@@ -28,7 +28,6 @@ signals:
 
 private:
     bool eventFilter(QObject* watched, QEvent* event) override;
-    QWidget* build_page_widget(const datalab::domain::OutputPage& page, std::size_t page_index);
 
     std::vector<datalab::domain::OutputPage> pages_;
 };

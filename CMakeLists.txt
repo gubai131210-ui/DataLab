@@ -180,6 +180,8 @@ add_library(datalab_ui STATIC
     src/ui/analysis_setup_dialog.h
     src/ui/output_workspace.cpp
     src/ui/output_workspace.h
+    src/ui/page_renderer.cpp
+    src/ui/page_renderer.h
     src/ui/command_registry.cpp
     src/ui/command_registry.h
     src/ui/project_navigator.cpp
