@@ -116,9 +116,16 @@ git commit -m "chore: initial commit"
 
 > 剩余：imr/ewma/cusum 已薄（46/25/28 行），无需再处理。
 
-### 2.4 文案与格式分离（未完成）
+### 2.4 文案与格式分离（重新定界 ⏸）
 
-把 4011 个 CJK 字符收进一个 `src/application/messages.h`（常量/函数），为后续 i18n 或双语维护留口。
+原目标：把 4011 个 CJK 字符收进一个 `src/application/messages.h`（常量/函数），为后续 i18n 或双语维护留口。
+
+**决策（本会话）**：暂缓，等待阶段 6 i18n 决策。证据：
+- **零去重**：`error_page` 44 处调用全部内容唯一；`analysis_name` 39 处赋值全部唯一（3.1 命令化后集中在 analysis_commands.cpp）；表格标题/表头/诊断/解释文案均为单点字符串——集中化 ≈ 每个唯一串建一个常量 + 调用点变长，无一致性收益；
+- **形态未定**：阶段 6 若选"全量 `tr()`"，字符串应留在原位包装；若选"正式声明简体中文单语"，集中化仅是装饰性。两种决策都使现阶段的 messages.h 大迁移可能被推翻；
+- 真正常驻的"目录型"数据（46 个分析 id/label）已在 `analysis_commands` 数据表中单一来源（见 3.1 ✅）。
+
+**后续触发条件**：阶段 6 i18n 决策确定后，按所选形态（tr() 原位包装 或 messages.h 全量收敛）一次性执行。
 
 ### 2.5 顺带消灭"反解析"（已完成 ✅）
 
@@ -173,6 +180,10 @@ struct AnalysisSpec {
 - `pdf_layout_test` 的图表用例改写为走生产多页重载（保留 PDF+图表冒烟覆盖）。
 
 > 剩余：`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除纳入 undo 栈。
+
+**已实施 ✅**（`bde8a03`/`c031836`）：
+- 新增 `src/ui/page_renderer.{h,cpp}` 统一渲染标题/方法卡/解释/表格/诊断/图（`PageRenderOptions` 参数化交互与方法卡）；`output_workspace.cpp` 301 → 132 行、`report_preview_dialog.cpp` 199 → 52 行；两处重复的 `analysis_icon_resource` 收敛为 `page_renderer::icon_resource`
+- 行排除与清除排除纳入 undo 栈：新增 `CleaningChangeCommand`（前后 `cleaning_operations_` 快照 + 应用器 lambda），`MainWindow::restore_cleaning_operations` 统一重放；排除操作可 Ctrl+Z/Ctrl+Y
 
 验证：`ctest` 全绿；`mainwindow.cpp` 从 2502 行降到 842 行（命令表迁往 `analysis_commands.cpp`）；UI 手动过一遍 6 类代表分析（描述统计/单样本 t/Xbar-R/能力/柏拉图/ARIMA）。
 
