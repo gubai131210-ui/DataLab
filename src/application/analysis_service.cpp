@@ -1,4 +1,5 @@
 #include "application/analysis_service.h"
+#include "application/chart_pages.h"
 #include "application/column_assembly.h"
 #include "application/output_builder.h"
 
@@ -2688,485 +2689,345 @@ OutputPage AnalysisService::xbar_range(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const ExtractedNumericColumn extracted =
-        extract_numeric_column(table, first_variable(configuration), configuration.excluded_rows);
-    std::string subgroup_error;
-    const auto input = build_strict_subgroups(table, extracted, configuration, subgroup_error);
-    if (!input.has_value()) {
-        return error_page("Xbar-R 控制图", "Xbar-R Chart", subgroup_error);
-    }
-    const std::vector<std::vector<double>>& subgroups = input->values;
-    if (subgroups.front().size() > 8) {
-        return error_page("Xbar-R 控制图", "Xbar-R Chart",
-                          "Xbar-R 适用于子组大小不超过 8；较大子组请使用 Xbar-S。");
-    }
-    const auto dual = datalab::domain::statistics::ControlCharts::xbar_range_dual(subgroups);
-    OutputPage page;
-    page.id = new_id("xbarr");
-    page.title = "Xbar-R 控制图";
-    page.method_name = "Xbar-R Chart";
-    page.configuration = configuration;
-    page.diagnostics = dual.diagnostics;
-    page.parameter_summary =
-        "变量: " + extracted.name + "    子组数 = " + std::to_string(subgroups.size())
-        + "    σ = R̄ / d2 = " + format_number(dual.sigma);
-    StatisticTable table_out;
-    table_out.title = "Xbar-R 参数";
-    table_out.headers = {"指标", "数值"};
-    table_out.rows = {
-        {"子组数", std::to_string(subgroups.size())},
-        {"X̄", format_number(dual.primary.center_line.empty() ? 0.0 : dual.primary.center_line.front())},
-        {"R̄", format_number(dual.average_moving_range)},
-        {"σ (within)", format_number(dual.sigma)},
-        {"Xbar Test 1 超限点数", std::to_string(dual.primary.test1_points.size())},
-        {"R Test 1 超限点数", std::to_string(dual.secondary.test1_points.size())}};
-    page.tables.push_back(table_out);
-    std::vector<std::size_t> subgroup_rows;
-    StatisticTable subgroup_table;
-    subgroup_table.title = "Xbar-R 逐子组统计";
-    subgroup_table.headers = {"子组", "N", "Xbar", "R", "Xbar CL", "Xbar LCL",
-                              "Xbar UCL", "R CL", "R LCL", "R UCL", "Test 1"};
-    for (std::size_t index = 0; index < subgroups.size(); ++index) {
-        subgroup_rows.push_back(input->source_rows[index].front());
-        const bool xbar_failed = std::find(
-            dual.primary.test1_points.cbegin(), dual.primary.test1_points.cend(), index)
-            != dual.primary.test1_points.cend();
-        const bool r_failed = std::find(
-            dual.secondary.test1_points.cbegin(), dual.secondary.test1_points.cend(), index)
-            != dual.secondary.test1_points.cend();
-        subgroup_table.rows.push_back({
-            input->labels[index], std::to_string(subgroups[index].size()),
-            format_number(dual.primary.plotted_values[index]),
-            format_number(dual.secondary.plotted_values[index]),
-            format_number(dual.primary.center_line[index]),
-            format_number(dual.primary.lower_control_limit[index]),
-            format_number(dual.primary.upper_control_limit[index]),
-            format_number(dual.secondary.center_line[index]),
-            format_number(dual.secondary.lower_control_limit[index]),
-            format_number(dual.secondary.upper_control_limit[index]),
-            (xbar_failed || r_failed) ? "是" : ""});
-    }
-    page.tables.push_back(subgroup_table);
-    page.plots.push_back(control_plot("Xbar 图", "子组均值", dual.primary, subgroup_rows));
-    page.plots.push_back(control_plot("R 图", "子组极差", dual.secondary, subgroup_rows));
-    return page;
+    DualSubgroupChartSpec spec;
+    spec.title = "Xbar-R 控制图";
+    spec.method_name = "Xbar-R Chart";
+    spec.id_prefix = "xbarr";
+    spec.sigma_label = "R̄";
+    spec.sigma_expression = "R̄ / d2";
+    spec.secondary_short = "R";
+    spec.secondary_plot_title = "R 图";
+    spec.secondary_axis = "子组极差";
+    spec.parameter_table_title = "Xbar-R 参数";
+    spec.subgroup_table_title = "Xbar-R 逐子组统计";
+    spec.compute = [](const std::vector<std::vector<double>>& subgroups) {
+        return datalab::domain::statistics::ControlCharts::xbar_range_dual(subgroups);
+    };
+    spec.validate = [](const std::vector<std::vector<double>>& subgroups) -> std::string {
+        return subgroups.front().size() > 8
+            ? "Xbar-R 适用于子组大小不超过 8；较大子组请使用 Xbar-S。" : "";
+    };
+    return subgroup_dual_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::xbar_s(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const ExtractedNumericColumn extracted =
-        extract_numeric_column(table, first_variable(configuration), configuration.excluded_rows);
-    std::string subgroup_error;
-    const auto input = build_strict_subgroups(table, extracted, configuration, subgroup_error);
-    if (!input.has_value()) {
-        return error_page("Xbar-S 控制图", "Xbar-S Chart", subgroup_error);
-    }
-    const std::vector<std::vector<double>>& subgroups = input->values;
-    const auto dual = datalab::domain::statistics::ControlCharts::xbar_s_dual(subgroups);
-    OutputPage page;
-    page.id = new_id("xbars");
-    page.title = "Xbar-S 控制图";
-    page.method_name = "Xbar-S Chart";
-    page.configuration = configuration;
-    page.diagnostics = dual.diagnostics;
-    page.parameter_summary = "变量: " + extracted.name
-        + "    子组大小 = " + std::to_string(configuration.subgroup_size.value_or(5))
-        + "    σ = S̄ / c4 = " + format_number(dual.sigma);
-    StatisticTable table_out;
-    table_out.title = "Xbar-S 参数";
-    table_out.headers = {"指标", "数值"};
-    table_out.rows = {
-        {"子组数", std::to_string(subgroups.size())},
-        {"X̄", format_number(dual.primary.center_line.empty() ? 0.0 : dual.primary.center_line.front())},
-        {"S̄", format_number(dual.average_moving_range)},
-        {"σ (within)", format_number(dual.sigma)},
-        {"Xbar Test 1 超限点数", std::to_string(dual.primary.test1_points.size())},
-        {"S Test 1 超限点数", std::to_string(dual.secondary.test1_points.size())}};
-    page.tables.push_back(table_out);
-    std::vector<std::size_t> rows;
-    StatisticTable subgroup_table;
-    subgroup_table.title = "Xbar-S 逐子组统计";
-    subgroup_table.headers = {"子组", "N", "Xbar", "S", "Xbar CL", "Xbar LCL",
-                              "Xbar UCL", "S CL", "S LCL", "S UCL", "Test 1"};
-    for (std::size_t index = 0; index < subgroups.size(); ++index) {
-        rows.push_back(input->source_rows[index].front());
-        const bool xbar_failed = std::find(
-            dual.primary.test1_points.cbegin(), dual.primary.test1_points.cend(), index)
-            != dual.primary.test1_points.cend();
-        const bool s_failed = std::find(
-            dual.secondary.test1_points.cbegin(), dual.secondary.test1_points.cend(), index)
-            != dual.secondary.test1_points.cend();
-        subgroup_table.rows.push_back({
-            input->labels[index], std::to_string(subgroups[index].size()),
-            format_number(dual.primary.plotted_values[index]),
-            format_number(dual.secondary.plotted_values[index]),
-            format_number(dual.primary.center_line[index]),
-            format_number(dual.primary.lower_control_limit[index]),
-            format_number(dual.primary.upper_control_limit[index]),
-            format_number(dual.secondary.center_line[index]),
-            format_number(dual.secondary.lower_control_limit[index]),
-            format_number(dual.secondary.upper_control_limit[index]),
-            (xbar_failed || s_failed) ? "是" : ""});
-    }
-    page.tables.push_back(subgroup_table);
-    page.plots.push_back(control_plot("Xbar 图", "子组均值", dual.primary, rows));
-    page.plots.push_back(control_plot("S 图", "子组标准差", dual.secondary, rows));
-    return page;
+    DualSubgroupChartSpec spec;
+    spec.title = "Xbar-S 控制图";
+    spec.method_name = "Xbar-S Chart";
+    spec.id_prefix = "xbars";
+    spec.sigma_label = "S̄";
+    spec.sigma_expression = "S̄ / c4";
+    spec.secondary_short = "S";
+    spec.secondary_plot_title = "S 图";
+    spec.secondary_axis = "子组标准差";
+    spec.parameter_table_title = "Xbar-S 参数";
+    spec.subgroup_table_title = "Xbar-S 逐子组统计";
+    spec.use_config_subgroup_size_in_summary = true;
+    spec.compute = [](const std::vector<std::vector<double>>& subgroups) {
+        return datalab::domain::statistics::ControlCharts::xbar_s_dual(subgroups);
+    };
+    return subgroup_dual_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::p_chart(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const std::size_t defect_column = configuration.selection.defect_count_column.value_or(
-        first_variable(configuration));
-    const ExtractedNumericColumn defectives =
-        extract_numeric_column(table, defect_column, configuration.excluded_rows);
-    std::vector<std::size_t> defective_counts;
-    std::vector<std::size_t> inspected_counts;
-    if (configuration.inspected_constant.has_value()) {
-        if (!append_nonnegative_counts(defectives.values, defective_counts)) {
-            return error_page("P 图", "P Chart", "不合格品数必须是非负整数。");
-        }
-        for (std::size_t index = 0; index < defective_counts.size(); ++index) {
-            inspected_counts.push_back(*configuration.inspected_constant);
-        }
-    } else if (configuration.selection.inspected_count_column.has_value()) {
-        const ExtractedNumericColumn inspected = extract_numeric_column(
-            table, *configuration.selection.inspected_count_column, configuration.excluded_rows);
-        const std::size_t count = std::min(defectives.values.size(), inspected.values.size());
-        if (!append_nonnegative_counts(
-                std::vector<double>(defectives.values.begin(), defectives.values.begin() + count),
-                defective_counts)
-            || !append_nonnegative_counts(
-                std::vector<double>(inspected.values.begin(), inspected.values.begin() + count),
-                inspected_counts)) {
-            return error_page("P 图", "P Chart", "不合格品数和检验数必须是非负整数。");
-        }
-    }
-    if (defective_counts.empty()) {
-        return error_page("P 图", "P Chart", "请指定不合格品数列和检验数（常数或列）。");
-    }
-    const auto chart = datalab::domain::statistics::ControlCharts::p_chart(
-        defective_counts, inspected_counts);
-    if (chart.plotted_values.empty()) {
-        return error_page("P 图", "P Chart", chart.diagnostics.empty()
-            ? "P 图没有可显示的数据。" : chart.diagnostics.front().message);
-    }
-    OutputPage page;
-    page.id = new_id("pchart");
-    page.title = "P 图";
-    page.method_name = "P Chart";
-    page.configuration = configuration;
-    page.diagnostics = chart.diagnostics;
-    page.parameter_summary = "分布 = 二项分布    p̄ = Σ不合格品数 / Σ检验数    "
+    AttributeChartSpec spec;
+    spec.title = "P 图";
+    spec.method_name = "P Chart";
+    spec.id_prefix = "pchart";
+    spec.count_header = "不合格品数";
+    spec.denominator_header = "检验数";
+    spec.rate_header = "不合格品率";
+    spec.plot_title = "P 图";
+    spec.y_axis = "不合格品率";
+    spec.parameter_summary = "分布 = 二项分布    p̄ = Σ不合格品数 / Σ检验数    "
         "Test 1 = 超出 3σ 控制限的点";
-    page.tables.push_back(attribute_chart_table(
-        "P 图逐子组统计", defective_counts, inspected_counts, chart,
-        "不合格品数", "检验数", "不合格品率"));
-    page.plots.push_back(control_plot("P 图", "不合格品率", chart, defectives.source_rows));
-    return page;
+    spec.assemble = [](const DataTable& table,
+                       const AnalysisConfiguration& configuration,
+                       std::string& error) -> std::optional<AttributeChartData> {
+        const std::size_t defect_column = configuration.selection.defect_count_column.value_or(
+            first_variable(configuration));
+        const ExtractedNumericColumn defectives =
+            extract_numeric_column(table, defect_column, configuration.excluded_rows);
+        AttributeChartData data;
+        data.source_rows = defectives.source_rows;
+        if (configuration.inspected_constant.has_value()) {
+            if (!append_nonnegative_counts(defectives.values, data.counts)) {
+                error = "不合格品数必须是非负整数。";
+                return std::nullopt;
+            }
+            for (std::size_t index = 0; index < data.counts.size(); ++index) {
+                data.denominators.push_back(*configuration.inspected_constant);
+            }
+        } else if (configuration.selection.inspected_count_column.has_value()) {
+            const ExtractedNumericColumn inspected = extract_numeric_column(
+                table, *configuration.selection.inspected_count_column, configuration.excluded_rows);
+            const std::size_t count = std::min(defectives.values.size(), inspected.values.size());
+            if (!append_nonnegative_counts(
+                    std::vector<double>(defectives.values.begin(), defectives.values.begin() + count),
+                    data.counts)
+                || !append_nonnegative_counts(
+                    std::vector<double>(inspected.values.begin(), inspected.values.begin() + count),
+                    data.denominators)) {
+                error = "不合格品数和检验数必须是非负整数。";
+                return std::nullopt;
+            }
+        }
+        if (data.counts.empty()) {
+            error = "请指定不合格品数列和检验数（常数或列）。";
+            return std::nullopt;
+        }
+        return data;
+    };
+    spec.compute = [](const std::vector<std::size_t>& defectives,
+                      const std::vector<std::size_t>& inspected) {
+        return datalab::domain::statistics::ControlCharts::p_chart(defectives, inspected);
+    };
+    return attribute_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::np_chart(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const std::size_t defect_column = configuration.selection.defect_count_column.value_or(
-        first_variable(configuration));
-    const ExtractedNumericColumn defects =
-        extract_numeric_column(table, defect_column, configuration.excluded_rows);
-    if (!configuration.inspected_constant.has_value()
-        && !configuration.selection.inspected_count_column.has_value()) {
-        return error_page("NP 图", "NP Chart", "NP 图需要固定检验数或检验数列。");
-    }
-    std::vector<std::size_t> defective_counts;
-    std::vector<std::size_t> inspected_counts;
-    if (!append_nonnegative_counts(defects.values, defective_counts)) {
-        return error_page("NP 图", "NP Chart", "不合格品数必须是非负整数。");
-    }
-    for (std::size_t index = 0; index < defective_counts.size(); ++index) {
-        inspected_counts.push_back(configuration.inspected_constant.value_or(1));
-    }
-    if (!configuration.inspected_constant.has_value()
-        && configuration.selection.inspected_count_column.has_value()) {
-        const ExtractedNumericColumn inspected = extract_numeric_column(
-            table, *configuration.selection.inspected_count_column, configuration.excluded_rows);
-        inspected_counts.clear();
-        if (!append_nonnegative_counts(inspected.values, inspected_counts)) {
-            return error_page("NP 图", "NP Chart", "检验数必须是非负整数。");
-        }
-    }
-    const auto chart = datalab::domain::statistics::ControlCharts::np_chart(
-        defective_counts, inspected_counts);
-    if (chart.plotted_values.empty()) {
-        return error_page("NP 图", "NP Chart", chart.diagnostics.empty()
-            ? "NP 图没有可显示的数据。" : chart.diagnostics.front().message);
-    }
-    OutputPage page;
-    page.id = new_id("np");
-    page.title = "NP 图";
-    page.method_name = "NP Chart";
-    page.configuration = configuration;
-    page.diagnostics = chart.diagnostics;
-    page.parameter_summary = "分布 = 二项分布    np̄_i = n_i p̄    "
+    AttributeChartSpec spec;
+    spec.title = "NP 图";
+    spec.method_name = "NP Chart";
+    spec.id_prefix = "np";
+    spec.count_header = "不合格品数";
+    spec.denominator_header = "检验数";
+    spec.rate_header = "不合格品数";
+    spec.plot_title = "NP 图";
+    spec.y_axis = "不合格品数";
+    spec.parameter_summary = "分布 = 二项分布    np̄_i = n_i p̄    "
         "Test 1 = 超出 3σ 控制限的点";
-    page.tables.push_back(attribute_chart_table(
-        "NP 图逐子组统计", defective_counts, inspected_counts, chart,
-        "不合格品数", "检验数", "不合格品数"));
-    page.plots.push_back(control_plot("NP 图", "不合格品数", chart, defects.source_rows));
-    return page;
+    spec.assemble = [](const DataTable& table,
+                       const AnalysisConfiguration& configuration,
+                       std::string& error) -> std::optional<AttributeChartData> {
+        const std::size_t defect_column = configuration.selection.defect_count_column.value_or(
+            first_variable(configuration));
+        const ExtractedNumericColumn defects =
+            extract_numeric_column(table, defect_column, configuration.excluded_rows);
+        if (!configuration.inspected_constant.has_value()
+            && !configuration.selection.inspected_count_column.has_value()) {
+            error = "NP 图需要固定检验数或检验数列。";
+            return std::nullopt;
+        }
+        AttributeChartData data;
+        data.source_rows = defects.source_rows;
+        if (!append_nonnegative_counts(defects.values, data.counts)) {
+            error = "不合格品数必须是非负整数。";
+            return std::nullopt;
+        }
+        for (std::size_t index = 0; index < data.counts.size(); ++index) {
+            data.denominators.push_back(configuration.inspected_constant.value_or(1));
+        }
+        if (!configuration.inspected_constant.has_value()
+            && configuration.selection.inspected_count_column.has_value()) {
+            const ExtractedNumericColumn inspected = extract_numeric_column(
+                table, *configuration.selection.inspected_count_column, configuration.excluded_rows);
+            data.denominators.clear();
+            if (!append_nonnegative_counts(inspected.values, data.denominators)) {
+                error = "检验数必须是非负整数。";
+                return std::nullopt;
+            }
+        }
+        return data;
+    };
+    spec.compute = [](const std::vector<std::size_t>& defectives,
+                      const std::vector<std::size_t>& inspected) {
+        return datalab::domain::statistics::ControlCharts::np_chart(defectives, inspected);
+    };
+    return attribute_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::c_chart(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const ExtractedNumericColumn defects = extract_numeric_column(
-        table, configuration.selection.defect_count_column.value_or(first_variable(configuration)),
-        configuration.excluded_rows);
-    std::vector<std::size_t> counts;
-    if (!append_nonnegative_counts(defects.values, counts)) {
-        return error_page("C 图", "C Chart", "缺陷数必须是非负整数。");
-    }
-    const auto chart = datalab::domain::statistics::ControlCharts::c_chart(
-        counts, configuration.inspected_constant.value_or(1));
-    if (chart.plotted_values.empty()) {
-        return error_page("C 图", "C Chart", chart.diagnostics.empty()
-            ? "C 图没有可显示的数据。" : chart.diagnostics.front().message);
-    }
-    OutputPage page;
-    page.id = new_id("cchart");
-    page.title = "C 图";
-    page.method_name = "C Chart";
-    page.configuration = configuration;
-    page.diagnostics = chart.diagnostics;
-    const std::size_t units = configuration.inspected_constant.value_or(1);
-    std::vector<std::size_t> unit_counts(counts.size(), units);
-    page.parameter_summary = "分布 = 泊松分布    c̄ = 缺陷数均值    "
+    AttributeChartSpec spec;
+    spec.title = "C 图";
+    spec.method_name = "C Chart";
+    spec.id_prefix = "cchart";
+    spec.count_header = "缺陷数";
+    spec.denominator_header = "单位数";
+    spec.rate_header = "缺陷数";
+    spec.plot_title = "C 图";
+    spec.y_axis = "缺陷数";
+    spec.parameter_summary = "分布 = 泊松分布    c̄ = 缺陷数均值    "
         "C 图要求每个子组单位数相同    Test 1 = 超出 3σ 控制限的点";
-    page.tables.push_back(attribute_chart_table(
-        "C 图逐子组统计", counts, unit_counts, chart,
-        "缺陷数", "单位数", "缺陷数"));
-    page.plots.push_back(control_plot("C 图", "缺陷数", chart, defects.source_rows));
-    return page;
+    spec.assemble = [](const DataTable& table,
+                       const AnalysisConfiguration& configuration,
+                       std::string& error) -> std::optional<AttributeChartData> {
+        const ExtractedNumericColumn defects = extract_numeric_column(
+            table, configuration.selection.defect_count_column.value_or(first_variable(configuration)),
+            configuration.excluded_rows);
+        AttributeChartData data;
+        data.source_rows = defects.source_rows;
+        if (!append_nonnegative_counts(defects.values, data.counts)) {
+            error = "缺陷数必须是非负整数。";
+            return std::nullopt;
+        }
+        data.denominators.assign(
+            data.counts.size(), configuration.inspected_constant.value_or(1));
+        return data;
+    };
+    spec.compute = [](const std::vector<std::size_t>& counts,
+                      const std::vector<std::size_t>& denominators) {
+        return datalab::domain::statistics::ControlCharts::c_chart(
+            counts, denominators.empty() ? 1 : denominators.front());
+    };
+    return attribute_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::u_chart(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const ExtractedNumericColumn defects = extract_numeric_column(
-        table, configuration.selection.defect_count_column.value_or(first_variable(configuration)),
-        configuration.excluded_rows);
-    if (!configuration.selection.inspected_count_column.has_value()) {
-        return error_page("U 图", "U Chart", "U 图需要单位数列。");
-    }
-    const ExtractedNumericColumn units = extract_numeric_column(
-        table, *configuration.selection.inspected_count_column, configuration.excluded_rows);
-    std::vector<std::size_t> defect_counts;
-    std::vector<std::size_t> unit_counts;
-    const std::size_t count = std::min(defects.values.size(), units.values.size());
-    if (!append_nonnegative_counts(
-            std::vector<double>(defects.values.begin(), defects.values.begin() + count),
-            defect_counts)
-        || !append_nonnegative_counts(
-            std::vector<double>(units.values.begin(), units.values.begin() + count),
-            unit_counts)) {
-        return error_page("U 图", "U Chart", "缺陷数和单位数必须是非负整数。");
-    }
-    const auto chart = datalab::domain::statistics::ControlCharts::u_chart(
-        defect_counts, unit_counts);
-    if (chart.plotted_values.empty()) {
-        return error_page("U 图", "U Chart", chart.diagnostics.empty()
-            ? "U 图没有可显示的数据。" : chart.diagnostics.front().message);
-    }
-    OutputPage page;
-    page.id = new_id("uchart");
-    page.title = "U 图";
-    page.method_name = "U Chart";
-    page.configuration = configuration;
-    page.diagnostics = chart.diagnostics;
-    page.parameter_summary = "分布 = 泊松分布    ū = Σ缺陷数 / Σ单位数    "
+    AttributeChartSpec spec;
+    spec.title = "U 图";
+    spec.method_name = "U Chart";
+    spec.id_prefix = "uchart";
+    spec.count_header = "缺陷数";
+    spec.denominator_header = "单位数";
+    spec.rate_header = "单位缺陷数";
+    spec.plot_title = "U 图";
+    spec.y_axis = "单位缺陷数";
+    spec.parameter_summary = "分布 = 泊松分布    ū = Σ缺陷数 / Σ单位数    "
         "Test 1 = 超出 3σ 控制限的点";
-    page.tables.push_back(attribute_chart_table(
-        "U 图逐子组统计", defect_counts, unit_counts, chart,
-        "缺陷数", "单位数", "单位缺陷数"));
-    page.plots.push_back(control_plot("U 图", "单位缺陷数", chart, defects.source_rows));
-    return page;
+    spec.assemble = [](const DataTable& table,
+                       const AnalysisConfiguration& configuration,
+                       std::string& error) -> std::optional<AttributeChartData> {
+        const ExtractedNumericColumn defects = extract_numeric_column(
+            table, configuration.selection.defect_count_column.value_or(first_variable(configuration)),
+            configuration.excluded_rows);
+        if (!configuration.selection.inspected_count_column.has_value()) {
+            error = "U 图需要单位数列。";
+            return std::nullopt;
+        }
+        const ExtractedNumericColumn units = extract_numeric_column(
+            table, *configuration.selection.inspected_count_column, configuration.excluded_rows);
+        AttributeChartData data;
+        data.source_rows = defects.source_rows;
+        const std::size_t count = std::min(defects.values.size(), units.values.size());
+        if (!append_nonnegative_counts(
+                std::vector<double>(defects.values.begin(), defects.values.begin() + count),
+                data.counts)
+            || !append_nonnegative_counts(
+                std::vector<double>(units.values.begin(), units.values.begin() + count),
+                data.denominators)) {
+            error = "缺陷数和单位数必须是非负整数。";
+            return std::nullopt;
+        }
+        return data;
+    };
+    spec.compute = [](const std::vector<std::size_t>& defects,
+                      const std::vector<std::size_t>& units) {
+        return datalab::domain::statistics::ControlCharts::u_chart(defects, units);
+    };
+    return attribute_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::laney_p_chart(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    AnalysisConfiguration effective = configuration;
-    if (!effective.included_rows.empty()) {
-        effective.excluded_rows.clear();
-        for (std::size_t row = 0; row < table.rows.size(); ++row) {
-            if (std::find(effective.included_rows.cbegin(), effective.included_rows.cend(), row)
-                == effective.included_rows.cend()) {
-                effective.excluded_rows.push_back(row);
+    LaneyChartSpec spec;
+    spec.title = "Laney P' 图";
+    spec.method_name = "Laney P' Chart";
+    spec.id_prefix = "laneyp";
+    spec.distribution_text = "二项分布";
+    spec.center_label = "p̄";
+    spec.count_header = "不合格品数";
+    spec.denominator_header = "检验数";
+    spec.y_axis = "不合格品率";
+    spec.include_enabled_tests_row = true;
+    spec.assemble = [](const DataTable& table,
+                       const AnalysisConfiguration& effective,
+                       std::string& error) -> std::optional<AttributeChartData> {
+        const std::size_t defect_column = effective.selection.defect_count_column.value_or(
+            first_variable(effective));
+        const ExtractedNumericColumn defectives =
+            extract_numeric_column(table, defect_column, effective.excluded_rows);
+        AttributeChartData data;
+        data.source_rows = defectives.source_rows;
+        if (!append_nonnegative_counts(defectives.values, data.counts)) {
+            error = "不合格品数必须是非负整数。";
+            return std::nullopt;
+        }
+        if (effective.inspected_constant.has_value()) {
+            data.denominators.assign(data.counts.size(), *effective.inspected_constant);
+        } else if (effective.selection.inspected_count_column.has_value()) {
+            const ExtractedNumericColumn inspected = extract_numeric_column(
+                table, *effective.selection.inspected_count_column, effective.excluded_rows);
+            if (!append_nonnegative_counts(inspected.values, data.denominators)
+                || data.denominators.size() != data.counts.size()) {
+                error = "检验数必须是有效的非负整数列。";
+                return std::nullopt;
             }
+        } else {
+            error = "请指定检验数列或检验数常数。";
+            return std::nullopt;
         }
-    }
-    const std::size_t defect_column = effective.selection.defect_count_column.value_or(
-        first_variable(effective));
-    const ExtractedNumericColumn defectives =
-        extract_numeric_column(table, defect_column, effective.excluded_rows);
-    std::vector<std::size_t> defective_counts;
-    std::vector<std::size_t> inspected_counts;
-    if (!append_nonnegative_counts(defectives.values, defective_counts)) {
-        return error_page("Laney P' 图", "Laney P' Chart", "不合格品数必须是非负整数。");
-    }
-    if (effective.inspected_constant.has_value()) {
-        inspected_counts.assign(defective_counts.size(), *effective.inspected_constant);
-    } else if (effective.selection.inspected_count_column.has_value()) {
-        const ExtractedNumericColumn inspected = extract_numeric_column(
-            table, *effective.selection.inspected_count_column, effective.excluded_rows);
-        if (!append_nonnegative_counts(inspected.values, inspected_counts)
-            || inspected_counts.size() != defective_counts.size()) {
-            return error_page("Laney P' 图", "Laney P' Chart", "检验数必须是有效的非负整数列。");
-        }
-    } else {
-        return error_page("Laney P' 图", "Laney P' Chart", "请指定检验数列或检验数常数。");
-    }
-    datalab::domain::statistics::LaneyChartOptions options;
-    options.enabled_special_cause_tests = effective.enabled_special_cause_tests;
-    options.historical_center = effective.historical_center;
-    options.historical_sigma_z = effective.historical_sigma_z;
-    const auto chart = datalab::domain::statistics::ControlCharts::laney_p_chart(
-        defective_counts, inspected_counts, options);
-    if (chart.plotted_values.empty()) {
-        return error_page("Laney P' 图", "Laney P' Chart", chart.diagnostics.empty()
-            ? "Laney P' 图没有可显示的数据。" : chart.diagnostics.front().message);
-    }
-    std::vector<std::string> stages;
-    if (effective.stage_column.has_value()) {
-        const std::vector<std::string> stage_values = extract_text_column(
-            table, *effective.stage_column);
-        for (const std::size_t row : defectives.source_rows) {
-            const std::string stage = row < stage_values.size() ? stage_values[row] : "";
-            if (is_missing_cell(stage)) {
-                return error_page("Laney P' 图", "Laney P' Chart",
-                                  "阶段列存在缺失标签，请补齐原始数据。");
-            }
-            stages.push_back(stage);
-        }
-    }
-    OutputPage page;
-    page.id = new_id("laneyp");
-    page.title = "Laney P' 图";
-    page.method_name = "Laney P' Chart";
-    page.configuration = effective;
-    page.diagnostics = chart.diagnostics;
-    page.parameter_summary = "分布 = 二项分布    p̄ = "
-        + format_number(chart.center_line.front()) + "    Sigma Z = "
-        + format_number(chart.sigma_z)
-        + (effective.historical_sigma_z.has_value() ? "（历史参数）" : "（估计）");
-    StatisticTable parameters;
-    parameters.title = "Laney P' 参数";
-    parameters.headers = {"指标", "数值"};
-    parameters.rows = {
-        {"p̄", format_number(chart.center_line.front())},
-        {"Sigma Z", format_number(chart.sigma_z)},
-        {"MR̄(Z)", format_number(chart.moving_ranges.size() > 1
-            ? std::accumulate(chart.moving_ranges.cbegin() + 1, chart.moving_ranges.cend(), 0.0)
-                / static_cast<double>(chart.moving_ranges.size() - 1) : 0.0)},
-        {"有效子组数", std::to_string(chart.plotted_values.size())},
-        {"启用测试", effective.enabled_special_cause_tests.empty()
-            ? "无" : "Test " + std::to_string(effective.enabled_special_cause_tests.front())}};
-    page.tables.push_back(parameters);
-    page.tables.push_back(laney_chart_table(
-        defective_counts, inspected_counts, chart, stages, "不合格品数", "检验数"));
-    PlotSpec plot = control_plot("Laney P' 图", "不合格品率", chart, defectives.source_rows);
-    plot.subtitle = "Sigma Z = " + format_number(chart.sigma_z);
-    page.plots.push_back(plot);
-    return page;
+        return data;
+    };
+    spec.compute = [](const std::vector<std::size_t>& defectives,
+                      const std::vector<std::size_t>& inspected,
+                      const datalab::domain::statistics::LaneyChartOptions& options) {
+        return datalab::domain::statistics::ControlCharts::laney_p_chart(
+            defectives, inspected, options);
+    };
+    return laney_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::laney_u_chart(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    AnalysisConfiguration effective = configuration;
-    if (!effective.included_rows.empty()) {
-        effective.excluded_rows.clear();
-        for (std::size_t row = 0; row < table.rows.size(); ++row) {
-            if (std::find(effective.included_rows.cbegin(), effective.included_rows.cend(), row)
-                == effective.included_rows.cend()) {
-                effective.excluded_rows.push_back(row);
-            }
+    LaneyChartSpec spec;
+    spec.title = "Laney U' 图";
+    spec.method_name = "Laney U' Chart";
+    spec.id_prefix = "laneyu";
+    spec.distribution_text = "泊松分布";
+    spec.center_label = "ū";
+    spec.count_header = "缺陷数";
+    spec.denominator_header = "单位数";
+    spec.y_axis = "单位缺陷数";
+    spec.assemble = [spec](const DataTable& table,
+                           const AnalysisConfiguration& effective,
+                           std::string& error) -> std::optional<AttributeChartData> {
+        const std::size_t defect_column = effective.selection.defect_count_column.value_or(
+            first_variable(effective));
+        const ExtractedNumericColumn defects =
+            extract_numeric_column(table, defect_column, effective.excluded_rows);
+        if (!effective.selection.inspected_count_column.has_value()) {
+            error = spec.title + "需要单位数列。";
+            return std::nullopt;
         }
-    }
-    const std::size_t defect_column = effective.selection.defect_count_column.value_or(
-        first_variable(effective));
-    const ExtractedNumericColumn defects =
-        extract_numeric_column(table, defect_column, effective.excluded_rows);
-    if (!effective.selection.inspected_count_column.has_value()) {
-        return error_page("Laney U' 图", "Laney U' Chart", "Laney U' 图需要单位数列。");
-    }
-    const ExtractedNumericColumn units = extract_numeric_column(
-        table, *effective.selection.inspected_count_column, effective.excluded_rows);
-    std::vector<std::size_t> defect_counts;
-    std::vector<std::size_t> unit_counts;
-    if (!append_nonnegative_counts(defects.values, defect_counts)
-        || !append_nonnegative_counts(units.values, unit_counts)
-        || defect_counts.size() != unit_counts.size()) {
-        return error_page("Laney U' 图", "Laney U' Chart", "缺陷数和单位数必须是有效的非负整数列。");
-    }
-    datalab::domain::statistics::LaneyChartOptions options;
-    options.enabled_special_cause_tests = effective.enabled_special_cause_tests;
-    options.historical_center = effective.historical_center;
-    options.historical_sigma_z = effective.historical_sigma_z;
-    const auto chart = datalab::domain::statistics::ControlCharts::laney_u_chart(
-        defect_counts, unit_counts, options);
-    if (chart.plotted_values.empty()) {
-        return error_page("Laney U' 图", "Laney U' Chart", chart.diagnostics.empty()
-            ? "Laney U' 图没有可显示的数据。" : chart.diagnostics.front().message);
-    }
-    std::vector<std::string> stages;
-    if (effective.stage_column.has_value()) {
-        const std::vector<std::string> stage_values = extract_text_column(
-            table, *effective.stage_column);
-        for (const std::size_t row : defects.source_rows) {
-            const std::string stage = row < stage_values.size() ? stage_values[row] : "";
-            if (is_missing_cell(stage)) {
-                return error_page("Laney U' 图", "Laney U' Chart",
-                                  "阶段列存在缺失标签，请补齐原始数据。");
-            }
-            stages.push_back(stage);
+        const ExtractedNumericColumn units = extract_numeric_column(
+            table, *effective.selection.inspected_count_column, effective.excluded_rows);
+        AttributeChartData data;
+        data.source_rows = defects.source_rows;
+        if (!append_nonnegative_counts(defects.values, data.counts)
+            || !append_nonnegative_counts(units.values, data.denominators)
+            || data.counts.size() != data.denominators.size()) {
+            error = "缺陷数和单位数必须是有效的非负整数列。";
+            return std::nullopt;
         }
-    }
-    OutputPage page;
-    page.id = new_id("laneyu");
-    page.title = "Laney U' 图";
-    page.method_name = "Laney U' Chart";
-    page.configuration = effective;
-    page.diagnostics = chart.diagnostics;
-    page.parameter_summary = "分布 = 泊松分布    ū = "
-        + format_number(chart.center_line.front()) + "    Sigma Z = "
-        + format_number(chart.sigma_z)
-        + (effective.historical_sigma_z.has_value() ? "（历史参数）" : "（估计）");
-    StatisticTable parameters;
-    parameters.title = "Laney U' 参数";
-    parameters.headers = {"指标", "数值"};
-    parameters.rows = {
-        {"ū", format_number(chart.center_line.front())},
-        {"Sigma Z", format_number(chart.sigma_z)},
-        {"MR̄(Z)", format_number(chart.moving_ranges.size() > 1
-            ? std::accumulate(chart.moving_ranges.cbegin() + 1, chart.moving_ranges.cend(), 0.0)
-                / static_cast<double>(chart.moving_ranges.size() - 1) : 0.0)},
-        {"有效子组数", std::to_string(chart.plotted_values.size())}};
-    page.tables.push_back(parameters);
-    page.tables.push_back(laney_chart_table(
-        defect_counts, unit_counts, chart, stages, "缺陷数", "单位数"));
-    PlotSpec plot = control_plot("Laney U' 图", "单位缺陷数", chart, defects.source_rows);
-    plot.subtitle = "Sigma Z = " + format_number(chart.sigma_z);
-    page.plots.push_back(plot);
-    return page;
+        return data;
+    };
+    spec.compute = [](const std::vector<std::size_t>& defects,
+                      const std::vector<std::size_t>& units,
+                      const datalab::domain::statistics::LaneyChartOptions& options) {
+        return datalab::domain::statistics::ControlCharts::laney_u_chart(
+            defects, units, options);
+    };
+    return laney_chart_page(table, configuration, spec);
 }
 
 OutputPage AnalysisService::capability(

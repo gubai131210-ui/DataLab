@@ -99,9 +99,14 @@ git commit -m "chore: initial commit"
 产出 `src/application/output_builder.h/.cpp`（280 行）：`format_number`/`format_optional`/`parse_numeric_cell`、`new_id`/`error_page`/`append_diagnostics`、`parse_alternative`/`parse_variance_method`/`alternative_label`/`append_nonnegative_counts`、`t_test_table`/`descriptive_table`/`attribute_chart_table`/`laney_chart_table`/`control_plot`（原 analysis_service.cpp 60-423 行的 18 个匿名辅助）。
 > 命名空间注意：这些函数进入 `datalab::application`（非匿名），头文件内 `StatisticTable` 等 domain 类型必须限定为 `domain::StatisticTable`。
 
-### 2.3 45 个方法收敛为薄壳（未完成，下一步）
+### 2.3 45 个方法收敛为薄壳（进行中）
 
-每个方法变成：装配参数 → 调 domain → `OutputBuilder` 组装 → 返回。目标是单方法不超过 40 行。
+**控制图族已完成 ✅**：新增 `src/application/chart_pages.{h,cpp}`（190 行），三个共享页面构建器：
+- `subgroup_dual_chart_page`：Xbar-R / Xbar-S 共用（xbar_range 266→26 行、xbar_s 262→24 行）；
+- `attribute_chart_page`：P / NP / C / U 共用（各方法从 ~55 行收敛到 ~40 行规格配置）；
+- `laney_chart_page`：Laney P' / Laney U' 共用（从 ~90 行收敛到 ~45 行，含 included_rows→excluded_rows 换算、阶段列处理、参数表）。
+方法内的数据装配差异用 `assemble` lambda 表达；页面骨架、表格、图表、错误页全部下沉。`analysis_service.cpp` 3625 → 3486 行。
+> 剩余：imr/ewma/cusum（薄壳化）与统计检验族、DOE/MSA/时序族（较大，方法内嵌 bespoke 表格构建，需按族逐个抽取）。
 
 ### 2.4 文案与格式分离（未完成）
 
