@@ -1,7 +1,7 @@
 #include "ui/output_workspace.h"
 
 #include "ui/analysis_chart_widget.h"
-#include "ui/chart_adapter.h"
+#include "reporting/chart_adapter.h"
 
 #include <QLabel>
 #include <QScrollArea>

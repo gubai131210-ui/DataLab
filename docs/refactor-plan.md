@@ -49,19 +49,22 @@ git commit -m "chore: initial commit"
 
 现状：`CMakeLists.txt:8-114` 一个 `datalab_domain` 库装四层。
 
-拆成四个静态库 + 一个可执行目标：
+拆成五个静态库 + 一个可执行目标（**已实施**，见 ADR 0002）：
 
-| 目标 | 内容 | 链接 | include |
-|---|---|---|---|
-| `datalab_domain` | `src/domain/**` | 仅 Qt6::Core（或干脆不链 Qt，保持纯 C++） | `src/` |
-| `datalab_application` | `src/application/**` | `datalab_domain` PRIVATE，Qt6::Core | `src/` |
-| `datalab_infrastructure` | `src/infrastructure/**` | `datalab_domain` PRIVATE，Qt6::Core/Widgets/Sql | `src/` |
-| `datalab_ui` | `src/ui/**` + 迁入的 `mainwindow.*` | 上面三个 PRIVATE，Qt6::Widgets/Svg | `src/` |
-| `DataLab` | `main.cpp` + 资源 | `datalab_ui` PRIVATE | — |
+| 目标 | 内容 | 链接 |
+|---|---|---|
+| `datalab_domain` | `src/domain/**` | 无 Qt（纯 C++） |
+| `datalab_application` | `src/application/**` | `datalab_domain` PUBLIC，Qt6::Core |
+| `datalab_reporting` | `src/reporting/**`（图表渲染，无 QWidget） | `datalab_domain` PUBLIC，Qt6::Gui |
+| `datalab_infrastructure` | `src/infrastructure/**` | `datalab_domain` PUBLIC，Core/Gui；`datalab_reporting` PRIVATE，Qt6::Sql |
+| `datalab_ui` | `src/ui/**` + 迁入的 `mainwindow.*` | `datalab_domain` PUBLIC，Widgets；`datalab_application`/`datalab_infrastructure`/`datalab_reporting` PRIVATE |
+| `DataLab` | `main.cpp` + 资源 | `datalab_ui` PRIVATE，Widgets/Svg |
 
-- `datalab_domain` 若保持链接 Qt6::Core：`column_extract`、`quality_types` 只用 `std::`，可先验证去掉 Qt 依赖（domain 目录 grep 已确认无 `#include <Q`）。
-- `target_include_directories` 各目标用 PRIVATE 指向自己目录，**不再统一 PUBLIC `src/`**——这是让跨层 include 失效的关键。
-- 测试目标改链对应的库：domain 测试链 `datalab_domain`；`worksheet_model_test` 改链 `datalab_ui`；服务层测试链 `datalab_application`。
+- include 根**保持统一为 `src/`**（保留 `domain/...`、`ui/...` 自描述前缀），分层由两层机制约束：
+  - 链接期：target 依赖图表达允许方向，反向引用直接链接失败；
+  - include 期：`tools/check_layering.ps1` 按层白名单检查 include 前缀（CI 阶段接入）。
+  - 备选的"每目标 include 白名单"需要把所有 include 改为层根相对（破坏可读性、改动面大），作为后续强化手段保留（见 ADR 0002）。
+- 测试目标改链对应的库：domain 测试链 `datalab_domain`；`worksheet_model_test` 链 `datalab_ui`；`chart_geometry_test` 链 `datalab_reporting`；服务层测试链 `datalab_application`；fixture/序列化/PDF 测试链 `datalab_infrastructure`。
 
 验证：`cmake -S . -B build/... && cmake --build ...` 全绿；`ctest` 全绿。
 
@@ -69,13 +72,13 @@ git commit -m "chore: initial commit"
 
 证据：`pdf_report_writer.cpp:5-6` include `ui/chart_adapter.h`、`ui/chart_renderer.h`。
 
-`ChartRenderer`（928 行，纯 QPainter）、`ChartModel`、`chart_adapter`、`chart_coordinate_mapper` 均不含 QWidget，把四个文件从 `src/ui/` 下沉到新目录 `src/reporting/`（或 `src/infrastructure/reporting/`）：
+**已实施**：`ChartRenderer`（928 行，纯 QPainter）、`ChartModel`、`chart_adapter`、`chart_coordinate_mapper` 均不含 QWidget，已从 `src/ui/` 下沉到 `src/reporting/`（新建 reporting 层，见 ADR 0002）：
 
-- 命名空间与 include 同步调整；
-- `pdf_report_writer` 改链 `datalab_reporting`；
-- `output_workspace`、`analysis_chart_widget`、`report_preview_dialog` 反向依赖 reporting（方向正常）。
+- include 前缀 `ui/chart_*` → `reporting/chart_*`（12 处消费方同步更新，含 `pdf_report_writer.cpp`、`output_workspace.cpp`、`analysis_chart_widget.*`、`graph_properties_dialog.h`、`report_preview_dialog.cpp`、`chart_geometry_test.cpp`）；
+- `pdf_report_writer`（infrastructure）改链 `datalab_reporting`；
+- `output_workspace`、`analysis_chart_widget`、`report_preview_dialog`（ui）反向依赖 reporting（方向正常）。
 
-验证：`ctest` 全绿；grep 确认 `src/infrastructure` 下再无 `#include "ui/"`。
+验证：`ctest` 全绿；grep 确认 `src/infrastructure` 下再无 `#include "ui/"`；`tools/check_layering.ps1` 通过。
 
 ---
 

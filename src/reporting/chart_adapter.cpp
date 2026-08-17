@@ -1,4 +1,4 @@
-#include "ui/chart_adapter.h"
+#include "reporting/chart_adapter.h"
 
 #include <utility>
 

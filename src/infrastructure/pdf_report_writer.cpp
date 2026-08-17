@@ -2,8 +2,8 @@
 
 #include "infrastructure/report_layout_cursor.h"
 #include "infrastructure/report_painter.h"
-#include "ui/chart_adapter.h"
-#include "ui/chart_renderer.h"
+#include "reporting/chart_adapter.h"
+#include "reporting/chart_renderer.h"
 
 #include <QDateTime>
 #include <QFontDatabase>

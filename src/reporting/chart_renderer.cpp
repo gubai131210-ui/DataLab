@@ -1,6 +1,6 @@
 #include "chart_renderer.h"
 
-#include "ui/chart_coordinate_mapper.h"
+#include "reporting/chart_coordinate_mapper.h"
 #include "domain/statistics/normal_distribution.h"
 
 #include <QPainter>

@@ -5,7 +5,16 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test)
 
 qt_standard_project_setup()
 
+# 分层目标（依赖方向：ui → {application, infrastructure, reporting} → domain）
+# 注意：include 根统一为 src/，分层由链接依赖 + tools/check_layering.ps1 约束。
+
+# ---------------------------------------------------------------------------
+# domain：纯 C++ 统计与领域模型，不依赖 Qt
+# ---------------------------------------------------------------------------
 add_library(datalab_domain STATIC
+    src/domain/column_extract.cpp
+    src/domain/column_extract.h
+    src/domain/quality_types.h
     src/domain/statistics/descriptive_statistics.cpp
     src/domain/statistics/descriptive_statistics.h
     src/domain/statistics/process_capability.cpp
@@ -65,13 +74,55 @@ add_library(datalab_domain STATIC
     src/domain/statistics/seasonal_forecasting.h
     src/domain/statistics/pca.cpp
     src/domain/statistics/pca.h
-    src/domain/column_extract.cpp
-    src/domain/column_extract.h
-    src/domain/quality_types.h
+)
+
+target_include_directories(datalab_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# ---------------------------------------------------------------------------
+# application：分析编排（AnalysisService / AnalysisCatalog / InterpretationService）
+# ---------------------------------------------------------------------------
+add_library(datalab_application STATIC
     src/application/analysis_service.cpp
-    src/application/analysis_catalog.cpp
-    src/application/interpretation_service.cpp
     src/application/analysis_service.h
+    src/application/analysis_catalog.cpp
+    src/application/analysis_catalog.h
+    src/application/interpretation_service.cpp
+    src/application/interpretation_service.h
+)
+
+target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+target_link_libraries(datalab_application
+    PUBLIC
+        datalab_domain
+        Qt6::Core
+)
+
+# ---------------------------------------------------------------------------
+# reporting：图表渲染（纯 QPainter，无 QWidget 依赖；ui 与 infrastructure 共用）
+# ---------------------------------------------------------------------------
+add_library(datalab_reporting STATIC
+    src/reporting/chart_model.h
+    src/reporting/chart_renderer.cpp
+    src/reporting/chart_renderer.h
+    src/reporting/chart_adapter.cpp
+    src/reporting/chart_adapter.h
+    src/reporting/chart_coordinate_mapper.cpp
+    src/reporting/chart_coordinate_mapper.h
+)
+
+target_include_directories(datalab_reporting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+target_link_libraries(datalab_reporting
+    PUBLIC
+        datalab_domain
+        Qt6::Gui
+)
+
+# ---------------------------------------------------------------------------
+# infrastructure：CSV/SQLite/PDF/Python 桥等外部依赖适配
+# ---------------------------------------------------------------------------
+add_library(datalab_infrastructure STATIC
     src/infrastructure/csv_importer.cpp
     src/infrastructure/csv_importer.h
     src/infrastructure/project_repository.cpp
@@ -81,19 +132,40 @@ add_library(datalab_domain STATIC
     src/infrastructure/pdf_report_writer.cpp
     src/infrastructure/pdf_report_writer.h
     src/infrastructure/report_layout_cursor.cpp
-    src/infrastructure/report_painter.cpp
     src/infrastructure/report_layout_cursor.h
+    src/infrastructure/report_painter.cpp
+    src/infrastructure/report_painter.h
     src/infrastructure/python_table_importer.cpp
     src/infrastructure/python_table_importer.h
+)
+
+target_include_directories(datalab_infrastructure PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# DATALAB_SOURCE_DIR 供 python_table_importer 与基于 fixtures 的测试使用
+target_compile_definitions(datalab_infrastructure
+    PUBLIC
+        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_link_libraries(datalab_infrastructure
+    PUBLIC
+        datalab_domain
+        Qt6::Core
+        Qt6::Gui
+    PRIVATE
+        datalab_reporting
+        Qt6::Sql
+)
+
+# ---------------------------------------------------------------------------
+# ui：Qt Widgets 界面（含 mainwindow）
+# ---------------------------------------------------------------------------
+add_library(datalab_ui STATIC
+    src/ui/mainwindow.cpp
+    src/ui/mainwindow.h
+    src/ui/mainwindow.ui
     src/ui/analysis_chart_widget.cpp
     src/ui/analysis_chart_widget.h
-    src/ui/chart_coordinate_mapper.cpp
-    src/ui/chart_coordinate_mapper.h
-    src/ui/chart_renderer.cpp
-    src/ui/chart_renderer.h
-    src/ui/chart_adapter.cpp
-    src/ui/chart_adapter.h
-    src/ui/chart_model.h
     src/ui/analysis_dialog.cpp
     src/ui/analysis_dialog.h
     src/ui/analysis_setup_dialog.cpp
@@ -107,36 +179,33 @@ add_library(datalab_domain STATIC
     src/ui/project_navigator.cpp
     src/ui/project_navigator.h
     src/ui/worksheet_model.cpp
-    src/ui/worksheet_view.cpp
-    src/ui/report_preview_dialog.cpp
-    src/ui/graph_properties_dialog.cpp
     src/ui/worksheet_model.h
+    src/ui/worksheet_view.cpp
+    src/ui/worksheet_view.h
+    src/ui/report_preview_dialog.cpp
+    src/ui/report_preview_dialog.h
+    src/ui/graph_properties_dialog.cpp
+    src/ui/graph_properties_dialog.h
 )
 
-target_include_directories(datalab_domain
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+target_include_directories(datalab_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-target_compile_definitions(datalab_domain
+target_link_libraries(datalab_ui
     PUBLIC
-        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
-target_link_libraries(datalab_domain
-    PUBLIC
-        Qt6::Core
-        Qt6::Gui
+        datalab_domain
         Qt6::Widgets
-        Qt6::Sql
+    PRIVATE
+        datalab_application
+        datalab_infrastructure
+        datalab_reporting
 )
 
+# ---------------------------------------------------------------------------
+# 可执行目标
+# ---------------------------------------------------------------------------
 qt_add_executable(DataLab
     WIN32 MACOSX_BUNDLE
     main.cpp
-    mainwindow.cpp
-    mainwindow.h
-    mainwindow.ui
     translations/translations.qrc
 )
 
@@ -207,12 +276,14 @@ qt_add_resources(DataLab app_resources
 
 target_link_libraries(DataLab
     PRIVATE
-        datalab_domain
-        Qt6::Core
+        datalab_ui
         Qt6::Widgets
         Qt6::Svg
 )
 
+# ---------------------------------------------------------------------------
+# 测试
+# ---------------------------------------------------------------------------
 enable_testing()
 
 qt_add_executable(descriptive_statistics_test
@@ -234,6 +305,7 @@ qt_add_executable(column_extract_import_test
 target_link_libraries(column_extract_import_test
     PRIVATE
         datalab_domain
+        datalab_infrastructure
         Qt6::Test
 )
 
@@ -246,6 +318,7 @@ qt_add_executable(quality_statistics_test
 target_link_libraries(quality_statistics_test
     PRIVATE
         datalab_domain
+        datalab_application
         Qt6::Test
 )
 
@@ -258,6 +331,7 @@ qt_add_executable(reliability_msa_power_test
 target_link_libraries(reliability_msa_power_test
     PRIVATE
         datalab_domain
+        datalab_application
         Qt6::Test
 )
 
@@ -281,7 +355,7 @@ qt_add_executable(minitab_fixture_test
 
 target_link_libraries(minitab_fixture_test
     PRIVATE
-        datalab_domain
+        datalab_infrastructure
         Qt6::Test
 )
 
@@ -293,7 +367,7 @@ qt_add_executable(chart_geometry_test
 
 target_link_libraries(chart_geometry_test
     PRIVATE
-        datalab_domain
+        datalab_reporting
         Qt6::Test
 )
 
@@ -305,7 +379,8 @@ qt_add_executable(pdf_layout_test
 
 target_link_libraries(pdf_layout_test
     PRIVATE
-        datalab_domain
+        datalab_infrastructure
+        datalab_reporting
         Qt6::Test
 )
 
@@ -317,7 +392,8 @@ qt_add_executable(minitab_formula_golden_test
 
 target_link_libraries(minitab_formula_golden_test
     PRIVATE
-        datalab_domain
+        datalab_application
+        datalab_infrastructure
         Qt6::Test
 )
 
@@ -329,7 +405,7 @@ qt_add_executable(worksheet_model_test
 
 target_link_libraries(worksheet_model_test
     PRIVATE
-        datalab_domain
+        datalab_ui
         Qt6::Test
 )
 
@@ -341,7 +417,7 @@ qt_add_executable(output_serialization_test
 
 target_link_libraries(output_serialization_test
     PRIVATE
-        datalab_domain
+        datalab_infrastructure
         Qt6::Test
 )
 

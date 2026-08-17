@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/chart_model.h"
+#include "reporting/chart_model.h"
 
 #include <QWidget>
 

@@ -1,8 +1,8 @@
 #include "ui/analysis_chart_widget.h"
 #include "ui/graph_properties_dialog.h"
 
-#include "ui/chart_coordinate_mapper.h"
-#include "ui/chart_renderer.h"
+#include "reporting/chart_coordinate_mapper.h"
+#include "reporting/chart_renderer.h"
 
 #include <QContextMenuEvent>
 #include <QApplication>

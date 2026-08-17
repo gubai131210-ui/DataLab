@@ -1,7 +1,7 @@
 #include "ui/report_preview_dialog.h"
 
 #include "ui/analysis_chart_widget.h"
-#include "ui/chart_adapter.h"
+#include "reporting/chart_adapter.h"
 
 #include <QDialogButtonBox>
 #include <QFile>

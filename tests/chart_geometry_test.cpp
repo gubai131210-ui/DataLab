@@ -1,4 +1,4 @@
-#include "ui/chart_coordinate_mapper.h"
+#include "reporting/chart_coordinate_mapper.h"
 
 #include <QtTest/QtTest>
 
