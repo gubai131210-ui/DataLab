@@ -92,7 +92,7 @@ git commit -m "chore: initial commit"
 
 产出 `src/application/column_assembly.h/.cpp`：`SubgroupInput`、`build_strict_subgroups`、`first_variable`（原 analysis_service.cpp 313-393 行）。
 **统一三套数值解析（已完成 ✅）**：pca 的裸 `std::stod`（原 2925-2954 行）改用 `parse_numeric_cell`；`capability_sixpack` 反解析改为 `capability()` 新增可选 out 参数 `capability_indices` 直接捕获结构化值。当前 analysis_service.cpp 已无任何 `std::stod/strtod/stoul/stoi` 残留。
-> 剩余：按 by_column 分组、paired_t/regression/logistic 等方法内的行对齐（complete-case）仍内联在各方法中，待 2.3 薄壳化时下沉。
+> 剩余：按 by_column 分组（descriptive/one_way_anova 等方法内）仍内联，随 2.4/后续族抽取时下沉；paired_t/regression 的 complete-case 行对齐已下沉 `align_complete_rows`（见 2.3 ✅）。
 
 ### 2.2 抽"表格/图表构建器"（已完成 ✅）
 
@@ -106,7 +106,15 @@ git commit -m "chore: initial commit"
 - `attribute_chart_page`：P / NP / C / U 共用（各方法从 ~55 行收敛到 ~40 行规格配置）；
 - `laney_chart_page`：Laney P' / Laney U' 共用（从 ~90 行收敛到 ~45 行，含 included_rows→excluded_rows 换算、阶段列处理、参数表）。
 方法内的数据装配差异用 `assemble` lambda 表达；页面骨架、表格、图表、错误页全部下沉。`analysis_service.cpp` 3625 → 3486 行。
-> 剩余：imr/ewma/cusum（薄壳化）与统计检验族、DOE/MSA/时序族（较大，方法内嵌 bespoke 表格构建，需按族逐个抽取）。
+
+**大方法薄壳化已完成 ✅**（`57d92c0`/`74e9a55`/`30e14ed`/`1cc6bbd`）：
+- `doe_factorial` 292 → 98 行：新增 `doe_pages.{h,cpp}`（响应分析页/设计矩阵页组装），3 处同构 ANOVA 表收敛为 `append_anova_rows`；
+- complete-case 行对齐下沉 `column_assembly::align_complete_rows`（行主序：`aligned[i][j]` = 第 i 个对齐观测第 j 列值），paired_t/regression 共用；初版列主序导致 regression 预测变量结构拍平（无测试覆盖未被发现），补 4 条服务层测试后修正；
+- `capability` 143 → 65 行（四表+直方图正文下沉 `build_capability_content`）、`capability_sixpack` 138 → 89 行（概率图/最后 25 点图下沉）、`logistic_regression` 125 → 88 行（complete-case 导入下沉 `logistic_import_rows`）；
+- 新增服务层测试：`buildsDoeFactorialServiceOutput` / `buildsRegressionServiceOutput` / `buildsLogisticServiceOutput` / `buildsPairedTServiceOutput`（覆盖此前无兜底的抽取路径；测试数据规避完全可分导致的 IRLS 秩亏与零误差自由度退化）。
+- `analysis_service.cpp` 3486 → 3313 行；剩余方法多为 bespoke 单表/单图内容（regression 147、arima 149 等），薄壳化收益低，不再强行抽取。
+
+> 剩余：imr/ewma/cusum 已薄（46/25/28 行），无需再处理。
 
 ### 2.4 文案与格式分离（未完成）
 
@@ -118,7 +126,7 @@ git commit -m "chore: initial commit"
 - `capability_sixpack` 反解析改为结构化捕获（见 2.1）；
 - `interpretation_service.cpp` 的死函数 `count_column_values` 删除。
 
-验证：`ctest` 全绿（12/12）；`analysis_service.cpp` 行数 4013 → 3625（薄壳化后应进一步降至 ~1500）。
+验证：`ctest` 全绿（12/12）；`analysis_service.cpp` 行数 4013 → 3313（薄壳化收敛；剩余 bespoke 内容不再强行抽取）。
 
 ---
 

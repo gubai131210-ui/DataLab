@@ -1,7 +1,7 @@
 # DataLab 重构会话交接文档
 
 > 本文件记录截至当前会话的完整工作状态，供**新对话**无缝续接。新对话第一条消息建议：
-> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从**阶段 2.3 大方法薄壳化**（doe_factorial/regression/capability/sixpack 等）开始。」
+> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从**阶段 2.4 文案分离**或**阶段 3.4 剩余**（output_workspace 与 report_preview_dialog 共享渲染器 / 行排除 undo）开始。」
 
 ---
 
@@ -13,7 +13,7 @@
 | 产品 | 模仿 Minitab 的汽车质量分析工具（46 种分析） |
 | 技术栈 | Qt 6.11.1 / MinGW 13.1 / C++17 / CMake / SQLite；Python(pandas) 仅用于 Excel 导入桥 |
 | 规模 | 约 20,500 行 C++（src+tests），12 个测试目标 |
-| 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 8 个重构提交）；无远端 |
+| 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 10 个重构提交）；无远端 |
 
 ### 构建与测试（每次改动后必须全绿）
 
@@ -32,6 +32,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check_layering.ps1
 ## 2. 当前 git 历史（工作区干净）
 
 ```
+1cc6bbd fix(application): align_complete_rows 行主序修正 + 补 2.3 服务层测试
+30e14ed refactor(application): capability 家族与 logistic_regression 薄壳化
+74e9a55 refactor(application): complete-case 行对齐下沉 column_assembly
+57d92c0 refactor(application): doe_factorial 薄壳化（doe_pages 页面装配模块）
 47fd2c8 refactor(ui): 阶段 3.1 命令化（AnalysisCatalog 数据驱动化）
 d79a1b1 docs: 新增会话交接文档（session-handoff.md）
 094b5af refactor(infrastructure): DataImportService 门面与 ProjectRepository 健壮性修复
@@ -71,6 +75,13 @@ e44552a docs: 补充图表子系统 thread_local 气味至已知缺陷清单
   - `laney_chart_page`（Laney P'/U'：~90 行 → ~45 行）
 - 模式：**规格结构体 + `assemble`/`compute` lambda**；行为逐字保留（含 xbar_s 与 xbar_range 的 parameter_summary 措辞差异、np 常数-列覆盖顺序、p/u 的 min 截断）
 - `analysis_service.cpp`：3625 → 3486 行
+
+### 阶段 2.3 大方法薄壳化（`57d92c0`/`74e9a55`/`30e14ed`/`1cc6bbd`）
+- **`doe_factorial` 292 → 98 行**：新增 `src/application/doe_pages.{h,cpp}`——`doe_response_page`（系数与效应/DOE ANOVA/模型项与区组/纯误差与失拟/残差诊断五表 + 主效应/交互作用图）与 `doe_design_page`（设计矩阵）；3 处同构 ANOVA 表收敛为 `append_anova_rows`（区组行 "Block: " 前缀保留）
+- **complete-case 行对齐下沉** `column_assembly::align_complete_rows`（**行主序**：`aligned[i][j]` = 第 i 个对齐观测第 j 列值），paired_t/regression 共用。⚠️ 初版列主序导致 regression 预测变量结构被拍平（fit 报 invalid_regression_shape）——当时无服务层测试未发现，`1cc6bbd` 补测试后修正
+- **`capability` 143 → 65 行**：四表（Process Data/Performance PPM/Potential Within/Overall）+ 直方图下沉 `build_capability_content`；**`capability_sixpack` 138 → 89 行**：概率图（含参考线）/最后 25 点图下沉 `probability_plot_spec`/`last_points_plot`；**`logistic_regression` 125 → 88 行**：complete-case 导入下沉 `logistic_import_rows`（LogisticImport 结构）
+- **补 4 条服务层测试**（quality_statistics_test）：`buildsDoeFactorialServiceOutput`（设计/响应两分支）、`buildsRegressionServiceOutput`、`buildsLogisticServiceOutput`、`buildsPairedTServiceOutput`——覆盖此前无兜底的抽取路径。测试数据教训：完全可分数据致 IRLS 秩亏（rank_deficient_design）、4 运行=4 参数致零误差自由度（拟合拒绝），均需规避
+- `analysis_service.cpp` 3486 → 3313 行；构建全绿 + ctest 12/12 + layering 通过
 
 ### 阶段 3.1 命令化（`47fd2c8`）
 - 新增 `src/ui/analysis_commands.{h,cpp}`（1498 行）：**46 项 `AnalysisCommand` 数据驱动表**——id/菜单文字/对话框标题/menu_path/图标/角色与输入规格/`apply`（配置构建）/`run`（`AnalysisService::xxx`）；doe_factorial 与 doe_response 共用 `doe_apply`/`doe_run`；t_power `requires_data=false`（不调 `ensure_data()`）
@@ -113,15 +124,17 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 
 ## 5. 剩余工作（按优先级）
 
-### 🔴 最高价值：阶段 2.3 大方法薄壳化（下一轮主攻）
-`analysis_service.cpp`（3486 行）剩余大方法：doe_factorial 292、regression 165、capability 127、sixpack 153、variance_test 130、logistic 125 行——为定制化多表输出，需逐方法内部抽取（如 doe 内部 3 处 ANOVA 表同构、sixpack 的 6 宫格骨架）；imr/ewma/cusum 薄壳化。golden 测试（`minitab_formula_golden_test`、`quality_statistics_test`）兜底输出逐字不变。
+### 🔴 最高价值：阶段 2.4 文案分离 或 阶段 3.4 剩余（下一轮主攻）
+- **2.4 文案分离**：4011 个 CJK 字符收进 `src/application/messages.h`（改动面大、为 i18n 铺路；注意 analysis_commands.cpp 的对话框文案在 ui 层，需一并规划归属）
+- **3.4 剩余**：`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除纳入 undo 栈
 
 ### 阶段 2 剩余
-- **2.4 文案分离**：4011 个 CJK 字符收进 `messages.h`（改动面大、为 i18n 铺路）
+- 2.3 已完成 ✅：doe/capability/sixpack/logistic/regression 对齐薄壳化；剩余方法（regression 147、arima 149、msa_type1 120、reliability 140）为 bespoke 单表/单图内容，薄壳化收益低不再强行抽取
+- 按 by_column 分组（descriptive/one_way_anova 等）仍内联，随 2.4/后续抽取下沉
 
 ### 阶段 3 剩余
 - **3.2 配置构造工厂**（待评估）：字段填充已随 3.1 迁入 `analysis_commands` 各 `apply` lambda（ui 层直接读对话框，耦合已局限在 ui 层）；是否下沉 application 层 `AnalysisConfigurationFactory`（纯数据入参）收益有限，倾向不做
-- **3.4 剩余**：`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除纳入 undo 栈
+- **3.4 剩余**：见上（共享渲染器、行排除 undo）
 
 ### 阶段 4：Python 桥与序列化
 - Python 桥：脚本入 Qt 资源/随 install（删 `DATALAB_SOURCE_DIR` 依赖）、QProcess 异步化、协议版本化、瘦 venv/PyInstaller、补 `PythonTableImporter` 测试（4 类用例）
@@ -149,6 +162,9 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 7. **新增源文件要加进 CMakeLists 对应目标**，否则链接失败
 8. `analysis_service.cpp` 的匿名命名空间 using 块（datalab::domain::X）只在该文件可见；新模块要自己 using 或限定
 9. 控制图族模式参考：`chart_pages.h` 的规格结构体 + lambda 设计是薄壳化的样板
+10. **抽取前先确认测试覆盖**：`doe_factorial`/`regression`/`logistic`/`paired_t` 的服务层路径原无测试兜底，`74e9a55` 的 `align_complete_rows` 列主序缺陷（regression 预测变量结构被拍平）即因无覆盖而漏网——`1cc6bbd` 补 4 条服务层测试后才发现并修正；抽取行为等价性必须靠测试，不能只靠"逐字搬运"
+11. **行主序 vs 列主序**：`align_complete_rows` 输出行主序（`aligned[i][j]` = 第 i 个观测第 j 列），regression 直接切片为观测行、paired_t 需转置——写共享数据装配函数前先想清下游消费方的布局
+12. **测试数据退化情形**：logistic 完全可分数据致 IRLS 秩亏（`rank_deficient_design`）；DOE 4 运行=4 参数致零误差自由度（内部回归拒绝拟合）——构造服务层测试数据时规避，或显式断言错误诊断
 
 ---
 
@@ -159,10 +175,11 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 | `docs/refactor-plan.md` | 分阶段重构计划（各阶段状态已标注 ✅/未完成） |
 | `docs/architecture-review.md` | 初始架构评审报告（证据+建议） |
 | `docs/adr/0001-core-architecture.md` / `0002-layer-targets.md` | 架构决策记录 |
-| `src/application/analysis_service.cpp` | 3486 行的编排类（剩余大方法的薄壳化目标） |
+| `src/application/analysis_service.cpp` | 3313 行的编排类（剩余方法为 bespoke 内容，不再强行抽取） |
 | `src/application/chart_pages.{h,cpp}` | 控制图族共享页面构建器（薄壳化样板） |
+| `src/application/doe_pages.{h,cpp}` | DOE 响应分析页/设计矩阵页组装（2.3 产物） |
 | `src/application/output_builder.{h,cpp}` | 数字格式/错误页/通用表格构建器 |
-| `src/application/column_assembly.{h,cpp}` | 子组构建/列选择 |
+| `src/application/column_assembly.{h,cpp}` | 子组构建/列选择/complete-case 行对齐（`align_complete_rows`，行主序） |
 | `src/ui/analysis_commands.{h,cpp}` | **46 项分析命令数据表**（3.1 产物：菜单/对话框/图标/apply/run 单一来源） |
 | `src/infrastructure/data_import_service.{h,cpp}` | 导入分派门面 |
 | `src/ui/mainwindow.cpp` | 842 行（3.1 命令化后只剩通用 run_from_spec 与界面装配） |
