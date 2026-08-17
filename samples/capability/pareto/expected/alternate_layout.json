@@ -1,0 +1,11 @@
+{
+  "dataset": "alternate_layout/PaintFlaws",
+  "note": "Hand-calculated from converted CSV. Tie-break Other vs Smudge may differ in Minitab.",
+  "total_count": 40,
+  "categories_datalab_stable_sort": [
+    {"category": "Peel", "count": 15, "percent": 37.5, "cum_percent": 37.5},
+    {"category": "Scratch", "count": 13, "percent": 32.5, "cum_percent": 70.0},
+    {"category": "Other", "count": 6, "percent": 15.0, "cum_percent": 85.0},
+    {"category": "Smudge", "count": 6, "percent": 15.0, "cum_percent": 100.0}
+  ]
+}

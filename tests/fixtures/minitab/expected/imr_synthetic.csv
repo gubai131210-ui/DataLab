@@ -1,0 +1,7 @@
+metric,value,source
+mean,2.0,hand+Minitab I-MR default
+mr_bar,1.0,hand+Minitab I-MR default
+d2,1.128,ASTM/AIAG
+sigma_within,0.8865248226950354,MR_bar/d2
+i_ucl,4.659574468085106,mean+3*sigma
+mr_ucl,3.2677304964539007,D4*MR_bar

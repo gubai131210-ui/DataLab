@@ -1,0 +1,15 @@
+.venv/
+build/
+.qtcreator/
+*.user
+*.user.*
+*.dll
+*.exe
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# root-level test/run artifacts
+/test-output.txt
+/icon-output.txt
+/test-results.xml

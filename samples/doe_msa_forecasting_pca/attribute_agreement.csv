@@ -1,0 +1,13 @@
+Rating,Part,Appraiser,Standard
+Pass,P01,A,Pass
+Pass,P02,A,Pass
+Fail,P03,A,Fail
+Pass,P04,A,Pass
+Pass,P01,B,Pass
+Fail,P02,B,Pass
+Fail,P03,B,Fail
+Pass,P04,B,Pass
+Pass,P01,C,Pass
+Pass,P02,C,Pass
+Fail,P03,C,Fail
+Pass,P04,C,Pass

@@ -1,0 +1,15 @@
+{
+  "dataset": "edge_case/ClothingDefect-derived",
+  "note": "Derived fixture. Other threshold 90% uses Minitab rule: keep until Cum% first surpasses threshold.",
+  "total_count_valid": 490,
+  "other_threshold_percent": 90,
+  "skipped": ["Defect=*", "Color fade with Count=*"],
+  "categories": [
+    {"category": "Missing button", "count": 217, "cum_percent": 44.285714},
+    {"category": "Stitching errors", "count": 112, "cum_percent": 67.142857},
+    {"category": "Loose thread", "count": 67, "cum_percent": 80.816327},
+    {"category": "Hemming errors", "count": 43, "cum_percent": 89.591837},
+    {"category": "Fabric flaws", "count": 23, "cum_percent": 94.285714},
+    {"category": "Other", "count": 28, "cum_percent": 100.0}
+  ]
+}

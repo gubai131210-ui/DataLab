@@ -1,0 +1,13 @@
+{
+  "dataset": "official_primary/ClothingDefect",
+  "note": "Hand-calculated placeholders from converted CSV. Replace with user-captured Minitab/DataLab values.",
+  "total_count": 480,
+  "categories": [
+    {"category": "Missing button", "count": 217, "percent": 45.208333, "cum_percent": 45.208333},
+    {"category": "Stitching errors", "count": 112, "percent": 23.333333, "cum_percent": 68.541667},
+    {"category": "Loose thread", "count": 67, "percent": 13.958333, "cum_percent": 82.5},
+    {"category": "Hemming errors", "count": 43, "percent": 8.958333, "cum_percent": 91.458333},
+    {"category": "Fabric flaws", "count": 23, "percent": 4.791667, "cum_percent": 96.25},
+    {"category": "Misaligned fabric", "count": 18, "percent": 3.75, "cum_percent": 100.0}
+  ]
+}
