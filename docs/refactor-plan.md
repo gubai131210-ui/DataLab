@@ -91,6 +91,7 @@ git commit -m "chore: initial commit"
 - 行对齐（`source_rows` 映射）、`excluded_rows` 过滤。
 
 产出：`src/application/column_assembly.h/.cpp`，接口如 `AssembledColumn assemble(const DataTable&, size_t column, const AnalysisConfiguration&)`。
+- **统一三套数值解析**：当前并存 `parse_numeric_cell`（analysis_service.cpp:70-85）、domain 提取逻辑、以及 pca（2925-2954 行）等处的裸 `std::stod`——下沉后收敛为单一解析入口，完整行对齐/complete-case 语义需对拍测试保结果不变。
 
 ### 2.2 抽"表格/图表构建器"
 
@@ -190,7 +191,7 @@ struct FieldSpec { QString key; /* 成员访问器 */ };
 ## 阶段 5：模型与解释类型化（2-3 天，可延后）
 
 - **`PlotSpec`/`ChartModel` 合一**：优先低成本方案——把 4 个视图状态字段（`chart_model.h:63-64/82-83`：selected/hovered/zoom/pan）收进 `ChartViewState`，明确"数据 vs 视图"边界；激进方案让渲染器直接消费 domain `PlotSpec`。
-- **`InterpretationService` 类型化**：analysis 输出结构化字段（如 `significant_terms`、`shape_parameter`），不再按表头字符串抓取；删除 `count_column_values` 死代码。
+- **`InterpretationService` 类型化**：analysis 输出结构化字段（如 `significant_terms`、`shape_parameter`），不再按表头字符串抓取；删除 `count_column_values` 死代码。顺带核对**覆盖不一致**：descriptive / chi_square / regression 等目前只落到兜底文案，类型化时逐分析确认解释覆盖。
 - **修已知 bug**：`analysis_chart_widget` 框选 `to_index` 补 zoom/pan 换算（235-241 行 vs 431-435 行）；`run_t_power` 的 `ensure_data()` 语义确认；`analysis_chart_widget::selected_rows`（78-88 行）返回 `static thread_local` 向量引用，改为成员或显式传参。
 
 ---
