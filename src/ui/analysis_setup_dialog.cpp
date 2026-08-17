@@ -2,7 +2,6 @@
 
 #include <QAbstractItemView>
 #include <QDialogButtonBox>
-#include <QFile>
 #include <QFocusEvent>
 #include <QFormLayout>
 #include <QFrame>
@@ -15,69 +14,12 @@
 #include <QListWidgetItem>
 #include <QMouseEvent>
 #include <QPushButton>
-#include <QPair>
 #include <QVBoxLayout>
 #include <QToolButton>
 
 #include <functional>
 
 namespace {
-
-QString setup_icon_resource(const QString& title)
-{
-    const QList<QPair<QString, QString>> rules = {
-        {QStringLiteral("描述性"), QStringLiteral("descriptive")},
-        {QStringLiteral("正态性"), QStringLiteral("normality_test")},
-        {QStringLiteral("相关"), QStringLiteral("correlation")},
-        {QStringLiteral("单样本"), QStringLiteral("one_sample_t")},
-        {QStringLiteral("双样本"), QStringLiteral("two_sample_t")},
-        {QStringLiteral("单因素"), QStringLiteral("one_way_anova")},
-        {QStringLiteral("配对"), QStringLiteral("paired_t")},
-        {QStringLiteral("线性回归"), QStringLiteral("regression")},
-        {QStringLiteral("两比例"), QStringLiteral("two_proportions")},
-        {QStringLiteral("列联表"), QStringLiteral("chi_square")},
-        {QStringLiteral("Mann-Whitney"), QStringLiteral("mann_whitney")},
-        {QStringLiteral("Wilcoxon"), QStringLiteral("wilcoxon_signed_rank")},
-        {QStringLiteral("Kruskal"), QStringLiteral("kruskal_wallis")},
-        {QStringLiteral("Box-Cox"), QStringLiteral("box_cox")},
-        {QStringLiteral("Crossed Gage"), QStringLiteral("gage_rr")},
-        {QStringLiteral("MSA"), QStringLiteral("gage_rr")},
-        {QStringLiteral("Reliability"), QStringLiteral("report")},
-        {QStringLiteral("可靠性"), QStringLiteral("report")},
-        {QStringLiteral("功效"), QStringLiteral("one_sample_t")},
-        {QStringLiteral("Nested Gage"), QStringLiteral("nested_gage_rr")},
-        {QStringLiteral("属性一致"), QStringLiteral("attribute_agreement")},
-        {QStringLiteral("I-MR"), QStringLiteral("imr")},
-        {QStringLiteral("Xbar-R"), QStringLiteral("xbar_r")},
-        {QStringLiteral("Xbar-S"), QStringLiteral("xbar_s")},
-        {QStringLiteral("Laney P"), QStringLiteral("laney_p_chart")},
-        {QStringLiteral("Laney U"), QStringLiteral("laney_u_chart")},
-        {QStringLiteral("EWMA"), QStringLiteral("ewma")},
-        {QStringLiteral("CUSUM"), QStringLiteral("cusum")},
-        {QStringLiteral("时间序列平滑"), QStringLiteral("time_series_smoothing")},
-        {QStringLiteral("ARIMA"), QStringLiteral("arima")},
-        {QStringLiteral("双因素"), QStringLiteral("two_factor_anova")},
-        {QStringLiteral("Logistic"), QStringLiteral("logistic_regression")},
-        {QStringLiteral("方差检验"), QStringLiteral("variance_test")},
-        {QStringLiteral("时间序列分解"), QStringLiteral("time_series_decomposition")},
-        {QStringLiteral("季节性"), QStringLiteral("seasonal_forecasting")},
-        {QStringLiteral("主成分"), QStringLiteral("pca")},
-        {QStringLiteral("全因子"), QStringLiteral("doe_factorial")},
-        {QStringLiteral("能力 Sixpack"), QStringLiteral("capability_sixpack")},
-        {QStringLiteral("过程能力"), QStringLiteral("capability")},
-        {QStringLiteral("直方图"), QStringLiteral("histogram")},
-        {QStringLiteral("箱线图"), QStringLiteral("boxplot")},
-        {QStringLiteral("柏拉图"), QStringLiteral("pareto")}};
-    QString icon_name = QStringLiteral("report");
-    for (const auto& rule : rules) {
-        if (title.contains(rule.first, Qt::CaseInsensitive)) {
-            icon_name = rule.second;
-            break;
-        }
-    }
-    const QString resource = QStringLiteral(":/icons/%1.svg").arg(icon_name);
-    return QFile::exists(resource) ? resource : QStringLiteral(":/icons/app-mark.svg");
-}
 
 class RoleListWidget final : public QListWidget {
 public:
@@ -114,13 +56,17 @@ private:
 AnalysisSetupDialog::AnalysisSetupDialog(
     const QString& title,
     const QStringList& column_labels,
-    QWidget* parent)
+    QWidget* parent,
+    const QString& icon_resource)
     : QDialog(parent)
     , column_labels_(column_labels)
 {
     setWindowTitle(title);
-    const QString icon_resource = setup_icon_resource(title);
-    setWindowIcon(QIcon(icon_resource));
+    // 图标由调用方（run_from_spec 传命令表 icon_file）提供，缺省回退应用图标。
+    const QString effective_icon = icon_resource.isEmpty()
+        ? QStringLiteral(":/icons/app-mark.svg")
+        : icon_resource;
+    setWindowIcon(QIcon(effective_icon));
     setModal(true);
     resize(820, 560);
     setMinimumSize(700, 480);
@@ -145,7 +91,7 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     root->setSpacing(18);
     auto* header = new QHBoxLayout();
     auto* header_icon = new QLabel(this);
-    header_icon->setPixmap(QIcon(icon_resource).pixmap(32, 32));
+    header_icon->setPixmap(QIcon(effective_icon).pixmap(32, 32));
     header->addWidget(header_icon);
     auto* header_text = new QLabel(title, this);
     header_text->setStyleSheet(QStringLiteral(

@@ -18,7 +18,8 @@ public:
     AnalysisSetupDialog(
         const QString& title,
         const QStringList& column_labels,
-        QWidget* parent = nullptr);
+        QWidget* parent = nullptr,
+        const QString& icon_resource = QStringLiteral(":/icons/app-mark.svg"));
 
     void add_role(const QString& id, const QString& label, bool multi, bool optional);
     QWidget* add_line_edit(const QString& id, const QString& label, const QString& placeholder = {});

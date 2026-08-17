@@ -79,13 +79,11 @@ add_library(datalab_domain STATIC
 target_include_directories(datalab_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # ---------------------------------------------------------------------------
-# application：分析编排（AnalysisService / AnalysisCatalog / InterpretationService）
+# application：分析编排（AnalysisService / InterpretationService / 构建器）
 # ---------------------------------------------------------------------------
 add_library(datalab_application STATIC
     src/application/analysis_service.cpp
     src/application/analysis_service.h
-    src/application/analysis_catalog.cpp
-    src/application/analysis_catalog.h
     src/application/interpretation_service.cpp
     src/application/interpretation_service.h
     src/application/output_builder.cpp
@@ -174,6 +172,8 @@ add_library(datalab_ui STATIC
     src/ui/mainwindow.ui
     src/ui/analysis_chart_widget.cpp
     src/ui/analysis_chart_widget.h
+    src/ui/analysis_commands.cpp
+    src/ui/analysis_commands.h
     src/ui/analysis_setup_dialog.cpp
     src/ui/analysis_setup_dialog.h
     src/ui/output_workspace.cpp
