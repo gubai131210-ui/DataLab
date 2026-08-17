@@ -61,6 +61,215 @@ using datalab::domain::extract_numeric_column;
 using datalab::domain::extract_text_column;
 using datalab::domain::is_missing_cell;
 
+// ---- capability 家族 / logistic 的页面装配辅助（阶段 2.3 薄壳化）----
+
+// 组装配过程能力页正文（Process Data / Performance PPM / Potential Within /
+// Overall 四表 + 直方图），capability() 只负责校验、Within σ 与附加图/指标。
+datalab::domain::OutputPage build_capability_content(
+    const datalab::domain::AnalysisConfiguration& configuration,
+    const datalab::domain::ExtractedNumericColumn& extracted,
+    const datalab::domain::statistics::ProcessCapabilityResult& capability_result,
+    int subgroup_size,
+    const std::string& within_method)
+{
+    datalab::domain::OutputPage page;
+    page.id = new_id("cap");
+    page.title = "正态过程能力分析";
+    page.method_name = "Normal Capability Analysis";
+    page.configuration = configuration;
+    page.diagnostics = capability_result.diagnostics;
+    page.parameter_summary =
+        "变量: " + extracted.name
+        + "    子组大小 = " + std::to_string(subgroup_size)
+        + "    Within σ: " + within_method;
+
+    StatisticTable process;
+    process.title = "Process Data";
+    process.headers = {"项目", "数值"};
+    process.rows = {
+        {"LSL", format_optional(configuration.specifications.lower)},
+        {"Target", format_optional(configuration.specifications.target)},
+        {"USL", format_optional(configuration.specifications.upper)},
+        {"Sample Mean", format_number(capability_result.mean)},
+        {"Sample N", std::to_string(capability_result.sample_size)},
+        {"StDev (Within)", format_number(capability_result.within_standard_deviation)},
+        {"StDev (Overall)", format_number(capability_result.overall_standard_deviation)}};
+    page.tables.push_back(process);
+
+    StatisticTable ppm;
+    ppm.title = "Performance (PPM)";
+    ppm.headers = {"", "观测", "期望 Within", "期望 Overall"};
+    ppm.rows = {
+        {"低于 LSL",
+         format_optional(capability_result.observed_ppm_below, 4),
+         format_optional(capability_result.expected_ppm_within_below, 4),
+         format_optional(capability_result.expected_ppm_overall_below, 4)},
+        {"高于 USL",
+         format_optional(capability_result.observed_ppm_above, 4),
+         format_optional(capability_result.expected_ppm_within_above, 4),
+         format_optional(capability_result.expected_ppm_overall_above, 4)},
+        {"合计",
+         format_optional(capability_result.observed_ppm_total, 4),
+         format_optional(capability_result.expected_ppm_within_total, 4),
+         format_optional(capability_result.expected_ppm_overall_total, 4)}};
+    page.tables.push_back(ppm);
+
+    StatisticTable within;
+    within.title = "Potential (Within) Capability";
+    within.headers = {"指标", "数值"};
+    within.rows = {
+        {"Cp", format_optional(capability_result.cp)},
+        {"CPL", format_optional(capability_result.cpl)},
+        {"CPU", format_optional(capability_result.cpu)},
+        {"Cpk", format_optional(capability_result.cpk)}};
+    page.tables.push_back(within);
+
+    StatisticTable overall;
+    overall.title = "Overall Capability";
+    overall.headers = {"指标", "数值"};
+    overall.rows = {
+        {"Pp", format_optional(capability_result.pp)},
+        {"PPL", format_optional(capability_result.ppl)},
+        {"PPU", format_optional(capability_result.ppu)},
+        {"Ppk", format_optional(capability_result.ppk)}};
+    page.tables.push_back(overall);
+
+    const auto bins = datalab::domain::statistics::histogram(extracted.values, 0);
+    PlotSpec hist;
+    hist.kind = PlotKind::histogram;
+    hist.title = "过程能力直方图";
+    hist.x_axis_title = extracted.name;
+    hist.y_axis_title = "频数";
+    hist.histogram_edges = bins.edges;
+    hist.histogram_counts = bins.counts;
+    hist.values = extracted.values;
+    hist.source_rows = extracted.source_rows;
+    hist.lsl = configuration.specifications.lower;
+    hist.usl = configuration.specifications.upper;
+    hist.target = configuration.specifications.target;
+    hist.process_mean = capability_result.mean;
+    hist.within_sigma = capability_result.within_standard_deviation;
+    hist.overall_sigma = capability_result.overall_standard_deviation;
+    page.plots.push_back(hist);
+    return page;
+}
+
+// 正态概率图（含参考线），capability_sixpack 使用。
+PlotSpec probability_plot_spec(
+    const datalab::domain::statistics::NormalProbabilityResult& probability,
+    const std::string& variable_name)
+{
+    PlotSpec plot;
+    plot.kind = PlotKind::probability;
+    plot.title = "正态概率图";
+    plot.x_axis_title = "理论标准正态分位数";
+    plot.y_axis_title = variable_name;
+    plot.values = probability.ordered_values;
+    plot.x_values = probability.theoretical_quantiles;
+    plot.source_rows.resize(probability.ordered_values.size());
+    std::iota(plot.source_rows.begin(), plot.source_rows.end(), 0);
+    plot.center.resize(probability.ordered_values.size());
+    if (probability.theoretical_quantiles.size() >= 2) {
+        const double x0 = probability.theoretical_quantiles.front();
+        const double x1 = probability.theoretical_quantiles.back();
+        const double y0 = probability.ordered_values.front();
+        const double y1 = probability.ordered_values.back();
+        const double slope = (x1 == x0) ? 0.0 : (y1 - y0) / (x1 - x0);
+        for (std::size_t index = 0; index < plot.center.size(); ++index) {
+            plot.center[index] =
+                y0 + slope * (probability.theoretical_quantiles[index] - x0);
+        }
+    }
+    return plot;
+}
+
+// "最后 25 个子组 / 最近 25 个观测"图，capability_sixpack 使用。
+PlotSpec last_points_plot(
+    const datalab::domain::ExtractedNumericColumn& extracted,
+    const datalab::domain::statistics::ControlChartResult& primary,
+    int subgroup_size)
+{
+    const bool by_subgroups = subgroup_size > 1;
+    PlotSpec plot;
+    plot.kind = PlotKind::control;
+    plot.title = by_subgroups ? "最后 25 个子组" : "最近 25 个观测";
+    plot.x_axis_title = "样本";
+    plot.y_axis_title = "测量值";
+    if (by_subgroups) {
+        const std::size_t group_count = extracted.values.size() / subgroup_size;
+        const std::size_t first_group = group_count > 25 ? group_count - 25 : 0;
+        for (std::size_t group = first_group; group < group_count; ++group) {
+            for (std::size_t offset = 0; offset < subgroup_size; ++offset) {
+                const std::size_t source = group * subgroup_size + offset;
+                plot.values.push_back(extracted.values[source]);
+                plot.x_values.push_back(static_cast<double>(group - first_group + 1));
+                plot.source_rows.push_back(extracted.source_rows[source]);
+            }
+        }
+    } else {
+        plot = control_plot("最近 25 个观测", "测量值", primary, extracted.source_rows);
+        const std::size_t first = plot.values.size() > 25 ? plot.values.size() - 25 : 0;
+        plot.values.erase(plot.values.begin(),
+                          plot.values.begin() + static_cast<std::ptrdiff_t>(first));
+        plot.source_rows.erase(plot.source_rows.begin(),
+                               plot.source_rows.begin() + static_cast<std::ptrdiff_t>(first));
+    }
+    return plot;
+}
+
+// Logistic 回归 complete-case 导入（事件解析 + 预测变量行），logistic_regression 使用。
+struct LogisticImport {
+    std::vector<int> response;
+    std::vector<std::vector<double>> predictors;
+    std::vector<std::size_t> source_rows;
+};
+
+LogisticImport logistic_import_rows(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    LogisticImport result;
+    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row_index)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        const auto& row = table.rows[row_index];
+        const std::size_t response_column = *configuration.logistic_response_column;
+        if (response_column >= row.size()) {
+            continue;
+        }
+        int event = -1;
+        if (const auto numeric = parse_numeric_cell(row[response_column]);
+            numeric.has_value() && (*numeric == 0.0 || *numeric == 1.0)) {
+            event = static_cast<int>(*numeric);
+        } else if (!configuration.logistic_event_level.empty()) {
+            event = row[response_column] == configuration.logistic_event_level ? 1 : 0;
+        }
+        std::vector<double> predictor_row;
+        bool complete = event >= 0;
+        for (const std::size_t column : configuration.logistic_predictor_columns) {
+            if (column >= row.size()) {
+                complete = false;
+                break;
+            }
+            const auto value = parse_numeric_cell(row[column]);
+            if (!value.has_value()) {
+                complete = false;
+                break;
+            }
+            predictor_row.push_back(*value);
+        }
+        if (complete) {
+            result.response.push_back(event);
+            result.predictors.push_back(std::move(predictor_row));
+            result.source_rows.push_back(row_index);
+        }
+    }
+    return result;
+}
+
 }  // namespace
 
 OutputPage AnalysisService::descriptive(
@@ -1438,47 +1647,10 @@ OutputPage AnalysisService::logistic_regression(
         return error_page("二元 Logistic 回归", "Binary Logistic Regression",
                           "请选择二元响应列和至少一个预测变量。");
     }
-    std::vector<int> response;
-    std::vector<std::vector<double>> predictors;
-    std::vector<std::size_t> source_rows;
-    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
-        if (std::find(configuration.excluded_rows.cbegin(),
-                      configuration.excluded_rows.cend(), row_index)
-            != configuration.excluded_rows.cend()) {
-            continue;
-        }
-        const auto& row = table.rows[row_index];
-        const std::size_t response_column = *configuration.logistic_response_column;
-        if (response_column >= row.size()) {
-            continue;
-        }
-        int event = -1;
-        if (const auto numeric = parse_numeric_cell(row[response_column]);
-            numeric.has_value() && (*numeric == 0.0 || *numeric == 1.0)) {
-            event = static_cast<int>(*numeric);
-        } else if (!configuration.logistic_event_level.empty()) {
-            event = row[response_column] == configuration.logistic_event_level ? 1 : 0;
-        }
-        std::vector<double> predictor_row;
-        bool complete = event >= 0;
-        for (const std::size_t column : configuration.logistic_predictor_columns) {
-            if (column >= row.size()) {
-                complete = false;
-                break;
-            }
-            const auto value = parse_numeric_cell(row[column]);
-            if (!value.has_value()) {
-                complete = false;
-                break;
-            }
-            predictor_row.push_back(*value);
-        }
-        if (complete) {
-            response.push_back(event);
-            predictors.push_back(std::move(predictor_row));
-            source_rows.push_back(row_index);
-        }
-    }
+    const LogisticImport imported = logistic_import_rows(table, configuration);
+    const std::vector<int>& response = imported.response;
+    const std::vector<std::vector<double>>& predictors = imported.predictors;
+    const std::vector<std::size_t>& source_rows = imported.source_rows;
     std::vector<std::string> labels;
     for (const std::size_t column : configuration.logistic_predictor_columns) {
         labels.push_back(column_label(table, column));
@@ -2843,68 +3015,8 @@ OutputPage AnalysisService::capability(
 
     const auto capability_result = datalab::domain::statistics::ProcessCapability::calculate(
         extracted.values, within_sigma, configuration.specifications);
-    OutputPage page;
-    page.id = new_id("cap");
-    page.title = "正态过程能力分析";
-    page.method_name = "Normal Capability Analysis";
-    page.configuration = configuration;
-    page.diagnostics = capability_result.diagnostics;
-    page.parameter_summary =
-        "变量: " + extracted.name
-        + "    子组大小 = " + std::to_string(subgroup_size)
-        + "    Within σ: " + within_method;
-
-    StatisticTable process;
-    process.title = "Process Data";
-    process.headers = {"项目", "数值"};
-    process.rows = {
-        {"LSL", format_optional(configuration.specifications.lower)},
-        {"Target", format_optional(configuration.specifications.target)},
-        {"USL", format_optional(configuration.specifications.upper)},
-        {"Sample Mean", format_number(capability_result.mean)},
-        {"Sample N", std::to_string(capability_result.sample_size)},
-        {"StDev (Within)", format_number(capability_result.within_standard_deviation)},
-        {"StDev (Overall)", format_number(capability_result.overall_standard_deviation)}};
-    page.tables.push_back(process);
-
-    StatisticTable ppm;
-    ppm.title = "Performance (PPM)";
-    ppm.headers = {"", "观测", "期望 Within", "期望 Overall"};
-    ppm.rows = {
-        {"低于 LSL",
-         format_optional(capability_result.observed_ppm_below, 4),
-         format_optional(capability_result.expected_ppm_within_below, 4),
-         format_optional(capability_result.expected_ppm_overall_below, 4)},
-        {"高于 USL",
-         format_optional(capability_result.observed_ppm_above, 4),
-         format_optional(capability_result.expected_ppm_within_above, 4),
-         format_optional(capability_result.expected_ppm_overall_above, 4)},
-        {"合计",
-         format_optional(capability_result.observed_ppm_total, 4),
-         format_optional(capability_result.expected_ppm_within_total, 4),
-         format_optional(capability_result.expected_ppm_overall_total, 4)}};
-    page.tables.push_back(ppm);
-
-    StatisticTable within;
-    within.title = "Potential (Within) Capability";
-    within.headers = {"指标", "数值"};
-    within.rows = {
-        {"Cp", format_optional(capability_result.cp)},
-        {"CPL", format_optional(capability_result.cpl)},
-        {"CPU", format_optional(capability_result.cpu)},
-        {"Cpk", format_optional(capability_result.cpk)}};
-    page.tables.push_back(within);
-
-    StatisticTable overall;
-    overall.title = "Overall Capability";
-    overall.headers = {"指标", "数值"};
-    overall.rows = {
-        {"Pp", format_optional(capability_result.pp)},
-        {"PPL", format_optional(capability_result.ppl)},
-        {"PPU", format_optional(capability_result.ppu)},
-        {"Ppk", format_optional(capability_result.ppk)}};
-    page.tables.push_back(overall);
-
+    OutputPage page = build_capability_content(
+        configuration, extracted, capability_result, subgroup_size, within_method);
     if (capability_indices != nullptr) {
         if (capability_result.cp.has_value()) {
             capability_indices->push_back(*capability_result.cp);
@@ -2919,24 +3031,6 @@ OutputPage AnalysisService::capability(
             capability_indices->push_back(*capability_result.ppk);
         }
     }
-
-    const auto bins = datalab::domain::statistics::histogram(extracted.values, 0);
-    PlotSpec hist;
-    hist.kind = PlotKind::histogram;
-    hist.title = "过程能力直方图";
-    hist.x_axis_title = extracted.name;
-    hist.y_axis_title = "频数";
-    hist.histogram_edges = bins.edges;
-    hist.histogram_counts = bins.counts;
-    hist.values = extracted.values;
-    hist.source_rows = extracted.source_rows;
-    hist.lsl = configuration.specifications.lower;
-    hist.usl = configuration.specifications.upper;
-    hist.target = configuration.specifications.target;
-    hist.process_mean = capability_result.mean;
-    hist.within_sigma = capability_result.within_standard_deviation;
-    hist.overall_sigma = capability_result.overall_standard_deviation;
-    page.plots.push_back(hist);
 
     if (subgroup_size <= 1) {
         datalab::domain::statistics::IndividualsMovingRangeOptions options;
@@ -2965,17 +3059,18 @@ OutputPage AnalysisService::capability_sixpack(
         return capability_page;
     }
 
+    const int subgroup_size = configuration.subgroup_size.value_or(1);
     std::vector<PlotSpec> primary_plots;
     datalab::domain::statistics::ControlChartResult primary;
     datalab::domain::statistics::ControlChartResult secondary;
     std::vector<std::size_t> subgroup_rows;
-    if (configuration.subgroup_size.value_or(1) > 1) {
+    if (subgroup_size > 1) {
         const auto subgroups = datalab::domain::statistics::build_subgroups(
-            extracted.values, configuration.subgroup_size.value_or(5));
+            extracted.values, subgroup_size);
         const auto xbar_r =
             datalab::domain::statistics::ControlCharts::xbar_range_dual(subgroups);
         for (std::size_t index = 0; index < subgroups.size(); ++index) {
-            const std::size_t source = index * configuration.subgroup_size.value_or(5);
+            const std::size_t source = index * subgroup_size;
             subgroup_rows.push_back(source < extracted.source_rows.size()
                                         ? extracted.source_rows[source] : source);
         }
@@ -2993,63 +3088,12 @@ OutputPage AnalysisService::capability_sixpack(
         primary_plots.push_back(control_plot("I 控制图", "测量值", primary, extracted.source_rows));
     }
     primary_plots.push_back(control_plot(
-        configuration.subgroup_size.value_or(1) > 1 ? "R 控制图" : "MR 控制图",
-        configuration.subgroup_size.value_or(1) > 1 ? "子组极差" : "移动极差",
+        subgroup_size > 1 ? "R 控制图" : "MR 控制图",
+        subgroup_size > 1 ? "子组极差" : "移动极差",
         secondary,
-        configuration.subgroup_size.value_or(1) > 1 ? subgroup_rows : extracted.source_rows));
+        subgroup_size > 1 ? subgroup_rows : extracted.source_rows));
     const auto probability =
         datalab::domain::statistics::normal_probability_plot(extracted.values);
-
-    PlotSpec probability_plot;
-    probability_plot.kind = PlotKind::probability;
-    probability_plot.title = "正态概率图";
-    probability_plot.x_axis_title = "理论标准正态分位数";
-    probability_plot.y_axis_title = extracted.name;
-    probability_plot.values = probability.ordered_values;
-    probability_plot.x_values = probability.theoretical_quantiles;
-    probability_plot.source_rows.resize(probability.ordered_values.size());
-    std::iota(probability_plot.source_rows.begin(), probability_plot.source_rows.end(), 0);
-    probability_plot.center.resize(probability.ordered_values.size());
-    if (probability.theoretical_quantiles.size() >= 2) {
-        const double x0 = probability.theoretical_quantiles.front();
-        const double x1 = probability.theoretical_quantiles.back();
-        const double y0 = probability.ordered_values.front();
-        const double y1 = probability.ordered_values.back();
-        const double slope = (x1 == x0) ? 0.0 : (y1 - y0) / (x1 - x0);
-        for (std::size_t index = 0; index < probability_plot.center.size(); ++index) {
-            probability_plot.center[index] =
-                y0 + slope * (probability.theoretical_quantiles[index] - x0);
-        }
-    }
-
-    PlotSpec last_points;
-    last_points.kind = PlotKind::control;
-    last_points.title = configuration.subgroup_size.value_or(1) > 1
-        ? "最后 25 个子组" : "最近 25 个观测";
-    last_points.x_axis_title = "样本";
-    last_points.y_axis_title = "测量值";
-    if (configuration.subgroup_size.value_or(1) > 1) {
-        const std::size_t subgroup_size = configuration.subgroup_size.value_or(5);
-        const std::size_t group_count = extracted.values.size() / subgroup_size;
-        const std::size_t first_group = group_count > 25 ? group_count - 25 : 0;
-        for (std::size_t group = first_group; group < group_count; ++group) {
-            for (std::size_t offset = 0; offset < subgroup_size; ++offset) {
-                const std::size_t source = group * subgroup_size + offset;
-                last_points.values.push_back(extracted.values[source]);
-                last_points.x_values.push_back(
-                    static_cast<double>(group - first_group + 1));
-                last_points.source_rows.push_back(extracted.source_rows[source]);
-            }
-        }
-    } else {
-        last_points = control_plot("最近 25 个观测", "测量值", primary, extracted.source_rows);
-        const std::size_t first = last_points.values.size() > 25
-            ? last_points.values.size() - 25 : 0;
-        last_points.values.erase(last_points.values.begin(),
-                                 last_points.values.begin() + static_cast<std::ptrdiff_t>(first));
-        last_points.source_rows.erase(last_points.source_rows.begin(),
-                                      last_points.source_rows.begin() + static_cast<std::ptrdiff_t>(first));
-    }
 
     capability_page.id = new_id("sixpack");
     capability_page.title = "过程能力 Sixpack";
@@ -3070,8 +3114,8 @@ OutputPage AnalysisService::capability_sixpack(
     if (primary_plots.size() > 1) {
         capability_page.plots.push_back(std::move(primary_plots[1]));
     }
-    capability_page.plots.push_back(probability_plot);
-    capability_page.plots.push_back(last_points);
+    capability_page.plots.push_back(probability_plot_spec(probability, extracted.name));
+    capability_page.plots.push_back(last_points_plot(extracted, primary, subgroup_size));
     PlotSpec capability_plot;
     capability_plot.kind = PlotKind::control;
     capability_plot.title = "能力图";
