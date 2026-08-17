@@ -172,12 +172,8 @@ add_library(datalab_ui STATIC
     src/ui/mainwindow.ui
     src/ui/analysis_chart_widget.cpp
     src/ui/analysis_chart_widget.h
-    src/ui/analysis_dialog.cpp
-    src/ui/analysis_dialog.h
     src/ui/analysis_setup_dialog.cpp
     src/ui/analysis_setup_dialog.h
-    src/ui/analysis_output_view.cpp
-    src/ui/analysis_output_view.h
     src/ui/output_workspace.cpp
     src/ui/output_workspace.h
     src/ui/command_registry.cpp

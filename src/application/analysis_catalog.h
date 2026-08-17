@@ -9,7 +9,6 @@ namespace datalab::application {
 struct AnalysisDescriptor {
     QString id;
     QString label;
-    QString menu_path;
 };
 
 class AnalysisCatalog final {

@@ -262,15 +262,4 @@ struct OutputPage {
     std::vector<InterpretationSection> interpretation;
 };
 
-struct AnalysisResult {
-    std::string analysis_name;
-    std::vector<DiagnosticMessage> diagnostics;
-    std::vector<std::string> statistic_names;
-    std::vector<double> statistic_values;
-    std::vector<double> center_line;
-    std::vector<double> lower_control_limit;
-    std::vector<double> upper_control_limit;
-    std::vector<double> plotted_values;
-};
-
 }  // namespace datalab::domain

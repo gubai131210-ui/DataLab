@@ -46,22 +46,29 @@ void PdfLayoutTest::writesMultiPageReportWithChart()
     table.columns = {"Diameter"};
     table.rows = {{"74.00"}, {"74.01"}, {"73.99"}};
 
-    datalab::domain::AnalysisResult result;
-    result.analysis_name = "I-MR 控制图";
-    result.plotted_values = {74.00, 74.01, 73.99};
-    result.center_line = {74.00, 74.00, 74.00};
-    result.lower_control_limit = {73.95, 73.95, 73.95};
-    result.upper_control_limit = {74.05, 74.05, 74.05};
-    result.statistic_names = {"Count", "Mean", "Cp", "Cpk"};
-    result.statistic_values = {3.0, 74.0, 1.2, 1.1};
-    result.diagnostics.push_back(
+    datalab::domain::OutputPage page;
+    page.title = "I-MR 控制图";
+    page.method_name = "I-MR";
+    page.parameter_summary = "变量: Diameter";
+    page.diagnostics.push_back(
         {datalab::domain::DiagnosticMessage::Severity::warning,
          "TEST",
          "这是一条用于验证多页 PDF 换行和布局的很长诊断信息。"});
+    datalab::domain::PlotSpec plot;
+    plot.kind = datalab::domain::PlotKind::control;
+    plot.title = "I 图";
+    plot.x_axis_title = "观测序号";
+    plot.y_axis_title = "测量值";
+    plot.values = {74.00, 74.01, 73.99};
+    plot.center = {74.00, 74.00, 74.00};
+    plot.lower = {73.95, 73.95, 73.95};
+    plot.upper = {74.05, 74.05, 74.05};
+    page.plots.push_back(plot);
 
     const QString path = directory.filePath(QStringLiteral("report.pdf"));
     QString error;
-    QVERIFY(datalab::infrastructure::PdfReportWriter::write(path, table, result, &error));
+    QVERIFY(datalab::infrastructure::PdfReportWriter::write(
+        path, table, std::vector<datalab::domain::OutputPage>{page}, &error));
     QVERIFY2(QFileInfo::exists(path), qPrintable(error));
     QVERIFY(QFileInfo(path).size() > 1000);
 }

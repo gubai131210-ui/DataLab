@@ -17,146 +17,6 @@
 
 namespace datalab::infrastructure {
 
-bool PdfReportWriter::write(
-    const QString& file_path,
-    const domain::DataTable& table,
-    const domain::AnalysisResult& result,
-    QString* error_message)
-{
-    QPdfWriter writer(file_path);
-    writer.setResolution(72);
-    writer.setPageSize(QPageSize(QPageSize::A4));
-    writer.setPageOrientation(QPageLayout::Landscape);
-    writer.setTitle(QStringLiteral("DataLab Quality Analysis Report"));
-    QPainter painter(&writer);
-    if (!painter.isActive()) {
-        if (error_message != nullptr) {
-            *error_message = QStringLiteral("Could not create the PDF report.");
-        }
-        return false;
-    }
-
-    const QString family = QFontDatabase().families().contains(QStringLiteral("Microsoft YaHei"))
-        ? QStringLiteral("Microsoft YaHei")
-        : QStringLiteral("SimSun");
-    const QRectF page(90.0, 100.0, writer.width() - 180.0, writer.height() - 190.0);
-    ReportLayoutCursor cursor(page, 8.0);
-    const QFont body_font(family, 10);
-    const QFont heading_font(family, 14, QFont::Bold);
-    const QFont title_font(family, 20, QFont::Bold);
-
-    const auto draw_footer = [&] {
-        painter.setFont(QFont(family, 8));
-        painter.setPen(QColor("#68737d"));
-        painter.drawText(QRectF(90.0, writer.height() - 65.0, writer.width() - 180.0, 20.0),
-                         Qt::AlignCenter,
-                         QStringLiteral("DataLab 质量分析报告  ·  第 %1 页").arg(cursor.page_number()));
-    };
-    const auto new_page = [&] {
-        draw_footer();
-        writer.newPage();
-        cursor.new_page();
-    };
-    const auto ensure_space = [&](double height) {
-        if (cursor.needs_page_break(height)) {
-            new_page();
-        }
-    };
-    const auto draw_wrapped = [&](const QString& text, const QFont& font, double indent = 0.0) {
-        const double height = cursor.measure_text(text, font);
-        ensure_space(height);
-        painter.setFont(font);
-        painter.setPen(Qt::black);
-        const QRectF target(cursor.x() + indent, cursor.y(),
-                            page.width() - indent, height);
-        painter.drawText(target, Qt::TextWordWrap, text);
-        cursor.advance(height);
-    };
-    const auto draw_heading = [&](const QString& text) {
-        draw_wrapped(text, heading_font);
-        cursor.advance(4.0);
-    };
-
-    draw_wrapped(QStringLiteral("DataLab 质量分析报告"), title_font);
-    draw_wrapped(QStringLiteral("生成时间：") + QDateTime::currentDateTime().toString(Qt::ISODate), body_font);
-    draw_wrapped(QStringLiteral("数据源：") + QString::fromStdString(table.source_path), body_font);
-    draw_wrapped(QStringLiteral("样本数：%1    字段数：%2")
-                     .arg(static_cast<qulonglong>(table.rows.size()))
-                     .arg(static_cast<qulonglong>(table.columns.size())),
-                 body_font);
-
-    draw_heading(QStringLiteral("分析方法与配置"));
-    draw_wrapped(QStringLiteral("分析方法：") + QString::fromStdString(result.analysis_name), body_font);
-    draw_wrapped(QStringLiteral("原始数据只读；清洗操作、参数和排除行应在项目文件中保留。"), body_font);
-
-    draw_heading(QStringLiteral("统计结果"));
-    const double row_height = 28.0;
-    ensure_space(row_height * (result.statistic_names.size() + 1));
-    const double first_column = page.width() * 0.30;
-    const double second_column = page.width() * 0.25;
-    const double third_column = page.width() - first_column - second_column;
-    const QStringList headers{QStringLiteral("指标"), QStringLiteral("数值"), QStringLiteral("说明")};
-    painter.setFont(QFont(family, 9, QFont::Bold));
-    painter.setPen(QColor("#263238"));
-    for (int column = 0; column < 3; ++column) {
-        const double x = page.left()
-            + (column == 0 ? 0.0 : (column == 1 ? first_column : first_column + second_column));
-        const double width = column == 0 ? first_column : (column == 1 ? second_column : third_column);
-        painter.fillRect(QRectF(x, cursor.y(), width, row_height), QColor("#e8f0f7"));
-        painter.drawRect(QRectF(x, cursor.y(), width, row_height));
-        painter.drawText(QRectF(x + 6.0, cursor.y(), width - 12.0, row_height),
-                         Qt::AlignVCenter, headers[column]);
-    }
-    cursor.advance(row_height);
-    painter.setFont(body_font);
-    for (std::size_t index = 0; index < result.statistic_names.size(); ++index) {
-        ensure_space(row_height);
-        const QString name = QString::fromStdString(result.statistic_names[index]);
-        const QString value = index < result.statistic_values.size()
-            ? QString::number(result.statistic_values[index], 'g', 12)
-            : QStringLiteral("-");
-        const QString explanation = name.startsWith(QStringLiteral("Cp"))
-            || name.startsWith(QStringLiteral("P"))
-            ? QStringLiteral("过程能力指标")
-            : QStringLiteral("统计量");
-        const QStringList cells{name, value, explanation};
-        for (int column = 0; column < 3; ++column) {
-            const double x = page.left()
-                + (column == 0 ? 0.0 : (column == 1 ? first_column : first_column + second_column));
-            const double width = column == 0 ? first_column : (column == 1 ? second_column : third_column);
-            painter.drawRect(QRectF(x, cursor.y(), width, row_height));
-            painter.drawText(QRectF(x + 6.0, cursor.y(), width - 12.0, row_height),
-                             Qt::AlignVCenter, cells[column]);
-        }
-        cursor.advance(row_height);
-    }
-
-    draw_heading(QStringLiteral("诊断信息"));
-    if (result.diagnostics.empty()) {
-        draw_wrapped(QStringLiteral("未发现诊断信息。"), body_font, 10.0);
-    } else {
-        for (const auto& diagnostic : result.diagnostics) {
-            draw_wrapped(QStringLiteral("• ") + QString::fromStdString(diagnostic.message),
-                         body_font, 10.0);
-        }
-    }
-
-    new_page();
-    draw_heading(QStringLiteral("控制图"));
-    ChartModel chart_model;
-    chart_model.title = QString::fromStdString(result.analysis_name);
-    chart_model.values = result.plotted_values;
-    chart_model.center = result.center_line;
-    chart_model.lower = result.lower_control_limit;
-    chart_model.upper = result.upper_control_limit;
-    ChartRenderer::render(painter, QRectF(page.left(), cursor.y(), page.width(), 520.0), chart_model);
-    cursor.advance(540.0);
-    draw_wrapped(QStringLiteral("结论：请结合控制限、过程能力指标和现场工艺知识确认是否需要采取纠正措施。"),
-                 body_font);
-    draw_footer();
-    painter.end();
-    return true;
-}
 
 bool PdfReportWriter::write(
     const QString& file_path,
@@ -164,12 +24,6 @@ bool PdfReportWriter::write(
     const std::vector<domain::OutputPage>& pages,
     QString* error_message)
 {
-    if (pages.empty()) {
-        domain::AnalysisResult empty;
-        empty.analysis_name = "DataLab 报告";
-        return write(file_path, table, empty, error_message);
-    }
-
     QPdfWriter writer(file_path);
     writer.setResolution(72);
     writer.setPageSize(QPageSize(QPageSize::A4));
@@ -228,6 +82,10 @@ bool PdfReportWriter::write(
             .arg(static_cast<qulonglong>(table.columns.size()))
             .arg(static_cast<qulonglong>(pages.size())),
         body_font);
+
+    if (pages.empty()) {
+        draw_wrapped(QStringLiteral("暂无分析结果。"), body_font);
+    }
 
     for (const domain::OutputPage& page : pages) {
         ensure_space(80.0);

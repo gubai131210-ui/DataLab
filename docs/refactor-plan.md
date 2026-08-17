@@ -156,10 +156,13 @@ struct AnalysisSpec {
 
 ### 3.4 清理
 
-- 删 `AnalysisDialog`、`AnalysisOutputView`（已确认无调用）；
-- 合并两份图标映射表（`mainwindow.cpp:195-238` 与 `analysis_setup_dialog.cpp:26-80`）——由 `AnalysisCatalog` 提供图标路径；
-- `output_workspace` 与 `report_preview_dialog` 的重复页面渲染抽共享渲染器；
-- 行排除（2443-2474 行）纳入 undo 栈（当前不在）。
+**已实施（首批）✅**：
+- 删 `AnalysisDialog`、`AnalysisOutputView`（无调用方）——连同其 CMake 源项一起移除；
+- 删 `AnalysisCatalog::menu_path` 死字段（46 处描述符第三项一并剔除）；
+- 删 `AnalysisResult` 结构体（`quality_types.h`）与 `PdfReportWriter` 单分析版 `write(file, table, AnalysisResult, ...)` 重载（生产只走多页重载）；空 pages 回退改为内联"暂无分析结果。"；
+- `pdf_layout_test` 的图表用例改写为走生产多页重载（保留 PDF+图表冒烟覆盖）。
+
+> 剩余：合并两份图标映射表（`mainwindow.cpp:195-238` 与 `analysis_setup_dialog.cpp:26-80`，随 3.1 命令化由 `AnalysisCatalog` 提供图标路径）；`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除（2443-2474 行）纳入 undo 栈。
 
 验证：`ctest` 全绿；`mainwindow.cpp` 从 2502 行降到 800 行以内；UI 手动过一遍 6 类代表分析（描述统计/单样本 t/Xbar-R/能力/柏拉图/ARIMA）。
 
