@@ -1,7 +1,7 @@
 # DataLab 重构会话交接文档
 
 > 本文件记录截至当前会话的完整工作状态，供**新对话**无缝续接。新对话第一条消息建议：
-> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从阶段 3.1 命令化开始。」
+> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从**阶段 2.3 大方法薄壳化**（doe_factorial/regression/capability/sixpack 等）开始。」
 
 ---
 
@@ -13,7 +13,7 @@
 | 产品 | 模仿 Minitab 的汽车质量分析工具（46 种分析） |
 | 技术栈 | Qt 6.11.1 / MinGW 13.1 / C++17 / CMake / SQLite；Python(pandas) 仅用于 Excel 导入桥 |
 | 规模 | 约 20,500 行 C++（src+tests），12 个测试目标 |
-| 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 7 个重构提交）；无远端 |
+| 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 8 个重构提交）；无远端 |
 
 ### 构建与测试（每次改动后必须全绿）
 
@@ -32,6 +32,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check_layering.ps1
 ## 2. 当前 git 历史（工作区干净）
 
 ```
+47fd2c8 refactor(ui): 阶段 3.1 命令化（AnalysisCatalog 数据驱动化）
+d79a1b1 docs: 新增会话交接文档（session-handoff.md）
 094b5af refactor(infrastructure): DataImportService 门面与 ProjectRepository 健壮性修复
 83729ba refactor(ui): 死代码清理（AnalysisDialog/AnalysisOutputView/menu_path/AnalysisResult/旧 PDF 重载）
 c3419cb refactor(application): 控制图族方法薄壳化（chart_pages 共享页面构建器）
@@ -70,6 +72,14 @@ e44552a docs: 补充图表子系统 thread_local 气味至已知缺陷清单
 - 模式：**规格结构体 + `assemble`/`compute` lambda**；行为逐字保留（含 xbar_s 与 xbar_range 的 parameter_summary 措辞差异、np 常数-列覆盖顺序、p/u 的 min 截断）
 - `analysis_service.cpp`：3625 → 3486 行
 
+### 阶段 3.1 命令化（`47fd2c8`）
+- 新增 `src/ui/analysis_commands.{h,cpp}`（1498 行）：**46 项 `AnalysisCommand` 数据驱动表**——id/菜单文字/对话框标题/menu_path/图标/角色与输入规格/`apply`（配置构建）/`run`（`AnalysisService::xxx`）；doe_factorial 与 doe_response 共用 `doe_apply`/`doe_run`；t_power `requires_data=false`（不调 `ensure_data()`）
+- **删 MainWindow 的 94 行 `run_analysis` if/else + 45 个 `run_*`（约 1600 行）**，只留通用 `run_from_spec(id)`：ensure_data（按需）→ 建对话框（命令表提供角色/输入/图标）→ apply 填配置（校验失败返回 `AnalysisApplyResult`，error_title 非空弹框、为空静默中止，忠实保留原行为差异）→ publish_page
+- 菜单按 `menu_path` 数据化生成（表顺序即菜单顺序，`separator_before` 重现分隔线）；"测量系统分析/试验设计"占位项保留（msa 仍只注册不进菜单——原样保留）
+- **图标映射表合并**：命令表 `icon_file` 为单一来源，删 mainwindow 45 项硬编码表 + `analysis_setup_dialog.cpp` 标题规则表（构造函数新增 `icon_resource` 参数）；reliability→report、t_power→one_sample_t、doe_response→doe_factorial 三个图标随合并生效（原为 data-table 回退）
+- 删除闲置 `AnalysisCatalog`（application 层，无调用方）；CMake 同步增删源文件
+- `mainwindow.cpp` 2502 → 842 行；`mainwindow.h` 107 → 62 行；构建全绿 + ctest 12/12 + layering 通过
+
 ### 阶段 3.4 首批：死代码清理（`83729ba`）
 - 删 `AnalysisDialog`、`AnalysisOutputView`（无调用方，含 CMake 源项）
 - 删 `AnalysisCatalog::menu_path` 死字段（46 处描述符第三项）
@@ -103,46 +113,15 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 
 ## 5. 剩余工作（按优先级）
 
-### 🔴 最高价值：阶段 3.1 命令化（下一轮主攻）
-目标：`AnalysisCatalog` 数据驱动化，删 MainWindow 的 94 行 if/else（`run_analysis`，mainwindow.cpp:849-943）和 45 个 `run_*`（约 1000 行样板），菜单随 `menu_path` 数据化。
-
-已确认的可行性事实（run_* 模式高度统一）：
-```
-① if (!ensure_data()) return;
-② AnalysisSetupDialog dialog(标题, column_labels(), this);
-③ dialog.add_role(id, 标签, multi, optional) / add_line_edit(id, 标签, 占位)
-④ if (dialog.exec() != QDialog::Accepted) return;
-⑤ 读 role_indices/first_role_index/line_text/line_number/line_int，校验（QMessageBox）
-⑥ auto configuration = base_configuration();
-⑦ 填 analysis_name/chart_type/字段
-⑧ publish_page(AnalysisService::xxx(table_, configuration));
-```
-
-设计（写于 docs/refactor-plan.md 3.1）：
-```cpp
-struct AnalysisCommand {
-    QString id, title, menu_path;
-    std::vector<RoleSpec> roles;       // add_role 参数
-    std::vector<InputSpec> inputs;     // add_line_edit 参数
-    std::function<void(datalab::domain::AnalysisConfiguration&, AnalysisSetupDialog&,
-                       std::optional<QString>& error)> apply;   // ⑤⑥⑦
-    std::function<datalab::domain::OutputPage(const datalab::domain::DataTable&,
-        const datalab::domain::AnalysisConfiguration&)> run;    // AnalysisService::xxx
-};
-```
-- 建议放 `src/ui/analysis_commands.{h,cpp}`（引用 AnalysisSetupDialog + AnalysisService）
-- MainWindow 只留通用 `run_from_spec(id)`；`create_commands` 遍历命令注册菜单（按 menu_path 分组）
-- 转换顺序建议：先控制图 11 个（已熟悉）→ 统计检验 10 个 → DOE/MSA/时序/图形 24 个；未转换的先用 if/else 兜底，全部转换后再删 if/else
-- 注意：`run_t_power` 不调 ensure_data()；pareto 有阈值校验；msa_type1 有模式归一化——这些特殊校验迁入各自 apply
-- 附带收益：3.4 剩余的图标映射表合并（mainwindow.cpp:195-238 vs analysis_setup_dialog.cpp:26-80）随命令化由 AnalysisCatalog 提供图标路径
+### 🔴 最高价值：阶段 2.3 大方法薄壳化（下一轮主攻）
+`analysis_service.cpp`（3486 行）剩余大方法：doe_factorial 292、regression 165、capability 127、sixpack 153、variance_test 130、logistic 125 行——为定制化多表输出，需逐方法内部抽取（如 doe 内部 3 处 ANOVA 表同构、sixpack 的 6 宫格骨架）；imr/ewma/cusum 薄壳化。golden 测试（`minitab_formula_golden_test`、`quality_statistics_test`）兜底输出逐字不变。
 
 ### 阶段 2 剩余
-- **2.3 剩余**：统计检验族方法本身已 30-90 行（薄壳化收益低）；大方法（doe_factorial 292、regression 165、capability 127、sixpack 153、variance_test 130、logistic 125）为定制化多表输出，需逐方法内部抽取（如 doe 内部 3 处 ANOVA 表同构）
 - **2.4 文案分离**：4011 个 CJK 字符收进 `messages.h`（改动面大、为 i18n 铺路）
 
 ### 阶段 3 剩余
-- **3.2 配置构造收敛到工厂**：`base_configuration()` + run_* 字段填充下沉为 per-analysis builder（随 3.1 一起做）
-- **3.4 剩余**：图标映射表合并（随 3.1）；output_workspace 与 report_preview_dialog 重复页面渲染抽共享渲染器；行排除纳入 undo 栈
+- **3.2 配置构造工厂**（待评估）：字段填充已随 3.1 迁入 `analysis_commands` 各 `apply` lambda（ui 层直接读对话框，耦合已局限在 ui 层）；是否下沉 application 层 `AnalysisConfigurationFactory`（纯数据入参）收益有限，倾向不做
+- **3.4 剩余**：`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除纳入 undo 栈
 
 ### 阶段 4：Python 桥与序列化
 - Python 桥：脚本入 Qt 资源/随 install（删 `DATALAB_SOURCE_DIR` 依赖）、QProcess 异步化、协议版本化、瘦 venv/PyInstaller、补 `PythonTableImporter` 测试（4 类用例）
@@ -184,7 +163,8 @@ struct AnalysisCommand {
 | `src/application/chart_pages.{h,cpp}` | 控制图族共享页面构建器（薄壳化样板） |
 | `src/application/output_builder.{h,cpp}` | 数字格式/错误页/通用表格构建器 |
 | `src/application/column_assembly.{h,cpp}` | 子组构建/列选择 |
+| `src/ui/analysis_commands.{h,cpp}` | **46 项分析命令数据表**（3.1 产物：菜单/对话框/图标/apply/run 单一来源） |
 | `src/infrastructure/data_import_service.{h,cpp}` | 导入分派门面 |
-| `src/ui/mainwindow.cpp` | 2502 行（3.1 命令化后应降至 ~800） |
+| `src/ui/mainwindow.cpp` | 842 行（3.1 命令化后只剩通用 run_from_spec 与界面装配） |
 | `tools/check_layering.ps1` | 分层 include 检查 |
 | `CONTEXT.md` | 领域词汇表 |

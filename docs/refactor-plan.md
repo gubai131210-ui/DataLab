@@ -126,7 +126,9 @@ git commit -m "chore: initial commit"
 
 ### 3.1 命令化（删 94 行 if/else + 45 个 run_*）
 
-`AnalysisCatalog`（`analysis_catalog.cpp`）扩展为数据驱动的规格表：
+**已完成 ✅**（`47fd2c8`）：实现为 `src/ui/analysis_commands.{h,cpp}`——46 项 `AnalysisCommand` 数据表（id/菜单文字/对话框标题/menu_path/图标/角色与输入规格/`apply`/`run`），`AnalysisCatalog` 随之删除（无调用方）。MainWindow 只留通用 `run_from_spec(id)`，`run_analysis` 的 94 行 if/else 与 45 个 `run_*`（约 1600 行）全部删除；菜单按 `menu_path` 数据化生成（`separator_before` 重现分隔线）；两份图标映射表合并为命令表 `icon_file` 单一来源。`mainwindow.cpp` 2502 → 842 行。doe_response 与 doe_factorial 共用配置构建（doe_apply/doe_run）；t_power 的 `requires_data=false` 保留不调 `ensure_data()`。
+
+原始设计（记录备查）：
 
 ```cpp
 struct AnalysisSpec {
@@ -142,11 +144,12 @@ struct AnalysisSpec {
 
 - `create_commands` 遍历目录注册菜单动作（`menu_path` 落地）；
 - MainWindow 只留一个 `run_from_spec(id)`：`ensure_data()`（按需）→ 建对话框 → 收集选择 → `apply` 填配置 → `publish_page(run(...))`；
-- 各分析的特殊校验（pareto 阈值 2431-2439、msa 模式归一化 1438-1441 等）迁入各自的 `apply` lambda。
+- 各分析的特殊校验（pareto 阈值、msa 模式归一化、静默中止等）迁入各自的 `apply` lambda。
 
 ### 3.2 配置构造收敛到工厂
 
-`base_configuration()`（810-815 行）+ 各 run_* 的字段填充下沉为 `AnalysisConfigurationFactory`（application 层），UI 只传"用户选择"（列索引 + 字符串参数）。
+`base_configuration()` + 各 run_* 的字段填充下沉为 `AnalysisConfigurationFactory`（application 层），UI 只传"用户选择"（列索引 + 字符串参数）。
+> 状态：字段填充已随 3.1 迁入 `analysis_commands` 各 `apply` lambda（ui 层，读 `AnalysisSetupDialog`）；是否进一步下沉为 application 层工厂（纯数据入参）待评估——当前 apply 直接读对话框，UI 耦合已局限在 ui 层，收益有限。
 
 ### 3.3 补应用层门面
 
@@ -161,9 +164,9 @@ struct AnalysisSpec {
 - 删 `AnalysisResult` 结构体（`quality_types.h`）与 `PdfReportWriter` 单分析版 `write(file, table, AnalysisResult, ...)` 重载（生产只走多页重载）；空 pages 回退改为内联"暂无分析结果。"；
 - `pdf_layout_test` 的图表用例改写为走生产多页重载（保留 PDF+图表冒烟覆盖）。
 
-> 剩余：合并两份图标映射表（`mainwindow.cpp:195-238` 与 `analysis_setup_dialog.cpp:26-80`，随 3.1 命令化由 `AnalysisCatalog` 提供图标路径）；`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除（2443-2474 行）纳入 undo 栈。
+> 剩余：`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除纳入 undo 栈。
 
-验证：`ctest` 全绿；`mainwindow.cpp` 从 2502 行降到 800 行以内；UI 手动过一遍 6 类代表分析（描述统计/单样本 t/Xbar-R/能力/柏拉图/ARIMA）。
+验证：`ctest` 全绿；`mainwindow.cpp` 从 2502 行降到 842 行（命令表迁往 `analysis_commands.cpp`）；UI 手动过一遍 6 类代表分析（描述统计/单样本 t/Xbar-R/能力/柏拉图/ARIMA）。
 
 ---
 
