@@ -60,24 +60,6 @@ std::optional<double> number_in_column(const domain::StatisticTable& table,
     }
 }
 
-std::size_t count_column_values(const domain::StatisticTable& table,
-                                const std::string& header)
-{
-    const auto column = std::find(table.headers.cbegin(), table.headers.cend(), header);
-    if (column == table.headers.cend()) {
-        return 0;
-    }
-    const std::size_t index = static_cast<std::size_t>(
-        std::distance(table.headers.cbegin(), column));
-    std::size_t count = 0;
-    for (const auto& row : table.rows) {
-        if (index < row.size() && !row[index].empty() && row[index] != "*") {
-            ++count;
-        }
-    }
-    return count;
-}
-
 void add_limitations(const domain::OutputPage& page,
                      domain::InterpretationSection& limitations)
 {

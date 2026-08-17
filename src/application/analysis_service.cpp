@@ -1,4 +1,6 @@
 #include "application/analysis_service.h"
+#include "application/column_assembly.h"
+#include "application/output_builder.h"
 
 #include "domain/column_extract.h"
 #include "domain/statistics/control_charts.h"
@@ -56,371 +58,6 @@ using datalab::domain::column_label;
 using datalab::domain::extract_numeric_column;
 using datalab::domain::extract_text_column;
 using datalab::domain::is_missing_cell;
-
-std::string format_number(double value, int digits = 6)
-{
-    if (!std::isfinite(value)) {
-        return "*";
-    }
-    std::ostringstream stream;
-    stream << std::setprecision(digits) << value;
-    return stream.str();
-}
-
-std::optional<double> parse_numeric_cell(const std::string& text)
-{
-    if (text.empty() || text == "*" || text == "NA" || text == "NaN") {
-        return std::nullopt;
-    }
-    try {
-        std::size_t consumed = 0;
-        const double value = std::stod(text, &consumed);
-        if (consumed != text.size() || !std::isfinite(value)) {
-            return std::nullopt;
-        }
-        return value;
-    } catch (...) {
-        return std::nullopt;
-    }
-}
-
-std::string format_optional(const std::optional<double>& value, int digits = 6)
-{
-    return value.has_value() ? format_number(*value, digits) : "*";
-}
-
-bool append_nonnegative_counts(
-    const std::vector<double>& values,
-    std::vector<std::size_t>& counts)
-{
-    for (const double value : values) {
-        if (!std::isfinite(value) || value < 0.0
-            || value != std::floor(value)
-            || value > static_cast<double>(std::numeric_limits<std::size_t>::max())) {
-            return false;
-        }
-        counts.push_back(static_cast<std::size_t>(value));
-    }
-    return true;
-}
-
-std::string new_id(const std::string& prefix)
-{
-    static int counter = 0;
-    ++counter;
-    return prefix + "_" + std::to_string(counter);
-}
-
-OutputPage error_page(const std::string& title, const std::string& method, const std::string& message)
-{
-    OutputPage page;
-    page.id = new_id("err");
-    page.title = title;
-    page.method_name = method;
-    page.diagnostics.push_back({DiagnosticMessage::Severity::error, "analysis", message});
-    return page;
-}
-
-datalab::domain::statistics::TestAlternative parse_alternative(const std::string& value)
-{
-    if (value == "less") {
-        return datalab::domain::statistics::TestAlternative::less;
-    }
-    if (value == "greater") {
-        return datalab::domain::statistics::TestAlternative::greater;
-    }
-    return datalab::domain::statistics::TestAlternative::two_sided;
-}
-
-datalab::domain::statistics::VarianceMethod parse_variance_method(const std::string& value)
-{
-    return value == "pooled"
-        ? datalab::domain::statistics::VarianceMethod::pooled
-        : datalab::domain::statistics::VarianceMethod::welch;
-}
-
-std::string alternative_label(const std::string& value)
-{
-    if (value == "less") {
-        return "小于";
-    }
-    if (value == "greater") {
-        return "大于";
-    }
-    return "不等于";
-}
-
-void append_diagnostics(
-    std::vector<DiagnosticMessage>& target,
-    const std::vector<DiagnosticMessage>& source,
-    const std::string& prefix)
-{
-    for (const auto& diagnostic : source) {
-        target.push_back({
-            diagnostic.severity,
-            diagnostic.code,
-            prefix + diagnostic.message});
-    }
-}
-
-StatisticTable t_test_table(
-    const std::string& title,
-    const datalab::domain::statistics::TTestResult& result,
-    const std::string& variable)
-{
-    StatisticTable table;
-    table.title = title;
-    table.headers = {"变量", "N", "Mean", "StDev", "SE Mean", "假设均值",
-                     "差值", "T", "DF", "P-Value", "置信区间"};
-    const std::string interval = result.confidence_lower.has_value()
-        && result.confidence_upper.has_value()
-        ? "[" + format_number(*result.confidence_lower) + ", "
-            + format_number(*result.confidence_upper) + "]"
-        : result.confidence_lower.has_value()
-            ? "[" + format_number(*result.confidence_lower) + ", +∞)"
-            : result.confidence_upper.has_value()
-                ? "(-∞, " + format_number(*result.confidence_upper) + "]" : "*";
-    table.rows.push_back({
-        variable,
-        std::to_string(result.count),
-        format_number(result.mean),
-        format_number(result.sample_standard_deviation),
-        format_number(result.standard_error),
-        format_number(result.hypothesized_mean),
-        format_number(result.difference),
-        format_number(result.t_statistic),
-        format_number(result.degrees_of_freedom),
-        result.p_value.has_value() ? format_number(*result.p_value) : "*",
-        interval});
-    return table;
-}
-
-PlotSpec control_plot(
-    const std::string& title,
-    const std::string& y_axis,
-    const datalab::domain::statistics::ControlChartResult& chart,
-    const std::vector<std::size_t>& source_rows)
-{
-    PlotSpec plot;
-    plot.kind = PlotKind::control;
-    plot.title = title;
-    plot.x_axis_title = "观测序号";
-    plot.y_axis_title = y_axis;
-    if (y_axis == "移动极差" || y_axis == "子组极差") {
-        plot.center_label = "R̄";
-    } else if (y_axis == "子组标准差") {
-        plot.center_label = "S̄";
-    } else if (y_axis == "不合格品率") {
-        plot.center_label = "p̄";
-    } else if (y_axis == "不合格品数") {
-        plot.center_label = "np̄";
-    } else if (y_axis == "缺陷数") {
-        plot.center_label = "c̄";
-    } else if (y_axis == "单位缺陷数") {
-        plot.center_label = "ū";
-    } else {
-        plot.center_label = "X̄";
-    }
-    plot.values = chart.plotted_values;
-    plot.center = chart.center_line;
-    plot.lower = chart.lower_control_limit;
-    plot.upper = chart.upper_control_limit;
-    plot.source_rows = source_rows;
-    plot.special_cause_points = chart.special_cause_points;
-    plot.sigma_z = chart.sigma_z;
-    return plot;
-}
-
-StatisticTable attribute_chart_table(
-    const std::string& title,
-    const std::vector<std::size_t>& counts,
-    const std::vector<std::size_t>& denominators,
-    const datalab::domain::statistics::ControlChartResult& chart,
-    const std::string& count_header,
-    const std::string& denominator_header,
-    const std::string& rate_header)
-{
-    StatisticTable table;
-    table.title = title;
-    table.headers = {
-        "子组", count_header, denominator_header, rate_header, "中心线", "LCL", "UCL", "Test 1"};
-    for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
-        const std::size_t count = index < counts.size() ? counts[index] : 0;
-        const std::size_t denominator = index < denominators.size() ? denominators[index] : 0;
-        const double center = index < chart.center_line.size() ? chart.center_line[index] : 0.0;
-        const double lower = index < chart.lower_control_limit.size()
-            ? chart.lower_control_limit[index] : 0.0;
-        const double upper = index < chart.upper_control_limit.size()
-            ? chart.upper_control_limit[index] : 0.0;
-        const bool test1_failed = std::find(
-            chart.test1_points.cbegin(), chart.test1_points.cend(), index)
-            != chart.test1_points.cend();
-        table.rows.push_back({
-            std::to_string(index + 1),
-            std::to_string(count),
-            std::to_string(denominator),
-            format_number(chart.plotted_values[index]),
-            format_number(center),
-            format_number(lower),
-            format_number(upper),
-            test1_failed ? "是" : ""});
-    }
-    return table;
-}
-
-StatisticTable laney_chart_table(
-    const std::vector<std::size_t>& counts,
-    const std::vector<std::size_t>& denominators,
-    const datalab::domain::statistics::ControlChartResult& chart,
-    const std::vector<std::string>& stages,
-    const std::string& count_header,
-    const std::string& denominator_header)
-{
-    StatisticTable table;
-    table.title = "Laney 图逐子组统计";
-    table.headers = {"子组", "阶段", count_header, denominator_header, "绘制值",
-                    "Z", "MR", "中心线", "LCL", "UCL", "Test 1", "Test 2",
-                    "Test 3", "Test 4"};
-    for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
-        const auto test_failed = [&](std::size_t test) {
-            return test < chart.special_cause_points.size()
-                && std::find(chart.special_cause_points[test].cbegin(),
-                             chart.special_cause_points[test].cend(), index)
-                    != chart.special_cause_points[test].cend();
-        };
-        table.rows.push_back({
-            std::to_string(index + 1),
-            index < stages.size() ? stages[index] : "",
-            index < counts.size() ? std::to_string(counts[index]) : "*",
-            index < denominators.size() ? std::to_string(denominators[index]) : "*",
-            format_number(chart.plotted_values[index]),
-            index < chart.standardized_values.size()
-                ? format_number(chart.standardized_values[index]) : "*",
-            index < chart.moving_ranges.size() ? format_number(chart.moving_ranges[index]) : "*",
-            index < chart.center_line.size() ? format_number(chart.center_line[index]) : "*",
-            index < chart.lower_control_limit.size()
-                ? format_number(chart.lower_control_limit[index]) : "*",
-            index < chart.upper_control_limit.size()
-                ? format_number(chart.upper_control_limit[index]) : "*",
-            test_failed(0) ? "是" : "",
-            test_failed(1) ? "是" : "",
-            test_failed(2) ? "是" : "",
-            test_failed(3) ? "是" : ""});
-    }
-    return table;
-}
-
-struct SubgroupInput {
-    std::vector<std::vector<double>> values;
-    std::vector<std::vector<std::size_t>> source_rows;
-    std::vector<std::string> labels;
-};
-
-std::optional<SubgroupInput> build_strict_subgroups(
-    const DataTable& table,
-    const ExtractedNumericColumn& extracted,
-    const AnalysisConfiguration& configuration,
-    std::string& error)
-{
-    if (extracted.missing_count > 0) {
-        error = "子组控制图要求测量列没有缺失或非法值；请先处理第 "
-            + std::to_string(extracted.missing_count) + " 个无效单元格。";
-        return std::nullopt;
-    }
-    SubgroupInput result;
-    if (configuration.selection.subgroup_column.has_value()) {
-        const std::vector<std::string> labels = extract_text_column(
-            table, *configuration.selection.subgroup_column);
-        std::map<std::string, std::size_t> indices;
-        for (std::size_t index = 0; index < extracted.values.size(); ++index) {
-            const std::size_t row = extracted.source_rows[index];
-            const std::string label = row < labels.size() ? labels[row] : std::string();
-            if (is_missing_cell(label)) {
-                error = "子组标识列包含缺失标签，无法严格构造子组（原始行 "
-                    + std::to_string(row + 1) + "）。";
-                return std::nullopt;
-            }
-            auto [iterator, inserted] = indices.emplace(label, result.values.size());
-            if (inserted) {
-                result.values.emplace_back();
-                result.source_rows.emplace_back();
-                result.labels.push_back(label);
-            }
-            result.values[iterator->second].push_back(extracted.values[index]);
-            result.source_rows[iterator->second].push_back(row);
-        }
-    } else {
-        const int configured_size = configuration.subgroup_size.value_or(5);
-        if (configured_size < 2) {
-            error = "子组大小必须至少为 2。";
-            return std::nullopt;
-        }
-        const std::size_t size = static_cast<std::size_t>(configured_size);
-        if (extracted.values.size() % size != 0) {
-            error = "测量值数量不能被子组大小整除，存在不完整尾部子组。";
-            return std::nullopt;
-        }
-        for (std::size_t offset = 0; offset < extracted.values.size(); offset += size) {
-            result.values.emplace_back(
-                extracted.values.begin() + static_cast<std::ptrdiff_t>(offset),
-                extracted.values.begin() + static_cast<std::ptrdiff_t>(offset + size));
-            result.source_rows.emplace_back(
-                extracted.source_rows.begin() + static_cast<std::ptrdiff_t>(offset),
-                extracted.source_rows.begin() + static_cast<std::ptrdiff_t>(offset + size));
-            result.labels.push_back(std::to_string(result.values.size()));
-        }
-    }
-    if (result.values.empty()) {
-        error = "无法构造有效子组。";
-        return std::nullopt;
-    }
-    const std::size_t expected_size = result.values.front().size();
-    for (const auto& subgroup : result.values) {
-        if (subgroup.size() != expected_size || subgroup.size() < 2) {
-            error = "各子组必须具有相同且至少为 2 的观测数。";
-            return std::nullopt;
-        }
-    }
-    return result;
-}
-
-std::size_t first_variable(const AnalysisConfiguration& configuration)
-{
-    if (!configuration.variable_columns.empty()) {
-        return configuration.variable_columns.front();
-    }
-    return configuration.selection.measurement_column;
-}
-
-StatisticTable descriptive_table(
-    const std::vector<datalab::domain::statistics::DescriptiveStatisticsResult>& rows)
-{
-    StatisticTable table;
-    table.title = "描述统计";
-    table.headers = {
-        "变量", "N", "N*", "Mean", "SE Mean", "StDev", "Variance",
-        "Minimum", "Q1", "Median", "Q3", "IQR", "Maximum", "Range", "Sum"};
-    for (const auto& row : rows) {
-        table.rows.push_back({
-            row.group_label,
-            std::to_string(row.count),
-            std::to_string(row.missing_count),
-            format_number(row.mean),
-            format_optional(row.standard_error_of_mean),
-            format_optional(row.sample_standard_deviation),
-            format_number(row.variance),
-            format_number(row.minimum),
-            format_number(row.first_quartile),
-            format_number(row.median),
-            format_number(row.third_quartile),
-            format_number(row.interquartile_range),
-            format_number(row.minimum),
-            format_number(row.maximum),
-            format_number(row.range),
-            format_number(row.sum)});
-    }
-    return table;
-}
 
 }  // namespace
 
@@ -2935,17 +2572,12 @@ OutputPage AnalysisService::pca(
                 valid = false;
                 break;
             }
-            try {
-                const double value = std::stod(table.rows[row][column]);
-                if (!std::isfinite(value)) {
-                    valid = false;
-                    break;
-                }
-                values.push_back(value);
-            } catch (...) {
+            const auto parsed = parse_numeric_cell(table.rows[row][column]);
+            if (!parsed.has_value()) {
                 valid = false;
                 break;
             }
+            values.push_back(*parsed);
         }
         if (valid) {
             rows.push_back(std::move(values));
@@ -3539,7 +3171,8 @@ OutputPage AnalysisService::laney_u_chart(
 
 OutputPage AnalysisService::capability(
     const DataTable& table,
-    const AnalysisConfiguration& configuration)
+    const AnalysisConfiguration& configuration,
+    std::vector<double>* capability_indices)
 {
     const ExtractedNumericColumn extracted =
         extract_numeric_column(table, first_variable(configuration), configuration.excluded_rows);
@@ -3636,6 +3269,21 @@ OutputPage AnalysisService::capability(
         {"Ppk", format_optional(capability_result.ppk)}};
     page.tables.push_back(overall);
 
+    if (capability_indices != nullptr) {
+        if (capability_result.cp.has_value()) {
+            capability_indices->push_back(*capability_result.cp);
+        }
+        if (capability_result.cpk.has_value()) {
+            capability_indices->push_back(*capability_result.cpk);
+        }
+        if (capability_result.pp.has_value()) {
+            capability_indices->push_back(*capability_result.pp);
+        }
+        if (capability_result.ppk.has_value()) {
+            capability_indices->push_back(*capability_result.ppk);
+        }
+    }
+
     const auto bins = datalab::domain::statistics::histogram(extracted.values, 0);
     PlotSpec hist;
     hist.kind = PlotKind::histogram;
@@ -3673,7 +3321,8 @@ OutputPage AnalysisService::capability_sixpack(
     if (extracted.values.size() < 2) {
         return error_page("过程能力 Sixpack", "Capability Sixpack", "Sixpack 至少需要两个数值观测。");
     }
-    OutputPage capability_page = capability(table, configuration);
+    std::vector<double> capability_indices;
+    OutputPage capability_page = capability(table, configuration, &capability_indices);
     if (capability_page.tables.empty() && capability_page.plots.empty()) {
         capability_page.title = "过程能力 Sixpack";
         capability_page.method_name = "Capability Sixpack";
@@ -3792,24 +3441,9 @@ OutputPage AnalysisService::capability_sixpack(
     capability_plot.title = "能力图";
     capability_plot.x_axis_title = "指标";
     capability_plot.y_axis_title = "能力指数";
-    const std::vector<std::string> capability_names = {"Cp", "Cpk", "Pp", "Ppk"};
-    for (const auto& table_block : capability_page.tables) {
-        if (table_block.title != "Potential (Within) Capability"
-            && table_block.title != "Overall Capability") {
-            continue;
-        }
-        for (const auto& row : table_block.rows) {
-            if (row.size() >= 2
-                && std::find(capability_names.begin(), capability_names.end(), row[0])
-                       != capability_names.end()) {
-                try {
-                    capability_plot.values.push_back(std::stod(row[1]));
-                    capability_plot.x_values.push_back(
-                        static_cast<double>(capability_plot.values.size() - 1));
-                } catch (...) {
-                }
-            }
-        }
+    for (std::size_t index = 0; index < capability_indices.size(); ++index) {
+        capability_plot.values.push_back(capability_indices[index]);
+        capability_plot.x_values.push_back(static_cast<double>(index));
     }
     capability_page.plots.push_back(capability_plot);
     capability_page.parameter_summary +=
@@ -3986,28 +3620,6 @@ OutputPage AnalysisService::pareto(
     page.tables.push_back(table_out);
     page.plots.push_back(plot);
     return page;
-}
-
-datalab::domain::AnalysisResult AnalysisService::to_legacy_result(const OutputPage& page)
-{
-    datalab::domain::AnalysisResult result;
-    result.analysis_name = page.title;
-    result.diagnostics = page.diagnostics;
-    if (!page.tables.empty() && !page.tables.front().rows.empty()) {
-        for (const auto& row : page.tables.front().rows) {
-            if (row.size() >= 2) {
-                result.statistic_names.push_back(row[0]);
-                result.statistic_values.push_back(std::strtod(row[1].c_str(), nullptr));
-            }
-        }
-    }
-    if (!page.plots.empty()) {
-        result.plotted_values = page.plots.front().values;
-        result.center_line = page.plots.front().center;
-        result.lower_control_limit = page.plots.front().lower;
-        result.upper_control_limit = page.plots.front().upper;
-    }
-    return result;
 }
 
 }  // namespace datalab::application

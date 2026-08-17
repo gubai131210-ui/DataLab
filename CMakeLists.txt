@@ -88,6 +88,10 @@ add_library(datalab_application STATIC
     src/application/analysis_catalog.h
     src/application/interpretation_service.cpp
     src/application/interpretation_service.h
+    src/application/output_builder.cpp
+    src/application/output_builder.h
+    src/application/column_assembly.cpp
+    src/application/column_assembly.h
 )
 
 target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)

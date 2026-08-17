@@ -171,7 +171,8 @@ public:
 
     static domain::OutputPage capability(
         const domain::DataTable& table,
-        const domain::AnalysisConfiguration& configuration);
+        const domain::AnalysisConfiguration& configuration,
+        std::vector<double>* capability_indices = nullptr);
 
     static domain::OutputPage capability_sixpack(
         const domain::DataTable& table,
@@ -188,8 +189,6 @@ public:
     static domain::OutputPage pareto(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
-
-    static domain::AnalysisResult to_legacy_result(const domain::OutputPage& page);
 };
 
 }  // namespace datalab::application

@@ -86,35 +86,34 @@ git commit -m "chore: initial commit"
 
 目标：把 4013 行的四合一文件拆成可独立维护的层。保持 `AnalysisService::xxx` 的**公开签名与输出不变**（golden 测试兜底）。
 
-### 2.1 抽"列装配层"（复用度最高）
+**已完成（首轮）**：`analysis_service.cpp` 4013 → 3625 行。
 
-从 `analysis_service.cpp` 提取（按行号定位）：
+### 2.1 抽"列装配层"（已完成 ✅）
 
-- 列提取/子组构建：`extract_numeric_column`、按 by_column 分组、subgroup 按标签/固定大小构建（325-465 行一带的模式）；
-- 行对齐（`source_rows` 映射）、`excluded_rows` 过滤。
+产出 `src/application/column_assembly.h/.cpp`：`SubgroupInput`、`build_strict_subgroups`、`first_variable`（原 analysis_service.cpp 313-393 行）。
+**统一三套数值解析（已完成 ✅）**：pca 的裸 `std::stod`（原 2925-2954 行）改用 `parse_numeric_cell`；`capability_sixpack` 反解析改为 `capability()` 新增可选 out 参数 `capability_indices` 直接捕获结构化值。当前 analysis_service.cpp 已无任何 `std::stod/strtod/stoul/stoi` 残留。
+> 剩余：按 by_column 分组、paired_t/regression/logistic 等方法内的行对齐（complete-case）仍内联在各方法中，待 2.3 薄壳化时下沉。
 
-产出：`src/application/column_assembly.h/.cpp`，接口如 `AssembledColumn assemble(const DataTable&, size_t column, const AnalysisConfiguration&)`。
-- **统一三套数值解析**：当前并存 `parse_numeric_cell`（analysis_service.cpp:70-85）、domain 提取逻辑、以及 pca（2925-2954 行）等处的裸 `std::stod`——下沉后收敛为单一解析入口，完整行对齐/complete-case 语义需对拍测试保结果不变。
+### 2.2 抽"表格/图表构建器"（已完成 ✅）
 
-### 2.2 抽"表格/图表构建器"
+产出 `src/application/output_builder.h/.cpp`（280 行）：`format_number`/`format_optional`/`parse_numeric_cell`、`new_id`/`error_page`/`append_diagnostics`、`parse_alternative`/`parse_variance_method`/`alternative_label`/`append_nonnegative_counts`、`t_test_table`/`descriptive_table`/`attribute_chart_table`/`laney_chart_table`/`control_plot`（原 analysis_service.cpp 60-423 行的 18 个匿名辅助）。
+> 命名空间注意：这些函数进入 `datalab::application`（非匿名），头文件内 `StatisticTable` 等 domain 类型必须限定为 `domain::StatisticTable`。
 
-- `format_number`/`format_optional`/`parse_numeric_cell`（60-90 行）→ `src/application/number_format.h/.cpp`；
-- 通用表格构造（`t_test_table` 166-196、描述统计表、ANOVA 表、控制图表的 `control_plot*` 系列 198-320 行）→ `src/application/output_builder.h/.cpp`；
-- `error_page`、`new_id`、`append_diagnostics`（107-164 行）→ 同构建器或独立 `page_helpers`。
-
-### 2.3 45 个方法收敛为薄壳
+### 2.3 45 个方法收敛为薄壳（未完成，下一步）
 
 每个方法变成：装配参数 → 调 domain → `OutputBuilder` 组装 → 返回。目标是单方法不超过 40 行。
 
-### 2.4 文案与格式分离（可推迟到 2.5 一起做）
+### 2.4 文案与格式分离（未完成）
 
 把 4011 个 CJK 字符收进一个 `src/application/messages.h`（常量/函数），为后续 i18n 或双语维护留口。
 
-### 2.5 顺带消灭"反解析"
+### 2.5 顺带消灭"反解析"（已完成 ✅）
 
-- `capability_sixpack`（3796-3813 行）与 `to_legacy_result`（3991 行）的字符串抓取改走结构化结果；若 `to_legacy_result`/`AnalysisResult` 无调用方则**直接删除**（已确认全仓无调用）。
+- `to_legacy_result` 删除（含 `analysis_service.h` 声明；`AnalysisResult` 结构体仍被 `pdf_report_writer` 旧重载与 `analysis_output_view` 使用，随阶段 3 死代码清理一并处理）；
+- `capability_sixpack` 反解析改为结构化捕获（见 2.1）；
+- `interpretation_service.cpp` 的死函数 `count_column_values` 删除。
 
-验证：`ctest` 全绿；`analysis_service.cpp` 行数应降到 1500 行以内。
+验证：`ctest` 全绿（12/12）；`analysis_service.cpp` 行数 4013 → 3625（薄壳化后应进一步降至 ~1500）。
 
 ---
 
