@@ -23,7 +23,6 @@ public:
     void set_model(const ChartModel& model);
     void set_source_rows(const std::vector<std::size_t>& rows);
     void set_selected_source_rows(const std::vector<std::size_t>& rows);
-    const std::vector<std::size_t>& selected_rows() const;
 
 signals:
     void rows_selected(const std::vector<std::size_t>& rows);

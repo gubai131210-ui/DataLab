@@ -75,18 +75,6 @@ void AnalysisChartWidget::set_selected_source_rows(const std::vector<std::size_t
     update();
 }
 
-const std::vector<std::size_t>& AnalysisChartWidget::selected_rows() const
-{
-    static thread_local std::vector<std::size_t> rows;
-    rows.clear();
-    for (const std::size_t point : model_.selected_points) {
-        if (point < model_.source_rows.size()) {
-            rows.push_back(model_.source_rows[point]);
-        }
-    }
-    return rows;
-}
-
 void AnalysisChartWidget::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event)
@@ -232,12 +220,24 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
     } else if (event->button() == Qt::LeftButton) {
         if ((selection_end_ - selection_start_).manhattanLength() > 8
             && !model_.values.empty()) {
+            // 与 hit_test 相同的映射（数据范围 + zoom + pan），框选在缩放/平移下不错位。
             const QRectF plot = rect().adjusted(58.0, 42.0, -96.0, -48.0);
-            const double denominator = std::max(1.0, plot.width());
+            const auto x_at = [&](std::size_t index) {
+                return model_.x_values.size() == model_.values.size()
+                    ? model_.x_values[index] : static_cast<double>(index);
+            };
+            ChartCoordinateMapper mapper(plot);
+            mapper.set_data_range(
+                x_at(0), std::max(x_at(0) + 1.0, x_at(model_.values.size() - 1)),
+                0.0, 1.0);
+            mapper.zoom(model_.zoom_factor, plot.center());
+            mapper.pan(model_.pan_offset);
             const auto to_index = [&](int x) {
-                const double ratio = std::clamp((x - plot.left()) / denominator, 0.0, 1.0);
-                return static_cast<std::size_t>(
-                    std::llround(ratio * static_cast<double>(model_.values.size() - 1)));
+                const double data_x =
+                    mapper.to_data(QPointF(static_cast<double>(x), 0.0)).x();
+                const double clamped = std::clamp(
+                    data_x, 0.0, static_cast<double>(model_.values.size() - 1));
+                return static_cast<std::size_t>(std::llround(clamped));
             };
             const std::size_t first = std::min(to_index(selection_start_.x()),
                                                to_index(selection_end_.x()));
