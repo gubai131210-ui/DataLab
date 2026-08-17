@@ -165,6 +165,7 @@ struct AnalysisSpec {
 - 协议加 `schema_version` 字段，C++ 侧校验；stdout 非 JSON 时给出明确错误；
 - QProcess 移到 `QtConcurrent`/线程，UI 不阻塞（当前 `waitForFinished(120000)` 冻结界面）；
 - 部署：瘦 venv（pandas+openpyxl+xlrd）或 PyInstaller 单文件；`requirements.txt` 拆分 `requirements-runtime.txt`（导入用）与 `requirements-dev.txt`（统计工具预留）。
+- **补 `PythonTableImporter` 自动化测试**（当前缺失）：至少覆盖 CSV 回退路径、进程失败/非零退出、stdout 非 JSON、error 字段透传四类用例（可用假的 python 脚本桩替代真实 pandas）。
 
 ### 4.2 序列化声明式化
 
