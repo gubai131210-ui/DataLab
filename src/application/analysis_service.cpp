@@ -1,6 +1,7 @@
 #include "application/analysis_service.h"
 #include "application/chart_pages.h"
 #include "application/column_assembly.h"
+#include "application/doe_pages.h"
 #include "application/output_builder.h"
 
 #include "domain/column_extract.h"
@@ -1830,177 +1831,7 @@ OutputPage AnalysisService::doe_factorial(
         const auto fit = datalab::domain::statistics::fit_response_analysis(
             imported_design, responses,
             column_label(table, *configuration.doe_response_column));
-        OutputPage page;
-        page.id = new_id("doe_response");
-        page.title = "DOE 响应分析";
-        page.method_name = "2-Level Factorial Response Analysis";
-        page.configuration = configuration;
-        page.parameter_summary = "响应 = "
-            + column_label(table, *configuration.doe_response_column)
-            + "    因子数 = "
-            + std::to_string(imported_design.factors.size())
-            + "    有效运行数 = " + std::to_string(fit.residuals.size());
-        page.diagnostics = imported_design.diagnostics;
-        page.diagnostics.insert(page.diagnostics.end(), fit.diagnostics.cbegin(),
-                                fit.diagnostics.cend());
-        StatisticTable coefficients;
-        coefficients.title = "系数与效应";
-        coefficients.headers = {"Term", "Coefficient", "Effect"};
-        for (std::size_t index = 0; index < fit.term_names.size(); ++index) {
-            coefficients.rows.push_back({
-                fit.term_names[index], format_number(fit.coefficients[index]),
-                format_number(fit.effects[index])});
-        }
-        page.tables.push_back(std::move(coefficients));
-        StatisticTable anova;
-        anova.title = "DOE ANOVA";
-        anova.headers = {"Source", "SS", "DF", "MS", "F", "P-Value"};
-        for (const auto& row : fit.anova_rows) {
-            anova.rows.push_back({row.source, format_number(row.sum_of_squares),
-                std::to_string(row.degrees_of_freedom), format_number(row.mean_square),
-                format_number(row.f_statistic), format_optional(row.p_value)});
-        }
-        page.tables.push_back(std::move(anova));
-        if (!fit.model_anova_rows.empty() || !fit.block_anova_rows.empty()) {
-            StatisticTable model_terms;
-            model_terms.title = "模型项与区组";
-            model_terms.headers = {"Source", "SS", "DF", "MS", "F", "P-Value"};
-            for (const auto& row : fit.model_anova_rows) {
-                model_terms.rows.push_back({
-                    row.source, format_number(row.sum_of_squares),
-                    std::to_string(row.degrees_of_freedom),
-                    format_number(row.mean_square), format_number(row.f_statistic),
-                    format_optional(row.p_value)});
-            }
-            for (const auto& row : fit.block_anova_rows) {
-                model_terms.rows.push_back({
-                    "Block: " + row.source, format_number(row.sum_of_squares),
-                    std::to_string(row.degrees_of_freedom),
-                    format_number(row.mean_square), format_number(row.f_statistic),
-                    format_optional(row.p_value)});
-            }
-            page.tables.push_back(std::move(model_terms));
-        }
-        if (fit.pure_error_anova_row.has_value()
-            || fit.lack_of_fit_anova_row.has_value()) {
-            StatisticTable fit_diagnostics;
-            fit_diagnostics.title = "纯误差与失拟";
-            fit_diagnostics.headers = {"Source", "SS", "DF", "MS", "F", "P-Value"};
-            const auto append_diagnostic_row = [&fit_diagnostics](
-                const datalab::domain::statistics::DoeAnovaRow& row) {
-                fit_diagnostics.rows.push_back({
-                    row.source, format_number(row.sum_of_squares),
-                    std::to_string(row.degrees_of_freedom),
-                    format_number(row.mean_square), format_number(row.f_statistic),
-                    format_optional(row.p_value)});
-            };
-            if (fit.pure_error_anova_row.has_value()) {
-                append_diagnostic_row(*fit.pure_error_anova_row);
-            }
-            if (fit.lack_of_fit_anova_row.has_value()) {
-                append_diagnostic_row(*fit.lack_of_fit_anova_row);
-            }
-            page.tables.push_back(std::move(fit_diagnostics));
-        }
-        if (fit.center_points.count > 0) {
-            StatisticTable curvature;
-            curvature.title = "中心点与曲率";
-            curvature.headers = {"Center N", "Center Mean", "Factorial Mean",
-                                 "Difference", "SS", "DF", "F", "P-Value"};
-            curvature.rows.push_back({
-                std::to_string(fit.center_points.count),
-                format_number(fit.center_points.mean),
-                format_number(fit.curvature.factorial_mean),
-                format_number(fit.curvature.difference),
-                format_number(fit.curvature.sum_of_squares),
-                std::to_string(fit.curvature.degrees_of_freedom),
-                format_number(fit.curvature.f_statistic),
-                format_optional(fit.curvature.p_value)});
-            page.tables.push_back(std::move(curvature));
-        }
-        StatisticTable residuals;
-        residuals.title = "残差诊断";
-        residuals.headers = {"Run", "Response", "Fitted", "Residual", "Standardized Residual"};
-        for (const auto& row : fit.residuals) {
-            residuals.rows.push_back({std::to_string(row.run_index),
-                format_number(row.response), format_number(row.fitted),
-                format_number(row.residual), format_number(row.standardized_residual)});
-        }
-        page.tables.push_back(std::move(residuals));
-        for (std::size_t factor = 0; factor < imported_design.factors.size(); ++factor) {
-            PlotSpec plot;
-            plot.kind = PlotKind::scatter;
-            plot.title = "主效应图 - " + imported_design.factors[factor].name;
-            plot.x_axis_title = imported_design.factors[factor].name;
-            plot.y_axis_title = column_label(table, *configuration.doe_response_column);
-            plot.x_values = {-1.0, 1.0};
-            plot.values = {0.0, 0.0};
-            double low_sum = 0.0;
-            double high_sum = 0.0;
-            std::size_t low_count = 0;
-            std::size_t high_count = 0;
-            for (std::size_t row = 0; row < imported_design.runs.size(); ++row) {
-                if (!std::isfinite(responses[row])) {
-                    continue;
-                }
-                if (imported_design.runs[row].coded_levels[factor] < 0) {
-                    low_sum += responses[row];
-                    ++low_count;
-                } else if (imported_design.runs[row].coded_levels[factor] > 0) {
-                    high_sum += responses[row];
-                    ++high_count;
-                }
-            }
-            plot.values = {low_count == 0 ? 0.0 : low_sum / low_count,
-                           high_count == 0 ? 0.0 : high_sum / high_count};
-            page.plots.push_back(std::move(plot));
-        }
-        for (std::size_t first = 0; first < imported_design.factors.size(); ++first) {
-            for (std::size_t second = first + 1;
-                 second < imported_design.factors.size(); ++second) {
-                PlotSpec plot;
-                plot.kind = PlotKind::scatter;
-                plot.title = "交互作用图 - "
-                    + imported_design.factors[first].name + "*"
-                    + imported_design.factors[second].name;
-                plot.x_axis_title = imported_design.factors[first].name
-                    + "（按 " + imported_design.factors[second].name + " 分组）";
-                plot.y_axis_title = column_label(table, *configuration.doe_response_column);
-                plot.x_values = {-1.0, 1.0, -1.0, 1.0};
-                plot.values.assign(4, 0.0);
-                std::array<double, 4> sums{};
-                std::array<std::size_t, 4> counts{};
-                for (std::size_t row = 0; row < imported_design.runs.size(); ++row) {
-                    if (!std::isfinite(responses[row])) {
-                        continue;
-                    }
-                    const int a = imported_design.runs[row].coded_levels[first];
-                    const int b = imported_design.runs[row].coded_levels[second];
-                    const std::size_t index = (b > 0 ? 2U : 0U) + (a > 0 ? 1U : 0U);
-                    sums[index] += responses[row];
-                    ++counts[index];
-                }
-                for (std::size_t index = 0; index < 4; ++index) {
-                    plot.values[index] = counts[index] == 0 ? 0.0
-                        : sums[index] / static_cast<double>(counts[index]);
-                }
-                datalab::domain::PlotSeries low_group;
-                low_group.role = datalab::domain::PlotSeriesRole::interaction_first;
-                low_group.label = imported_design.factors[second].name + " = Low";
-                low_group.x_values = {-1.0, 1.0};
-                low_group.values = {plot.values[0], plot.values[1]};
-                low_group.show_points = true;
-                datalab::domain::PlotSeries high_group;
-                high_group.role = datalab::domain::PlotSeriesRole::interaction_second;
-                high_group.label = imported_design.factors[second].name + " = High";
-                high_group.x_values = {-1.0, 1.0};
-                high_group.values = {plot.values[2], plot.values[3]};
-                high_group.show_points = true;
-                plot.series = {std::move(low_group), std::move(high_group)};
-                page.plots.push_back(std::move(plot));
-            }
-        }
-        return page;
+        return doe_response_page(table, configuration, imported_design, responses, fit);
     }
     std::vector<datalab::domain::statistics::DoeFactor> factors;
     for (std::size_t index = 0; index < configuration.doe_factor_names.size(); ++index) {
@@ -2018,31 +1849,7 @@ OutputPage AnalysisService::doe_factorial(
         configuration.doe_block_count,
         configuration.doe_randomize,
         configuration.doe_random_seed});
-    OutputPage page;
-    page.id = new_id("doe");
-    page.title = "2 水平全因子设计";
-    page.method_name = "2-Level Factorial Design";
-    page.configuration = configuration;
-    page.parameter_summary = "因子数 = " + std::to_string(factors.size())
-        + "    运行数 = " + std::to_string(design.runs.size());
-    page.diagnostics = design.diagnostics;
-    StatisticTable design_table;
-    design_table.title = "设计矩阵";
-    design_table.headers = {"Standard Order", "Run Order", "Block"};
-    for (const auto& factor : factors) {
-        design_table.headers.push_back(factor.name);
-    }
-    for (const auto& run : design.runs) {
-        std::vector<std::string> row = {
-            std::to_string(run.standard_order), std::to_string(run.run_order),
-            std::to_string(run.block)};
-        for (const int level : run.coded_levels) {
-            row.push_back(std::to_string(level));
-        }
-        design_table.rows.push_back(std::move(row));
-    }
-    page.tables.push_back(std::move(design_table));
-    return page;
+    return doe_design_page(configuration, factors, design);
 }
 
 OutputPage AnalysisService::msa_type1(

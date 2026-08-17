@@ -92,6 +92,8 @@ add_library(datalab_application STATIC
     src/application/column_assembly.h
     src/application/chart_pages.cpp
     src/application/chart_pages.h
+    src/application/doe_pages.cpp
+    src/application/doe_pages.h
 )
 
 target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
