@@ -1,7 +1,7 @@
 # DataLab 重构会话交接文档
 
 > 本文件记录截至当前会话的完整工作状态，供**新对话**无缝续接。新对话第一条消息建议：
-> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从**阶段 2.4 文案分离**或**阶段 3.4 剩余**（output_workspace 与 report_preview_dialog 共享渲染器 / 行排除 undo）开始。」
+> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从**阶段 5 剩余**（PlotSpec/ChartModel 合一 或 InterpretationService 类型化）或**阶段 6 工程化**开始。」
 
 ---
 
@@ -13,7 +13,7 @@
 | 产品 | 模仿 Minitab 的汽车质量分析工具（46 种分析） |
 | 技术栈 | Qt 6.11.1 / MinGW 13.1 / C++17 / CMake / SQLite；Python(pandas) 仅用于 Excel 导入桥 |
 | 规模 | 约 20,500 行 C++（src+tests），12 个测试目标 |
-| 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 10 个重构提交）；无远端 |
+| 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 14 个重构提交）；无远端 |
 
 ### 构建与测试（每次改动后必须全绿）
 
@@ -32,6 +32,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check_layering.ps1
 ## 2. 当前 git 历史（工作区干净）
 
 ```
+a9d893b fix(ui): 图表框选在缩放/平移下不错位 + 删 thread_local 死代码
+6c5789b docs: 阶段 3.4 完成 + 阶段 2.4 重新定界（等待 i18n 决策）
+c031836 feat(ui): 行排除与清除排除纳入 undo 栈
+bde8a03 refactor(ui): output_workspace 与 report_preview_dialog 共享页面渲染器
 1cc6bbd fix(application): align_complete_rows 行主序修正 + 补 2.3 服务层测试
 30e14ed refactor(application): capability 家族与 logistic_regression 薄壳化
 74e9a55 refactor(application): complete-case 行对齐下沉 column_assembly
@@ -83,6 +87,12 @@ e44552a docs: 补充图表子系统 thread_local 气味至已知缺陷清单
 - **补 4 条服务层测试**（quality_statistics_test）：`buildsDoeFactorialServiceOutput`（设计/响应两分支）、`buildsRegressionServiceOutput`、`buildsLogisticServiceOutput`、`buildsPairedTServiceOutput`——覆盖此前无兜底的抽取路径。测试数据教训：完全可分数据致 IRLS 秩亏（rank_deficient_design）、4 运行=4 参数致零误差自由度（拟合拒绝），均需规避
 - `analysis_service.cpp` 3486 → 3313 行；构建全绿 + ctest 12/12 + layering 通过
 
+### 阶段 3.4 剩余 + 阶段 5 已知 bug（`bde8a03`/`c031836`/`a9d893b`）
+- **共享页面渲染器**：新增 `src/ui/page_renderer.{h,cpp}` 统一标题/方法卡/解释/表格/诊断/图渲染（`PageRenderOptions` 参数化：interactive_charts 交互、include_method 方法卡）；`output_workspace.cpp` 301 → 132 行、`report_preview_dialog.cpp` 199 → 52 行；`analysis_icon_resource` 收敛为 `page_renderer::icon_resource`（两处原完全重复）
+- **行排除 undo**：新增 `CleaningChangeCommand`（前后 `cleaning_operations_` 快照 + 应用器 lambda，命令不依赖 MainWindow 类型）；`MainWindow::restore_cleaning_operations` 统一重放；排除/清除可 Ctrl+Z/Ctrl+Y
+- **bug 修复**：① 框选 `to_index` 原忽略 zoom/pan 线性映射，缩放/平移后选中错误区间——改为复用 `hit_test` 同款 `ChartCoordinateMapper`（数据范围 + zoom + pan）求数据 X 再钳制取整；② 删除无调用方的 `selected_rows()`（`static thread_local` 引用返回）——信号路径本就按值发送；③ **t_power ensure_data 语义确认无问题**：`AnalysisService::t_power` 不使用数据表（未命名参数），`requires_data=false` 正确
+- 构建全绿 + ctest 12/12 + layering 通过
+
 ### 阶段 3.1 命令化（`47fd2c8`）
 - 新增 `src/ui/analysis_commands.{h,cpp}`（1498 行）：**46 项 `AnalysisCommand` 数据驱动表**——id/菜单文字/对话框标题/menu_path/图标/角色与输入规格/`apply`（配置构建）/`run`（`AnalysisService::xxx`）；doe_factorial 与 doe_response 共用 `doe_apply`/`doe_run`；t_power `requires_data=false`（不调 `ensure_data()`）
 - **删 MainWindow 的 94 行 `run_analysis` if/else + 45 个 `run_*`（约 1600 行）**，只留通用 `run_from_spec(id)`：ensure_data（按需）→ 建对话框（命令表提供角色/输入/图标）→ apply 填配置（校验失败返回 `AnalysisApplyResult`，error_title 非空弹框、为空静默中止，忠实保留原行为差异）→ publish_page
@@ -124,17 +134,17 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 
 ## 5. 剩余工作（按优先级）
 
-### 🔴 最高价值：阶段 2.4 文案分离 或 阶段 3.4 剩余（下一轮主攻）
-- **2.4 文案分离**：4011 个 CJK 字符收进 `src/application/messages.h`（改动面大、为 i18n 铺路；注意 analysis_commands.cpp 的对话框文案在 ui 层，需一并规划归属）
-- **3.4 剩余**：`output_workspace` 与 `report_preview_dialog` 重复页面渲染抽共享渲染器；行排除纳入 undo 栈
+### 🔴 最高价值：阶段 5 剩余 或 阶段 6 工程化（下一轮主攻）
+- **PlotSpec / ChartModel 合一**：4 个视图状态字段（selected/hovered/zoom/pan）收进 `ChartViewState`，明确"数据 vs 视图"边界
+- **InterpretationService 类型化**：消灭按表头字符串抓取的隐藏契约（`number_after`/`number_in_column` 仍用 `std::stod`）；核对覆盖不一致（descriptive/chi_square/regression 只落到兜底文案）
+- **阶段 6 工程化**：i18n 决策（见 2.4）、CMake 测试目标 function() 化、CI（GitHub Actions + Qt 6.11 + MinGW + ctest）、ADR 补齐、test-results.xml 方差差异核对
 
 ### 阶段 2 剩余
-- 2.3 已完成 ✅：doe/capability/sixpack/logistic/regression 对齐薄壳化；剩余方法（regression 147、arima 149、msa_type1 120、reliability 140）为 bespoke 单表/单图内容，薄壳化收益低不再强行抽取
-- 按 by_column 分组（descriptive/one_way_anova 等）仍内联，随 2.4/后续抽取下沉
+- 2.3/3.1/3.4 已完成 ✅（见 §3）；剩余方法为 bespoke 内容不再强行抽取
 
-### 阶段 3 剩余
-- **3.2 配置构造工厂**（待评估）：字段填充已随 3.1 迁入 `analysis_commands` 各 `apply` lambda（ui 层直接读对话框，耦合已局限在 ui 层）；是否下沉 application 层 `AnalysisConfigurationFactory`（纯数据入参）收益有限，倾向不做
-- **3.4 剩余**：见上（共享渲染器、行排除 undo）
+### 阶段 2.4 文案分离（重新定界 ⏸，等待阶段 6 i18n 决策）
+- 证据：`error_page` 44 处、`analysis_name` 39 处全部内容唯一——集中化零去重且调用点变长；i18n 形态（tr() 原位 vs 单语声明）未定，两种都可能推翻 messages.h 大迁移
+- 触发条件：阶段 6 i18n 决策确定后按所选形态一次执行（详见 refactor-plan 2.4）
 
 ### 阶段 4：Python 桥与序列化
 - Python 桥：脚本入 Qt 资源/随 install（删 `DATALAB_SOURCE_DIR` 依赖）、QProcess 异步化、协议版本化、瘦 venv/PyInstaller、补 `PythonTableImporter` 测试（4 类用例）
@@ -181,6 +191,7 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 | `src/application/output_builder.{h,cpp}` | 数字格式/错误页/通用表格构建器 |
 | `src/application/column_assembly.{h,cpp}` | 子组构建/列选择/complete-case 行对齐（`align_complete_rows`，行主序） |
 | `src/ui/analysis_commands.{h,cpp}` | **46 项分析命令数据表**（3.1 产物：菜单/对话框/图标/apply/run 单一来源） |
+| `src/ui/page_renderer.{h,cpp}` | 分析页共享渲染器（3.4 产物：workspace/预览共用，选项参数化交互） |
 | `src/infrastructure/data_import_service.{h,cpp}` | 导入分派门面 |
 | `src/ui/mainwindow.cpp` | 842 行（3.1 命令化后只剩通用 run_from_spec 与界面装配） |
 | `tools/check_layering.ps1` | 分层 include 检查 |

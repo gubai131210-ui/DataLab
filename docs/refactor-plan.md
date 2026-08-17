@@ -223,7 +223,7 @@ struct FieldSpec { QString key; /* 成员访问器 */ };
 
 - **`PlotSpec`/`ChartModel` 合一**：优先低成本方案——把 4 个视图状态字段（`chart_model.h:63-64/82-83`：selected/hovered/zoom/pan）收进 `ChartViewState`，明确"数据 vs 视图"边界；激进方案让渲染器直接消费 domain `PlotSpec`。
 - **`InterpretationService` 类型化**：analysis 输出结构化字段（如 `significant_terms`、`shape_parameter`），不再按表头字符串抓取；删除 `count_column_values` 死代码。顺带核对**覆盖不一致**：descriptive / chi_square / regression 等目前只落到兜底文案，类型化时逐分析确认解释覆盖。
-- **修已知 bug**：`analysis_chart_widget` 框选 `to_index` 补 zoom/pan 换算（235-241 行 vs 431-435 行）；`run_t_power` 的 `ensure_data()` 语义确认；`analysis_chart_widget::selected_rows`（78-88 行）返回 `static thread_local` 向量引用，改为成员或显式传参。
+- **修已知 bug**（`a9d893b` ✅）：`analysis_chart_widget` 框选 `to_index` 改为复用 `hit_test` 同款 `ChartCoordinateMapper`（数据范围 + zoom + pan），缩放/平移下选中区间不再错位；删除无调用方的 `selected_rows()`（`static thread_local` 引用返回）；`run_t_power` 的 `ensure_data()` 语义确认无问题——`AnalysisService::t_power` 不使用数据表（未命名参数），`requires_data=false` 正确。
 
 ---
 
