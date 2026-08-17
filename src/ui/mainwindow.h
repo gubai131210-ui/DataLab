@@ -40,6 +40,8 @@ private:
     QStringList column_labels() const;
     datalab::domain::AnalysisConfiguration base_configuration() const;
     void publish_page(const datalab::domain::OutputPage& page);
+    void restore_cleaning_operations(
+        const std::vector<datalab::domain::CleaningOperation>& operations);
     std::vector<std::size_t> excluded_rows() const;
     bool eventFilter(QObject* watched, QEvent* event) override;
     void push_table_change(

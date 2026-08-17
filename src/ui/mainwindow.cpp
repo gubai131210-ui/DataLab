@@ -86,6 +86,38 @@ private:
     bool already_applied_ = false;
 };
 
+// 清洗操作（行排除/清除排除）undo：保存前后 cleaning_operations_ 快照，
+// undo/redo 经调用方提供的应用器重放（MainWindow 内构造 lambda 访问私有状态）。
+class CleaningChangeCommand final : public QUndoCommand {
+public:
+    CleaningChangeCommand(
+        std::function<void(const std::vector<datalab::domain::CleaningOperation>&)> apply,
+        std::vector<datalab::domain::CleaningOperation> before,
+        std::vector<datalab::domain::CleaningOperation> after,
+        const QString& text)
+        : apply_(std::move(apply))
+        , before_(std::move(before))
+        , after_(std::move(after))
+    {
+        setText(text);
+    }
+
+    void undo() override
+    {
+        apply_(before_);
+    }
+
+    void redo() override
+    {
+        apply_(after_);
+    }
+
+private:
+    std::function<void(const std::vector<datalab::domain::CleaningOperation>&)> apply_;
+    std::vector<datalab::domain::CleaningOperation> before_;
+    std::vector<datalab::domain::CleaningOperation> after_;
+};
+
 }  // namespace
 
 MainWindow::MainWindow(QWidget *parent)
@@ -794,8 +826,15 @@ void MainWindow::exclude_selected_row()
             rows.push_back(row);
         }
     }
-    cleaning_operations_.push_back({"exclude_row", "用户从分析中排除选中行。", rows});
-    worksheet_model_->set_excluded_rows(excluded_rows());
+    const std::vector<datalab::domain::CleaningOperation> before = cleaning_operations_;
+    std::vector<datalab::domain::CleaningOperation> after = before;
+    after.push_back({"exclude_row", "用户从分析中排除选中行。", rows});
+    // push() 立即调用 redo() 重放 after，纳入 undo 栈后可撤销。
+    undo_stack_->push(new CleaningChangeCommand(
+        [this](const std::vector<datalab::domain::CleaningOperation>& operations) {
+            restore_cleaning_operations(operations);
+        },
+        before, std::move(after), QStringLiteral("排除行")));
     statusBar()->showMessage(
         QStringLiteral("已标记排除 %1 行，原始数据未修改。")
             .arg(static_cast<qulonglong>(rows.size())));
@@ -803,14 +842,27 @@ void MainWindow::exclude_selected_row()
 
 void MainWindow::clear_exclusions()
 {
-    cleaning_operations_.erase(
-        std::remove_if(cleaning_operations_.begin(), cleaning_operations_.end(),
+    const std::vector<datalab::domain::CleaningOperation> before = cleaning_operations_;
+    std::vector<datalab::domain::CleaningOperation> after = before;
+    after.erase(
+        std::remove_if(after.begin(), after.end(),
                        [](const datalab::domain::CleaningOperation& operation) {
                            return operation.operation == "exclude_row";
                        }),
-        cleaning_operations_.end());
-    worksheet_model_->set_excluded_rows({});
+        after.end());
+    undo_stack_->push(new CleaningChangeCommand(
+        [this](const std::vector<datalab::domain::CleaningOperation>& operations) {
+            restore_cleaning_operations(operations);
+        },
+        before, std::move(after), QStringLiteral("清除排除标记")));
     statusBar()->showMessage(QStringLiteral("已清除排除标记，原始数据未修改。"));
+}
+
+void MainWindow::restore_cleaning_operations(
+    const std::vector<datalab::domain::CleaningOperation>& operations)
+{
+    cleaning_operations_ = operations;
+    worksheet_model_->set_excluded_rows(excluded_rows());
 }
 
 void MainWindow::export_pdf()
