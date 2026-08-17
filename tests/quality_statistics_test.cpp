@@ -58,9 +58,13 @@ private slots:
     void detectsLaneySpecialCauseTests();
     void buildsLaneyOutput();
     void buildsCapabilitySixpack();
+    void buildsDoeFactorialServiceOutput();
     void calculatesParetoPercentages();
     void combinesParetoOther();
     void buildsParetoOutput();
+    void buildsPairedTServiceOutput();
+    void buildsRegressionServiceOutput();
+    void buildsLogisticServiceOutput();
     void calculatesCorrelation();
     void calculatesTTests();
     void calculatesOneWayAnova();
@@ -659,6 +663,117 @@ void QualityStatisticsTest::calculatesNextBatchAlgorithms()
               0.0, 20.0, 0.0, 1.0}});
     QCOMPARE(optimized.candidates.size(), std::size_t{4});
     QVERIFY(optimized.best_candidate.has_value());
+}
+
+void QualityStatisticsTest::buildsDoeFactorialServiceOutput()
+{
+    // 设计矩阵分支：2 因子无响应列 → 4 次运行。
+    datalab::domain::DataTable design_table;
+    design_table.columns = {"X"};
+    design_table.rows = {{"1"}, {"2"}};
+    datalab::domain::AnalysisConfiguration design_configuration;
+    design_configuration.doe_factor_names = {"Temperature", "Pressure"};
+    design_configuration.doe_low_levels = {"-1", "-1"};
+    design_configuration.doe_high_levels = {"+1", "+1"};
+    design_configuration.doe_center_point_count = 0;
+    design_configuration.doe_block_count = 1;
+    design_configuration.doe_randomize = false;
+    const auto design_page = datalab::application::AnalysisService::doe_factorial(
+        design_table, design_configuration);
+    QCOMPARE(design_page.method_name, std::string{"2-Level Factorial Design"});
+    QCOMPARE(design_page.tables.size(), std::size_t{1});
+    QCOMPARE(design_page.tables.front().title, std::string{"设计矩阵"});
+    QCOMPARE(design_page.tables.front().headers.size(), std::size_t{5});
+    QCOMPARE(design_page.tables.front().headers[3], std::string{"Temperature"});
+    QCOMPARE(design_page.tables.front().rows.size(), std::size_t{4});
+
+    // 响应分析分支：8 运行（4 角点 ×2 次重复，精确线性响应）→ 4 张表 + 3 张图。
+    datalab::domain::DataTable table;
+    table.columns = {"A", "B", "Y"};
+    table.rows = {
+        {"-1", "-1", "-3.5"}, {"1", "-1", "-0.5"},
+        {"-1", "1", "1.5"}, {"1", "1", "6.5"},
+        {"-1", "-1", "-3.5"}, {"1", "-1", "-0.5"},
+        {"-1", "1", "1.5"}, {"1", "1", "6.5"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.doe_factor_columns = {0, 1};
+    configuration.doe_response_column = 2;
+    const auto page = datalab::application::AnalysisService::doe_factorial(table, configuration);
+    QCOMPARE(page.method_name, std::string{"2-Level Factorial Response Analysis"});
+    QVERIFY(page.id.rfind("doe_response", 0) == 0);
+    QCOMPARE(page.tables.size(), std::size_t{5});
+    QCOMPARE(page.tables[0].title, std::string{"系数与效应"});
+    QCOMPARE(page.tables[0].rows.size(), std::size_t{4});
+    QCOMPARE(page.tables[1].title, std::string{"DOE ANOVA"});
+    QCOMPARE(page.tables[2].title, std::string{"模型项与区组"});
+    QCOMPARE(page.tables[2].rows.size(), std::size_t{3});
+    QCOMPARE(page.tables[3].title, std::string{"纯误差与失拟"});
+    QCOMPARE(page.tables[4].title, std::string{"残差诊断"});
+    QCOMPARE(page.tables[4].rows.size(), std::size_t{8});
+    QCOMPARE(page.plots.size(), std::size_t{3});
+    QVERIFY(page.parameter_summary.find("有效运行数 = 8") != std::string::npos);
+    // 系数表项名（doe_pages 组装内容）：Constant + 因子名（column_label 带列号前缀）。
+    QCOMPARE(page.tables[0].rows[0][0], std::string{"Constant"});
+    QCOMPARE(page.tables[0].rows[1][0], std::string{"C1  A"});
+    QCOMPARE(page.tables[0].rows[2][0], std::string{"C2  B"});
+    QCOMPARE(page.tables[0].rows[3][0], std::string{"C1  A*C2  B"});
+}
+
+void QualityStatisticsTest::buildsPairedTServiceOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Before", "After"};
+    table.rows = {{"1", "2"}, {"2", "3"}, {"3", "4"}, {"4", "5"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0, 1};
+    const auto page = datalab::application::AnalysisService::paired_t(table, configuration);
+    QCOMPARE(page.method_name, std::string{"Paired t"});
+    QCOMPARE(page.tables.size(), std::size_t{1});
+    QCOMPARE(page.tables.front().title, std::string{"配对差值统计"});
+    QCOMPARE(page.tables.front().rows.size(), std::size_t{1});
+    QCOMPARE(page.tables.front().rows.front()[0], std::string{"4"});
+    QCOMPARE(page.plots.size(), std::size_t{1});
+}
+
+void QualityStatisticsTest::buildsRegressionServiceOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"X", "Y"};
+    table.rows = {{"1", "2"}, {"2", "4"}, {"3", "6"}, {"4", "8"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {1, 0};
+    const auto page = datalab::application::AnalysisService::regression(table, configuration);
+    QCOMPARE(page.method_name, std::string{"Linear Regression"});
+    QCOMPARE(page.tables.size(), std::size_t{4});
+    QCOMPARE(page.tables[0].title, std::string{"模型摘要"});
+    QCOMPARE(page.tables[1].title, std::string{"系数"});
+    QCOMPARE(page.tables[1].rows.size(), std::size_t{2});
+    QCOMPARE(page.plots.size(), std::size_t{3});
+    // 完全线性拟合：R-sq = 1。
+    QCOMPARE(page.tables[0].rows.front()[1], std::string{"1"});
+}
+
+void QualityStatisticsTest::buildsLogisticServiceOutput()
+{
+    // 非完全可分数据（X=4 的反转打破可分性），避免 IRLS 秩亏/不收敛。
+    datalab::domain::DataTable table;
+    table.columns = {"Y", "X"};
+    table.rows = {{"0", "1"}, {"0", "2"}, {"1", "3"}, {"0", "4"},
+                  {"1", "5"}, {"1", "6"}, {"1", "7"}, {"1", "8"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.logistic_response_column = 0;
+    configuration.logistic_predictor_columns = {1};
+    const auto page =
+        datalab::application::AnalysisService::logistic_regression(table, configuration);
+    QCOMPARE(page.method_name, std::string{"Binary Logistic Regression"});
+    QCOMPARE(page.tables.size(), std::size_t{3});
+    QCOMPARE(page.tables[0].title, std::string{"模型摘要"});
+    QCOMPARE(page.tables[1].title, std::string{"系数与 Odds Ratio"});
+    QCOMPARE(page.tables[2].title, std::string{"拟合与残差"});
+    QCOMPARE(page.tables[2].rows.size(), std::size_t{8});
+    QCOMPARE(page.plots.size(), std::size_t{1});
+    QVERIFY(page.tables[0].rows.front()[2] == std::string{"是"}
+            || page.tables[0].rows.front()[2] == std::string{"否"});
 }
 
 QTEST_APPLESS_MAIN(QualityStatisticsTest)

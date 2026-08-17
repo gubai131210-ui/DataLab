@@ -28,7 +28,7 @@ std::optional<SubgroupInput> build_strict_subgroups(
 std::size_t first_variable(const domain::AnalysisConfiguration& configuration);
 
 // 按源行对齐若干数值列（complete-case）：仅保留所有列在该源行都有值的行，
-// 输出按第一列源行升序；aligned[i][j] = 第 j 列的第 i 个对齐值。
+// 输出按第一列源行升序；aligned[i][j] = 第 i 个对齐观测的第 j 列值（行主序）。
 // 语义与原 paired_t/regression 内联实现逐字一致。
 std::vector<std::vector<double>> align_complete_rows(
     const std::vector<domain::ExtractedNumericColumn>& columns);

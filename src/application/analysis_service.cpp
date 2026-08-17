@@ -669,8 +669,14 @@ OutputPage AnalysisService::paired_t(
     const auto second = extract_numeric_column(
         table, configuration.variable_columns[1], configuration.excluded_rows);
     const auto aligned = align_complete_rows({first, second});
-    const std::vector<double>& first_values = aligned[0];
-    const std::vector<double>& second_values = aligned[1];
+    std::vector<double> first_values;
+    std::vector<double> second_values;
+    first_values.reserve(aligned.size());
+    second_values.reserve(aligned.size());
+    for (const auto& row : aligned) {
+        first_values.push_back(row[0]);
+        second_values.push_back(row[1]);
+    }
     const auto result = datalab::domain::statistics::paired_t_test(
         first_values, second_values, configuration.confidence_level,
         parse_alternative(configuration.alternative));
@@ -731,11 +737,13 @@ OutputPage AnalysisService::regression(
     columns.push_back(response);
     columns.insert(columns.end(), predictors.begin(), predictors.end());
     const auto aligned = align_complete_rows(columns);
-    const std::vector<double>& response_values = aligned[0];
+    std::vector<double> response_values;
     std::vector<std::vector<double>> predictor_values;
-    predictor_values.reserve(aligned.size() - 1);
-    for (std::size_t index = 1; index < aligned.size(); ++index) {
-        predictor_values.push_back(aligned[index]);
+    response_values.reserve(aligned.size());
+    predictor_values.reserve(aligned.size());
+    for (const auto& row : aligned) {
+        response_values.push_back(row[0]);
+        predictor_values.emplace_back(row.begin() + 1, row.end());
     }
     std::vector<std::string> labels;
     for (std::size_t index = 1; index < configuration.variable_columns.size(); ++index) {

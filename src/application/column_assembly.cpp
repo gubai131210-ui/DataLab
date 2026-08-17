@@ -83,7 +83,7 @@ std::size_t first_variable(const domain::AnalysisConfiguration& configuration)
 std::vector<std::vector<double>> align_complete_rows(
     const std::vector<domain::ExtractedNumericColumn>& columns)
 {
-    std::vector<std::vector<double>> aligned(columns.size());
+    std::vector<std::vector<double>> aligned;
     if (columns.empty()) {
         return aligned;
     }
@@ -114,9 +114,7 @@ std::vector<std::vector<double>> align_complete_rows(
             row_values.push_back(match->second);
         }
         if (complete) {
-            for (std::size_t column = 0; column < columns.size(); ++column) {
-                aligned[column].push_back(row_values[column]);
-            }
+            aligned.push_back(std::move(row_values));
         }
     }
     return aligned;
