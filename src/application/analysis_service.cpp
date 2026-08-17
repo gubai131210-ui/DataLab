@@ -459,23 +459,9 @@ OutputPage AnalysisService::paired_t(
         table, configuration.variable_columns[0], configuration.excluded_rows);
     const auto second = extract_numeric_column(
         table, configuration.variable_columns[1], configuration.excluded_rows);
-    std::map<std::size_t, double> first_by_row;
-    std::map<std::size_t, double> second_by_row;
-    for (std::size_t index = 0; index < first.values.size(); ++index) {
-        first_by_row[first.source_rows[index]] = first.values[index];
-    }
-    for (std::size_t index = 0; index < second.values.size(); ++index) {
-        second_by_row[second.source_rows[index]] = second.values[index];
-    }
-    std::vector<double> first_values;
-    std::vector<double> second_values;
-    for (const auto& [row, value] : first_by_row) {
-        const auto match = second_by_row.find(row);
-        if (match != second_by_row.end()) {
-            first_values.push_back(value);
-            second_values.push_back(match->second);
-        }
-    }
+    const auto aligned = align_complete_rows({first, second});
+    const std::vector<double>& first_values = aligned[0];
+    const std::vector<double>& second_values = aligned[1];
     const auto result = datalab::domain::statistics::paired_t_test(
         first_values, second_values, configuration.confidence_level,
         parse_alternative(configuration.alternative));
@@ -531,34 +517,16 @@ OutputPage AnalysisService::regression(
         predictors.push_back(extract_numeric_column(
             table, configuration.variable_columns[index], configuration.excluded_rows));
     }
-    std::map<std::size_t, double> response_by_row;
-    for (std::size_t index = 0; index < response.values.size(); ++index) {
-        response_by_row[response.source_rows[index]] = response.values[index];
-    }
-    std::vector<std::map<std::size_t, double>> predictor_by_row(predictors.size());
-    for (std::size_t column = 0; column < predictors.size(); ++column) {
-        for (std::size_t index = 0; index < predictors[column].values.size(); ++index) {
-            predictor_by_row[column][predictors[column].source_rows[index]]
-                = predictors[column].values[index];
-        }
-    }
-    std::vector<double> response_values;
+    std::vector<ExtractedNumericColumn> columns;
+    columns.reserve(predictors.size() + 1);
+    columns.push_back(response);
+    columns.insert(columns.end(), predictors.begin(), predictors.end());
+    const auto aligned = align_complete_rows(columns);
+    const std::vector<double>& response_values = aligned[0];
     std::vector<std::vector<double>> predictor_values;
-    for (const auto& [row, response_value] : response_by_row) {
-        std::vector<double> values;
-        bool complete = true;
-        for (const auto& column : predictor_by_row) {
-            const auto match = column.find(row);
-            if (match == column.end()) {
-                complete = false;
-                break;
-            }
-            values.push_back(match->second);
-        }
-        if (complete) {
-            response_values.push_back(response_value);
-            predictor_values.push_back(values);
-        }
+    predictor_values.reserve(aligned.size() - 1);
+    for (std::size_t index = 1; index < aligned.size(); ++index) {
+        predictor_values.push_back(aligned[index]);
     }
     std::vector<std::string> labels;
     for (std::size_t index = 1; index < configuration.variable_columns.size(); ++index) {

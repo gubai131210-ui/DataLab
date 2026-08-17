@@ -80,4 +80,46 @@ std::size_t first_variable(const domain::AnalysisConfiguration& configuration)
     return configuration.selection.measurement_column;
 }
 
+std::vector<std::vector<double>> align_complete_rows(
+    const std::vector<domain::ExtractedNumericColumn>& columns)
+{
+    std::vector<std::vector<double>> aligned(columns.size());
+    if (columns.empty()) {
+        return aligned;
+    }
+    std::map<std::size_t, double> driver;
+    for (std::size_t index = 0; index < columns[0].values.size(); ++index) {
+        driver[columns[0].source_rows[index]] = columns[0].values[index];
+    }
+    std::vector<std::map<std::size_t, double>> others;
+    others.reserve(columns.size() - 1);
+    for (std::size_t column = 1; column < columns.size(); ++column) {
+        std::map<std::size_t, double> by_row;
+        for (std::size_t index = 0; index < columns[column].values.size(); ++index) {
+            by_row[columns[column].source_rows[index]] = columns[column].values[index];
+        }
+        others.push_back(std::move(by_row));
+    }
+    for (const auto& [row, driver_value] : driver) {
+        std::vector<double> row_values;
+        row_values.reserve(columns.size());
+        row_values.push_back(driver_value);
+        bool complete = true;
+        for (const auto& column : others) {
+            const auto match = column.find(row);
+            if (match == column.end()) {
+                complete = false;
+                break;
+            }
+            row_values.push_back(match->second);
+        }
+        if (complete) {
+            for (std::size_t column = 0; column < columns.size(); ++column) {
+                aligned[column].push_back(row_values[column]);
+            }
+        }
+    }
+    return aligned;
+}
+
 }  // namespace datalab::application
