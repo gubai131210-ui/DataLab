@@ -31,20 +31,22 @@ bool ProjectRepository::save(
         QStringLiteral("datalab_project_%1").arg(reinterpret_cast<quintptr>(this));
     QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connection_name);
     database.setDatabaseName(project_path);
+    QSqlQuery query(database);
 
     auto fail = [&](const QString& message) {
         if (error_message != nullptr) {
             *error_message = message;
         }
+        query.clear();
         database.close();
+        database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connection_name);
         return false;
     };
 
     if (!database.open()) {
         return fail(database.lastError().text());
     }
-
-    QSqlQuery query(database);
     const QStringList schema = {
         QStringLiteral("CREATE TABLE IF NOT EXISTS project_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)"),
         QStringLiteral("CREATE TABLE IF NOT EXISTS raw_columns (position INTEGER PRIMARY KEY, name TEXT NOT NULL)"),
@@ -84,10 +86,17 @@ bool ProjectRepository::save(
         return fail(query.lastError().text());
     }
 
-    query.exec(QStringLiteral("DELETE FROM raw_columns"));
-    query.exec(QStringLiteral("DELETE FROM raw_rows"));
-    query.exec(QStringLiteral("DELETE FROM cleaning_operations"));
-    query.exec(QStringLiteral("DELETE FROM output_pages"));
+    const QStringList cleanup = {
+        QStringLiteral("DELETE FROM raw_columns"),
+        QStringLiteral("DELETE FROM raw_rows"),
+        QStringLiteral("DELETE FROM cleaning_operations"),
+        QStringLiteral("DELETE FROM output_pages")};
+    for (const QString& statement : cleanup) {
+        if (!query.exec(statement)) {
+            database.rollback();
+            return fail(query.lastError().text());
+        }
+    }
 
     query.prepare(QStringLiteral("INSERT INTO raw_columns (position, name) VALUES (?, ?)"));
     for (std::size_t index = 0; index < table.columns.size(); ++index) {

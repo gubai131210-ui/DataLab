@@ -3,10 +3,9 @@
 #include "application/analysis_service.h"
 #include "application/analysis_catalog.h"
 #include "application/interpretation_service.h"
-#include "infrastructure/csv_importer.h"
+#include "infrastructure/data_import_service.h"
 #include "infrastructure/pdf_report_writer.h"
 #include "infrastructure/project_repository.h"
-#include "infrastructure/python_table_importer.h"
 #include "ui/analysis_setup_dialog.h"
 #include "ui/command_registry.h"
 #include "ui/output_workspace.h"
@@ -739,11 +738,8 @@ void MainWindow::import_data()
     }
 
     QString error_message;
-    const bool is_excel = file_path.endsWith(QStringLiteral(".xlsx"), Qt::CaseInsensitive)
-        || file_path.endsWith(QStringLiteral(".xls"), Qt::CaseInsensitive);
-    const auto imported = is_excel
-        ? datalab::infrastructure::PythonTableImporter::import_file(file_path, &error_message)
-        : datalab::infrastructure::CsvImporter::import_file(file_path, &error_message);
+    const auto imported = datalab::infrastructure::DataImportService::import_file(
+        file_path, &error_message);
     if (!imported.has_value()) {
         QMessageBox::critical(this, QStringLiteral("导入失败"), error_message);
         return;

@@ -150,9 +150,8 @@ struct AnalysisSpec {
 
 ### 3.3 补应用层门面
 
-- `ProjectService`：open/save 编排 `ProjectRepository` + OutputPage 列表（替换 mainwindow.cpp:711/788 的直接调用）；
-- `DataImportService`：按扩展名选择 `CsvImporter`/`PythonTableImporter`（替换 745-746）；
-- `ReportService`：PDF 导出编排（替换 2495）。
+**DataImportService 已实施 ✅**：`src/infrastructure/data_import_service.{h,cpp}`——扩展名分派（.xlsx/.xls → Python 导入器，其余 → CSV 导入器）与错误传递从 mainwindow.cpp:741-746 下沉；mainwindow 不再直接引用 CsvImporter/PythonTableImporter。新增 2 个测试用例（CSV 经服务导入、文件不存在报错）。
+> 说明：`ProjectService`/`ReportService` 暂缓——当前仅是 `ProjectRepository`/`PdfReportWriter` 的一行调用直通，按"删除测试"原则不造浅模块；待 4.3 存储端口（`ProjectStore` 接口 + 迁移）落地时一并引入。
 
 ### 3.4 清理
 
@@ -191,8 +190,8 @@ struct FieldSpec { QString key; /* 成员访问器 */ };
 
 ### 4.3 存储层（配合 ADR #5）
 
-- 抽 `ProjectStore` 端口（application 或 domain 层接口）+ `SQLiteProjectStore` 实现；
-- 修：失败路径 `removeDatabase`（35-41 行）、`DELETE` 返回值检查（87-90 行）、`raw_rows.values_json` 改 JSON（106 行）、补 schema `user_version` 迁移。
+**健壮性修复已实施 ✅**（`project_repository.cpp`）：save() 失败路径补 `removeDatabase`（原 35-41 行，与 load() 对齐）；4 条 `DELETE` 的返回值改为逐一检查、失败即回滚（原 87-90 行）。
+> 剩余：抽 `ProjectStore` 端口 + `SQLiteProjectStore` 实现；`raw_rows.values_json` 列名与管道分隔实现不符（106 行）——改为 JSON 需考虑旧 .dlab 兼容，暂缓；补 schema `user_version` 迁移。
 
 验证：`ctest` 全绿；手工导入 xlsx 一次确认不冻 UI。
 

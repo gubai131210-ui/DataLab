@@ -131,6 +131,8 @@ target_link_libraries(datalab_reporting
 add_library(datalab_infrastructure STATIC
     src/infrastructure/csv_importer.cpp
     src/infrastructure/csv_importer.h
+    src/infrastructure/data_import_service.cpp
+    src/infrastructure/data_import_service.h
     src/infrastructure/project_repository.cpp
     src/infrastructure/project_repository.h
     src/infrastructure/output_serialization.cpp

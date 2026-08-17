@@ -1,5 +1,6 @@
 #include "domain/column_extract.h"
 #include "infrastructure/csv_importer.h"
+#include "infrastructure/data_import_service.h"
 
 #include <QTemporaryFile>
 #include <QtTest/QtTest>
@@ -10,6 +11,8 @@ class ColumnExtractImportTest final : public QObject {
 private slots:
     void rejectsTrailingCharactersInNumericCells();
     void preservesRowsForQuotedCsvFields();
+    void importsCsvThroughService();
+    void reportsMissingFileThroughService();
 };
 
 void ColumnExtractImportTest::rejectsTrailingCharactersInNumericCells()
@@ -50,6 +53,36 @@ void ColumnExtractImportTest::preservesRowsForQuotedCsvFields()
     QCOMPARE(table->rows[1][2], std::string("quoted \"text\""));
     QCOMPARE(table->rows[2].size(), std::size_t{3});
     QVERIFY(!table->import_warnings.empty());
+}
+
+void ColumnExtractImportTest::importsCsvThroughService()
+{
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    const QByteArray content("Part,Length\n"
+                             "A,1.5\n"
+                             "B,2.5\n");
+    QCOMPARE(file.write(content), content.size());
+    QVERIFY(file.flush());
+
+    QString error;
+    const auto table = datalab::infrastructure::DataImportService::import_file(
+        file.fileName(), &error);
+
+    QVERIFY2(table.has_value(), qPrintable(error));
+    QCOMPARE(table->columns.size(), std::size_t{2});
+    QCOMPARE(table->rows.size(), std::size_t{2});
+    QCOMPARE(table->rows[1][1], std::string("2.5"));
+}
+
+void ColumnExtractImportTest::reportsMissingFileThroughService()
+{
+    QString error;
+    const auto table = datalab::infrastructure::DataImportService::import_file(
+        QStringLiteral("nonexistent_data_file.csv"), &error);
+
+    QVERIFY(!table.has_value());
+    QVERIFY(!error.isEmpty());
 }
 
 QTEST_APPLESS_MAIN(ColumnExtractImportTest)
