@@ -14,6 +14,11 @@ struct BoxPlotSummary {
     double median = 0.0;
     double third_quartile = 0.0;
     double maximum = 0.0;
+    double iqr = 0.0;
+    double whisker_low = 0.0;
+    double whisker_high = 0.0;
+    std::size_t count = 0;
+    std::vector<double> outliers;
 };
 
 struct ParetoItem {
@@ -42,5 +47,8 @@ std::vector<ParetoItem> pareto(
     const ParetoOptions& options);
 
 HistogramResult histogram(const std::vector<double>& observations, int bin_count = 0);
+HistogramResult histogram_with_edges(
+    const std::vector<double>& observations,
+    const std::vector<double>& edges);
 
 }  // namespace datalab::domain::statistics

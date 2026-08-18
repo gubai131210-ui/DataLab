@@ -1,16 +1,20 @@
 #include "ui/analysis_commands.h"
 
 #include "application/analysis_service.h"
-#include "ui/analysis_setup_dialog.h"
+#include "application/graph_service.h"
+#include "domain/statistics/control_charts.h"
 
-#include <QList>
 #include <QRegularExpression>
+#include <QString>
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <functional>
 #include <optional>
+#include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace analysis_commands {
@@ -18,19 +22,58 @@ namespace analysis_commands {
 namespace {
 
 using datalab::application::AnalysisService;
+using datalab::application::GraphService;
 using datalab::domain::AnalysisConfiguration;
 using datalab::domain::DataTable;
 using datalab::domain::OutputPage;
 
 using ApplyFn = std::function<AnalysisApplyResult(
-    AnalysisConfiguration&, const AnalysisSetupDialog&)>;
+    AnalysisConfiguration&, const datalab::application::AnalysisIntent&)>;
 using RunFn = std::function<OutputPage(
     const DataTable&, const AnalysisConfiguration&)>;
 
-// 校验失败：弹出提示后中止（对应原 run_* 的 QMessageBox::information）。
-AnalysisApplyResult apply_error(const QString& title, const QString& message)
+std::string normalize(std::string value)
 {
-    return {false, title, message};
+    value.erase(value.begin(),
+                std::find_if(value.begin(), value.end(),
+                             [](unsigned char character) {
+                                 return !std::isspace(character);
+                             }));
+    value.erase(std::find_if(value.rbegin(), value.rend(),
+                             [](unsigned char character) {
+                                 return !std::isspace(character);
+                             }).base(),
+                value.end());
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char character) {
+                       return static_cast<char>(std::tolower(character));
+                   });
+    return value;
+}
+
+// 校验失败：弹出提示后中止（对应原 run_* 的 QMessageBox::information）。
+AnalysisApplyResult apply_error(
+    const QString& title,
+    const QString& message,
+    const QString& field_id = {})
+{
+    QString effective_field = field_id;
+    if (effective_field.isEmpty()) {
+        if (title.contains(QStringLiteral("变量"))
+            || message.contains(QStringLiteral("至少需要选择"))
+            || message.contains(QStringLiteral("请选择测量值"))
+            || message.contains(QStringLiteral("变量不足"))) {
+            effective_field = QStringLiteral("variables");
+        } else if (message.contains(QStringLiteral("响应"))) {
+            effective_field = QStringLiteral("response");
+        } else if (message.contains(QStringLiteral("因子"))) {
+            effective_field = QStringLiteral("factor_columns");
+        } else if (message.contains(QStringLiteral("LSL"))
+                   || message.contains(QStringLiteral("USL"))) {
+            effective_field = QStringLiteral("lsl");
+        }
+    }
+    return {false, title, message, effective_field};
 }
 
 // 校验失败：静默中止（对应原 run_* 中无提示的裸 return）。
@@ -39,37 +82,69 @@ AnalysisApplyResult apply_silent()
     return {false, {}, {}};
 }
 
+void apply_special_cause_selection(
+    AnalysisConfiguration& configuration,
+    const datalab::application::AnalysisIntent& intent)
+{
+    const std::string text = intent.line_text("tests");
+    if (text.empty()) {
+        configuration.control.special_cause_rule_policy = "default_all_applicable";
+        configuration.control.enabled_special_cause_tests.clear();
+        return;
+    }
+    configuration.control.special_cause_rule_policy = "explicit";
+    if (normalize(text) == "none") {
+        configuration.control.enabled_special_cause_tests.clear();
+        return;
+    }
+    configuration.control.enabled_special_cause_tests =
+        datalab::domain::statistics::parse_special_cause_tests(text);
+}
+
+InputSpec special_cause_tests_input(const QString& chart_kind)
+{
+    return {
+        QStringLiteral("tests"),
+        QStringLiteral("特殊原因测试"),
+        chart_kind};
+}
+
 // DOE 2 水平全因子：doe_factorial 与 doe_response 共用配置构建与执行。
 const ApplyFn doe_apply = [](AnalysisConfiguration& c,
-                             const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-    auto split = [](const QString& text) {
+                             const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+    auto split = [](const std::string& text) {
         std::vector<std::string> values;
-        for (const QString& value : text.split(',', Qt::SkipEmptyParts)) {
-            values.push_back(value.trimmed().toStdString());
+        std::stringstream stream(text);
+        std::string value;
+        while (std::getline(stream, value, ',')) {
+            const std::string normalized = normalize(value);
+            if (!normalized.empty()) {
+                values.push_back(normalized);
+            }
         }
         return values;
     };
     c.analysis_name = "2 水平全因子设计";
     c.chart_type = "doe_factorial";
-    c.doe_factor_names = split(d.line_text(QStringLiteral("factors")));
-    c.doe_low_levels = split(d.line_text(QStringLiteral("low")));
-    c.doe_high_levels = split(d.line_text(QStringLiteral("high")));
-    c.doe_center_point_count = static_cast<std::size_t>(
-        d.line_int(QStringLiteral("centers")).value_or(0));
-    c.doe_block_count = static_cast<std::size_t>(
-        std::max(1, d.line_int(QStringLiteral("blocks")).value_or(1)));
-    c.doe_randomize = true;
-    c.doe_random_seed = static_cast<std::uint64_t>(
-        std::max(0, d.line_int(QStringLiteral("seed")).value_or(0)));
-    const int response_column = d.first_role_index(QStringLiteral("response"));
+    c.doe.factor_names = split(d.line_text("factors"));
+    c.doe.low_levels = split(d.line_text("low"));
+    c.doe.high_levels = split(d.line_text("high"));
+    c.doe.center_point_count = static_cast<std::size_t>(
+        d.line_int("centers").value_or(0));
+    c.doe.block_count = static_cast<std::size_t>(
+        std::max(1, d.line_int("blocks").value_or(1)));
+    c.doe.randomize = true;
+    c.doe.random_seed = static_cast<std::uint64_t>(
+        std::max(0, d.line_int("seed").value_or(0)));
+    const int response_column = d.first_role_index("response");
     if (response_column >= 0) {
-        c.doe_response_column = static_cast<std::size_t>(response_column);
-        const QList<int> factor_columns =
-            d.role_indices(QStringLiteral("factor_columns"));
+        c.doe.response_column = static_cast<std::size_t>(response_column);
+        const std::vector<int> factor_columns =
+            d.role_indices("factor_columns");
         for (const int column : factor_columns) {
-            c.doe_factor_columns.push_back(static_cast<std::size_t>(column));
+            c.doe.factor_columns.push_back(static_cast<std::size_t>(column));
         }
-        if (c.doe_factor_columns.empty()) {
+        if (c.doe.factor_columns.empty()) {
             return apply_error(QStringLiteral("因子列不足"),
                                QStringLiteral("响应分析至少需要选择一个已导入因子列。"));
         }
@@ -83,6 +158,101 @@ const RunFn doe_run = [](const DataTable& table,
 };
 
 }  // namespace
+
+InputSpec::InputSpec(QString input_id, QString input_label, QString input_placeholder)
+    : id(std::move(input_id))
+    , label(std::move(input_label))
+    , placeholder(std::move(input_placeholder))
+{
+    const QString normalized = id.toLower();
+    if (placeholder.contains(QStringLiteral("pearson"), Qt::CaseInsensitive)
+        && placeholder.contains(QStringLiteral("spearman"), Qt::CaseInsensitive)) {
+        kind = InputKind::choice;
+        choices = {{QStringLiteral("pearson"), QStringLiteral("Pearson")},
+                   {QStringLiteral("spearman"), QStringLiteral("Spearman")}};
+    } else if (placeholder.contains(QStringLiteral("welch"), Qt::CaseInsensitive)
+               && placeholder.contains(QStringLiteral("pooled"), Qt::CaseInsensitive)) {
+        kind = InputKind::choice;
+        choices = {{QStringLiteral("welch"), QStringLiteral("Welch")},
+                   {QStringLiteral("pooled"), QStringLiteral("Pooled")}};
+    } else if (placeholder.contains(QStringLiteral("single"), Qt::CaseInsensitive)
+               && placeholder.contains(QStringLiteral("double"), Qt::CaseInsensitive)) {
+        kind = InputKind::choice;
+        choices = {{QStringLiteral("single"), QStringLiteral("单指数")},
+                   {QStringLiteral("double"), QStringLiteral("双指数")}};
+    }
+    if (normalized == QStringLiteral("confidence")) {
+        if (placeholder.contains(QStringLiteral("0.95"))) {
+            kind = InputKind::number;
+            minimum = 0.0;
+            maximum = 1.0;
+        } else {
+            kind = InputKind::percentage;
+            minimum = 0.0;
+            maximum = 100.0;
+            unit = QStringLiteral("%");
+        }
+    } else if (normalized == QStringLiteral("alpha")
+               || normalized == QStringLiteral("beta")
+               || normalized == QStringLiteral("gamma")
+               || normalized == QStringLiteral("lambda")) {
+        kind = InputKind::number;
+        minimum = 0.0;
+        maximum = 1.0;
+    } else if (normalized == QStringLiteral("period")
+               || normalized == QStringLiteral("periods")
+               || normalized == QStringLiteral("forecast")
+               || normalized == QStringLiteral("levels")
+               || normalized == QStringLiteral("bins")
+               || normalized == QStringLiteral("groups")
+               || normalized == QStringLiteral("blocks")
+               || normalized == QStringLiteral("centers")
+               || normalized == QStringLiteral("iterations")
+               || normalized == QStringLiteral("subgroup_size")
+               || normalized == QStringLiteral("mr_length")
+               || normalized == QStringLiteral("units")) {
+        kind = InputKind::integer;
+        minimum = 1.0;
+    } else if (normalized == QStringLiteral("seed")) {
+        kind = InputKind::integer;
+        minimum = 0.0;
+    } else if (normalized == QStringLiteral("lsl")
+               || normalized == QStringLiteral("usl")
+               || normalized == QStringLiteral("tolerance")
+               || normalized == QStringLiteral("sigma")
+               || normalized == QStringLiteral("k")
+               || normalized == QStringLiteral("h")
+               || normalized == QStringLiteral("limit")
+               || normalized == QStringLiteral("effect")) {
+        kind = InputKind::number;
+    }
+    if (normalized == QStringLiteral("tests")) {
+        kind = InputKind::special_cause_tests;
+        help = QStringLiteral(
+            "特殊原因测试遵循 Minitab Tests 1–8。默认勾选当前控制图的全部适用规则；"
+            "R/S/MR 仅 1–4，EWMA 仅 Test 1，CUSUM 使用专用累计和信号。");
+    }
+    if (normalized == QStringLiteral("seed")
+        || normalized == QStringLiteral("iterations")
+        || normalized == QStringLiteral("tolerance")) {
+        advanced = true;
+        group = QStringLiteral("高级选项");
+    }
+    if (help.isEmpty()) {
+        if (normalized == QStringLiteral("alpha")) {
+            help = QStringLiteral("α：第一类错误概率，通常取 0.05。");
+        } else if (normalized == QStringLiteral("confidence")) {
+            help = QStringLiteral("置信水平：区间覆盖真值的目标比例；可输入 95 或 0.95。");
+        } else if (normalized == QStringLiteral("sigma")) {
+            help = QStringLiteral("过程 Sigma：过程波动的标准差估计，必须大于 0。");
+        } else if (normalized == QStringLiteral("lsl")
+                   || normalized == QStringLiteral("usl")) {
+            help = QStringLiteral("规格限用于能力指数；LSL 应小于 USL。");
+        } else if (normalized == QStringLiteral("subgroup_size")) {
+            help = QStringLiteral("子组大小：每个连续子组包含的观测数量，必须为正整数。");
+        }
+    }
+}
 
 const std::vector<AnalysisCommand>& all()
 {
@@ -98,15 +268,15 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("variables"), QStringLiteral("变量"), true, false},
              {QStringLiteral("by"), QStringLiteral("By 变量"), false, true}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "显示描述性统计";
                 c.chart_type = "descriptive";
-                for (const int index : d.role_indices(QStringLiteral("variables"))) {
+                for (const int index : d.role_indices("variables")) {
                     c.variable_columns.push_back(static_cast<std::size_t>(index));
                 }
-                if (d.first_role_index(QStringLiteral("by")) >= 0) {
+                if (d.first_role_index("by") >= 0) {
                     c.by_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("by")));
+                        d.first_role_index("by"));
                 }
                 if (c.variable_columns.empty()) {
                     return apply_error(QStringLiteral("未选择变量"),
@@ -124,8 +294,8 @@ const std::vector<AnalysisCommand>& all()
             false, true,
             {{QStringLiteral("variables"), QStringLiteral("变量"), false, false}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int column = d.first_role_index(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择测量值列。"));
@@ -147,8 +317,8 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("variables"), QStringLiteral("变量（至少两列）"), true, false}},
             {{QStringLiteral("method"), QStringLiteral("方法"), QStringLiteral("pearson 或 spearman")},
              {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const QList<int> columns = d.role_indices(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
                 if (columns.size() < 2) {
                     return apply_error(QStringLiteral("变量不足"),
                                        QStringLiteral("请选择至少两列数值变量。"));
@@ -158,13 +328,12 @@ const std::vector<AnalysisCommand>& all()
                 for (const int column : columns) {
                     c.variable_columns.push_back(static_cast<std::size_t>(column));
                 }
-                c.correlation_method = d.line_text(QStringLiteral("method")).trimmed()
-                    .toLower().toStdString();
-                if (c.correlation_method != "spearman") {
-                    c.correlation_method = "pearson";
+                c.inference.correlation_method = normalize(d.line_text("method"));
+                if (c.inference.correlation_method != "spearman") {
+                    c.inference.correlation_method = "pearson";
                 }
-                const double confidence = d.line_number(QStringLiteral("confidence")).value_or(95.0);
-                c.confidence_level = confidence > 1.0 ? confidence / 100.0 : confidence;
+                const double confidence = d.line_number("confidence").value_or(95.0);
+                c.inference.confidence_level = confidence > 1.0 ? confidence / 100.0 : confidence;
                 return {};
             },
             AnalysisService::correlation},
@@ -180,9 +349,9 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int column = d.first_role_index(QStringLiteral("variables"));
-                const auto hypothesis = d.line_number(QStringLiteral("hypothesis_mean"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int column = d.first_role_index("variables");
+                const auto hypothesis = d.line_number("hypothesis_mean");
                 if (column < 0 || !hypothesis.has_value()) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择测量列并输入假设均值。"));
@@ -191,13 +360,12 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "one_sample_t";
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
-                c.hypothesis_mean = hypothesis;
-                c.confidence_level = d.line_number(QStringLiteral("confidence")).value_or(95.0);
-                if (c.confidence_level > 1.0) {
-                    c.confidence_level /= 100.0;
+                c.inference.hypothesis_mean = hypothesis;
+                c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
+                if (c.inference.confidence_level > 1.0) {
+                    c.inference.confidence_level /= 100.0;
                 }
-                c.alternative = d.line_text(QStringLiteral("alternative")).trimmed()
-                    .toLower().toStdString();
+                c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
             AnalysisService::one_sample_t},
@@ -213,8 +381,8 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const QList<int> columns = d.role_indices(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
                 if (columns.size() != 2) {
                     return apply_error(QStringLiteral("变量数量错误"),
                                        QStringLiteral("请选择正好两列独立样本变量。"));
@@ -223,17 +391,15 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "two_sample_t";
                 c.variable_columns = {
                     static_cast<std::size_t>(columns[0]), static_cast<std::size_t>(columns[1])};
-                c.variance_method = d.line_text(QStringLiteral("variance")).trimmed()
-                    .toLower().toStdString();
-                if (c.variance_method != "pooled") {
-                    c.variance_method = "welch";
+                c.inference.variance_method = normalize(d.line_text("variance"));
+                if (c.inference.variance_method != "pooled") {
+                    c.inference.variance_method = "welch";
                 }
-                c.confidence_level = d.line_number(QStringLiteral("confidence")).value_or(95.0);
-                if (c.confidence_level > 1.0) {
-                    c.confidence_level /= 100.0;
+                c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
+                if (c.inference.confidence_level > 1.0) {
+                    c.inference.confidence_level /= 100.0;
                 }
-                c.alternative = d.line_text(QStringLiteral("alternative")).trimmed()
-                    .toLower().toStdString();
+                c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
             AnalysisService::two_sample_t},
@@ -247,9 +413,9 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("response"), QStringLiteral("响应变量"), false, false},
              {QStringLiteral("factor"), QStringLiteral("因子/分组列"), false, false}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int response = d.first_role_index(QStringLiteral("response"));
-                const int factor = d.first_role_index(QStringLiteral("factor"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                const int factor = d.first_role_index("factor");
                 if (response < 0 || factor < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择响应变量和因子/分组列。"));
@@ -273,8 +439,8 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const QList<int> columns = d.role_indices(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
                 if (columns.size() != 2) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("配对 t 检验必须选择恰好两列。"));
@@ -283,12 +449,11 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "paired_t";
                 c.variable_columns = {
                     static_cast<std::size_t>(columns[0]), static_cast<std::size_t>(columns[1])};
-                const auto confidence = d.line_number(QStringLiteral("confidence"));
+                const auto confidence = d.line_number("confidence");
                 if (confidence.has_value()) {
-                    c.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
+                    c.inference.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
                 }
-                c.alternative = d.line_text(QStringLiteral("alternative"))
-                    .trimmed().toLower().toStdString();
+                c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
             AnalysisService::paired_t},
@@ -302,8 +467,8 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("variables"), QStringLiteral("变量（第一列响应，其余为预测变量）"),
               true, false}},
             {{QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const QList<int> columns = d.role_indices(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
                 if (columns.size() < 2) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("回归至少需要一列响应变量和一列预测变量。"));
@@ -313,9 +478,9 @@ const std::vector<AnalysisCommand>& all()
                 for (const int column : columns) {
                     c.variable_columns.push_back(static_cast<std::size_t>(column));
                 }
-                const auto confidence = d.line_number(QStringLiteral("confidence"));
+                const auto confidence = d.line_number("confidence");
                 if (confidence.has_value()) {
-                    c.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
+                    c.inference.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
                 }
                 return {};
             },
@@ -334,27 +499,26 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int first_events = d.first_role_index(QStringLiteral("first_events"));
-                const int first_trials = d.first_role_index(QStringLiteral("first_trials"));
-                const int second_events = d.first_role_index(QStringLiteral("second_events"));
-                const int second_trials = d.first_role_index(QStringLiteral("second_trials"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int first_events = d.first_role_index("first_events");
+                const int first_trials = d.first_role_index("first_trials");
+                const int second_events = d.first_role_index("second_events");
+                const int second_trials = d.first_role_index("second_trials");
                 if (first_events < 0 || first_trials < 0 || second_events < 0 || second_trials < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择四个计数列。"));
                 }
                 c.analysis_name = "两比例检验";
                 c.chart_type = "two_proportions";
-                c.first_events_column = static_cast<std::size_t>(first_events);
-                c.first_trials_column = static_cast<std::size_t>(first_trials);
-                c.second_events_column = static_cast<std::size_t>(second_events);
-                c.second_trials_column = static_cast<std::size_t>(second_trials);
-                const auto confidence = d.line_number(QStringLiteral("confidence"));
+                c.inference.first_events_column = static_cast<std::size_t>(first_events);
+                c.inference.first_trials_column = static_cast<std::size_t>(first_trials);
+                c.inference.second_events_column = static_cast<std::size_t>(second_events);
+                c.inference.second_trials_column = static_cast<std::size_t>(second_trials);
+                const auto confidence = d.line_number("confidence");
                 if (confidence.has_value()) {
-                    c.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
+                    c.inference.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
                 }
-                c.alternative = d.line_text(QStringLiteral("alternative"))
-                    .trimmed().toLower().toStdString();
+                c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
             AnalysisService::two_proportions},
@@ -368,17 +532,17 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("row_category"), QStringLiteral("行分类列"), false, false},
              {QStringLiteral("column_category"), QStringLiteral("列分类列"), false, false}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int row = d.first_role_index(QStringLiteral("row_category"));
-                const int column = d.first_role_index(QStringLiteral("column_category"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int row = d.first_role_index("row_category");
+                const int column = d.first_role_index("column_category");
                 if (row < 0 || column < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择行分类列和列分类列。"));
                 }
                 c.analysis_name = "列联表卡方";
                 c.chart_type = "chi_square";
-                c.row_category_column = static_cast<std::size_t>(row);
-                c.column_category_column = static_cast<std::size_t>(column);
+                c.inference.row_category_column = static_cast<std::size_t>(row);
+                c.inference.column_category_column = static_cast<std::size_t>(column);
                 return {};
             },
             AnalysisService::chi_square},
@@ -392,8 +556,8 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("variables"), QStringLiteral("两列独立样本"), true, false}},
             {{QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const QList<int> columns = d.role_indices(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
                 if (columns.size() != 2) {
                     return apply_error(QStringLiteral("变量数量错误"),
                                        QStringLiteral("请选择正好两列独立样本。"));
@@ -402,8 +566,7 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "mann_whitney";
                 c.variable_columns = {
                     static_cast<std::size_t>(columns[0]), static_cast<std::size_t>(columns[1])};
-                c.alternative = d.line_text(QStringLiteral("alternative"))
-                    .trimmed().toLower().toStdString();
+                c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
             AnalysisService::mann_whitney},
@@ -417,8 +580,8 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("variables"), QStringLiteral("两列配对样本"), true, false}},
             {{QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const QList<int> columns = d.role_indices(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
                 if (columns.size() != 2) {
                     return apply_error(QStringLiteral("变量数量错误"),
                                        QStringLiteral("请选择正好两列配对样本。"));
@@ -427,8 +590,7 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "wilcoxon_signed_rank";
                 c.variable_columns = {
                     static_cast<std::size_t>(columns[0]), static_cast<std::size_t>(columns[1])};
-                c.alternative = d.line_text(QStringLiteral("alternative"))
-                    .trimmed().toLower().toStdString();
+                c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
             AnalysisService::wilcoxon_signed_rank},
@@ -442,9 +604,9 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("response"), QStringLiteral("测量值"), false, false},
              {QStringLiteral("factor"), QStringLiteral("分组列"), false, false}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int response = d.first_role_index(QStringLiteral("response"));
-                const int factor = d.first_role_index(QStringLiteral("factor"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                const int factor = d.first_role_index("factor");
                 if (response < 0 || factor < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择测量值和分组列。"));
@@ -468,22 +630,21 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("alpha"), QStringLiteral("Alpha"), QStringLiteral("0.2")},
              {QStringLiteral("gamma"), QStringLiteral("Gamma（双指数）"), QStringLiteral("0.2")},
              {QStringLiteral("periods"), QStringLiteral("预测期数"), QStringLiteral("1")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int column = d.first_role_index(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_silent();
                 }
                 c.analysis_name = "时间序列平滑";
                 c.chart_type = "time_series_smoothing";
                 c.variable_columns = {static_cast<std::size_t>(column)};
-                c.smoothing_method = d.line_text(QStringLiteral("method")).trimmed()
-                    .toLower().toStdString();
-                if (c.smoothing_method != "single") {
-                    c.smoothing_method = "double";
+                c.time_series.smoothing_method = normalize(d.line_text("method"));
+                if (c.time_series.smoothing_method != "single") {
+                    c.time_series.smoothing_method = "double";
                 }
-                c.smoothing_alpha = d.line_number(QStringLiteral("alpha")).value_or(0.2);
-                c.smoothing_gamma = d.line_number(QStringLiteral("gamma")).value_or(0.2);
-                c.forecast_periods = d.line_int(QStringLiteral("periods")).value_or(1);
+                c.time_series.smoothing_alpha = d.line_number("alpha").value_or(0.2);
+                c.time_series.smoothing_gamma = d.line_number("gamma").value_or(0.2);
+                c.time_series.forecast_periods = d.line_int("periods").value_or(1);
                 return {};
             },
             AnalysisService::time_series_smoothing},
@@ -499,26 +660,25 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("criterion"), QStringLiteral("选模准则"),
               QStringLiteral("aicc / aic / bic")},
              {QStringLiteral("periods"), QStringLiteral("预测期数"), QStringLiteral("3")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int value = d.first_role_index(QStringLiteral("value"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int value = d.first_role_index("value");
                 if (value < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择时间序列值列。"));
                 }
                 c.analysis_name = "ARIMA 基础预测";
                 c.chart_type = "arima";
-                const int time = d.first_role_index(QStringLiteral("time"));
+                const int time = d.first_role_index("time");
                 if (time >= 0) {
-                    c.arima_time_column = static_cast<std::size_t>(time);
+                    c.time_series.arima_time_column = static_cast<std::size_t>(time);
                 }
-                c.arima_value_column = static_cast<std::size_t>(value);
-                c.arima_selection_criterion = d.line_text(QStringLiteral("criterion")).trimmed()
-                    .toLower().toStdString();
-                if (c.arima_selection_criterion != "aic"
-                    && c.arima_selection_criterion != "bic") {
-                    c.arima_selection_criterion = "aicc";
+                c.time_series.arima_value_column = static_cast<std::size_t>(value);
+                c.time_series.arima_selection_criterion = normalize(d.line_text("criterion"));
+                if (c.time_series.arima_selection_criterion != "aic"
+                    && c.time_series.arima_selection_criterion != "bic") {
+                    c.time_series.arima_selection_criterion = "aicc";
                 }
-                c.forecast_periods = d.line_int(QStringLiteral("periods")).value_or(3);
+                c.time_series.forecast_periods = d.line_int("periods").value_or(3);
                 return {};
             },
             AnalysisService::arima},
@@ -534,23 +694,22 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("factor_b"), QStringLiteral("因子 B"), false, false}},
             {{QStringLiteral("encoding"), QStringLiteral("因子编码"),
               QStringLiteral("reference / effect")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int response = d.first_role_index(QStringLiteral("response"));
-                const int factor_a = d.first_role_index(QStringLiteral("factor_a"));
-                const int factor_b = d.first_role_index(QStringLiteral("factor_b"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                const int factor_a = d.first_role_index("factor_a");
+                const int factor_b = d.first_role_index("factor_b");
                 if (response < 0 || factor_a < 0 || factor_b < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择响应变量、因子 A 和因子 B。"));
                 }
                 c.analysis_name = "双因素 ANOVA";
                 c.chart_type = "two_factor_anova";
-                c.anova_response_column = static_cast<std::size_t>(response);
-                c.anova_factor_a_column = static_cast<std::size_t>(factor_a);
-                c.anova_factor_b_column = static_cast<std::size_t>(factor_b);
-                c.anova_factor_encoding = d.line_text(QStringLiteral("encoding")).trimmed()
-                    .toLower().toStdString();
-                if (c.anova_factor_encoding != "effect") {
-                    c.anova_factor_encoding = "reference";
+                c.inference.anova_response_column = static_cast<std::size_t>(response);
+                c.inference.anova_factor_a_column = static_cast<std::size_t>(factor_a);
+                c.inference.anova_factor_b_column = static_cast<std::size_t>(factor_b);
+                c.inference.anova_factor_encoding = normalize(d.line_text("encoding"));
+                if (c.inference.anova_factor_encoding != "effect") {
+                    c.inference.anova_factor_encoding = "reference";
                 }
                 return {};
             },
@@ -568,27 +727,26 @@ const std::vector<AnalysisCommand>& all()
               QStringLiteral("0/1 数据可留空；文本数据输入事件标签")},
              {QStringLiteral("iterations"), QStringLiteral("最大迭代次数"), QStringLiteral("100")},
              {QStringLiteral("tolerance"), QStringLiteral("收敛阈值"), QStringLiteral("1e-8")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int response = d.first_role_index(QStringLiteral("response"));
-                const QList<int> predictors = d.role_indices(QStringLiteral("predictors"));
-                if (response < 0 || predictors.isEmpty()) {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                const std::vector<int> predictors = d.role_indices("predictors");
+                if (response < 0 || predictors.empty()) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择一个二元响应列和至少一个预测变量。"));
                 }
                 c.analysis_name = "二元 Logistic 回归";
                 c.chart_type = "logistic_regression";
-                c.logistic_response_column = static_cast<std::size_t>(response);
+                c.inference.logistic_response_column = static_cast<std::size_t>(response);
                 for (const int predictor : predictors) {
-                    c.logistic_predictor_columns.push_back(
+                    c.inference.logistic_predictor_columns.push_back(
                         static_cast<std::size_t>(predictor));
                 }
-                c.logistic_event_level = d.line_text(QStringLiteral("event")).trimmed()
-                    .toStdString();
-                if (c.logistic_event_level.empty()) {
-                    c.logistic_event_level = "1";
+                c.inference.logistic_event_level = d.line_text("event");
+                if (c.inference.logistic_event_level.empty()) {
+                    c.inference.logistic_event_level = "1";
                 }
-                c.logistic_max_iterations = d.line_int(QStringLiteral("iterations")).value_or(100);
-                c.logistic_tolerance = d.line_number(QStringLiteral("tolerance")).value_or(1.0e-8);
+                c.inference.logistic_max_iterations = d.line_int("iterations").value_or(100);
+                c.inference.logistic_tolerance = d.line_number("tolerance").value_or(1.0e-8);
                 return {};
             },
             AnalysisService::logistic_regression},
@@ -607,31 +765,29 @@ const std::vector<AnalysisCommand>& all()
               QStringLiteral("f / levene / brown_forsythe")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int first = d.first_role_index(QStringLiteral("first"));
-                const int second = d.first_role_index(QStringLiteral("second"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int first = d.first_role_index("first");
+                const int second = d.first_role_index("second");
                 if (first < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择第一样本列。"));
                 }
                 c.analysis_name = "方差检验";
                 c.chart_type = "variance_test";
-                c.variance_first_column = static_cast<std::size_t>(first);
+                c.inference.variance_first_column = static_cast<std::size_t>(first);
                 if (second >= 0) {
-                    c.variance_second_column = static_cast<std::size_t>(second);
+                    c.inference.variance_second_column = static_cast<std::size_t>(second);
                 }
-                c.hypothesized_variance = d.line_number(QStringLiteral("hypothesis"));
-                c.variance_test_method = d.line_text(QStringLiteral("method")).trimmed()
-                    .toLower().toStdString();
-                if (c.variance_test_method != "levene"
-                    && c.variance_test_method != "brown_forsythe") {
-                    c.variance_test_method = "f";
+                c.inference.hypothesized_variance = d.line_number("hypothesis");
+                c.inference.variance_test_method = normalize(d.line_text("method"));
+                if (c.inference.variance_test_method != "levene"
+                    && c.inference.variance_test_method != "brown_forsythe") {
+                    c.inference.variance_test_method = "f";
                 }
-                c.variance_alternative = d.line_text(QStringLiteral("alternative")).trimmed()
-                    .toLower().toStdString();
-                if (c.variance_alternative != "less"
-                    && c.variance_alternative != "greater") {
-                    c.variance_alternative = "two_sided";
+                c.inference.variance_alternative = normalize(d.line_text("alternative"));
+                if (c.inference.variance_alternative != "less"
+                    && c.inference.variance_alternative != "greater") {
+                    c.inference.variance_alternative = "two_sided";
                 }
                 return {};
             },
@@ -649,26 +805,25 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("model"), QStringLiteral("模型"),
               QStringLiteral("additive / multiplicative")},
              {QStringLiteral("periods"), QStringLiteral("预测期数"), QStringLiteral("4")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int value = d.first_role_index(QStringLiteral("value"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int value = d.first_role_index("value");
                 if (value < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择时间序列值列。"));
                 }
                 c.analysis_name = "时间序列分解";
                 c.chart_type = "time_series_decomposition";
-                const int time = d.first_role_index(QStringLiteral("time"));
+                const int time = d.first_role_index("time");
                 if (time >= 0) {
-                    c.decomposition_time_column = static_cast<std::size_t>(time);
+                    c.time_series.decomposition_time_column = static_cast<std::size_t>(time);
                 }
-                c.decomposition_value_column = static_cast<std::size_t>(value);
-                c.decomposition_seasonal_period = d.line_int(QStringLiteral("period")).value_or(1);
-                c.decomposition_model = d.line_text(QStringLiteral("model")).trimmed()
-                    .toLower().toStdString();
-                if (c.decomposition_model != "multiplicative") {
-                    c.decomposition_model = "additive";
+                c.time_series.decomposition_value_column = static_cast<std::size_t>(value);
+                c.time_series.decomposition_seasonal_period = d.line_int("period").value_or(1);
+                c.time_series.decomposition_model = normalize(d.line_text("model"));
+                if (c.time_series.decomposition_model != "multiplicative") {
+                    c.time_series.decomposition_model = "additive";
                 }
-                c.forecast_periods = d.line_int(QStringLiteral("periods")).value_or(4);
+                c.time_series.forecast_periods = d.line_int("periods").value_or(4);
                 return {};
             },
             AnalysisService::time_series_decomposition},
@@ -689,22 +844,19 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("beta"), QStringLiteral("Beta"), QStringLiteral("0.1")},
              {QStringLiteral("gamma"), QStringLiteral("Gamma"), QStringLiteral("0.2")},
              {QStringLiteral("forecast"), QStringLiteral("预测期数"), QStringLiteral("4")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "季节性预测";
                 c.chart_type = "seasonal_forecasting";
-                c.decomposition_value_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("value")));
-                c.seasonal_period = static_cast<std::size_t>(
-                    std::max(1, d.line_int(QStringLiteral("period")).value_or(12)));
-                c.seasonal_error_model = d.line_text(QStringLiteral("error")).trimmed()
-                    .toLower().toStdString();
-                c.seasonal_trend_model = d.line_text(QStringLiteral("trend")).trimmed()
-                    .toLower().toStdString();
-                c.smoothing_alpha = d.line_number(QStringLiteral("alpha")).value_or(0.2);
-                c.seasonal_beta = d.line_number(QStringLiteral("beta")).value_or(0.1);
-                c.smoothing_gamma = d.line_number(QStringLiteral("gamma")).value_or(0.2);
-                c.forecast_periods = std::max(1, d.line_int(
-                    QStringLiteral("forecast")).value_or(4));
+                c.time_series.decomposition_value_column = static_cast<std::size_t>(
+                    d.first_role_index("value"));
+                c.time_series.seasonal_period = static_cast<std::size_t>(
+                    std::max(1, d.line_int("period").value_or(12)));
+                c.time_series.seasonal_error_model = normalize(d.line_text("error"));
+                c.time_series.seasonal_trend_model = normalize(d.line_text("trend"));
+                c.time_series.smoothing_alpha = d.line_number("alpha").value_or(0.2);
+                c.time_series.seasonal_beta = d.line_number("beta").value_or(0.1);
+                c.time_series.smoothing_gamma = d.line_number("gamma").value_or(0.2);
+                c.time_series.forecast_periods = std::max(1, d.line_int("forecast").value_or(4));
                 return {};
             },
             AnalysisService::seasonal_forecasting},
@@ -720,17 +872,17 @@ const std::vector<AnalysisCommand>& all()
               QStringLiteral("covariance / standardized")},
              {QStringLiteral("components"), QStringLiteral("保留主成分数"),
               QStringLiteral("0 = 全部")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "主成分分析";
                 c.chart_type = "pca";
-                for (const int column : d.role_indices(QStringLiteral("variables"))) {
+                for (const int column : d.role_indices("variables")) {
                     if (column >= 0) {
-                        c.pca_variable_columns.push_back(static_cast<std::size_t>(column));
+                        c.pca.variable_columns.push_back(static_cast<std::size_t>(column));
                     }
                 }
-                c.pca_mode = d.line_text(QStringLiteral("mode")).trimmed().toLower().toStdString();
-                c.pca_component_count = static_cast<std::size_t>(
-                    std::max(0, d.line_int(QStringLiteral("components")).value_or(0)));
+                c.pca.mode = normalize(d.line_text("mode"));
+                c.pca.component_count = static_cast<std::size_t>(
+                    std::max(0, d.line_int("components").value_or(0)));
                 return {};
             },
             AnalysisService::pca},
@@ -746,26 +898,25 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("group"), QStringLiteral("分组列（Log-rank，可选）"), false, true}},
             {{QStringLiteral("model"), QStringLiteral("模型"),
               QStringLiteral("kaplan_meier / weibull / exponential")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int time = d.first_role_index(QStringLiteral("time"));
-                const int event = d.first_role_index(QStringLiteral("event"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int time = d.first_role_index("time");
+                const int event = d.first_role_index("event");
                 if (time < 0 || event < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择寿命列和失效指示列。"));
                 }
                 c.analysis_name = "Reliability Analysis";
                 c.chart_type = "reliability";
-                c.reliability_time_column = static_cast<std::size_t>(time);
-                c.reliability_event_column = static_cast<std::size_t>(event);
-                const int group = d.first_role_index(QStringLiteral("group"));
+                c.reliability.time_column = static_cast<std::size_t>(time);
+                c.reliability.event_column = static_cast<std::size_t>(event);
+                const int group = d.first_role_index("group");
                 if (group >= 0) {
-                    c.reliability_group_column = static_cast<std::size_t>(group);
+                    c.reliability.group_column = static_cast<std::size_t>(group);
                 }
-                c.reliability_model = d.line_text(QStringLiteral("model")).trimmed()
-                    .toLower().toStdString();
-                if (c.reliability_model != "weibull"
-                    && c.reliability_model != "exponential") {
-                    c.reliability_model = "kaplan_meier";
+                c.reliability.model = normalize(d.line_text("model"));
+                if (c.reliability.model != "weibull"
+                    && c.reliability.model != "exponential") {
+                    c.reliability.model = "kaplan_meier";
                 }
                 return {};
             },
@@ -791,28 +942,27 @@ const std::vector<AnalysisCommand>& all()
               QStringLiteral("0.7")},
              {QStringLiteral("variance_method"), QStringLiteral("比例方差"),
               QStringLiteral("pooled / unpooled")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "t 功效与样本量";
                 c.chart_type = "t_power";
-                c.power_mode = d.line_text(QStringLiteral("mode")).trimmed().toLower().toStdString();
-                if (c.power_mode.empty()) {
-                    c.power_mode = "one_sample_sample_size";
+                c.power.mode = normalize(d.line_text("mode"));
+                if (c.power.mode.empty()) {
+                    c.power.mode = "one_sample_sample_size";
                 }
-                c.power_effect_size = d.line_number(QStringLiteral("effect")).value_or(0.5);
-                c.power_target = d.line_number(QStringLiteral("target")).value_or(0.8);
-                c.power_alpha = d.line_number(QStringLiteral("alpha")).value_or(0.05);
-                c.power_sample_size = static_cast<std::size_t>(
-                    std::max(0, d.line_int(QStringLiteral("sample_size")).value_or(0)));
-                c.power_group_count = static_cast<std::size_t>(
-                    std::max(0, d.line_int(QStringLiteral("groups")).value_or(3)));
-                c.power_null_proportion =
-                    d.line_number(QStringLiteral("null_proportion")).value_or(0.5);
-                c.power_second_proportion =
-                    d.line_number(QStringLiteral("second_proportion")).value_or(0.7);
-                c.power_variance_method = d.line_text(QStringLiteral("variance_method")).trimmed()
-                    .toLower().toStdString();
-                if (c.power_variance_method != "unpooled") {
-                    c.power_variance_method = "pooled";
+                c.power.effect_size = d.line_number("effect").value_or(0.5);
+                c.power.target = d.line_number("target").value_or(0.8);
+                c.power.alpha = d.line_number("alpha").value_or(0.05);
+                c.power.sample_size = static_cast<std::size_t>(
+                    std::max(0, d.line_int("sample_size").value_or(0)));
+                c.power.group_count = static_cast<std::size_t>(
+                    std::max(0, d.line_int("groups").value_or(3)));
+                c.power.null_proportion =
+                    d.line_number("null_proportion").value_or(0.5);
+                c.power.second_proportion =
+                    d.line_number("second_proportion").value_or(0.7);
+                c.power.variance_method = normalize(d.line_text("variance_method"));
+                if (c.power.variance_method != "unpooled") {
+                    c.power.variance_method = "pooled";
                 }
                 return {};
             },
@@ -825,16 +975,22 @@ const std::vector<AnalysisCommand>& all()
             QStringLiteral("图形"),
             QStringLiteral("histogram"),
             false, true,
-            {{QStringLiteral("variables"), QStringLiteral("变量"), false, false}},
-            {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {{QStringLiteral("variables"), QStringLiteral("变量"), false, false},
+             {QStringLiteral("by"), QStringLiteral("分组变量"), false, true}},
+            {{QStringLiteral("bins"), QStringLiteral("组数（可选）"), QStringLiteral("留空则自动")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.chart_type = "histogram";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择连续变量列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
+                c.graph.bin_count = d.line_int("bins").value_or(0);
+                if (d.first_role_index("by") >= 0) {
+                    c.by_column = static_cast<std::size_t>(d.first_role_index("by"));
+                    c.graph.by_column = c.by_column;
+                }
                 return {};
             },
             AnalysisService::histogram},
@@ -848,17 +1004,17 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("variables"), QStringLiteral("变量"), false, false},
              {QStringLiteral("by"), QStringLiteral("分类变量"), false, true}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.chart_type = "boxplot";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择连续变量列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
-                if (d.first_role_index(QStringLiteral("by")) >= 0) {
+                if (d.first_role_index("by") >= 0) {
                     c.by_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("by")));
+                        d.first_role_index("by"));
                 }
                 return {};
             },
@@ -874,20 +1030,20 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("counts"), QStringLiteral("计数列"), false, true}},
             {{QStringLiteral("other_threshold"), QStringLiteral("Other 合并阈值（可选 %）"),
               QStringLiteral("例如 95；留空则不合并")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.chart_type = "pareto";
-                const int column = d.first_role_index(QStringLiteral("category"));
+                const int column = d.first_role_index("category");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择缺陷类别列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
-                if (d.first_role_index(QStringLiteral("counts")) >= 0) {
+                if (d.first_role_index("counts") >= 0) {
                     c.selection.defect_count_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("counts")));
+                        d.first_role_index("counts"));
                 }
                 const std::optional<double> threshold =
-                    d.line_number(QStringLiteral("other_threshold"));
+                    d.line_number("other_threshold");
                 if (threshold.has_value() && *threshold >= 0.0 && *threshold <= 100.0) {
                     c.pareto_other_threshold_percent = threshold;
                 } else if (threshold.has_value()) {
@@ -897,6 +1053,450 @@ const std::vector<AnalysisCommand>& all()
                 return {};
             },
             AnalysisService::pareto},
+        {
+            QStringLiteral("scatter_plot"),
+            QStringLiteral("散点图"),
+            QStringLiteral("散点图"),
+            QStringLiteral("图形"),
+            QStringLiteral("scatter"),
+            false, true,
+            {{QStringLiteral("x_variable"), QStringLiteral("X 变量"), false, false},
+             {QStringLiteral("y_variable"), QStringLiteral("Y 变量"), false, false},
+             {QStringLiteral("by"), QStringLiteral("分组变量"), false, true},
+             {QStringLiteral("label"), QStringLiteral("标签变量"), false, true}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "散点图";
+                c.chart_type = "scatter_plot";
+                c.graph.graph_kind = "scatter";
+                const int x = d.first_role_index("x_variable");
+                const int y = d.first_role_index("y_variable");
+                if (x < 0 || y < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择 X 变量和 Y 变量。"));
+                }
+                c.graph.x_column = static_cast<std::size_t>(x);
+                c.graph.y_column = static_cast<std::size_t>(y);
+                if (d.first_role_index("by") >= 0) {
+                    c.graph.by_column =
+                        static_cast<std::size_t>(d.first_role_index("by"));
+                }
+                if (d.first_role_index("label") >= 0) {
+                    c.graph.label_column =
+                        static_cast<std::size_t>(d.first_role_index("label"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("interval_plot"),
+            QStringLiteral("区间散点图"),
+            QStringLiteral("区间散点图"),
+            QStringLiteral("图形"),
+            QStringLiteral("interval"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应变量"), false, false},
+             {QStringLiteral("category"), QStringLiteral("分类变量"), false, false}},
+            {{QStringLiteral("confidence"), QStringLiteral("置信水平"), QStringLiteral("0.95")}},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "区间散点图";
+                c.chart_type = "interval_plot";
+                c.graph.graph_kind = "interval";
+                const int response = d.first_role_index("response");
+                const int category = d.first_role_index("category");
+                if (response < 0 || category < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择响应变量和分类变量。"));
+                }
+                c.graph.y_column = static_cast<std::size_t>(response);
+                c.graph.by_column = static_cast<std::size_t>(category);
+                c.graph.confidence_level = d.line_number("confidence").value_or(0.95);
+                if (!(c.graph.confidence_level > 0.0 && c.graph.confidence_level < 1.0)) {
+                    return apply_error(QStringLiteral("参数无效"),
+                                       QStringLiteral("置信水平必须在 0 到 1 之间。"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("correlation_plot"),
+            QStringLiteral("相关图"),
+            QStringLiteral("相关图"),
+            QStringLiteral("图形"),
+            QStringLiteral("correlation"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("变量"), true, false}},
+            {{QStringLiteral("method"), QStringLiteral("方法"), QStringLiteral("pearson")},
+             {QStringLiteral("confidence"), QStringLiteral("置信水平"), QStringLiteral("0.95")}},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "相关图";
+                c.chart_type = "correlation_plot";
+                c.graph.graph_kind = "correlation";
+                c.graph.variable_columns.clear();
+                for (const int column : d.role_indices("variables")) {
+                    c.graph.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
+                if (c.graph.variable_columns.size() < 2) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("相关图至少需要两个连续变量。"));
+                }
+                c.graph.correlation_method = normalize(d.line_text("method"));
+                if (c.graph.correlation_method != "spearman") {
+                    c.graph.correlation_method = "pearson";
+                }
+                c.graph.confidence_level = d.line_number("confidence").value_or(0.95);
+                if (!(c.graph.confidence_level > 0.0 && c.graph.confidence_level < 1.0)) {
+                    return apply_error(QStringLiteral("参数无效"),
+                                       QStringLiteral("置信水平必须在 0 到 1 之间。"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("bubble_plot"),
+            QStringLiteral("气泡图"),
+            QStringLiteral("气泡图"),
+            QStringLiteral("图形"),
+            QStringLiteral("bubble"),
+            false, true,
+            {{QStringLiteral("x_variable"), QStringLiteral("X 变量"), false, false},
+             {QStringLiteral("y_variable"), QStringLiteral("Y 变量"), false, false},
+             {QStringLiteral("size_variable"), QStringLiteral("气泡大小变量"), false, false},
+             {QStringLiteral("by"), QStringLiteral("分组变量"), false, true},
+             {QStringLiteral("label"), QStringLiteral("标签变量"), false, true}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "气泡图";
+                c.chart_type = "bubble_plot";
+                c.graph.graph_kind = "bubble";
+                const int x = d.first_role_index("x_variable");
+                const int y = d.first_role_index("y_variable");
+                const int size = d.first_role_index("size_variable");
+                if (x < 0 || y < 0 || size < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择 X、Y 和气泡大小变量。"));
+                }
+                c.graph.x_column = static_cast<std::size_t>(x);
+                c.graph.y_column = static_cast<std::size_t>(y);
+                c.graph.size_column = static_cast<std::size_t>(size);
+                if (d.first_role_index("by") >= 0) {
+                    c.graph.by_column =
+                        static_cast<std::size_t>(d.first_role_index("by"));
+                }
+                if (d.first_role_index("label") >= 0) {
+                    c.graph.label_column =
+                        static_cast<std::size_t>(d.first_role_index("label"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("probability_plot"),
+            QStringLiteral("概率图"),
+            QStringLiteral("正态概率图"),
+            QStringLiteral("图形"),
+            QStringLiteral("probability"),
+            false, true,
+            {{QStringLiteral("variable"), QStringLiteral("变量"), false, false}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "正态概率图";
+                c.chart_type = "probability_plot";
+                c.graph.graph_kind = "probability";
+                const int column = d.first_role_index("variable");
+                if (column < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择连续变量。"));
+                }
+                c.graph.y_column = static_cast<std::size_t>(column);
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("ecdf_plot"),
+            QStringLiteral("经验累积分布图"),
+            QStringLiteral("经验累积分布图"),
+            QStringLiteral("图形"),
+            QStringLiteral("ecdf"),
+            false, true,
+            {{QStringLiteral("variable"), QStringLiteral("变量"), false, false}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "经验累积分布图";
+                c.chart_type = "ecdf_plot";
+                c.graph.graph_kind = "ecdf";
+                const int column = d.first_role_index("variable");
+                if (column < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择连续变量。"));
+                }
+                c.graph.y_column = static_cast<std::size_t>(column);
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("matrix_plot"),
+            QStringLiteral("矩阵图"),
+            QStringLiteral("矩阵图"),
+            QStringLiteral("图形"),
+            QStringLiteral("matrix"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("变量"), true, false},
+             {QStringLiteral("by"), QStringLiteral("分组变量"), false, true}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "矩阵图";
+                c.chart_type = "matrix_plot";
+                c.graph.graph_kind = "matrix";
+                for (const int column : d.role_indices("variables")) {
+                    c.graph.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
+                if (c.graph.variable_columns.size() < 2) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("矩阵图至少需要两个连续变量。"));
+                }
+                if (d.first_role_index("by") >= 0) {
+                    c.graph.by_column = static_cast<std::size_t>(d.first_role_index("by"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("marginal_plot"),
+            QStringLiteral("边际图"),
+            QStringLiteral("边际图"),
+            QStringLiteral("图形"),
+            QStringLiteral("marginal"),
+            false, true,
+            {{QStringLiteral("x_variable"), QStringLiteral("X 变量"), false, false},
+             {QStringLiteral("y_variable"), QStringLiteral("Y 变量"), false, false}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "边际图";
+                c.chart_type = "marginal_plot";
+                c.graph.graph_kind = "marginal";
+                const int x = d.first_role_index("x_variable");
+                const int y = d.first_role_index("y_variable");
+                if (x < 0 || y < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择 X 变量和 Y 变量。"));
+                }
+                c.graph.x_column = static_cast<std::size_t>(x);
+                c.graph.y_column = static_cast<std::size_t>(y);
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("parallel_plot"),
+            QStringLiteral("平行坐标图"),
+            QStringLiteral("平行坐标图"),
+            QStringLiteral("图形"),
+            QStringLiteral("parallel"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("变量"), true, false},
+             {QStringLiteral("by"), QStringLiteral("分组变量"), false, true}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "平行坐标图";
+                c.chart_type = "parallel_plot";
+                c.graph.graph_kind = "parallel";
+                for (const int column : d.role_indices("variables")) {
+                    c.graph.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
+                if (c.graph.variable_columns.size() < 2) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("平行坐标图至少需要两个连续变量。"));
+                }
+                if (d.first_role_index("by") >= 0) {
+                    c.graph.by_column = static_cast<std::size_t>(d.first_role_index("by"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("heatmap_plot"),
+            QStringLiteral("热图"),
+            QStringLiteral("热图"),
+            QStringLiteral("图形"),
+            QStringLiteral("heatmap"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("相关变量"), true, true},
+             {QStringLiteral("x_variable"), QStringLiteral("列类别"), false, true},
+             {QStringLiteral("y_variable"), QStringLiteral("行类别"), false, true},
+             {QStringLiteral("z_variable"), QStringLiteral("数值"), false, true}},
+            {{QStringLiteral("method"), QStringLiteral("相关方法"), QStringLiteral("pearson")}},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "热图";
+                c.chart_type = "heatmap_plot";
+                c.graph.graph_kind = "heatmap";
+                for (const int column : d.role_indices("variables")) {
+                    c.graph.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
+                if (d.first_role_index("x_variable") >= 0) {
+                    c.graph.x_column = static_cast<std::size_t>(d.first_role_index("x_variable"));
+                }
+                if (d.first_role_index("y_variable") >= 0) {
+                    c.graph.y_column = static_cast<std::size_t>(d.first_role_index("y_variable"));
+                }
+                if (d.first_role_index("z_variable") >= 0) {
+                    c.graph.z_column = static_cast<std::size_t>(d.first_role_index("z_variable"));
+                }
+                c.graph.correlation_method = normalize(d.line_text("method"));
+                if (c.graph.correlation_method != "spearman") {
+                    c.graph.correlation_method = "pearson";
+                }
+                if (c.graph.variable_columns.size() < 2
+                    && !(c.graph.x_column.has_value() && c.graph.y_column.has_value()
+                         && c.graph.z_column.has_value())) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择至少两个连续变量，或行/列类别和数值。"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("time_series_plot"),
+            QStringLiteral("时间序列图"),
+            QStringLiteral("时间序列图"),
+            QStringLiteral("图形"),
+            QStringLiteral("time_series"),
+            false, true,
+            {{QStringLiteral("time"), QStringLiteral("时间变量"), false, false},
+             {QStringLiteral("value"), QStringLiteral("数值变量"), false, false},
+             {QStringLiteral("by"), QStringLiteral("分组变量"), false, true}},
+            {{QStringLiteral("connect_missing"), QStringLiteral("连接缺失间隔"),
+              QStringLiteral("yes / no")}},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "时间序列图";
+                c.chart_type = "time_series_plot";
+                c.graph.graph_kind = "time_series";
+                const int time = d.first_role_index("time");
+                const int value = d.first_role_index("value");
+                if (time < 0 || value < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择时间变量和数值变量。"));
+                }
+                c.graph.time_column = static_cast<std::size_t>(time);
+                c.graph.x_column = static_cast<std::size_t>(time);
+                c.graph.y_column = static_cast<std::size_t>(value);
+                if (d.first_role_index("by") >= 0) {
+                    c.graph.by_column = static_cast<std::size_t>(d.first_role_index("by"));
+                }
+                const QString connect = QString::fromStdString(normalize(d.line_text("connect_missing")));
+                c.graph.connect_missing = connect != QStringLiteral("no")
+                    && connect != QStringLiteral("false")
+                    && connect != QStringLiteral("0");
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("area_plot"),
+            QStringLiteral("区域图"),
+            QStringLiteral("区域图"),
+            QStringLiteral("图形"),
+            QStringLiteral("area"),
+            false, true,
+            {{QStringLiteral("time"), QStringLiteral("顺序/时间变量"), false, false},
+             {QStringLiteral("value"), QStringLiteral("数值变量"), false, false}},
+            {},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "区域图";
+                c.chart_type = "area_plot";
+                c.graph.graph_kind = "area";
+                const int time = d.first_role_index("time");
+                const int value = d.first_role_index("value");
+                if (time < 0 || value < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择顺序变量和数值变量。"));
+                }
+                c.graph.time_column = static_cast<std::size_t>(time);
+                c.graph.x_column = static_cast<std::size_t>(time);
+                c.graph.y_column = static_cast<std::size_t>(value);
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("contour_plot"),
+            QStringLiteral("等值线图"),
+            QStringLiteral("等值线图"),
+            QStringLiteral("图形"),
+            QStringLiteral("contour"),
+            false, true,
+            {{QStringLiteral("x_variable"), QStringLiteral("X 变量"), false, false},
+             {QStringLiteral("y_variable"), QStringLiteral("Y 变量"), false, false},
+             {QStringLiteral("z_variable"), QStringLiteral("Z 变量"), false, false}},
+            {{QStringLiteral("levels"), QStringLiteral("等值线层数"), QStringLiteral("8")}},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "等值线图";
+                c.chart_type = "contour_plot";
+                c.graph.graph_kind = "contour";
+                const int x = d.first_role_index("x_variable");
+                const int y = d.first_role_index("y_variable");
+                const int z = d.first_role_index("z_variable");
+                if (x < 0 || y < 0 || z < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择 X、Y 和 Z 变量。"));
+                }
+                c.graph.x_column = static_cast<std::size_t>(x);
+                c.graph.y_column = static_cast<std::size_t>(y);
+                c.graph.z_column = static_cast<std::size_t>(z);
+                c.graph.contour_levels = d.line_int("levels").value_or(8);
+                if (c.graph.contour_levels < 2 || c.graph.contour_levels > 20) {
+                    return apply_error(QStringLiteral("参数无效"),
+                                       QStringLiteral("等值线层数必须在 2 到 20 之间。"));
+                }
+                return {};
+            },
+            GraphService::run},
+        {
+            QStringLiteral("pie_plot"),
+            QStringLiteral("饼图"),
+            QStringLiteral("饼图"),
+            QStringLiteral("图形"),
+            QStringLiteral("pie"),
+            false, true,
+            {{QStringLiteral("category"), QStringLiteral("分类变量"), false, false},
+             {QStringLiteral("weight"), QStringLiteral("权重/计数"), false, true}},
+            {{QStringLiteral("other_threshold"), QStringLiteral("小类别合并阈值 %"),
+              QStringLiteral("5")}},
+            [](AnalysisConfiguration& c,
+               const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "饼图";
+                c.chart_type = "pie_plot";
+                c.graph.graph_kind = "pie";
+                const int category = d.first_role_index("category");
+                if (category < 0) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("请选择分类变量。"));
+                }
+                c.graph.x_column = static_cast<std::size_t>(category);
+                if (d.first_role_index("weight") >= 0) {
+                    c.graph.weight_column =
+                        static_cast<std::size_t>(d.first_role_index("weight"));
+                }
+                c.graph.other_threshold_percent =
+                    d.line_number("other_threshold").value_or(5.0);
+                if (c.graph.other_threshold_percent < 0.0
+                    || c.graph.other_threshold_percent > 100.0) {
+                    return apply_error(QStringLiteral("参数无效"),
+                                       QStringLiteral("小类别合并阈值必须在 0 到 100 之间。"));
+                }
+                return {};
+            },
+            GraphService::run},
         // ------------------------------------------------------------ 控制图
         {
             QStringLiteral("imr"),
@@ -906,18 +1506,20 @@ const std::vector<AnalysisCommand>& all()
             QStringLiteral("imr"),
             false, true,
             {{QStringLiteral("variables"), QStringLiteral("变量"), false, false}},
-            {{QStringLiteral("mr_length"), QStringLiteral("移动极差长度"), QStringLiteral("2")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {{QStringLiteral("mr_length"), QStringLiteral("移动极差长度"), QStringLiteral("2")},
+             special_cause_tests_input(QStringLiteral("individuals"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "I-MR 控制图";
                 c.chart_type = "imr";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择测量值列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
-                c.moving_range_length = d.line_int(QStringLiteral("mr_length")).value_or(2);
+                c.control.moving_range_length = d.line_int("mr_length").value_or(2);
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::individuals_moving_range},
@@ -930,22 +1532,24 @@ const std::vector<AnalysisCommand>& all()
             false, true,
             {{QStringLiteral("variables"), QStringLiteral("变量"), false, false},
              {QStringLiteral("subgroup"), QStringLiteral("子组列"), false, true}},
-            {{QStringLiteral("subgroup_size"), QStringLiteral("子组大小"), QStringLiteral("5")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {{QStringLiteral("subgroup_size"), QStringLiteral("子组大小"), QStringLiteral("5")},
+             special_cause_tests_input(QStringLiteral("xbar"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "Xbar-R 控制图";
                 c.chart_type = "xbar_r";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择测量值列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
-                if (d.first_role_index(QStringLiteral("subgroup")) >= 0) {
+                if (d.first_role_index("subgroup") >= 0) {
                     c.selection.subgroup_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("subgroup")));
+                        d.first_role_index("subgroup"));
                 }
-                c.subgroup_size = d.line_int(QStringLiteral("subgroup_size")).value_or(5);
+                c.control.subgroup_size = d.line_int("subgroup_size").value_or(5);
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::xbar_range},
@@ -958,21 +1562,23 @@ const std::vector<AnalysisCommand>& all()
             false, true,
             {{QStringLiteral("variables"), QStringLiteral("变量"), false, false},
              {QStringLiteral("subgroup"), QStringLiteral("子组列"), false, true}},
-            {{QStringLiteral("subgroup_size"), QStringLiteral("子组大小"), QStringLiteral("5")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {{QStringLiteral("subgroup_size"), QStringLiteral("子组大小"), QStringLiteral("5")},
+             special_cause_tests_input(QStringLiteral("xbar"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "Xbar-S 控制图";
                 c.chart_type = "xbar_s";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_silent();
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
-                if (d.first_role_index(QStringLiteral("subgroup")) >= 0) {
+                if (d.first_role_index("subgroup") >= 0) {
                     c.selection.subgroup_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("subgroup")));
+                        d.first_role_index("subgroup"));
                 }
-                c.subgroup_size = d.line_int(QStringLiteral("subgroup_size")).value_or(5);
+                c.control.subgroup_size = d.line_int("subgroup_size").value_or(5);
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::xbar_s},
@@ -985,25 +1591,27 @@ const std::vector<AnalysisCommand>& all()
             true, true,
             {{QStringLiteral("defectives"), QStringLiteral("不合格品数"), false, false},
              {QStringLiteral("inspected"), QStringLiteral("检验数（列）"), false, true}},
-            {{QStringLiteral("inspected_constant"), QStringLiteral("检验数（常数）"), QString()}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {{QStringLiteral("inspected_constant"), QStringLiteral("检验数（常数）"), QString()},
+             special_cause_tests_input(QStringLiteral("attribute"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "P 图";
                 c.chart_type = "p_chart";
-                const int defectives = d.first_role_index(QStringLiteral("defectives"));
+                const int defectives = d.first_role_index("defectives");
                 if (defectives < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择不合格品数列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(defectives));
                 c.selection.defect_count_column = static_cast<std::size_t>(defectives);
-                if (d.first_role_index(QStringLiteral("inspected")) >= 0) {
+                if (d.first_role_index("inspected") >= 0) {
                     c.selection.inspected_count_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("inspected")));
+                        d.first_role_index("inspected"));
                 }
-                if (d.line_int(QStringLiteral("inspected_constant")).has_value()) {
+                if (d.line_int("inspected_constant").has_value()) {
                     c.inspected_constant = static_cast<std::size_t>(
-                        *d.line_int(QStringLiteral("inspected_constant")));
+                        *d.line_int("inspected_constant"));
                 }
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::p_chart},
@@ -1017,23 +1625,25 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("defectives"), QStringLiteral("不合格品数"), false, false},
              {QStringLiteral("inspected"), QStringLiteral("检验数列"), false, true}},
             {{QStringLiteral("inspected_constant"), QStringLiteral("检验数常数"),
-              QStringLiteral("例如 100")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+              QStringLiteral("例如 100")},
+             special_cause_tests_input(QStringLiteral("attribute"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.chart_type = "np_chart";
-                const int defect_column = d.first_role_index(QStringLiteral("defectives"));
+                const int defect_column = d.first_role_index("defectives");
                 if (defect_column < 0) {
                     return apply_silent();
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(defect_column));
                 c.selection.defect_count_column = static_cast<std::size_t>(defect_column);
-                if (d.first_role_index(QStringLiteral("inspected")) >= 0) {
+                if (d.first_role_index("inspected") >= 0) {
                     c.selection.inspected_count_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("inspected")));
+                        d.first_role_index("inspected"));
                 }
-                if (d.line_int(QStringLiteral("inspected_constant")).has_value()) {
+                if (d.line_int("inspected_constant").has_value()) {
                     c.inspected_constant = static_cast<std::size_t>(
-                        *d.line_int(QStringLiteral("inspected_constant")));
+                        *d.line_int("inspected_constant"));
                 }
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::np_chart},
@@ -1045,17 +1655,19 @@ const std::vector<AnalysisCommand>& all()
             QStringLiteral("c_chart"),
             false, true,
             {{QStringLiteral("defects"), QStringLiteral("缺陷数"), false, false}},
-            {{QStringLiteral("units"), QStringLiteral("每个子组单位数"), QStringLiteral("1")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {{QStringLiteral("units"), QStringLiteral("每个子组单位数"), QStringLiteral("1")},
+             special_cause_tests_input(QStringLiteral("attribute"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.chart_type = "c_chart";
-                const int defect_column = d.first_role_index(QStringLiteral("defects"));
+                const int defect_column = d.first_role_index("defects");
                 if (defect_column < 0) {
                     return apply_silent();
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(defect_column));
                 c.selection.defect_count_column = static_cast<std::size_t>(defect_column);
                 c.inspected_constant = static_cast<std::size_t>(
-                    d.line_int(QStringLiteral("units")).value_or(1));
+                    d.line_int("units").value_or(1));
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::c_chart},
@@ -1068,17 +1680,18 @@ const std::vector<AnalysisCommand>& all()
             false, true,
             {{QStringLiteral("defects"), QStringLiteral("缺陷数"), false, false},
              {QStringLiteral("units"), QStringLiteral("单位数列"), false, false}},
-            {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            {special_cause_tests_input(QStringLiteral("attribute"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.chart_type = "u_chart";
-                const int defect_column = d.first_role_index(QStringLiteral("defects"));
-                const int units_column = d.first_role_index(QStringLiteral("units"));
+                const int defect_column = d.first_role_index("defects");
+                const int units_column = d.first_role_index("units");
                 if (defect_column < 0 || units_column < 0) {
                     return apply_silent();
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(defect_column));
                 c.selection.defect_count_column = static_cast<std::size_t>(defect_column);
                 c.selection.inspected_count_column = static_cast<std::size_t>(units_column);
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::u_chart},
@@ -1094,47 +1707,35 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("stage"), QStringLiteral("阶段列"), false, true}},
             {{QStringLiteral("inspected_constant"), QStringLiteral("检验数常数"),
               QStringLiteral("可选")},
-             {QStringLiteral("tests"), QStringLiteral("特殊原因测试"),
-              QStringLiteral("例如 1 2 3 4")},
+             special_cause_tests_input(QStringLiteral("laney")),
              {QStringLiteral("historical_center"), QStringLiteral("历史中心线"),
               QStringLiteral("可选")},
              {QStringLiteral("historical_sigma_z"), QStringLiteral("历史 Sigma Z"),
               QStringLiteral("可选")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "Laney P' 图";
                 c.chart_type = "laney_p_chart";
-                const int defect_column = d.first_role_index(QStringLiteral("defectives"));
+                const int defect_column = d.first_role_index("defectives");
                 if (defect_column < 0) {
                     return apply_silent();
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(defect_column));
                 c.selection.defect_count_column = static_cast<std::size_t>(defect_column);
-                if (d.first_role_index(QStringLiteral("inspected")) >= 0) {
+                if (d.first_role_index("inspected") >= 0) {
                     c.selection.inspected_count_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("inspected")));
+                        d.first_role_index("inspected"));
                 }
-                if (d.first_role_index(QStringLiteral("stage")) >= 0) {
-                    c.stage_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("stage")));
+                if (d.first_role_index("stage") >= 0) {
+                    c.control.stage_column = static_cast<std::size_t>(
+                        d.first_role_index("stage"));
                 }
-                if (d.line_int(QStringLiteral("inspected_constant")).has_value()) {
+                if (d.line_int("inspected_constant").has_value()) {
                     c.inspected_constant = static_cast<std::size_t>(
-                        *d.line_int(QStringLiteral("inspected_constant")));
+                        *d.line_int("inspected_constant"));
                 }
-                c.enabled_special_cause_tests.clear();
-                for (const QString& token : d.line_text(QStringLiteral("tests")).split(
-                         QRegularExpression(QStringLiteral("[,;\\s]+")), Qt::SkipEmptyParts)) {
-                    bool ok = false;
-                    const int test = token.toInt(&ok);
-                    if (ok && test >= 1 && test <= 4) {
-                        c.enabled_special_cause_tests.push_back(test);
-                    }
-                }
-                if (c.enabled_special_cause_tests.empty()) {
-                    c.enabled_special_cause_tests = {1};
-                }
-                c.historical_center = d.line_number(QStringLiteral("historical_center"));
-                c.historical_sigma_z = d.line_number(QStringLiteral("historical_sigma_z"));
+                apply_special_cause_selection(c, d);
+                c.control.historical_center = d.line_number("historical_center");
+                c.control.historical_sigma_z = d.line_number("historical_sigma_z");
                 return {};
             },
             AnalysisService::laney_p_chart},
@@ -1148,41 +1749,29 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("defects"), QStringLiteral("缺陷数"), false, false},
              {QStringLiteral("units"), QStringLiteral("单位数列"), false, false},
              {QStringLiteral("stage"), QStringLiteral("阶段列"), false, true}},
-            {{QStringLiteral("tests"), QStringLiteral("特殊原因测试"),
-              QStringLiteral("例如 1 2 3 4")},
+            {special_cause_tests_input(QStringLiteral("laney")),
              {QStringLiteral("historical_center"), QStringLiteral("历史中心线"),
               QStringLiteral("可选")},
              {QStringLiteral("historical_sigma_z"), QStringLiteral("历史 Sigma Z"),
               QStringLiteral("可选")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "Laney U' 图";
                 c.chart_type = "laney_u_chart";
-                const int defect_column = d.first_role_index(QStringLiteral("defects"));
-                const int units_column = d.first_role_index(QStringLiteral("units"));
+                const int defect_column = d.first_role_index("defects");
+                const int units_column = d.first_role_index("units");
                 if (defect_column < 0 || units_column < 0) {
                     return apply_silent();
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(defect_column));
                 c.selection.defect_count_column = static_cast<std::size_t>(defect_column);
                 c.selection.inspected_count_column = static_cast<std::size_t>(units_column);
-                if (d.first_role_index(QStringLiteral("stage")) >= 0) {
-                    c.stage_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("stage")));
+                if (d.first_role_index("stage") >= 0) {
+                    c.control.stage_column = static_cast<std::size_t>(
+                        d.first_role_index("stage"));
                 }
-                c.enabled_special_cause_tests.clear();
-                for (const QString& token : d.line_text(QStringLiteral("tests")).split(
-                         QRegularExpression(QStringLiteral("[,;\\s]+")), Qt::SkipEmptyParts)) {
-                    bool ok = false;
-                    const int test = token.toInt(&ok);
-                    if (ok && test >= 1 && test <= 4) {
-                        c.enabled_special_cause_tests.push_back(test);
-                    }
-                }
-                if (c.enabled_special_cause_tests.empty()) {
-                    c.enabled_special_cause_tests = {1};
-                }
-                c.historical_center = d.line_number(QStringLiteral("historical_center"));
-                c.historical_sigma_z = d.line_number(QStringLiteral("historical_sigma_z"));
+                apply_special_cause_selection(c, d);
+                c.control.historical_center = d.line_number("historical_center");
+                c.control.historical_sigma_z = d.line_number("historical_sigma_z");
                 return {};
             },
             AnalysisService::laney_u_chart},
@@ -1197,18 +1786,20 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("lambda"), QStringLiteral("Lambda"), QStringLiteral("0.2")},
              {QStringLiteral("limit"), QStringLiteral("控制限倍数"), QStringLiteral("3")},
              {QStringLiteral("historical_mean"), QStringLiteral("历史均值（可选）"),
-              QStringLiteral("可选")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int column = d.first_role_index(QStringLiteral("variables"));
+              QStringLiteral("可选")},
+             special_cause_tests_input(QStringLiteral("ewma"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_silent();
                 }
                 c.analysis_name = "EWMA 控制图";
                 c.chart_type = "ewma";
                 c.variable_columns = {static_cast<std::size_t>(column)};
-                c.ewma_lambda = d.line_number(QStringLiteral("lambda")).value_or(0.2);
-                c.ewma_limit_sigma = d.line_number(QStringLiteral("limit")).value_or(3.0);
-                c.historical_center = d.line_number(QStringLiteral("historical_mean"));
+                c.control.ewma_lambda = d.line_number("lambda").value_or(0.2);
+                c.control.ewma_limit_sigma = d.line_number("limit").value_or(3.0);
+                c.control.historical_center = d.line_number("historical_mean");
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::ewma},
@@ -1223,19 +1814,21 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("target"), QStringLiteral("目标值"), QStringLiteral("0")},
              {QStringLiteral("sigma"), QStringLiteral("过程 Sigma"), QStringLiteral("1")},
              {QStringLiteral("k"), QStringLiteral("参考值 k"), QStringLiteral("0.5")},
-             {QStringLiteral("h"), QStringLiteral("决策间隔 h"), QStringLiteral("4")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int column = d.first_role_index(QStringLiteral("variables"));
+             {QStringLiteral("h"), QStringLiteral("决策间隔 h"), QStringLiteral("4")},
+             special_cause_tests_input(QStringLiteral("cusum"))},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_silent();
                 }
                 c.analysis_name = "CUSUM 控制图";
                 c.chart_type = "cusum";
                 c.variable_columns = {static_cast<std::size_t>(column)};
-                c.cusum_target = d.line_number(QStringLiteral("target")).value_or(0.0);
-                c.cusum_sigma = d.line_number(QStringLiteral("sigma")).value_or(1.0);
-                c.cusum_k = d.line_number(QStringLiteral("k")).value_or(0.5);
-                c.cusum_h = d.line_number(QStringLiteral("h")).value_or(4.0);
+                c.control.cusum_target = d.line_number("target").value_or(0.0);
+                c.control.cusum_sigma = d.line_number("sigma").value_or(1.0);
+                c.control.cusum_k = d.line_number("k").value_or(0.5);
+                c.control.cusum_h = d.line_number("h").value_or(4.0);
+                apply_special_cause_selection(c, d);
                 return {};
             },
             AnalysisService::cusum},
@@ -1252,20 +1845,20 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("lsl"), QStringLiteral("LSL"), QStringLiteral("例如 73.95")},
              {QStringLiteral("usl"), QStringLiteral("USL"), QStringLiteral("例如 74.05")},
              {QStringLiteral("target"), QStringLiteral("Target"), QStringLiteral("可选")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "正态过程能力";
                 c.chart_type = "capability";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择测量值列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
-                c.subgroup_size = d.line_int(QStringLiteral("subgroup_size")).value_or(1);
-                c.specifications.lower = d.line_number(QStringLiteral("lsl"));
-                c.specifications.upper = d.line_number(QStringLiteral("usl"));
-                c.specifications.target = d.line_number(QStringLiteral("target"));
+                c.control.subgroup_size = d.line_int("subgroup_size").value_or(1);
+                c.specifications.lower = d.line_number("lsl");
+                c.specifications.upper = d.line_number("usl");
+                c.specifications.target = d.line_number("target");
                 return {};
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
@@ -1283,20 +1876,20 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("lsl"), QStringLiteral("LSL"), QStringLiteral("例如 73.95")},
              {QStringLiteral("usl"), QStringLiteral("USL"), QStringLiteral("例如 74.05")},
              {QStringLiteral("target"), QStringLiteral("Target"), QStringLiteral("可选")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "过程能力 Sixpack";
                 c.chart_type = "capability_sixpack";
-                const int column = d.first_role_index(QStringLiteral("variables"));
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("未选择变量"),
                                        QStringLiteral("请选择测量值列。"));
                 }
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
-                c.subgroup_size = d.line_int(QStringLiteral("subgroup_size")).value_or(1);
-                c.specifications.lower = d.line_number(QStringLiteral("lsl"));
-                c.specifications.upper = d.line_number(QStringLiteral("usl"));
-                c.specifications.target = d.line_number(QStringLiteral("target"));
+                c.control.subgroup_size = d.line_int("subgroup_size").value_or(1);
+                c.specifications.lower = d.line_number("lsl");
+                c.specifications.upper = d.line_number("usl");
+                c.specifications.target = d.line_number("target");
                 return {};
             },
             AnalysisService::capability_sixpack},
@@ -1312,8 +1905,8 @@ const std::vector<AnalysisCommand>& all()
               QStringLiteral("留空自动搜索 -5 到 5")},
              {QStringLiteral("lsl"), QStringLiteral("LSL（可选）"), QStringLiteral("规格下限")},
              {QStringLiteral("usl"), QStringLiteral("USL（可选）"), QStringLiteral("规格上限")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int column = d.first_role_index(QStringLiteral("variables"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int column = d.first_role_index("variables");
                 if (column < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择一个正值变量。"));
@@ -1321,9 +1914,9 @@ const std::vector<AnalysisCommand>& all()
                 c.analysis_name = "Box-Cox 变换";
                 c.chart_type = "box_cox";
                 c.variable_columns = {static_cast<std::size_t>(column)};
-                c.hypothesis_mean = d.line_number(QStringLiteral("lambda"));
-                c.specifications.lower = d.line_number(QStringLiteral("lsl"));
-                c.specifications.upper = d.line_number(QStringLiteral("usl"));
+                c.inference.hypothesis_mean = d.line_number("lambda");
+                c.specifications.lower = d.line_number("lsl");
+                c.specifications.upper = d.line_number("usl");
                 return {};
             },
             AnalysisService::box_cox},
@@ -1339,21 +1932,21 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("operator"), QStringLiteral("操作员"), false, false}},
             {{QStringLiteral("lsl"), QStringLiteral("LSL（可选）"), QStringLiteral("规格下限")},
              {QStringLiteral("usl"), QStringLiteral("USL（可选）"), QStringLiteral("规格上限")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int measurement = d.first_role_index(QStringLiteral("measurement"));
-                const int part = d.first_role_index(QStringLiteral("part"));
-                const int oper = d.first_role_index(QStringLiteral("operator"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int measurement = d.first_role_index("measurement");
+                const int part = d.first_role_index("part");
+                const int oper = d.first_role_index("operator");
                 if (measurement < 0 || part < 0 || oper < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择测量值、零件和操作员列。"));
                 }
                 c.analysis_name = "Crossed Gage R&R";
                 c.chart_type = "gage_rr";
-                c.gage_measurement_column = static_cast<std::size_t>(measurement);
-                c.gage_part_column = static_cast<std::size_t>(part);
-                c.gage_operator_column = static_cast<std::size_t>(oper);
-                c.specifications.lower = d.line_number(QStringLiteral("lsl"));
-                c.specifications.upper = d.line_number(QStringLiteral("usl"));
+                c.msa.gage_measurement_column = static_cast<std::size_t>(measurement);
+                c.msa.gage_part_column = static_cast<std::size_t>(part);
+                c.msa.gage_operator_column = static_cast<std::size_t>(oper);
+                c.specifications.lower = d.line_number("lsl");
+                c.specifications.upper = d.line_number("usl");
                 return {};
             },
             AnalysisService::gage_rr},
@@ -1370,25 +1963,25 @@ const std::vector<AnalysisCommand>& all()
               QStringLiteral("type1 / bias_linearity / stability")},
              {QStringLiteral("reference_value"), QStringLiteral("参考值（Type 1）"), QString()},
              {QStringLiteral("tolerance"), QStringLiteral("公差宽度（可选）"), QString()}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
-                const int measurement = d.first_role_index(QStringLiteral("measurement"));
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int measurement = d.first_role_index("measurement");
                 if (measurement < 0) {
                     return apply_error(QStringLiteral("参数不足"),
                                        QStringLiteral("请选择测量值列。"));
                 }
                 c.analysis_name = "MSA Type 1 / Bias / Stability";
                 c.chart_type = "msa_type1";
-                c.gage_measurement_column = static_cast<std::size_t>(measurement);
-                c.msa_mode = d.line_text(QStringLiteral("mode")).trimmed().toLower().toStdString();
-                if (c.msa_mode != "bias_linearity" && c.msa_mode != "stability") {
-                    c.msa_mode = "type1";
+                c.msa.gage_measurement_column = static_cast<std::size_t>(measurement);
+                c.msa.mode = normalize(d.line_text("mode"));
+                if (c.msa.mode != "bias_linearity" && c.msa.mode != "stability") {
+                    c.msa.mode = "type1";
                 }
-                if (d.first_role_index(QStringLiteral("reference")) >= 0) {
-                    c.msa_reference_column = static_cast<std::size_t>(
-                        d.first_role_index(QStringLiteral("reference")));
+                if (d.first_role_index("reference") >= 0) {
+                    c.msa.reference_column = static_cast<std::size_t>(
+                        d.first_role_index("reference"));
                 }
-                c.msa_reference_value = d.line_number(QStringLiteral("reference_value"));
-                c.gage_tolerance = d.line_number(QStringLiteral("tolerance")).value_or(0.0);
+                c.msa.reference_value = d.line_number("reference_value");
+                c.msa.gage_tolerance = d.line_number("tolerance").value_or(0.0);
                 return {};
             },
             AnalysisService::msa_type1},
@@ -1403,16 +1996,16 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("part"), QStringLiteral("部件"), false, false},
              {QStringLiteral("operator"), QStringLiteral("操作者"), false, false}},
             {{QStringLiteral("tolerance"), QStringLiteral("公差"), QStringLiteral("可选")}},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "Nested Gage R&R";
                 c.chart_type = "nested_gage_rr";
-                c.nested_gage_measurement_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("measurement")));
-                c.nested_gage_part_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("part")));
-                c.nested_gage_operator_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("operator")));
-                c.gage_tolerance = d.line_number(QStringLiteral("tolerance")).value_or(0.0);
+                c.msa.nested_measurement_column = static_cast<std::size_t>(
+                    d.first_role_index("measurement"));
+                c.msa.nested_part_column = static_cast<std::size_t>(
+                    d.first_role_index("part"));
+                c.msa.nested_operator_column = static_cast<std::size_t>(
+                    d.first_role_index("operator"));
+                c.msa.gage_tolerance = d.line_number("tolerance").value_or(0.0);
                 return {};
             },
             AnalysisService::nested_gage_rr},
@@ -1428,18 +2021,18 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("appraiser"), QStringLiteral("评估者"), false, false},
              {QStringLiteral("standard"), QStringLiteral("标准（可选）"), false, true}},
             {},
-            [](AnalysisConfiguration& c, const AnalysisSetupDialog& d) -> AnalysisApplyResult {
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "属性一致性分析";
                 c.chart_type = "attribute_agreement";
-                c.attribute_rating_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("rating")));
-                c.attribute_part_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("part")));
-                c.attribute_appraiser_column = static_cast<std::size_t>(
-                    d.first_role_index(QStringLiteral("appraiser")));
-                const int standard = d.first_role_index(QStringLiteral("standard"));
+                c.msa.attribute_rating_column = static_cast<std::size_t>(
+                    d.first_role_index("rating"));
+                c.msa.attribute_part_column = static_cast<std::size_t>(
+                    d.first_role_index("part"));
+                c.msa.attribute_appraiser_column = static_cast<std::size_t>(
+                    d.first_role_index("appraiser"));
+                const int standard = d.first_role_index("standard");
                 if (standard >= 0) {
-                    c.attribute_standard_column = static_cast<std::size_t>(standard);
+                    c.msa.attribute_standard_column = static_cast<std::size_t>(standard);
                 }
                 return {};
             },

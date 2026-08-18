@@ -20,14 +20,23 @@ def main() -> int:
 
     source = pathlib.Path(sys.argv[1])
     try:
+        sheet_name = ""
+        sheet_index = 0
         if source.suffix.lower() in {".xlsx", ".xls"}:
-            frame = pd.read_excel(source)
+            workbook = pd.ExcelFile(source)
+            if not workbook.sheet_names:
+                raise ValueError("Excel workbook contains no worksheets.")
+            sheet_name = str(workbook.sheet_names[0])
+            frame = pd.read_excel(workbook, sheet_name=sheet_name)
         else:
             frame = pd.read_csv(source)
         frame = frame.where(pd.notna(frame), "")
         payload = {
+            "schema_version": 1,
             "name": source.stem,
             "source_path": str(source),
+            "sheet_name": sheet_name,
+            "sheet_index": sheet_index,
             "columns": [str(column) for column in frame.columns],
             "rows": [[str(value) for value in row] for row in frame.astype(str).values.tolist()],
         }

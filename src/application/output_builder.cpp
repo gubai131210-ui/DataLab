@@ -10,6 +10,28 @@ namespace datalab::application {
 
 using datalab::domain::StatisticTable;
 
+namespace {
+
+std::string triggered_tests_text(
+    const datalab::domain::statistics::ControlChartResult& chart,
+    std::size_t index)
+{
+    if (index >= chart.triggered_tests.size()
+        || chart.triggered_tests[index].empty()) {
+        return {};
+    }
+    std::ostringstream stream;
+    for (std::size_t offset = 0; offset < chart.triggered_tests[index].size(); ++offset) {
+        if (offset > 0) {
+            stream << ",";
+        }
+        stream << "Test " << chart.triggered_tests[index][offset];
+    }
+    return stream.str();
+}
+
+}  // namespace
+
 std::string format_number(double value, int digits)
 {
     if (!std::isfinite(value)) {
@@ -158,7 +180,8 @@ StatisticTable descriptive_table(
     table.title = "描述统计";
     table.headers = {
         "变量", "N", "N*", "Mean", "SE Mean", "StDev", "Variance",
-        "Minimum", "Q1", "Median", "Q3", "IQR", "Maximum", "Range", "Sum"};
+        "Minimum", "Q1", "Median", "Q3", "IQR", "Maximum", "Range", "Sum",
+        "Skewness", "Excess Kurtosis"};
     for (const auto& row : rows) {
         table.rows.push_back({
             row.group_label,
@@ -173,10 +196,11 @@ StatisticTable descriptive_table(
             format_number(row.median),
             format_number(row.third_quartile),
             format_number(row.interquartile_range),
-            format_number(row.minimum),
             format_number(row.maximum),
             format_number(row.range),
-            format_number(row.sum)});
+            format_number(row.sum),
+            format_optional(row.skewness),
+            format_optional(row.excess_kurtosis)});
     }
     return table;
 }
@@ -193,7 +217,8 @@ StatisticTable attribute_chart_table(
     StatisticTable table;
     table.title = title;
     table.headers = {
-        "子组", count_header, denominator_header, rate_header, "中心线", "LCL", "UCL", "Test 1"};
+        "原始行", "子组", count_header, denominator_header, rate_header, "中心线", "LCL", "UCL",
+        "触发测试", "最小测试"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         const std::size_t count = index < counts.size() ? counts[index] : 0;
         const std::size_t denominator = index < denominators.size() ? denominators[index] : 0;
@@ -202,10 +227,12 @@ StatisticTable attribute_chart_table(
             ? chart.lower_control_limit[index] : 0.0;
         const double upper = index < chart.upper_control_limit.size()
             ? chart.upper_control_limit[index] : 0.0;
-        const bool test1_failed = std::find(
-            chart.test1_points.cbegin(), chart.test1_points.cend(), index)
-            != chart.test1_points.cend();
+        const std::string tests = triggered_tests_text(chart, index);
+        const int primary_test = index < chart.primary_test_by_point.size()
+            ? chart.primary_test_by_point[index] : 0;
         table.rows.push_back({
+            index < chart.source_rows.size()
+                ? std::to_string(chart.source_rows[index] + 1) : "*",
             std::to_string(index + 1),
             std::to_string(count),
             std::to_string(denominator),
@@ -213,7 +240,8 @@ StatisticTable attribute_chart_table(
             format_number(center),
             format_number(lower),
             format_number(upper),
-            test1_failed ? "是" : ""});
+            tests,
+            primary_test > 0 ? "Test " + std::to_string(primary_test) : ""});
     }
     return table;
 }
@@ -228,9 +256,9 @@ StatisticTable laney_chart_table(
 {
     StatisticTable table;
     table.title = "Laney 图逐子组统计";
-    table.headers = {"子组", "阶段", count_header, denominator_header, "绘制值",
+    table.headers = {"原始行", "子组", "阶段", count_header, denominator_header, "绘制值",
                     "Z", "MR", "中心线", "LCL", "UCL", "Test 1", "Test 2",
-                    "Test 3", "Test 4"};
+                    "Test 3", "Test 4", "触发测试", "最小测试"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         const auto test_failed = [&](std::size_t test) {
             return test < chart.special_cause_points.size()
@@ -239,6 +267,8 @@ StatisticTable laney_chart_table(
                     != chart.special_cause_points[test].cend();
         };
         table.rows.push_back({
+            index < chart.source_rows.size()
+                ? std::to_string(chart.source_rows[index] + 1) : "*",
             std::to_string(index + 1),
             index < stages.size() ? stages[index] : "",
             index < counts.size() ? std::to_string(counts[index]) : "*",
@@ -255,7 +285,11 @@ StatisticTable laney_chart_table(
             test_failed(0) ? "是" : "",
             test_failed(1) ? "是" : "",
             test_failed(2) ? "是" : "",
-            test_failed(3) ? "是" : ""});
+            test_failed(3) ? "是" : "",
+            triggered_tests_text(chart, index),
+            index < chart.primary_test_by_point.size()
+                && chart.primary_test_by_point[index] > 0
+                ? "Test " + std::to_string(chart.primary_test_by_point[index]) : ""});
     }
     return table;
 }
@@ -292,6 +326,9 @@ domain::PlotSpec control_plot(
     plot.upper = chart.upper_control_limit;
     plot.source_rows = source_rows;
     plot.special_cause_points = chart.special_cause_points;
+    plot.triggered_tests = chart.triggered_tests;
+    plot.primary_test_by_point = chart.primary_test_by_point;
+    plot.signal_direction = chart.signal_direction;
     plot.sigma_z = chart.sigma_z;
     return plot;
 }

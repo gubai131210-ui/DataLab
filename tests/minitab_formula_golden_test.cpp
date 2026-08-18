@@ -32,7 +32,7 @@ void MinitabFormulaGoldenTest::capabilityWithinSigmaMatchesImr()
     table.rows = {{"1"}, {"2"}, {"3"}, {"2"}};
     datalab::domain::AnalysisConfiguration configuration;
     configuration.variable_columns = {0};
-    configuration.subgroup_size = 1;
+    configuration.control.subgroup_size = 1;
     configuration.specifications.lower = -10.0;
     configuration.specifications.upper = 10.0;
     const auto capability = datalab::application::AnalysisService::capability(table, configuration);

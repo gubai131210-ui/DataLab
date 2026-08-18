@@ -38,7 +38,7 @@ std::optional<SubgroupInput> build_strict_subgroups(
             result.source_rows[iterator->second].push_back(row);
         }
     } else {
-        const int configured_size = configuration.subgroup_size.value_or(5);
+        const int configured_size = configuration.control.subgroup_size.value_or(5);
         if (configured_size < 2) {
             error = "子组大小必须至少为 2。";
             return std::nullopt;
@@ -83,7 +83,13 @@ std::size_t first_variable(const domain::AnalysisConfiguration& configuration)
 std::vector<std::vector<double>> align_complete_rows(
     const std::vector<domain::ExtractedNumericColumn>& columns)
 {
-    std::vector<std::vector<double>> aligned;
+    return align_complete_rows_with_source(columns).values;
+}
+
+AlignedNumericRows align_complete_rows_with_source(
+    const std::vector<domain::ExtractedNumericColumn>& columns)
+{
+    AlignedNumericRows aligned;
     if (columns.empty()) {
         return aligned;
     }
@@ -114,7 +120,8 @@ std::vector<std::vector<double>> align_complete_rows(
             row_values.push_back(match->second);
         }
         if (complete) {
-            aligned.push_back(std::move(row_values));
+            aligned.source_rows.push_back(row);
+            aligned.values.push_back(std::move(row_values));
         }
     }
     return aligned;

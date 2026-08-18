@@ -1,0 +1,29 @@
+name: DataLab build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          arch: win64_mingw
+          modules: qtsvg qtserialport
+      - name: Configure
+        shell: pwsh
+        run: cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        shell: pwsh
+        run: cmake --build build --parallel
+      - name: Layering check
+        shell: pwsh
+        run: ./tools/check_layering.ps1
+      - name: Test
+        shell: pwsh
+        run: ctest --test-dir build --output-on-failure

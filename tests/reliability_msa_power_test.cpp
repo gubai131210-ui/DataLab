@@ -170,23 +170,23 @@ void ReliabilityMsaPowerTest::buildsServiceOutputPages()
     table.rows = {{"10.0", "10.0", "1", "1"}, {"10.1", "10.0", "2", "0"},
                   {"9.9", "10.0", "3", "1"}, {"10.0", "10.0", "4", "1"}};
     datalab::domain::AnalysisConfiguration msa;
-    msa.gage_measurement_column = 0;
-    msa.msa_reference_value = 10.0;
-    msa.gage_tolerance = 1.0;
+    msa.msa.gage_measurement_column = 0;
+    msa.msa.reference_value = 10.0;
+    msa.msa.gage_tolerance = 1.0;
     const auto msa_page = datalab::application::AnalysisService::msa_type1(table, msa);
     QCOMPARE(msa_page.tables.size(), std::size_t{1});
     QCOMPARE(msa_page.plots.size(), std::size_t{1});
 
     datalab::domain::AnalysisConfiguration reliability;
-    reliability.reliability_time_column = 2;
-    reliability.reliability_event_column = 3;
+    reliability.reliability.time_column = 2;
+    reliability.reliability.event_column = 3;
     const auto reliability_page =
         datalab::application::AnalysisService::reliability(table, reliability);
     QCOMPARE(reliability_page.tables.size(), std::size_t{1});
     QCOMPARE(reliability_page.plots.size(), std::size_t{1});
 
     datalab::domain::AnalysisConfiguration power;
-    power.power_mode = "two_sample_sample_size";
+    power.power.mode = "two_sample_sample_size";
     const auto power_page = datalab::application::AnalysisService::t_power(table, power);
     QCOMPARE(power_page.tables.size(), std::size_t{1});
 }

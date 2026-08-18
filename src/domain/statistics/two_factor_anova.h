@@ -19,16 +19,19 @@ struct TwoFactorAnovaInput {
     std::vector<std::string> factor_b;
     std::vector<double> response;
     AnovaFactorEncoding encoding = AnovaFactorEncoding::reference;
+    std::vector<std::size_t> source_rows;
 };
 
 struct AnovaEffectResult {
     std::string term;
-    double sequential_sum_of_squares = 0.0;
-    double adjusted_sum_of_squares = 0.0;
+    std::optional<double> sequential_sum_of_squares;
+    std::optional<double> adjusted_sum_of_squares;
     std::size_t degrees_of_freedom = 0;
-    double mean_square = 0.0;
-    double f_statistic = 0.0;
+    std::optional<double> mean_square;
+    std::optional<double> f_statistic;
     std::optional<double> p_value;
+    bool estimable = true;
+    std::string estimability = "estimable";
 };
 
 struct AnovaFactorMean {
@@ -47,6 +50,7 @@ struct AnovaInteractionMean {
 struct TwoFactorAnovaResult {
     std::size_t observation_count = 0;
     std::size_t omitted_observation_count = 0;
+    QualityEvidence evidence;
     double grand_mean = 0.0;
     double total_sum_of_squares = 0.0;
     double error_sum_of_squares = 0.0;

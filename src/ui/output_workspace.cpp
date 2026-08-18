@@ -19,11 +19,14 @@ OutputWorkspace::OutputWorkspace(QWidget* parent)
     setTabPosition(QTabWidget::North);
     setElideMode(Qt::ElideRight);
     setStyleSheet(QStringLiteral(
-        "QTabWidget::pane { border: 1px solid #d6e1e5; background: #ffffff; }"
-        "QTabBar::tab { background: #eaf2f5; color: #647b84; padding: 9px 16px;"
-        " border: 0; border-right: 1px solid #d6e1e5; }"
+        "QTabWidget::pane { border: 1px solid #d7e3e6; background: #ffffff;"
+        " border-radius: 7px; }"
+        "QTabBar { background: #e8f0f2; qproperty-drawBase: 0; }"
+        "QTabBar::tab { background: transparent; color: #647b84; padding: 9px 16px;"
+        " margin: 3px 2px 0 0; border: 0; border-radius: 6px 6px 0 0; }"
+        "QTabBar::tab:hover { background: #dceced; color: #2d6971; }"
         "QTabBar::tab:selected { background: #ffffff; color: #147d85;"
-        " border-top: 2px solid #42aeb4; }"));
+        " font-weight: 600; border-top: 2px solid #35a6aa; }"));
     tabBar()->installEventFilter(this);
 }
 
@@ -69,12 +72,7 @@ void OutputWorkspace::add_page(const datalab::domain::OutputPage& page)
                 || plot_index >= pages_[page_index].plots.size()) {
                 return;
             }
-            auto& target = pages_[page_index].plots[plot_index];
-            target.title = model.title.toStdString();
-            target.subtitle = model.subtitle.toStdString();
-            target.show_grid = model.show_grid;
-            target.show_legend = model.show_legend;
-            target.line_width = model.line_width;
+            pages_[page_index].plots[plot_index] = plot_from_chart_model(model);
         };
     options.on_rows_selected = [this](const std::vector<std::size_t>& rows) {
         emit rows_selected(rows);

@@ -57,6 +57,19 @@
         <file>icons/histogram.svg</file>
         <file>icons/boxplot.svg</file>
         <file>icons/pareto.svg</file>
+        <file>icons/scatter.svg</file>
+        <file>icons/interval.svg</file>
+        <file>icons/bubble.svg</file>
+        <file>icons/probability.svg</file>
+        <file>icons/ecdf.svg</file>
+        <file>icons/matrix.svg</file>
+        <file>icons/marginal.svg</file>
+        <file>icons/parallel.svg</file>
+        <file>icons/heatmap.svg</file>
+        <file>icons/time_series.svg</file>
+        <file>icons/area.svg</file>
+        <file>icons/contour.svg</file>
+        <file>icons/pie.svg</file>
         <file>icons/import-data.svg</file>
         <file>icons/export-report.svg</file>
     </qresource>

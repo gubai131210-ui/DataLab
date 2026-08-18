@@ -1,9 +1,11 @@
 #include "domain/statistics/msa_type1.h"
 
+#include "domain/statistics/control_charts.h"
 #include "domain/statistics/hypothesis_tests.h"
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <numeric>
 
 namespace datalab::domain::statistics {
@@ -48,14 +50,22 @@ MsaType1Result msa_type1(const std::vector<double>& measurements,
     r.bias_standard_error = r.standard_deviation / std::sqrt(static_cast<double>(r.count));
     r.t_statistic = r.bias_standard_error > 0.0 ? r.bias / r.bias_standard_error : 0.0;
     r.degrees_of_freedom = static_cast<double>(r.count - 1);
-    r.p_value = r.bias_standard_error > 0.0
-        ? std::clamp(2.0 * (1.0 - student_t_cdf(
-              std::abs(r.t_statistic), r.degrees_of_freedom)), 0.0, 1.0)
-        : (r.bias == 0.0 ? 1.0 : 0.0);
-    const double critical = student_t_quantile(
-        0.5 + confidence_level / 2.0, r.degrees_of_freedom);
-    r.bias_ci_lower = r.bias - critical * r.bias_standard_error;
-    r.bias_ci_upper = r.bias + critical * r.bias_standard_error;
+    if (r.standard_deviation > 0.0 && r.bias_standard_error > 0.0) {
+        r.inference_available = true;
+        r.p_value = std::clamp(2.0 * (1.0 - student_t_cdf(
+              std::abs(r.t_statistic), r.degrees_of_freedom)), 0.0, 1.0);
+        const double critical = student_t_quantile(
+            0.5 + confidence_level / 2.0, r.degrees_of_freedom);
+        r.bias_ci_lower = r.bias - critical * r.bias_standard_error;
+        r.bias_ci_upper = r.bias + critical * r.bias_standard_error;
+    } else {
+        error(r.diagnostics, "zero_repeatability",
+              "重复性为零时 t、p 和置信区间不可用，不输出 p=0。");
+        r.p_value = 1.0;
+        r.t_statistic = 0.0;
+        r.bias_ci_lower = r.bias;
+        r.bias_ci_upper = r.bias;
+    }
     if (tolerance > 0.0 && r.standard_deviation > 0.0) {
         r.cg = tolerance / (6.0 * r.standard_deviation);
         const double half_tolerance = tolerance / 2.0;
@@ -121,6 +131,18 @@ BiasLinearityResult bias_linearity(const std::vector<double>& references,
     const auto [low, high] = std::minmax_element(references.begin(), references.end());
     r.bias_at_low = r.intercept + r.slope * *low;
     r.bias_at_high = r.intercept + r.slope * *high;
+    std::map<double, BiasLinearityLevel> by_reference;
+    for (std::size_t i = 0; i < references.size(); ++i) {
+        BiasLinearityLevel& level = by_reference[references[i]];
+        level.reference = references[i];
+        ++level.valid_count;
+        level.bias += measurements[i] - references[i];
+        level.source_rows.push_back(i);
+    }
+    for (auto& [_, level] : by_reference) {
+        level.bias /= static_cast<double>(level.valid_count);
+        r.levels.push_back(level);
+    }
     return r;
 }
 
@@ -137,17 +159,24 @@ StabilityResult gage_stability(const std::vector<double>& measurements)
             return r;
         }
     }
+    const auto chart = ControlCharts::individuals_moving_range(measurements);
     r.values = measurements;
-    r.center = mean(measurements);
-    double mr_sum = 0.0;
-    for (std::size_t i = 1; i < measurements.size(); ++i)
-        mr_sum += std::abs(measurements[i] - measurements[i - 1]);
-    r.sigma = (mr_sum / static_cast<double>(measurements.size() - 1)) / 1.128;
-    r.lower_control_limit = r.center - 3.0 * r.sigma;
-    r.upper_control_limit = r.center + 3.0 * r.sigma;
-    for (std::size_t i = 0; i < measurements.size(); ++i)
-        if (measurements[i] < r.lower_control_limit || measurements[i] > r.upper_control_limit)
-            r.out_of_control.push_back(i);
+    r.diagnostics = chart.diagnostics;
+    if (!chart.center_line.empty()) {
+        r.center = chart.center_line.front();
+        r.lower_control_limit = chart.lower_control_limit.empty()
+            ? 0.0 : chart.lower_control_limit.front();
+        r.upper_control_limit = chart.upper_control_limit.empty()
+            ? 0.0 : chart.upper_control_limit.front();
+    }
+    r.sigma = (r.upper_control_limit - r.center) / 3.0;
+    r.out_of_control = chart.test1_points;
+    r.triggered_tests = chart.triggered_tests;
+    r.primary_test_by_point = chart.primary_test_by_point;
+    r.limit_source = "estimated_individuals";
+    for (std::size_t i = 0; i < measurements.size(); ++i) {
+        r.source_rows.push_back(i);
+    }
     return r;
 }
 }  // namespace datalab::domain::statistics

@@ -21,6 +21,8 @@ struct DescriptiveStatisticsResult {
     double interquartile_range = 0.0;
     double range = 0.0;
     double sum = 0.0;
+    std::optional<double> skewness;
+    std::optional<double> excess_kurtosis;
     std::optional<double> sample_standard_deviation;
     std::optional<double> standard_error_of_mean;
     double population_standard_deviation = 0.0;

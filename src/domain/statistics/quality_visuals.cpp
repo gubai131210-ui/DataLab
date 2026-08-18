@@ -26,6 +26,28 @@ BoxPlotSummary box_plot_summary(const std::vector<double>& observations)
     result.median = percentile(0.5);
     result.third_quartile = percentile(0.75);
     result.maximum = ordered.back();
+    result.count = ordered.size();
+    result.iqr = result.third_quartile - result.first_quartile;
+    const double fence_low = result.first_quartile - 1.5 * result.iqr;
+    const double fence_high = result.third_quartile + 1.5 * result.iqr;
+    result.whisker_low = result.minimum;
+    result.whisker_high = result.maximum;
+    bool found_low = false;
+    for (const double value : ordered) {
+        if (value < fence_low) {
+            result.outliers.push_back(value);
+            continue;
+        }
+        if (!found_low) {
+            result.whisker_low = value;
+            found_low = true;
+        }
+        if (value > fence_high) {
+            result.outliers.push_back(value);
+        } else {
+            result.whisker_high = value;
+        }
+    }
     return result;
 }
 
@@ -131,6 +153,34 @@ HistogramResult histogram(const std::vector<double>& observations, int bin_count
             bin = 0;
         }
         result.counts[static_cast<std::size_t>(bin)] += 1.0;
+    }
+    return result;
+}
+
+HistogramResult histogram_with_edges(
+    const std::vector<double>& observations,
+    const std::vector<double>& edges)
+{
+    HistogramResult result;
+    result.edges = edges;
+    if (edges.size() < 2) {
+        return result;
+    }
+    result.counts.assign(edges.size() - 1, 0.0);
+    for (const double value : observations) {
+        if (!std::isfinite(value) || value < edges.front() || value > edges.back()) {
+            continue;
+        }
+        auto it = std::upper_bound(edges.cbegin(), edges.cend(), value);
+        std::size_t bin = static_cast<std::size_t>(std::distance(edges.cbegin(), it));
+        if (bin == 0) {
+            bin = 1;
+        }
+        --bin;
+        if (bin >= result.counts.size()) {
+            bin = result.counts.size() - 1;
+        }
+        result.counts[bin] += 1.0;
     }
     return result;
 }

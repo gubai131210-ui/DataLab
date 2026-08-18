@@ -14,15 +14,45 @@ enum class SigmaEstimateMethod {
     median_moving_range
 };
 
+enum class ControlChartKind {
+    individuals,
+    moving_range,
+    xbar,
+    range,
+    stdev,
+    attribute,
+    laney,
+    ewma,
+    cusum
+};
+
+struct SpecialCauseTestSpec {
+    int number = 0;
+    int default_k = 0;
+    const char* short_name = "";
+    const char* description = "";
+};
+
+struct SpecialCauseSelection {
+    std::vector<int> enabled_tests;
+    std::string policy;
+};
+
 struct ControlChartResult {
     std::vector<double> plotted_values;
     std::vector<double> center_line;
     std::vector<double> lower_control_limit;
     std::vector<double> upper_control_limit;
+    std::vector<double> point_sigma;
     std::vector<std::size_t> test1_points;
     std::vector<std::vector<std::size_t>> special_cause_points;
     std::vector<double> standardized_values;
     std::vector<double> moving_ranges;
+    std::vector<std::vector<int>> triggered_tests;
+    std::vector<int> primary_test_by_point;
+    std::vector<int> signal_direction;
+    std::vector<std::string> phase_labels;
+    std::vector<RowId> source_rows;
     double sigma_z = 0.0;
     std::vector<DiagnosticMessage> diagnostics;
 };
@@ -33,6 +63,7 @@ struct IndividualsMovingRangeOptions {
     std::vector<std::size_t> omit_from_estimate;
     std::optional<double> historical_mean;
     std::optional<double> historical_sigma;
+    SpecialCauseSelection special_causes;
 };
 
 struct DualControlChartResult {
@@ -44,7 +75,8 @@ struct DualControlChartResult {
 };
 
 struct LaneyChartOptions {
-    std::vector<int> enabled_special_cause_tests = {1};
+    std::vector<int> enabled_special_cause_tests;
+    std::string special_cause_rule_policy = "default_all_applicable";
     std::optional<double> historical_center;
     std::optional<double> historical_sigma_z;
 };
@@ -54,6 +86,7 @@ struct EwmaOptions {
     double limit_sigma = 3.0;
     std::optional<double> historical_mean;
     std::optional<double> historical_sigma;
+    SpecialCauseSelection special_causes;
 };
 
 struct CusumOptions {
@@ -85,26 +118,32 @@ public:
         const std::vector<std::vector<double>>& subgroups);
 
     static DualControlChartResult xbar_range_dual(
-        const std::vector<std::vector<double>>& subgroups);
+        const std::vector<std::vector<double>>& subgroups,
+        const SpecialCauseSelection& special_causes = {});
 
     static DualControlChartResult xbar_s_dual(
-        const std::vector<std::vector<double>>& subgroups);
+        const std::vector<std::vector<double>>& subgroups,
+        const SpecialCauseSelection& special_causes = {});
 
     static ControlChartResult p_chart(
         const std::vector<std::size_t>& defectives,
-        const std::vector<std::size_t>& inspected);
+        const std::vector<std::size_t>& inspected,
+        const SpecialCauseSelection& special_causes = {});
 
     static ControlChartResult np_chart(
         const std::vector<std::size_t>& defectives,
-        const std::vector<std::size_t>& inspected);
+        const std::vector<std::size_t>& inspected,
+        const SpecialCauseSelection& special_causes = {});
 
     static ControlChartResult c_chart(
         const std::vector<std::size_t>& defects,
-        std::size_t constant_units);
+        std::size_t constant_units,
+        const SpecialCauseSelection& special_causes = {});
 
     static ControlChartResult u_chart(
         const std::vector<std::size_t>& defects,
-        const std::vector<std::size_t>& units);
+        const std::vector<std::size_t>& units,
+        const SpecialCauseSelection& special_causes = {});
 
     static ControlChartResult laney_p_chart(
         const std::vector<std::size_t>& defectives,
@@ -133,5 +172,24 @@ std::vector<std::vector<double>> build_subgroups_by_label(
     const std::vector<double>& observations,
     const std::vector<std::size_t>& source_rows,
     const std::vector<std::string>& labels);
+
+const std::vector<SpecialCauseTestSpec>& all_special_cause_tests();
+std::vector<int> applicable_special_cause_tests(ControlChartKind kind);
+std::vector<int> default_special_cause_tests(ControlChartKind kind);
+ControlChartKind control_chart_kind_from_name(const std::string& name);
+std::string control_chart_kind_name(ControlChartKind kind);
+SpecialCauseSelection special_cause_selection_from_configuration(
+    const std::vector<int>& enabled_tests,
+    const std::string& policy);
+std::vector<int> parse_special_cause_tests(const std::string& text);
+std::string format_special_cause_tests(const std::vector<int>& tests);
+std::vector<int> resolve_special_cause_tests(
+    const SpecialCauseSelection& selection,
+    ControlChartKind kind,
+    std::vector<DiagnosticMessage>* diagnostics = nullptr);
+void apply_special_cause_tests(
+    ControlChartResult& result,
+    ControlChartKind kind,
+    const SpecialCauseSelection& selection = {});
 
 }  // namespace datalab::domain::statistics

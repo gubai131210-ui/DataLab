@@ -1,5 +1,7 @@
 #include "domain/statistics/attribute_agreement.h"
 
+#include "domain/statistics/normal_distribution.h"
+
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -18,13 +20,7 @@ void add_diagnostic(std::vector<DiagnosticMessage>& diagnostics,
 
 double critical_value(double confidence_level)
 {
-    if (confidence_level >= 0.995) {
-        return 2.807;
-    }
-    if (confidence_level >= 0.975) {
-        return 2.241;
-    }
-    return 1.960;
+    return standard_normal_quantile(0.5 + confidence_level / 2.0);
 }
 
 AgreementEstimate estimate(const std::vector<std::pair<std::string, std::string>>& pairs,
@@ -61,14 +57,22 @@ AgreementEstimate estimate(const std::vector<std::pair<std::string, std::string>
     }
     const double observed = static_cast<double>(observed_count)
         / static_cast<double>(result.valid_count);
-    result.kappa = std::abs(1.0 - expected) > 1e-12
-        ? (observed - expected) / (1.0 - expected) : 0.0;
+    result.expected_agreement = expected;
+    if (std::abs(1.0 - expected) <= 1e-12) {
+        result.identifiable = false;
+        result.kappa = 0.0;
+        result.kappa_standard_error = 0.0;
+        result.kappa_ci_low = 0.0;
+        result.kappa_ci_high = 0.0;
+        return result;
+    }
+    result.kappa = (observed - expected) / (1.0 - expected);
     const double variance = observed * (1.0 - observed)
         / (static_cast<double>(result.valid_count)
            * std::pow(1.0 - expected, 2.0));
     result.kappa_standard_error = std::sqrt(std::max(0.0, variance));
-    const double margin = critical_value(confidence_level)
-        * result.kappa_standard_error;
+    const double z = critical_value(confidence_level);
+    const double margin = std::isfinite(z) ? z * result.kappa_standard_error : 0.0;
     result.kappa_ci_low = std::max(-1.0, result.kappa - margin);
     result.kappa_ci_high = std::min(1.0, result.kappa + margin);
     return result;
@@ -162,6 +166,20 @@ AttributeAgreementResult attribute_agreement(
                        "missing_attribute_standard",
                        "部分项目缺少标准评级，相关评估者-标准比较将排除这些项目。");
     }
+    bool unbalanced_replicates = false;
+    for (const auto& row : matrix) {
+        const std::size_t first_size = row.front().size();
+        for (const auto& cell : row) {
+            if (cell.size() != first_size) {
+                unbalanced_replicates = true;
+            }
+        }
+    }
+    if (unbalanced_replicates) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "unbalanced_replicates",
+                       "评估者重复次数不一致；不等长配对已排除，不会静默截断。");
+    }
 
     for (std::size_t evaluator = 0; evaluator < result.evaluator_count; ++evaluator) {
         std::vector<std::pair<std::string, std::string>> pairs;
@@ -194,9 +212,10 @@ AttributeAgreementResult attribute_agreement(
             for (const auto& row : matrix) {
                 const auto& first_ratings = row[first];
                 const auto& second_ratings = row[second];
-                const std::size_t pair_count = std::min(
-                    first_ratings.size(), second_ratings.size());
-                for (std::size_t repeat = 0; repeat < pair_count; ++repeat) {
+                if (first_ratings.size() != second_ratings.size()) {
+                    continue;
+                }
+                for (std::size_t repeat = 0; repeat < first_ratings.size(); ++repeat) {
                     pairs.emplace_back(first_ratings[repeat],
                                        second_ratings[repeat]);
                 }
@@ -205,6 +224,22 @@ AttributeAgreementResult attribute_agreement(
                 {evaluator_names[first], evaluator_names[second],
                  estimate(pairs, confidence_level)});
         }
+    }
+    auto mark_unidentifiable = [&](const AgreementEstimate& estimate) {
+        if (!estimate.identifiable) {
+            add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                           "not_estimable",
+                           "期望一致率 P_expected=1，Kappa 不可识别，不计算无限标准误。");
+        }
+    };
+    for (const auto& row : result.within_evaluator) {
+        mark_unidentifiable(row.estimate);
+    }
+    for (const auto& row : result.between_evaluator) {
+        mark_unidentifiable(row.estimate);
+    }
+    for (const auto& row : result.against_standard) {
+        mark_unidentifiable(row.estimate);
     }
     return result;
 }

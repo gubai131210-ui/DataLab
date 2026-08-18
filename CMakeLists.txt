@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(DataLab LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test Concurrent)
 
 qt_standard_project_setup()
 
@@ -14,7 +14,11 @@ qt_standard_project_setup()
 add_library(datalab_domain STATIC
     src/domain/column_extract.cpp
     src/domain/column_extract.h
+    src/domain/graph_assembly.cpp
+    src/domain/graph_assembly.h
     src/domain/quality_types.h
+    src/domain/quality_diagnostics.cpp
+    src/domain/quality_diagnostics.h
     src/domain/statistics/descriptive_statistics.cpp
     src/domain/statistics/descriptive_statistics.h
     src/domain/statistics/process_capability.cpp
@@ -74,6 +78,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/seasonal_forecasting.h
     src/domain/statistics/pca.cpp
     src/domain/statistics/pca.h
+    src/domain/statistics/graph_visuals.cpp
+    src/domain/statistics/graph_visuals.h
 )
 
 target_include_directories(datalab_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -82,6 +88,8 @@ target_include_directories(datalab_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
 # application：分析编排（AnalysisService / InterpretationService / 构建器）
 # ---------------------------------------------------------------------------
 add_library(datalab_application STATIC
+    src/application/analysis_intent.cpp
+    src/application/analysis_intent.h
     src/application/analysis_service.cpp
     src/application/analysis_service.h
     src/application/interpretation_service.cpp
@@ -92,6 +100,8 @@ add_library(datalab_application STATIC
     src/application/column_assembly.h
     src/application/chart_pages.cpp
     src/application/chart_pages.h
+    src/application/graph_service.cpp
+    src/application/graph_service.h
     src/application/doe_pages.cpp
     src/application/doe_pages.h
 )
@@ -101,7 +111,6 @@ target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR
 target_link_libraries(datalab_application
     PUBLIC
         datalab_domain
-        Qt6::Core
 )
 
 # ---------------------------------------------------------------------------
@@ -109,6 +118,7 @@ target_link_libraries(datalab_application
 # ---------------------------------------------------------------------------
 add_library(datalab_reporting STATIC
     src/reporting/chart_model.h
+    src/reporting/chart_geometry.h
     src/reporting/chart_renderer.cpp
     src/reporting/chart_renderer.h
     src/reporting/chart_adapter.cpp
@@ -148,12 +158,6 @@ add_library(datalab_infrastructure STATIC
 )
 
 target_include_directories(datalab_infrastructure PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-# DATALAB_SOURCE_DIR 供 python_table_importer 与基于 fixtures 的测试使用
-target_compile_definitions(datalab_infrastructure
-    PUBLIC
-        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
-)
 
 target_link_libraries(datalab_infrastructure
     PUBLIC
@@ -206,6 +210,82 @@ target_link_libraries(datalab_ui
         datalab_application
         datalab_infrastructure
         datalab_reporting
+        Qt6::Concurrent
+)
+
+set(DATALAB_ICON_FILES
+    resources/icons/app-mark.svg
+    resources/icons/new.svg
+    resources/icons/open.svg
+    resources/icons/save.svg
+    resources/icons/import.svg
+    resources/icons/undo.svg
+    resources/icons/redo.svg
+    resources/icons/run-analysis.svg
+    resources/icons/data-table.svg
+    resources/icons/report.svg
+    resources/icons/export-pdf.svg
+    resources/icons/settings.svg
+    resources/icons/warning.svg
+    resources/icons/error.svg
+    resources/icons/success.svg
+    resources/icons/descriptive.svg
+    resources/icons/normality_test.svg
+    resources/icons/correlation.svg
+    resources/icons/one_sample_t.svg
+    resources/icons/two_sample_t.svg
+    resources/icons/paired_t.svg
+    resources/icons/one_way_anova.svg
+    resources/icons/two_factor_anova.svg
+    resources/icons/chi_square.svg
+    resources/icons/two_proportions.svg
+    resources/icons/mann_whitney.svg
+    resources/icons/wilcoxon_signed_rank.svg
+    resources/icons/kruskal_wallis.svg
+    resources/icons/regression.svg
+    resources/icons/logistic_regression.svg
+    resources/icons/box_cox.svg
+    resources/icons/pca.svg
+    resources/icons/imr.svg
+    resources/icons/xbar_r.svg
+    resources/icons/xbar_s.svg
+    resources/icons/p_chart.svg
+    resources/icons/np_chart.svg
+    resources/icons/c_chart.svg
+    resources/icons/u_chart.svg
+    resources/icons/laney_p_chart.svg
+    resources/icons/laney_u_chart.svg
+    resources/icons/ewma.svg
+    resources/icons/cusum.svg
+    resources/icons/time_series_smoothing.svg
+    resources/icons/time_series_decomposition.svg
+    resources/icons/seasonal_forecasting.svg
+    resources/icons/arima.svg
+    resources/icons/doe_factorial.svg
+    resources/icons/gage_rr.svg
+    resources/icons/nested_gage_rr.svg
+    resources/icons/attribute_agreement.svg
+    resources/icons/variance_test.svg
+    resources/icons/capability.svg
+    resources/icons/capability_sixpack.svg
+    resources/icons/histogram.svg
+    resources/icons/boxplot.svg
+    resources/icons/pareto.svg
+    resources/icons/scatter.svg
+    resources/icons/interval.svg
+    resources/icons/bubble.svg
+    resources/icons/probability.svg
+    resources/icons/ecdf.svg
+    resources/icons/matrix.svg
+    resources/icons/marginal.svg
+    resources/icons/parallel.svg
+    resources/icons/heatmap.svg
+    resources/icons/time_series.svg
+    resources/icons/area.svg
+    resources/icons/contour.svg
+    resources/icons/pie.svg
+    resources/icons/import-data.svg
+    resources/icons/export-report.svg
 )
 
 # ---------------------------------------------------------------------------
@@ -220,66 +300,14 @@ qt_add_executable(DataLab
 qt_add_resources(DataLab app_resources
     PREFIX "/"
     BASE resources
+    FILES ${DATALAB_ICON_FILES}
+)
+
+qt_add_resources(DataLab import_script_resource
+    PREFIX "/"
+    BASE .
     FILES
-        resources/icons/app-mark.svg
-        resources/icons/new.svg
-        resources/icons/open.svg
-        resources/icons/save.svg
-        resources/icons/import.svg
-        resources/icons/undo.svg
-        resources/icons/redo.svg
-        resources/icons/run-analysis.svg
-        resources/icons/data-table.svg
-        resources/icons/report.svg
-        resources/icons/export-pdf.svg
-        resources/icons/settings.svg
-        resources/icons/warning.svg
-        resources/icons/error.svg
-        resources/icons/success.svg
-        resources/icons/descriptive.svg
-        resources/icons/normality_test.svg
-        resources/icons/correlation.svg
-        resources/icons/one_sample_t.svg
-        resources/icons/two_sample_t.svg
-        resources/icons/paired_t.svg
-        resources/icons/one_way_anova.svg
-        resources/icons/two_factor_anova.svg
-        resources/icons/chi_square.svg
-        resources/icons/two_proportions.svg
-        resources/icons/mann_whitney.svg
-        resources/icons/wilcoxon_signed_rank.svg
-        resources/icons/kruskal_wallis.svg
-        resources/icons/regression.svg
-        resources/icons/logistic_regression.svg
-        resources/icons/box_cox.svg
-        resources/icons/pca.svg
-        resources/icons/imr.svg
-        resources/icons/xbar_r.svg
-        resources/icons/xbar_s.svg
-        resources/icons/p_chart.svg
-        resources/icons/np_chart.svg
-        resources/icons/c_chart.svg
-        resources/icons/u_chart.svg
-        resources/icons/laney_p_chart.svg
-        resources/icons/laney_u_chart.svg
-        resources/icons/ewma.svg
-        resources/icons/cusum.svg
-        resources/icons/time_series_smoothing.svg
-        resources/icons/time_series_decomposition.svg
-        resources/icons/seasonal_forecasting.svg
-        resources/icons/arima.svg
-        resources/icons/doe_factorial.svg
-        resources/icons/gage_rr.svg
-        resources/icons/nested_gage_rr.svg
-        resources/icons/attribute_agreement.svg
-        resources/icons/variance_test.svg
-        resources/icons/capability.svg
-        resources/icons/capability_sixpack.svg
-        resources/icons/histogram.svg
-        resources/icons/boxplot.svg
-        resources/icons/pareto.svg
-        resources/icons/import-data.svg
-        resources/icons/export-report.svg
+        tools/import_table.py
 )
 
 target_link_libraries(DataLab
@@ -294,68 +322,23 @@ target_link_libraries(DataLab
 # ---------------------------------------------------------------------------
 enable_testing()
 
-qt_add_executable(descriptive_statistics_test
-    tests/descriptive_statistics_test.cpp
-)
+function(add_datalab_test name source)
+    qt_add_executable(${name} ${source})
+    target_link_libraries(${name} PRIVATE ${ARGN} Qt6::Test)
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+add_datalab_test(descriptive_statistics_test tests/descriptive_statistics_test.cpp datalab_domain)
 
-target_link_libraries(descriptive_statistics_test
-    PRIVATE
-        datalab_domain
-        Qt6::Test
-)
+add_datalab_test(column_extract_import_test tests/column_extract_import_test.cpp datalab_domain datalab_infrastructure)
 
-add_test(NAME descriptive_statistics_test COMMAND descriptive_statistics_test)
+add_datalab_test(quality_statistics_test tests/quality_statistics_test.cpp datalab_domain datalab_application)
 
-qt_add_executable(column_extract_import_test
-    tests/column_extract_import_test.cpp
-)
+add_datalab_test(reliability_msa_power_test tests/reliability_msa_power_test.cpp datalab_domain datalab_application)
 
-target_link_libraries(column_extract_import_test
-    PRIVATE
-        datalab_domain
-        datalab_infrastructure
-        Qt6::Test
-)
+add_datalab_test(doe_response_test tests/doe_response_test.cpp datalab_domain)
 
-add_test(NAME column_extract_import_test COMMAND column_extract_import_test)
-
-qt_add_executable(quality_statistics_test
-    tests/quality_statistics_test.cpp
-)
-
-target_link_libraries(quality_statistics_test
-    PRIVATE
-        datalab_domain
-        datalab_application
-        Qt6::Test
-)
-
-add_test(NAME quality_statistics_test COMMAND quality_statistics_test)
-
-qt_add_executable(reliability_msa_power_test
-    tests/reliability_msa_power_test.cpp
-)
-
-target_link_libraries(reliability_msa_power_test
-    PRIVATE
-        datalab_domain
-        datalab_application
-        Qt6::Test
-)
-
-add_test(NAME reliability_msa_power_test COMMAND reliability_msa_power_test)
-
-qt_add_executable(doe_response_test
-    tests/doe_response_test.cpp
-)
-
-target_link_libraries(doe_response_test
-    PRIVATE
-        datalab_domain
-        Qt6::Test
-)
-
-add_test(NAME doe_response_test COMMAND doe_response_test)
+add_datalab_test(graph_visuals_test tests/graph_visuals_test.cpp datalab_domain)
+add_datalab_test(graph_service_test tests/graph_service_test.cpp datalab_application)
 
 qt_add_executable(minitab_fixture_test
     tests/minitab_fixture_test.cpp
@@ -366,33 +349,22 @@ target_link_libraries(minitab_fixture_test
         datalab_infrastructure
         Qt6::Test
 )
+target_compile_definitions(minitab_fixture_test
+    PRIVATE
+        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
 add_test(NAME minitab_fixture_test COMMAND minitab_fixture_test)
 
-qt_add_executable(chart_geometry_test
-    tests/chart_geometry_test.cpp
+add_datalab_test(chart_geometry_test tests/chart_geometry_test.cpp datalab_reporting)
+
+add_datalab_test(
+    chart_model_roundtrip_test
+    tests/chart_model_roundtrip_test.cpp
+    datalab_reporting
 )
 
-target_link_libraries(chart_geometry_test
-    PRIVATE
-        datalab_reporting
-        Qt6::Test
-)
-
-add_test(NAME chart_geometry_test COMMAND chart_geometry_test)
-
-qt_add_executable(pdf_layout_test
-    tests/pdf_layout_test.cpp
-)
-
-target_link_libraries(pdf_layout_test
-    PRIVATE
-        datalab_infrastructure
-        datalab_reporting
-        Qt6::Test
-)
-
-add_test(NAME pdf_layout_test COMMAND pdf_layout_test)
+add_datalab_test(pdf_layout_test tests/pdf_layout_test.cpp datalab_infrastructure datalab_reporting)
 
 qt_add_executable(minitab_formula_golden_test
     tests/minitab_formula_golden_test.cpp
@@ -404,32 +376,63 @@ target_link_libraries(minitab_formula_golden_test
         datalab_infrastructure
         Qt6::Test
 )
+target_compile_definitions(minitab_formula_golden_test
+    PRIVATE
+        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
 add_test(NAME minitab_formula_golden_test COMMAND minitab_formula_golden_test)
 
-qt_add_executable(worksheet_model_test
-    tests/worksheet_model_test.cpp
+add_datalab_test(worksheet_model_test tests/worksheet_model_test.cpp datalab_ui)
+
+add_datalab_test(output_serialization_test tests/output_serialization_test.cpp datalab_infrastructure)
+
+add_datalab_test(quality_diagnostics_test tests/quality_diagnostics_test.cpp datalab_domain datalab_infrastructure)
+
+add_datalab_test(
+    interpretation_service_test
+    tests/interpretation_service_test.cpp
+    datalab_application
 )
 
-target_link_libraries(worksheet_model_test
-    PRIVATE
-        datalab_ui
-        Qt6::Test
+add_datalab_test(
+    analysis_intent_test
+    tests/analysis_intent_test.cpp
+    datalab_ui
 )
 
-add_test(NAME worksheet_model_test COMMAND worksheet_model_test)
-
-qt_add_executable(output_serialization_test
-    tests/output_serialization_test.cpp
+add_datalab_test(
+    analysis_setup_dialog_test
+    tests/analysis_setup_dialog_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    analysis_setup_dialog_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
-target_link_libraries(output_serialization_test
-    PRIVATE
-        datalab_infrastructure
-        Qt6::Test
+add_datalab_test(
+    special_cause_rule_test
+    tests/special_cause_rule_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    special_cause_rule_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
-add_test(NAME output_serialization_test COMMAND output_serialization_test)
+add_datalab_test(
+    python_table_importer_test
+    tests/python_table_importer_test.cpp
+    datalab_infrastructure
+)
+
+add_datalab_test(
+    project_repository_test
+    tests/project_repository_test.cpp
+    datalab_infrastructure
+    Qt6::Sql
+)
 
 qt_add_executable(icon_resource_test
     tests/icon_resource_test.cpp
@@ -438,66 +441,7 @@ qt_add_executable(icon_resource_test
 qt_add_resources(icon_resource_test icon_resources
     PREFIX "/"
     BASE resources
-    FILES
-        resources/icons/app-mark.svg
-        resources/icons/new.svg
-        resources/icons/open.svg
-        resources/icons/save.svg
-        resources/icons/import.svg
-        resources/icons/undo.svg
-        resources/icons/redo.svg
-        resources/icons/run-analysis.svg
-        resources/icons/data-table.svg
-        resources/icons/report.svg
-        resources/icons/export-pdf.svg
-        resources/icons/settings.svg
-        resources/icons/warning.svg
-        resources/icons/error.svg
-        resources/icons/success.svg
-        resources/icons/descriptive.svg
-        resources/icons/normality_test.svg
-        resources/icons/correlation.svg
-        resources/icons/one_sample_t.svg
-        resources/icons/two_sample_t.svg
-        resources/icons/paired_t.svg
-        resources/icons/one_way_anova.svg
-        resources/icons/two_factor_anova.svg
-        resources/icons/chi_square.svg
-        resources/icons/two_proportions.svg
-        resources/icons/mann_whitney.svg
-        resources/icons/wilcoxon_signed_rank.svg
-        resources/icons/kruskal_wallis.svg
-        resources/icons/regression.svg
-        resources/icons/logistic_regression.svg
-        resources/icons/box_cox.svg
-        resources/icons/pca.svg
-        resources/icons/imr.svg
-        resources/icons/xbar_r.svg
-        resources/icons/xbar_s.svg
-        resources/icons/p_chart.svg
-        resources/icons/np_chart.svg
-        resources/icons/c_chart.svg
-        resources/icons/u_chart.svg
-        resources/icons/laney_p_chart.svg
-        resources/icons/laney_u_chart.svg
-        resources/icons/ewma.svg
-        resources/icons/cusum.svg
-        resources/icons/time_series_smoothing.svg
-        resources/icons/time_series_decomposition.svg
-        resources/icons/seasonal_forecasting.svg
-        resources/icons/arima.svg
-        resources/icons/doe_factorial.svg
-        resources/icons/gage_rr.svg
-        resources/icons/nested_gage_rr.svg
-        resources/icons/attribute_agreement.svg
-        resources/icons/variance_test.svg
-        resources/icons/capability.svg
-        resources/icons/capability_sixpack.svg
-        resources/icons/histogram.svg
-        resources/icons/boxplot.svg
-        resources/icons/pareto.svg
-        resources/icons/import-data.svg
-        resources/icons/export-report.svg
+    FILES ${DATALAB_ICON_FILES}
 )
 
 target_link_libraries(icon_resource_test

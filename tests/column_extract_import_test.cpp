@@ -13,6 +13,9 @@ private slots:
     void preservesRowsForQuotedCsvFields();
     void importsCsvThroughService();
     void reportsMissingFileThroughService();
+    void distinguishesMissingAndInvalidCells();
+    void populatesImportContract();
+    void preservesMultilineQuotedCsvFields();
 };
 
 void ColumnExtractImportTest::rejectsTrailingCharactersInNumericCells()
@@ -25,9 +28,73 @@ void ColumnExtractImportTest::rejectsTrailingCharactersInNumericCells()
 
     QCOMPARE(result.values.size(), std::size_t{1});
     QCOMPARE(result.source_rows.front(), std::size_t{1});
-    QCOMPARE(result.missing_count, std::size_t{2});
+    QCOMPARE(result.missing_count, std::size_t{1});
     QCOMPARE(result.invalid_count, std::size_t{1});
     QVERIFY(result.column_valid);
+}
+
+void ColumnExtractImportTest::distinguishesMissingAndInvalidCells()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Value"};
+    table.rows = {{"1"}, {"NA"}, {"not-a-number"}, {""}};
+
+    datalab::domain::populate_data_table_contract(table);
+    QCOMPARE(table.cell_states[0][0], datalab::domain::CellState::valid);
+    QCOMPARE(table.cell_states[1][0], datalab::domain::CellState::missing);
+    QCOMPARE(table.cell_states[2][0], datalab::domain::CellState::invalid);
+    QCOMPARE(table.cell_states[3][0], datalab::domain::CellState::missing);
+
+    const auto result = datalab::domain::extract_numeric_column(table, 0, {});
+    QCOMPARE(result.missing_count, std::size_t{2});
+    QCOMPARE(result.invalid_count, std::size_t{1});
+
+    datalab::domain::DataTable categorical;
+    categorical.columns = {"Group"};
+    categorical.rows = {{"A"}, {"B"}};
+    datalab::domain::populate_data_table_contract(categorical);
+    QCOMPARE(categorical.column_types[0], datalab::domain::ColumnType::categorical);
+    QCOMPARE(categorical.cell_states[0][0], datalab::domain::CellState::valid);
+}
+
+void ColumnExtractImportTest::populatesImportContract()
+{
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    const QByteArray content("Date,Value,Group\n"
+                             "2026-01-01,1.5,A\n"
+                             "2026-01-02,NA,B\n");
+    QCOMPARE(file.write(content), content.size());
+    QVERIFY(file.flush());
+
+    QString error;
+    const auto table = datalab::infrastructure::CsvImporter::import_file(
+        file.fileName(), &error);
+    QVERIFY2(table.has_value(), qPrintable(error));
+    QCOMPARE(table->row_ids, std::vector<datalab::domain::RowId>({0, 1}));
+    QCOMPARE(table->column_types[0], datalab::domain::ColumnType::time);
+    QCOMPARE(table->column_types[1], datalab::domain::ColumnType::numeric);
+    QCOMPARE(table->column_types[2], datalab::domain::ColumnType::categorical);
+    QCOMPARE(table->import_metadata.original_row_count, std::size_t{2});
+}
+
+void ColumnExtractImportTest::preservesMultilineQuotedCsvFields()
+{
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    const QByteArray content("Name,Note\n"
+                             "A,\"first line\n"
+                             "second line\"\n"
+                             "B,\"plain\"\n");
+    QCOMPARE(file.write(content), content.size());
+    QVERIFY(file.flush());
+
+    QString error;
+    const auto table = datalab::infrastructure::CsvImporter::import_file(
+        file.fileName(), &error);
+    QVERIFY2(table.has_value(), qPrintable(error));
+    QCOMPARE(table->rows.size(), std::size_t{2});
+    QCOMPARE(table->rows[0][1], std::string("first line\nsecond line"));
 }
 
 void ColumnExtractImportTest::preservesRowsForQuotedCsvFields()

@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace datalab::domain::statistics {
@@ -17,6 +18,7 @@ struct ProcessCapabilityResult {
     std::optional<double> cpl;
     std::optional<double> cpu;
     std::optional<double> cpk;
+    std::optional<double> cpm;
     std::optional<double> pp;
     std::optional<double> ppl;
     std::optional<double> ppu;
@@ -30,6 +32,13 @@ struct ProcessCapabilityResult {
     std::optional<double> expected_ppm_overall_below;
     std::optional<double> expected_ppm_overall_above;
     std::optional<double> expected_ppm_overall_total;
+    std::optional<double> z_lsl;
+    std::optional<double> z_usl;
+    std::optional<double> z_bench;
+    std::string specification_mode;
+    std::string within_sigma_method;
+    std::string overall_sigma_method = "sample_standard_deviation";
+    QualityEvidence evidence;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

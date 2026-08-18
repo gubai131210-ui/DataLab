@@ -23,6 +23,7 @@
 #include <QEvent>
 #include <QFileDialog>
 #include <QFile>
+#include <QFrame>
 #include <QHash>
 #include <QHeaderView>
 #include <QIcon>
@@ -38,13 +39,95 @@
 #include <QStatusBar>
 #include <QTableView>
 #include <QToolBar>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QUndoCommand>
 #include <QUndoStack>
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <optional>
+#include <utility>
 
 namespace {
+
+QString primary_analysis_menu(const analysis_commands::AnalysisCommand& command)
+{
+    if (command.id == QStringLiteral("pareto")) {
+        return QStringLiteral("质量工具");
+    }
+    if (command.id == QStringLiteral("doe_factorial")
+        || command.id == QStringLiteral("doe_response")
+        || command.menu_path == QStringLiteral("控制图")) {
+        return QStringLiteral("统计");
+    }
+    return command.menu_path;
+}
+
+QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
+{
+    const QString id = command.id;
+    if (command.menu_path == QStringLiteral("控制图")) {
+        return QStringLiteral("控制图");
+    }
+    if (id == QStringLiteral("doe_factorial")
+        || id == QStringLiteral("doe_response")) {
+        return QStringLiteral("DOE");
+    }
+    if (id == QStringLiteral("descriptive")
+        || id == QStringLiteral("normality_test")
+        || id == QStringLiteral("one_sample_t")
+        || id == QStringLiteral("two_sample_t")
+        || id == QStringLiteral("paired_t")
+        || id == QStringLiteral("correlation")) {
+        return QStringLiteral("基础统计");
+    }
+    if (id == QStringLiteral("one_way_anova")
+        || id == QStringLiteral("two_factor_anova")) {
+        return QStringLiteral("ANOVA");
+    }
+    if (id == QStringLiteral("regression")
+        || id == QStringLiteral("logistic_regression")) {
+        return QStringLiteral("回归");
+    }
+    if (id == QStringLiteral("time_series_smoothing")
+        || id == QStringLiteral("time_series_decomposition")
+        || id == QStringLiteral("seasonal_forecasting")
+        || id == QStringLiteral("arima")) {
+        return QStringLiteral("时间序列");
+    }
+    if (id == QStringLiteral("pca")) {
+        return QStringLiteral("多变量");
+    }
+    if (id == QStringLiteral("reliability")) {
+        return QStringLiteral("可靠性");
+    }
+    if (id == QStringLiteral("t_power")) {
+        return QStringLiteral("功效与样本量");
+    }
+    if (id == QStringLiteral("two_proportions")
+        || id == QStringLiteral("chi_square")
+        || id == QStringLiteral("variance_test")
+        || id == QStringLiteral("mann_whitney")
+        || id == QStringLiteral("wilcoxon_signed_rank")
+        || id == QStringLiteral("kruskal_wallis")) {
+        return QStringLiteral("假设检验");
+    }
+    if (id == QStringLiteral("capability")
+        || id == QStringLiteral("capability_sixpack")
+        || id == QStringLiteral("box_cox")
+        || id == QStringLiteral("gage_rr")
+        || id == QStringLiteral("msa_type1")
+        || id == QStringLiteral("nested_gage_rr")
+        || id == QStringLiteral("attribute_agreement")
+        || id == QStringLiteral("pareto")) {
+        return QStringLiteral("质量工具");
+    }
+    if (command.menu_path == QStringLiteral("图形")) {
+        return QStringLiteral("探索性图形");
+    }
+    return {};
+}
 
 class TableChangeCommand final : public QUndoCommand {
 public:
@@ -128,23 +211,36 @@ MainWindow::MainWindow(QWidget *parent)
     resize(1440, 900);
     setMinimumSize(1080, 680);
     setStyleSheet(QStringLiteral(
-        "QMainWindow { background: #f4f7f9; color: #29434e; }"
-        "QMenuBar { background: #ffffff; color: #29434e; spacing: 6px; padding: 4px 8px; }"
-        "QMenuBar::item { padding: 6px 10px; border-radius: 4px; }"
-        "QMenuBar::item:selected { background: #e3f3f4; color: #147d85; }"
-        "QMenu { background: #ffffff; color: #29434e; border: 1px solid #d6e1e5; padding: 5px; }"
-        "QMenu::item { padding: 7px 28px 7px 12px; border-radius: 4px; }"
-        "QMenu::item:selected { background: #e3f3f4; color: #147d85; }"
-        "QToolBar { background: #ffffff; border: 0; border-bottom: 1px solid #d6e1e5; spacing: 5px; padding: 6px 10px; }"
-        "QToolButton { color: #49636d; border: 0; border-radius: 5px; padding: 6px; }"
-        "QToolButton:hover { background: #eaf6f6; color: #147d85; }"
-        "QToolButton:pressed { background: #d8eeee; }"
-        "QDockWidget { color: #29434e; font-weight: 600; }"
-        "QDockWidget::title { background: #e7f0f3; padding: 9px 12px; border-bottom: 1px solid #d6e1e5; }"
-        "QLineEdit { background: #ffffff; border: 1px solid #cbd9de; border-radius: 5px; padding: 6px 9px; color: #29434e; }"
-        "QLineEdit:focus { border: 1px solid #42aeb4; }"
-        "QStatusBar { background: #e7f0f3; color: #49636d; border-top: 1px solid #d6e1e5; }"
-        "QSplitter::handle { background: #d6e1e5; }"));
+        "QMainWindow { background: #eef3f5; color: #243b44; }"
+        "QMenuBar { background: #ffffff; color: #243b44; spacing: 4px; padding: 5px 10px;"
+        " border-bottom: 1px solid #d9e3e6; }"
+        "QMenuBar::item { padding: 7px 11px; border-radius: 5px; }"
+        "QMenuBar::item:selected { background: #e2f2f1; color: #147d85; }"
+        "QMenu { background: #ffffff; color: #243b44; border: 1px solid #d5e1e5; padding: 6px; }"
+        "QMenu::item { padding: 8px 30px 8px 12px; border-radius: 5px; }"
+        "QMenu::item:selected { background: #e2f2f1; color: #147d85; }"
+        "QToolBar { background: #ffffff; border: 0; border-bottom: 1px solid #d9e3e6;"
+        " spacing: 6px; padding: 7px 12px; }"
+        "QToolButton { color: #49636d; border: 0; border-radius: 6px; padding: 7px; }"
+        "QToolButton:hover { background: #e2f2f1; color: #147d85; }"
+        "QToolButton:pressed { background: #cfe9e8; }"
+        "QDockWidget { color: #243b44; font-weight: 600; }"
+        "QDockWidget::title { background: #e3edf0; padding: 10px 13px; border: 0;"
+        " border-bottom: 1px solid #d2dfe3; }"
+        "QLineEdit { background: #ffffff; border: 1px solid #c8d8dd; border-radius: 6px;"
+        " padding: 7px 10px; color: #243b44; min-height: 30px; }"
+        "QLineEdit:focus { border: 1px solid #35a6aa; }"
+        "QTableView { background: #ffffff; alternate-background-color: #f7fafb;"
+        " border: 1px solid #d5e1e5; gridline-color: #e5edef; }"
+        "QHeaderView::section { background: #e8f0f2; color: #38525c;"
+        " border: 0; border-right: 1px solid #d5e1e5; padding: 7px 9px; }"
+        "QStatusBar { background: #e3edf0; color: #49636d; border-top: 1px solid #d2dfe3; }"
+        "QSplitter::handle { background: #d3e0e4; }"
+        "QSplitter::handle:hover { background: #72c1c0; }"
+        "QFrame#pane_card { background: #ffffff; border: 1px solid #d7e3e6;"
+        " border-radius: 8px; }"
+        "QLabel#pane_title { color: #29434e; font-size: 14px; font-weight: 700; }"
+        "QLabel#pane_subtitle { color: #71858d; font-size: 11px; }"));
     commands_ = new CommandRegistry(this);
     undo_stack_ = new QUndoStack(this);
     create_commands();
@@ -249,30 +345,32 @@ void MainWindow::create_commands()
     commands_->add_to_menu(data_menu, QStringLiteral("exclude"));
     commands_->add_to_menu(data_menu, QStringLiteral("clear_exclude"));
 
-    // 分析菜单：按命令表 menu_path 分组生成（表顺序即菜单项顺序，
-    // separator_before 重现原手工菜单的分隔线）。
+    // 分析菜单：按 Minitab 风格的顶层菜单和子菜单生成。
     QHash<QString, QMenu*> analysis_menus;
+    QHash<QString, QMenu*> analysis_submenus;
     for (const auto& command : analysis_commands::all()) {
-        QMenu* menu = analysis_menus.value(command.menu_path, nullptr);
+        const QString top_menu = primary_analysis_menu(command);
+        QMenu* menu = analysis_menus.value(top_menu, nullptr);
         if (menu == nullptr) {
-            menu = menuBar()->addMenu(command.menu_path);
-            analysis_menus.insert(command.menu_path, menu);
+            menu = menuBar()->addMenu(top_menu);
+            analysis_menus.insert(top_menu, menu);
+        }
+        const QString group = analysis_menu_group(command);
+        QMenu* target = menu;
+        if (!group.isEmpty()) {
+            const QString submenu_key = top_menu + QStringLiteral("/") + group;
+            target = analysis_submenus.value(submenu_key, nullptr);
+            if (target == nullptr) {
+                target = menu->addMenu(group);
+                analysis_submenus.insert(submenu_key, target);
+            }
         }
         if (command.separator_before) {
-            menu->addSeparator();
+            target->addSeparator();
         }
-        commands_->add_to_menu(menu, command.id);
+        commands_->add_to_menu(target, command.id);
     }
-    commands_->add_to_menu(
-        analysis_menus.value(QStringLiteral("质量工具")), QStringLiteral("doe"));
-
-    auto* view_menu = menuBar()->addMenu(QStringLiteral("查看"));
-    auto* navigator_action = view_menu->addAction(QStringLiteral("项目导航器"));
-    connect(navigator_action, &QAction::triggered, this, [this] {
-        if (navigator_dock_ != nullptr) {
-            navigator_dock_->setVisible(!navigator_dock_->isVisible());
-        }
-    });
+    menuBar()->addMenu(QStringLiteral("查看"));
 
     auto* help_menu = menuBar()->addMenu(QStringLiteral("帮助"));
     help_menu->addAction(QStringLiteral("关于 DataLab"), this, [this] {
@@ -309,6 +407,13 @@ void MainWindow::create_commands()
 
 void MainWindow::create_layout()
 {
+    QMenu* view_menu = nullptr;
+    for (QAction* action : menuBar()->actions()) {
+        if (action->text() == QStringLiteral("查看")) {
+            view_menu = action->menu();
+            break;
+        }
+    }
     navigator_dock_ = new QDockWidget(QStringLiteral("项目导航器"), this);
     navigator_dock_->setAllowedAreas(Qt::LeftDockWidgetArea);
     navigator_dock_->setMinimumWidth(220);
@@ -316,6 +421,9 @@ void MainWindow::create_layout()
     navigator_ = new ProjectNavigator(navigator_dock_);
     navigator_dock_->setWidget(navigator_);
     addDockWidget(Qt::LeftDockWidgetArea, navigator_dock_);
+    if (view_menu != nullptr) {
+        view_menu->addAction(navigator_dock_->toggleViewAction());
+    }
     connect(navigator_, &ProjectNavigator::analysis_activated, this, [this](const QString& id) {
         if (output_workspace_ != nullptr) {
             output_workspace_->show_page(id);
@@ -328,26 +436,36 @@ void MainWindow::create_layout()
     context_dock_->setMaximumWidth(300);
     auto* context = new QWidget(context_dock_);
     auto* context_layout = new QVBoxLayout(context);
-    context_layout->setContentsMargins(14, 14, 14, 14);
-    context_layout->setSpacing(10);
+    context_layout->setContentsMargins(16, 16, 16, 16);
+    context_layout->setSpacing(12);
     auto* context_heading = new QLabel(QStringLiteral("数据集状态"), context);
-    context_heading->setStyleSheet(QStringLiteral(
-        "font-size: 15px; font-weight: 600; color: #29434e;"));
+    context_heading->setObjectName(QStringLiteral("pane_title"));
     auto* context_status = new QLabel(QStringLiteral("尚未导入数据"), context);
     context_status->setWordWrap(true);
     context_status->setStyleSheet(QStringLiteral(
-        "background: #e8f6f2; color: #18794e; padding: 10px; border-radius: 6px;"));
+        "background: #e8f6f2; color: #18794e; padding: 12px;"
+        " border: 1px solid #c7e9dc; border-radius: 7px;"));
     auto* context_detail = new QLabel(
         QStringLiteral("导入 CSV 或 Excel 后，这里显示当前工作表的行数、列数和排除状态。"),
         context);
     context_detail->setWordWrap(true);
-    context_detail->setStyleSheet(QStringLiteral("color: #647b84; line-height: 1.4;"));
+    context_detail->setObjectName(QStringLiteral("pane_subtitle"));
+    auto* context_next = new QLabel(
+        QStringLiteral("下一步\n导入数据后，从“分析”菜单选择统计方法。"), context);
+    context_next->setWordWrap(true);
+    context_next->setStyleSheet(QStringLiteral(
+        "background:#ffffff; color:#49636d; padding:11px;"
+        " border:1px solid #d7e3e6; border-radius:7px;"));
     context_layout->addWidget(context_heading);
     context_layout->addWidget(context_status);
     context_layout->addWidget(context_detail);
+    context_layout->addWidget(context_next);
     context_layout->addStretch(1);
     context_dock_->setWidget(context);
     addDockWidget(Qt::RightDockWidgetArea, context_dock_);
+    if (view_menu != nullptr) {
+        view_menu->addAction(context_dock_->toggleViewAction());
+    }
 
     auto* central = new QWidget(this);
     auto* layout = new QVBoxLayout(central);
@@ -439,13 +557,49 @@ void MainWindow::create_layout()
                 navigator_->rename_analysis(id, title);
             });
 
+    auto make_pane = [central](const QString& title, const QString& subtitle,
+                               QWidget* content) {
+        auto* pane = new QFrame(central);
+        pane->setObjectName(QStringLiteral("pane_card"));
+        auto* pane_layout = new QVBoxLayout(pane);
+        pane_layout->setContentsMargins(14, 10, 14, 14);
+        pane_layout->setSpacing(6);
+        auto* heading = new QHBoxLayout();
+        auto* title_label = new QLabel(title, pane);
+        title_label->setObjectName(QStringLiteral("pane_title"));
+        auto* subtitle_label = new QLabel(subtitle, pane);
+        subtitle_label->setObjectName(QStringLiteral("pane_subtitle"));
+        heading->addWidget(title_label);
+        heading->addSpacing(10);
+        heading->addWidget(subtitle_label);
+        heading->addStretch(1);
+        pane_layout->addLayout(heading);
+        pane_layout->addWidget(content, 1);
+        return pane;
+    };
+    auto* output_pane = make_pane(
+        QStringLiteral("分析输出"),
+        QStringLiteral("统计表、图形和诊断结果"),
+        output_workspace_);
+    auto* worksheet_pane = make_pane(
+        QStringLiteral("活动工作表"),
+        QStringLiteral("编辑数据，分析当前工作表"),
+        data_table_);
     auto* workspace = new QSplitter(Qt::Vertical, central);
-    workspace->addWidget(output_workspace_);
-    workspace->addWidget(data_table_);
+    workspace->setObjectName(QStringLiteral("main_workspace"));
+    workspace->addWidget(output_pane);
+    workspace->addWidget(worksheet_pane);
     workspace->setStretchFactor(0, 2);
     workspace->setStretchFactor(1, 1);
     workspace->setSizes({460, 320});
     layout->addWidget(workspace);
+    if (view_menu != nullptr) {
+        QAction* worksheet_action = view_menu->addAction(QStringLiteral("活动工作表"));
+        worksheet_action->setCheckable(true);
+        worksheet_action->setChecked(true);
+        connect(worksheet_action, &QAction::toggled, worksheet_pane, &QWidget::setVisible);
+        view_menu->addSeparator();
+    }
     setCentralWidget(central);
     setDockNestingEnabled(true);
     setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
@@ -673,25 +827,44 @@ void MainWindow::import_data()
         return;
     }
 
-    QString error_message;
-    const auto imported = datalab::infrastructure::DataImportService::import_file(
-        file_path, &error_message);
-    if (!imported.has_value()) {
-        QMessageBox::critical(this, QStringLiteral("导入失败"), error_message);
+    if (import_in_progress_) {
+        statusBar()->showMessage(QStringLiteral("已有数据导入任务正在执行。"));
         return;
     }
 
-    table_ = *imported;
-    display_table();
-    navigator_->add_worksheet(QString::fromStdString(table_.name));
-    QString import_summary = QStringLiteral("已导入 %1 行数据：%2。")
-        .arg(static_cast<qulonglong>(table_.rows.size()))
-        .arg(QString::fromStdString(table_.name));
-    if (!table_.import_warnings.empty()) {
-        import_summary += QStringLiteral(" 检测到 %1 个导入警告，请检查列名或行字段数。")
-            .arg(static_cast<qulonglong>(table_.import_warnings.size()));
-    }
-    statusBar()->showMessage(import_summary);
+    import_in_progress_ = true;
+    statusBar()->showMessage(QStringLiteral("正在导入数据……"));
+    using ImportResult = std::pair<std::optional<datalab::domain::DataTable>, QString>;
+    auto* watcher = new QFutureWatcher<ImportResult>(this);
+    connect(watcher, &QFutureWatcher<ImportResult>::finished, this, [this, watcher] {
+        import_in_progress_ = false;
+        const ImportResult result = watcher->result();
+        watcher->deleteLater();
+        if (!result.first.has_value()) {
+            QMessageBox::critical(this, QStringLiteral("导入失败"), result.second);
+            return;
+        }
+        cleaning_operations_.clear();
+        output_workspace_->clear_pages();
+        navigator_->clear_contents();
+        table_ = *result.first;
+        display_table();
+        navigator_->add_worksheet(QString::fromStdString(table_.name));
+        QString import_summary = QStringLiteral("已导入 %1 行数据：%2。")
+            .arg(static_cast<qulonglong>(table_.rows.size()))
+            .arg(QString::fromStdString(table_.name));
+        if (!table_.import_warnings.empty()) {
+            import_summary += QStringLiteral(" 检测到 %1 个导入警告，请检查列名或行字段数。")
+                .arg(static_cast<qulonglong>(table_.import_warnings.size()));
+        }
+        statusBar()->showMessage(import_summary);
+    });
+    watcher->setFuture(QtConcurrent::run([file_path] {
+        QString error_message;
+        const auto imported = datalab::infrastructure::DataImportService::import_file(
+            file_path, &error_message);
+        return ImportResult{imported, error_message};
+    }));
 }
 
 void MainWindow::display_table()
@@ -791,25 +964,56 @@ void MainWindow::run_from_spec(const QString& id)
         command->dialog_title,
         column_labels(),
         this,
-        QStringLiteral(":/icons/%1.svg").arg(command->icon_file));
+        QStringLiteral(":/icons/%1.svg").arg(command->icon_file),
+        table_.column_types);
     for (const auto& role : command->roles) {
-        dialog.add_role(role.id, role.label, role.multi, role.optional);
+        dialog.add_role(role);
     }
     for (const auto& input : command->inputs) {
-        dialog.add_line_edit(input.id, input.label, input.placeholder);
+        dialog.add_input(input);
     }
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
-    }
-    auto configuration = base_configuration();
-    const analysis_commands::AnalysisApplyResult result = command->apply(configuration, dialog);
-    if (!result.valid) {
-        if (!result.error_title.isEmpty()) {
-            QMessageBox::information(this, result.error_title, result.error_message);
+    datalab::domain::AnalysisConfiguration accepted_configuration;
+    datalab::application::AnalysisIntent accepted_intent;
+    dialog.set_accept_validator([&dialog, &accepted_configuration, &accepted_intent,
+                                 this, command, id](QString* error_title,
+                                                    QString* error_message) {
+        datalab::application::AnalysisIntent intent;
+        intent.command_id = id.toStdString();
+        for (const auto& role : command->roles) {
+            std::vector<std::size_t>& selected = intent.roles[role.id.toStdString()];
+            for (const int index : dialog.role_indices(role.id)) {
+                if (index >= 0) {
+                    selected.push_back(static_cast<std::size_t>(index));
+                }
+            }
         }
-        return;
+        for (const auto& input : command->inputs) {
+            intent.inputs[input.id.toStdString()] =
+                dialog.line_text(input.id).toStdString();
+        }
+
+        datalab::domain::AnalysisConfiguration configuration = base_configuration();
+        const analysis_commands::AnalysisApplyResult result =
+            command->apply(configuration, intent);
+        if (!result.valid) {
+            if (error_title != nullptr) {
+                *error_title = result.error_title;
+            }
+            if (error_message != nullptr) {
+                *error_message = result.error_message;
+            }
+            if (!result.field_id.isEmpty()) {
+                dialog.set_field_error(result.field_id, result.error_message);
+            }
+            return false;
+        }
+        accepted_configuration = std::move(configuration);
+        accepted_intent = std::move(intent);
+        return true;
+    });
+    if (dialog.exec() == QDialog::Accepted) {
+        publish_page(command->run(table_, accepted_configuration));
     }
-    publish_page(command->run(table_, configuration));
 }
 
 void MainWindow::exclude_selected_row()

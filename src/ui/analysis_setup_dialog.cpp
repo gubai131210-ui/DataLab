@@ -2,11 +2,17 @@
 
 #include <QAbstractItemView>
 #include <QDialogButtonBox>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QColor>
+#include <QDoubleSpinBox>
+#include <QDoubleValidator>
 #include <QFocusEvent>
 #include <QFormLayout>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QIcon>
+#include <QIntValidator>
 #include <QLabel>
 #include <QList>
 #include <QLineEdit>
@@ -14,9 +20,16 @@
 #include <QListWidgetItem>
 #include <QMouseEvent>
 #include <QPushButton>
-#include <QVBoxLayout>
+#include <QScrollArea>
+#include <QStringList>
+#include <QSpinBox>
+#include <QStyle>
 #include <QToolButton>
+#include <QVBoxLayout>
 
+#include "domain/statistics/control_charts.h"
+
+#include <algorithm>
 #include <functional>
 
 namespace {
@@ -51,15 +64,188 @@ private:
     std::function<void(QListWidget*)> handler_;
 };
 
+QWidget* make_field_label(
+    const QString& text,
+    const QString& icon_resource,
+    const bool optional,
+    QWidget* parent)
+{
+    const QString caption = optional
+        ? text + QStringLiteral("（可选）")
+        : text;
+    auto* container = new QWidget(parent);
+    auto* layout = new QHBoxLayout(container);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(6);
+    auto* icon = new QLabel(container);
+    icon->setPixmap(QIcon(icon_resource).pixmap(16, 16));
+    icon->setFixedSize(16, 16);
+    auto* caption_label = new QLabel(caption, container);
+    caption_label->setWordWrap(true);
+    caption_label->setStyleSheet(QStringLiteral(
+        "font-size: 13px; font-weight: 600; color: #29434e;"));
+    layout->addWidget(icon, 0, Qt::AlignTop);
+    layout->addWidget(caption_label, 1);
+    container->setToolTip(caption);
+    container->setMinimumWidth(108);
+    return container;
+}
+
+QString column_type_label(const datalab::domain::ColumnType type)
+{
+    switch (type) {
+    case datalab::domain::ColumnType::numeric:
+        return QStringLiteral("数值");
+    case datalab::domain::ColumnType::categorical:
+        return QStringLiteral("分类");
+    case datalab::domain::ColumnType::time:
+        return QStringLiteral("时间");
+    case datalab::domain::ColumnType::unknown:
+        break;
+    }
+    return QStringLiteral("未知");
+}
+
+class SpecialCauseTestsEditor final : public QWidget {
+public:
+    SpecialCauseTestsEditor(const QString& chart_kind, QWidget* parent)
+        : QWidget(parent)
+        , kind_(datalab::domain::statistics::control_chart_kind_from_name(
+              chart_kind.toStdString()))
+    {
+        auto* layout = new QVBoxLayout(this);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(6);
+        summary_ = new QLabel(this);
+        layout->addWidget(summary_);
+        auto* buttons = new QHBoxLayout();
+        auto* select_all = new QPushButton(QStringLiteral("全选"), this);
+        auto* clear_all = new QPushButton(QStringLiteral("清空"), this);
+        auto* restore = new QPushButton(QStringLiteral("恢复默认"), this);
+        buttons->addWidget(select_all);
+        buttons->addWidget(clear_all);
+        buttons->addWidget(restore);
+        buttons->addStretch();
+        layout->addLayout(buttons);
+        auto* list = new QWidget(this);
+        auto* list_layout = new QVBoxLayout(list);
+        list_layout->setContentsMargins(0, 0, 0, 0);
+        list_layout->setSpacing(4);
+        const auto applicable =
+            datalab::domain::statistics::applicable_special_cause_tests(kind_);
+        for (const auto& spec : datalab::domain::statistics::all_special_cause_tests()) {
+            auto* check = new QCheckBox(
+                QStringLiteral("Test %1  %2").arg(spec.number)
+                    .arg(QString::fromUtf8(spec.short_name)),
+                list);
+            const bool allowed = std::find(applicable.begin(), applicable.end(), spec.number)
+                != applicable.end();
+            check->setToolTip(QString::fromUtf8(spec.description));
+            check->setEnabled(allowed && kind_ != datalab::domain::statistics::ControlChartKind::cusum);
+            check->setChecked(allowed);
+            check->setProperty("defaultValue", allowed);
+            check->setProperty("testNumber", spec.number);
+            if (!allowed) {
+                check->setToolTip(
+                    QString::fromUtf8(spec.description)
+                    + QStringLiteral("\n此规则不适用于当前控制图，已置灰。"));
+            }
+            list_layout->addWidget(check);
+            checks_.push_back(check);
+            connect(check, &QCheckBox::toggled, this, [this](bool) { refresh_summary(); });
+        }
+        auto* scroll = new QScrollArea(this);
+        scroll->setWidget(list);
+        scroll->setWidgetResizable(true);
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setMinimumHeight(180);
+        layout->addWidget(scroll);
+        if (kind_ == datalab::domain::statistics::ControlChartKind::cusum) {
+            auto* note = new QLabel(
+                QStringLiteral("CUSUM 不使用 Tests 1–8，改为报告上侧/下侧累计和的首次信号。"),
+                this);
+            note->setWordWrap(true);
+            layout->addWidget(note);
+            select_all->setEnabled(false);
+            clear_all->setEnabled(false);
+        }
+        connect(select_all, &QPushButton::clicked, this, [this]() { set_all_applicable(true); });
+        connect(clear_all, &QPushButton::clicked, this, [this]() { set_all_applicable(false); });
+        connect(restore, &QPushButton::clicked, this, [this]() { restore_defaults(); });
+        refresh_summary();
+        setMinimumHeight(260);
+    }
+
+    QString selected_text() const
+    {
+        if (kind_ == datalab::domain::statistics::ControlChartKind::cusum) {
+            return QStringLiteral("none");
+        }
+        QStringList selected;
+        for (const QCheckBox* check : checks_) {
+            if (check->isEnabled() && check->isChecked()) {
+                selected.append(QString::number(check->property("testNumber").toInt()));
+            }
+        }
+        return selected.isEmpty() ? QStringLiteral("none") : selected.join(QLatin1Char(' '));
+    }
+
+    void restore_defaults()
+    {
+        for (QCheckBox* check : checks_) {
+            check->setChecked(check->property("defaultValue").toBool());
+        }
+        refresh_summary();
+    }
+
+private:
+    void set_all_applicable(bool checked)
+    {
+        for (QCheckBox* check : checks_) {
+            if (check->isEnabled()) {
+                check->setChecked(checked);
+            }
+        }
+        refresh_summary();
+    }
+
+    void refresh_summary()
+    {
+        int enabled = 0;
+        int selected = 0;
+        for (const QCheckBox* check : checks_) {
+            if (!check->isEnabled()) {
+                continue;
+            }
+            ++enabled;
+            selected += check->isChecked() ? 1 : 0;
+        }
+        if (kind_ == datalab::domain::statistics::ControlChartKind::cusum) {
+            summary_->setText(QStringLiteral("CUSUM 使用专用信号，不勾选 Tests 1–8。"));
+            return;
+        }
+        summary_->setText(
+            QStringLiteral("已选 %1 / %2 条适用规则（DataLab 默认全选适用规则，不同于 Minitab 只启用 Test 1）。")
+                .arg(selected)
+                .arg(enabled));
+    }
+
+    datalab::domain::statistics::ControlChartKind kind_;
+    QLabel* summary_ = nullptr;
+    std::vector<QCheckBox*> checks_;
+};
+
 }  // namespace
 
 AnalysisSetupDialog::AnalysisSetupDialog(
     const QString& title,
     const QStringList& column_labels,
     QWidget* parent,
-    const QString& icon_resource)
+    const QString& icon_resource,
+    const std::vector<datalab::domain::ColumnType>& column_types)
     : QDialog(parent)
     , column_labels_(column_labels)
+    , column_types_(column_types)
 {
     setWindowTitle(title);
     // 图标由调用方（run_from_spec 传命令表 icon_file）提供，缺省回退应用图标。
@@ -71,7 +257,7 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     resize(820, 560);
     setMinimumSize(700, 480);
     setStyleSheet(QStringLiteral(
-        "QDialog { background: #f4f7f9; color: #29434e; }"
+        "QDialog { background: #eef3f5; color: #29434e; }"
         "QLabel { color: #49636d; }"
         "QListWidget { background: #ffffff; border: 1px solid #cbd9de;"
         " border-radius: 5px; padding: 4px; color: #29434e; }"
@@ -81,10 +267,22 @@ AnalysisSetupDialog::AnalysisSetupDialog(
         "QPushButton { background: #ffffff; color: #39717a; border: 1px solid #b9d2d7;"
         " border-radius: 5px; padding: 7px 14px; }"
         "QPushButton:hover { background: #eaf6f6; border-color: #42aeb4; }"
+        "QPushButton#run_button { background: #188a91; color: #ffffff; border: 0;"
+        " font-weight: 600; }"
+        "QPushButton#run_button:hover { background: #14777d; }"
         "QDialogButtonBox QPushButton { min-width: 84px; }"
         "QLineEdit { background: #ffffff; border: 1px solid #cbd9de;"
         " border-radius: 5px; padding: 7px 9px; }"
-        "QLineEdit:focus { border-color: #42aeb4; }"));
+        "QLineEdit:focus { border-color: #42aeb4; }"
+        "QLineEdit[validationError=\"true\"], QListWidget[validationError=\"true\"],"
+        " QSpinBox[validationError=\"true\"], QDoubleSpinBox[validationError=\"true\"],"
+        " QComboBox[validationError=\"true\"] { border: 2px solid #d32f2f; }"
+        "QSpinBox, QDoubleSpinBox, QComboBox { min-height: 34px; }"
+        "QCheckBox { min-height: 34px; }"
+        "QFrame#dialog_card { background:#ffffff; border:1px solid #d7e3e6;"
+        " border-radius:9px; }"
+        "QToolButton#advanced_toggle { color:#2d6971; font-weight:600;"
+        " padding:8px 4px; text-align:left; }"));
 
     auto* root = new QVBoxLayout(this);
     root->setContentsMargins(20, 18, 20, 18);
@@ -99,52 +297,105 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     header->addWidget(header_text);
     header->addStretch();
     root->addLayout(header);
+    error_banner_ = new QLabel(this);
+    error_banner_->setObjectName(QStringLiteral("error_banner"));
+    error_banner_->setWordWrap(true);
+    error_banner_->setStyleSheet(QStringLiteral(
+        "background:#fff0f0; color:#b3261e; border:1px solid #ef9a9a;"
+        " border-radius:5px; padding:8px 10px;"));
+    error_banner_->hide();
+    root->addWidget(error_banner_);
     auto* content = new QHBoxLayout();
-    content->setSpacing(18);
-    auto* left = new QVBoxLayout();
+    content->setSpacing(14);
+    auto* left_panel = new QFrame(this);
+    left_panel->setObjectName(QStringLiteral("dialog_card"));
+    auto* left = new QVBoxLayout(left_panel);
+    left->setContentsMargins(16, 16, 16, 16);
     left->setSpacing(8);
     auto* source_title = new QLabel(QStringLiteral("工作表列"), this);
     source_title->setStyleSheet(QStringLiteral(
         "font-size: 15px; font-weight: 600; color: #29434e;"));
     left->addWidget(source_title);
+    auto* search = new QLineEdit(this);
+    search->setPlaceholderText(QStringLiteral("搜索列名…"));
+    search->setClearButtonEnabled(true);
+    left->addWidget(search);
     available_ = new QListWidget(this);
-    available_->addItems(column_labels_);
+    for (int index = 0; index < column_labels_.size(); ++index) {
+        QString label = column_labels_.at(index);
+        if (index >= 0 && index < static_cast<int>(column_types_.size())) {
+            label += QStringLiteral("  [") + column_type_label(
+                column_types_[static_cast<std::size_t>(index)]) + QStringLiteral("]");
+        }
+        auto* item = new QListWidgetItem(label, available_);
+        item->setData(Qt::UserRole, index);
+    }
     available_->setSelectionMode(QAbstractItemView::ExtendedSelection);
     left->addWidget(available_);
     auto* select = new QPushButton(QStringLiteral("选择 >"), this);
     select->setIcon(QIcon(QStringLiteral(":/icons/import-data.svg")));
     left->addWidget(select);
+    auto* remove = new QPushButton(QStringLiteral("移除选中列"), this);
+    remove->setIcon(QIcon(QStringLiteral(":/icons/error.svg")));
+    left->addWidget(remove);
     left->addWidget(new QLabel(
         QStringLiteral("先点击右侧角色框，再点“选择 >”或双击左侧列。"), this));
 
-    auto* right = new QVBoxLayout();
+    auto* right_panel = new QFrame(this);
+    right_panel->setObjectName(QStringLiteral("dialog_card"));
+    auto* right = new QVBoxLayout(right_panel);
+    right->setContentsMargins(16, 16, 16, 16);
     right->setSpacing(8);
     auto* settings_title = new QLabel(QStringLiteral("分析设置"), this);
     settings_title->setStyleSheet(QStringLiteral(
         "font-size: 15px; font-weight: 600; color: #29434e;"));
     right->addWidget(settings_title);
+    auto* settings_content = new QWidget(this);
+    auto* settings_layout = new QVBoxLayout(settings_content);
+    settings_layout->setContentsMargins(8, 8, 8, 8);
     roles_layout_ = new QFormLayout();
-    roles_layout_->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    roles_layout_->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     roles_layout_->setFormAlignment(Qt::AlignTop);
     roles_layout_->setVerticalSpacing(10);
-    roles_layout_->setHorizontalSpacing(10);
-    right->addLayout(roles_layout_);
-    right->addStretch();
+    roles_layout_->setHorizontalSpacing(12);
+    roles_layout_->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    settings_layout->addLayout(roles_layout_);
+    advanced_toggle_ = new QToolButton(this);
+    advanced_toggle_->setText(QStringLiteral("高级选项"));
+    advanced_toggle_->setCheckable(true);
+    advanced_toggle_->setObjectName(QStringLiteral("advanced_toggle"));
+    advanced_toggle_->setChecked(false);
+    advanced_toggle_->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    advanced_toggle_->setArrowType(Qt::RightArrow);
+    settings_layout->addWidget(advanced_toggle_);
+    advanced_panel_ = new QWidget(this);
+    advanced_layout_ = new QFormLayout(advanced_panel_);
+    advanced_layout_->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    advanced_layout_->setFormAlignment(Qt::AlignTop);
+    advanced_layout_->setVerticalSpacing(10);
+    advanced_layout_->setHorizontalSpacing(12);
+    advanced_layout_->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    advanced_panel_->setVisible(false);
+    settings_layout->addWidget(advanced_panel_);
+    settings_layout->addStretch();
+    auto* settings_scroll = new QScrollArea(this);
+    settings_scroll->setWidgetResizable(true);
+    settings_scroll->setFrameShape(QFrame::NoFrame);
+    settings_scroll->setWidget(settings_content);
+    right->addWidget(settings_scroll, 1);
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    auto* reset = new QPushButton(QStringLiteral("重置默认值"), this);
+    buttons->addButton(reset, QDialogButtonBox::ResetRole);
     right->addWidget(buttons);
 
-    content->addLayout(left, 1);
-    auto* separator = new QFrame(this);
-    separator->setFrameShape(QFrame::VLine);
-    separator->setFrameShadow(QFrame::Plain);
-    separator->setStyleSheet(QStringLiteral("color: #d6e1e5;"));
-    content->addWidget(separator);
-    content->addLayout(right, 1);
+    content->addWidget(left_panel, 1);
+    content->addWidget(right_panel, 2);
     root->addLayout(content, 1);
 
     const auto ok_button = buttons->button(QDialogButtonBox::Ok);
     const auto cancel_button = buttons->button(QDialogButtonBox::Cancel);
     if (ok_button != nullptr) {
+        ok_button->setObjectName(QStringLiteral("run_button"));
         ok_button->setIcon(QIcon(QStringLiteral(":/icons/success.svg")));
     }
     if (cancel_button != nullptr) {
@@ -152,11 +403,24 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     }
 
     connect(select, &QPushButton::clicked, this, &AnalysisSetupDialog::select_into_role);
+    connect(remove, &QPushButton::clicked, this, &AnalysisSetupDialog::remove_from_role);
+    connect(search, &QLineEdit::textChanged, this, [this](const QString& text) {
+        for (int row = 0; row < available_->count(); ++row) {
+            available_->item(row)->setHidden(
+                !available_->item(row)->text().contains(text, Qt::CaseInsensitive));
+        }
+    });
     connect(available_, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem*) {
         select_into_role();
     });
-    connect(buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::accepted,
+            this, &AnalysisSetupDialog::validate_and_accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    connect(reset, &QPushButton::clicked, this, &AnalysisSetupDialog::reset_defaults);
+    connect(advanced_toggle_, &QToolButton::toggled, this, [this](bool expanded) {
+        advanced_panel_->setVisible(expanded);
+        advanced_toggle_->setArrowType(expanded ? Qt::DownArrow : Qt::RightArrow);
+    });
 }
 
 void AnalysisSetupDialog::set_active_role(QListWidget* list)
@@ -183,12 +447,39 @@ void AnalysisSetupDialog::add_role(
     bool multi,
     bool optional)
 {
+    add_role(analysis_commands::RoleSpec{id, label, multi, optional});
+}
+
+void AnalysisSetupDialog::add_role(const analysis_commands::RoleSpec& spec)
+{
     auto* list = new RoleListWidget(this);
-    list->setMinimumHeight(multi ? 96 : 48);
-    list->setMaximumHeight(multi ? 120 : 56);
-    list->setObjectName(id);
-    list->setProperty("optional", optional);
-    list->setProperty("multi", multi);
+    list->setMinimumHeight(spec.multi ? 96 : 48);
+    list->setMaximumHeight(spec.multi ? 120 : 56);
+    list->setObjectName(spec.id);
+    list->setProperty("optional", spec.optional);
+    list->setProperty("multi", spec.multi);
+    list->setProperty("minimumCount",
+                      spec.minimum_count > 0 ? spec.minimum_count
+                                             : (spec.optional ? 0 : 1));
+    list->setProperty("maximumCount", spec.maximum_count);
+    QStringList allowed_types;
+    for (const datalab::domain::ColumnType type : spec.allowed_types) {
+        allowed_types.push_back(column_type_label(type));
+    }
+    if (allowed_types.isEmpty()) {
+        const QString normalized_id = spec.id.toLower();
+        if (normalized_id == QStringLiteral("variables")
+            || normalized_id == QStringLiteral("response")
+            || normalized_id == QStringLiteral("measurement")
+            || normalized_id == QStringLiteral("x")
+            || normalized_id == QStringLiteral("y")) {
+            allowed_types.push_back(QStringLiteral("数值"));
+        } else if (normalized_id == QStringLiteral("time")
+                   || normalized_id == QStringLiteral("time_column")) {
+            allowed_types.push_back(QStringLiteral("时间"));
+        }
+    }
+    list->setProperty("allowedTypes", allowed_types);
     list->setSelectionMode(QAbstractItemView::SingleSelection);
     list->set_activation_handler([this](QListWidget* role) {
         set_active_role(role);
@@ -202,11 +493,118 @@ void AnalysisSetupDialog::add_role(
         list->setStyleSheet(
             QStringLiteral("QListWidget { border: 1px solid #cbd9de; background: #ffffff; }"));
     }
-    auto* role_label = new QLabel(this);
-    role_label->setPixmap(QIcon(QStringLiteral(":/icons/data-table.svg")).pixmap(16, 16));
-    role_label->setToolTip(label + (optional ? QStringLiteral("（可选）") : QString()));
-    roles_layout_->addRow(role_label, list);
-    list->setToolTip(label + (optional ? QStringLiteral("（可选）") : QString()));
+    const QString caption = spec.optional
+        ? spec.label + QStringLiteral("（可选）")
+        : spec.label;
+    roles_layout_->addRow(
+        make_field_label(spec.label, QStringLiteral(":/icons/data-table.svg"),
+                         spec.optional, this),
+        list);
+    list->setToolTip(caption);
+    list->setAccessibleName(caption);
+}
+
+QWidget* AnalysisSetupDialog::add_input(const analysis_commands::InputSpec& spec)
+{
+    QWidget* editor = nullptr;
+    const bool optional = spec.placeholder.contains(QStringLiteral("可选"))
+        || spec.placeholder.contains(QStringLiteral("留空"));
+    if (spec.kind == analysis_commands::InputKind::integer && !optional) {
+        auto* spin = new QSpinBox(this);
+        spin->setRange(
+            spec.minimum.has_value() ? static_cast<int>(*spec.minimum) : -1000000000,
+            spec.maximum.has_value() ? static_cast<int>(*spec.maximum) : 1000000000);
+        bool ok = false;
+        const int default_value = spec.placeholder.toInt(&ok);
+        if (ok) {
+            spin->setValue(default_value);
+        }
+        spin->setProperty("defaultValue", spin->value());
+        editor = spin;
+    } else if ((spec.kind == analysis_commands::InputKind::number
+                || spec.kind == analysis_commands::InputKind::percentage)
+               && !optional) {
+        auto* spin = new QDoubleSpinBox(this);
+        spin->setDecimals(6);
+        spin->setRange(
+            spec.minimum.has_value() ? *spec.minimum : -1.0e12,
+            spec.maximum.has_value() ? *spec.maximum : 1.0e12);
+        spin->setSingleStep(spec.kind == analysis_commands::InputKind::percentage
+                                ? 1.0 : 0.1);
+        bool ok = false;
+        const double default_value = spec.placeholder.toDouble(&ok);
+        if (ok) {
+            spin->setValue(default_value);
+        }
+        spin->setProperty("defaultValue", spin->value());
+        editor = spin;
+    } else if (spec.kind == analysis_commands::InputKind::choice
+               && !spec.choices.empty()) {
+        auto* combo = new QComboBox(this);
+        for (const auto& [value, label] : spec.choices) {
+            combo->addItem(label, value);
+        }
+        combo->setCurrentIndex(std::max(0, combo->findData(spec.placeholder)));
+        combo->setProperty("defaultIndex", combo->currentIndex());
+        editor = combo;
+    } else if (spec.kind == analysis_commands::InputKind::boolean) {
+        auto* check = new QCheckBox(this);
+        check->setChecked(spec.placeholder == QStringLiteral("true"));
+        check->setProperty("defaultValue", check->isChecked());
+        editor = check;
+    } else if (spec.kind == analysis_commands::InputKind::special_cause_tests) {
+        editor = new SpecialCauseTestsEditor(spec.placeholder, this);
+    } else {
+        auto* line = new QLineEdit(this);
+        line->setPlaceholderText(spec.placeholder);
+        const bool numeric = spec.kind == analysis_commands::InputKind::number
+            || spec.kind == analysis_commands::InputKind::percentage;
+        bool ok = false;
+        if (numeric && !optional) {
+            const double default_value = spec.placeholder.toDouble(&ok);
+            if (ok) {
+                line->setText(QString::number(default_value, 'g', 12));
+            }
+        }
+        if (spec.kind == analysis_commands::InputKind::integer) {
+            line->setValidator(new QIntValidator(
+                spec.minimum.has_value() ? static_cast<int>(*spec.minimum) : -1000000000,
+                spec.maximum.has_value() ? static_cast<int>(*spec.maximum) : 1000000000,
+                line));
+        } else if (numeric) {
+            line->setValidator(new QDoubleValidator(
+                spec.minimum.has_value() ? *spec.minimum : -1.0e12,
+                spec.maximum.has_value() ? *spec.maximum : 1.0e12,
+                8, line));
+        }
+        line->setProperty("defaultText", line->text());
+        editor = line;
+    }
+
+    editor->setObjectName(spec.id);
+    editor->setToolTip(spec.help.isEmpty()
+                           ? spec.label + QStringLiteral("，默认值：") + spec.placeholder
+                           : spec.help);
+    editor->setAccessibleName(spec.label);
+    editor->setMinimumHeight(34);
+    QFormLayout* target_layout = spec.advanced ? advanced_layout_ : roles_layout_;
+    target_layout->addRow(
+        make_field_label(spec.label, QStringLiteral(":/icons/settings.svg"), optional, this),
+        editor);
+    if (spec.id == QStringLiteral("historical_center")) {
+        if (auto* sigma = findChild<QWidget*>(QStringLiteral("historical_sigma_z"))) {
+            sigma->setEnabled(!line_text(spec.id).isEmpty());
+        }
+    } else if (spec.id == QStringLiteral("historical_sigma_z")) {
+        if (auto* center = findChild<QLineEdit*>(QStringLiteral("historical_center"))) {
+            editor->setEnabled(!center->text().trimmed().isEmpty());
+            connect(center, &QLineEdit::textChanged, editor,
+                    [editor](const QString& text) {
+                        editor->setEnabled(!text.trimmed().isEmpty());
+                    });
+        }
+    }
+    return editor;
 }
 
 QWidget* AnalysisSetupDialog::add_line_edit(
@@ -214,15 +612,8 @@ QWidget* AnalysisSetupDialog::add_line_edit(
     const QString& label,
     const QString& placeholder)
 {
-    auto* edit = new QLineEdit(this);
-    edit->setObjectName(id);
-    edit->setPlaceholderText(placeholder);
-    auto* parameter_label = new QLabel(this);
-    parameter_label->setPixmap(QIcon(QStringLiteral(":/icons/settings.svg")).pixmap(16, 16));
-    parameter_label->setToolTip(label);
-    roles_layout_->addRow(parameter_label, edit);
-    edit->setToolTip(label);
-    return edit;
+    analysis_commands::InputSpec spec{id, label, placeholder};
+    return add_input(spec);
 }
 
 QListWidget* AnalysisSetupDialog::role_list(const QString& id) const
@@ -245,13 +636,47 @@ void AnalysisSetupDialog::select_into_role()
         target->clear();
     }
     for (QListWidgetItem* item : selected) {
-        const int column = available_->row(item);
+        const int column = item->data(Qt::UserRole).toInt();
+        bool already_selected = false;
+        for (int row = 0; row < target->count(); ++row) {
+            already_selected = target->item(row)->data(Qt::UserRole).toInt() == column;
+            if (already_selected) {
+                break;
+            }
+        }
+        if (already_selected) {
+            continue;
+        }
         auto* copy = new QListWidgetItem(item->text());
         copy->setData(Qt::UserRole, column);
+        const QStringList allowed = target->property("allowedTypes").toStringList();
+        if (!allowed.isEmpty() && column >= 0
+            && column < static_cast<int>(column_types_.size())) {
+            const QString actual = column_type_label(
+                column_types_[static_cast<std::size_t>(column)]);
+            if (!allowed.contains(actual)) {
+                copy->setForeground(QColor(QStringLiteral("#a15c00")));
+                copy->setToolTip(
+                    QStringLiteral("列类型为“%1”，与角色建议的类型（%2）不完全匹配；"
+                                   "命令仍会在提交时进行最终校验。")
+                        .arg(actual, allowed.join(QStringLiteral("、"))));
+            }
+        }
         target->addItem(copy);
         if (!multi) {
             break;
         }
+    }
+}
+
+void AnalysisSetupDialog::remove_from_role()
+{
+    if (active_role_ == nullptr) {
+        return;
+    }
+    const QList<QListWidgetItem*> selected = active_role_->selectedItems();
+    for (QListWidgetItem* item : selected) {
+        delete item;
     }
 }
 
@@ -277,7 +702,27 @@ int AnalysisSetupDialog::first_role_index(const QString& id) const
 QString AnalysisSetupDialog::line_text(const QString& id) const
 {
     const QLineEdit* edit = findChild<QLineEdit*>(id);
-    return edit == nullptr ? QString() : edit->text().trimmed();
+    if (edit != nullptr) {
+        return edit->text().trimmed();
+    }
+    if (const auto* spin = findChild<QSpinBox*>(id)) {
+        return QString::number(spin->value());
+    }
+    if (const auto* spin = findChild<QDoubleSpinBox*>(id)) {
+        return QString::number(spin->value(), 'g', 12);
+    }
+    if (const auto* combo = findChild<QComboBox*>(id)) {
+        return combo->currentData().toString().isEmpty()
+            ? combo->currentText() : combo->currentData().toString();
+    }
+    if (const auto* check = findChild<QCheckBox*>(id)) {
+        return check->isChecked() ? QStringLiteral("true") : QStringLiteral("false");
+    }
+    if (const auto* tests =
+            dynamic_cast<const SpecialCauseTestsEditor*>(findChild<QWidget*>(id))) {
+        return tests->selected_text();
+    }
+    return {};
 }
 
 std::optional<double> AnalysisSetupDialog::line_number(const QString& id) const
@@ -292,4 +737,102 @@ std::optional<int> AnalysisSetupDialog::line_int(const QString& id) const
     bool ok = false;
     const int value = line_text(id).toInt(&ok);
     return ok ? std::optional<int>(value) : std::nullopt;
+}
+
+void AnalysisSetupDialog::set_accept_validator(
+    std::function<bool(QString*, QString*)> validator)
+{
+    accept_validator_ = std::move(validator);
+}
+
+void AnalysisSetupDialog::set_field_error(const QString& id, const QString& message)
+{
+    error_banner_->setText(message);
+    error_banner_->show();
+    QWidget* field = findChild<QWidget*>(id);
+    if (field == nullptr) {
+        return;
+    }
+    field->setProperty("validationError", true);
+    field->setToolTip(message);
+    field->style()->unpolish(field);
+    field->style()->polish(field);
+    field->setFocus();
+}
+
+void AnalysisSetupDialog::clear_errors()
+{
+    error_banner_->clear();
+    error_banner_->hide();
+    for (QWidget* field : findChildren<QWidget*>()) {
+        if (field->property("validationError").toBool()) {
+            field->setProperty("validationError", false);
+            field->style()->unpolish(field);
+            field->style()->polish(field);
+        }
+    }
+}
+
+void AnalysisSetupDialog::reset_defaults()
+{
+    clear_errors();
+    for (QLineEdit* edit : findChildren<QLineEdit*>()) {
+        edit->setText(edit->property("defaultText").toString());
+    }
+    for (QSpinBox* spin : findChildren<QSpinBox*>()) {
+        spin->setValue(spin->property("defaultValue").toInt());
+    }
+    for (QDoubleSpinBox* spin : findChildren<QDoubleSpinBox*>()) {
+        spin->setValue(spin->property("defaultValue").toDouble());
+    }
+    for (QComboBox* combo : findChildren<QComboBox*>()) {
+        combo->setCurrentIndex(combo->property("defaultIndex").toInt());
+    }
+    for (QCheckBox* check : findChildren<QCheckBox*>()) {
+        if (check->property("defaultValue").isValid()) {
+            check->setChecked(check->property("defaultValue").toBool());
+        }
+    }
+    for (QWidget* field : findChildren<QWidget*>()) {
+        if (auto* tests = dynamic_cast<SpecialCauseTestsEditor*>(field)) {
+            tests->restore_defaults();
+        }
+    }
+}
+
+void AnalysisSetupDialog::validate_and_accept()
+{
+    clear_errors();
+    for (QListWidget* role : findChildren<QListWidget*>()) {
+        if (role == available_) {
+            continue;
+        }
+        const int minimum = role->property("minimumCount").toInt();
+        const int maximum = role->property("maximumCount").toInt();
+        if (role->count() < minimum) {
+            set_field_error(
+                role->objectName(),
+                QStringLiteral("此角色至少需要选择 %1 列。").arg(minimum));
+            return;
+        }
+        if (maximum > 0 && role->count() > maximum) {
+            set_field_error(
+                role->objectName(),
+                QStringLiteral("此角色最多只能选择 %1 列。").arg(maximum));
+            return;
+        }
+    }
+    if (accept_validator_ == nullptr) {
+        accept();
+        return;
+    }
+    QString error_title;
+    QString error_message;
+    if (accept_validator_(&error_title, &error_message)) {
+        accept();
+        return;
+    }
+    error_banner_->setText(
+        error_title.isEmpty() ? error_message : error_title + QStringLiteral("：") + error_message);
+    error_banner_->show();
 }

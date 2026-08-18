@@ -1,19 +1,29 @@
 #include "ui/project_navigator.h"
 
+#include <QColor>
+#include <QFrame>
+#include <QFont>
+
 ProjectNavigator::ProjectNavigator(QWidget* parent)
     : QTreeWidget(parent)
 {
     setHeaderHidden(true);
     setRootIsDecorated(true);
-    setIndentation(20);
+    setIndentation(18);
+    setUniformRowHeights(true);
+    setFrameShape(QFrame::NoFrame);
     setMinimumWidth(220);
     setStyleSheet(QStringLiteral(
-        "QTreeWidget { background: #eaf2f5; border: 0; padding: 10px 8px; color: #49636d; }"
-        "QTreeWidget::item { padding: 7px 6px; border-radius: 5px; }"
-        "QTreeWidget::item:hover { background: #e2eef1; }"
-        "QTreeWidget::item:selected { background: #bfe7e9; color: #146f77; font-weight: 600; }"));
+        "QTreeWidget { background: #e8f0f2; border: 0; padding: 12px 10px; color: #49636d; }"
+        "QTreeWidget::item { height: 30px; padding: 4px 7px; border-radius: 5px; }"
+        "QTreeWidget::item:hover { background: #dcebed; }"
+        "QTreeWidget::item:selected { background: #cfe9e8; color: #146f77; font-weight: 600; }"));
 
     auto* project = new QTreeWidgetItem(this, {QStringLiteral("DataLab 项目")});
+    project->setData(0, Qt::UserRole + 1, true);
+    QFont project_font = project->font(0);
+    project_font.setBold(true);
+    project->setFont(0, project_font);
     project->setExpanded(true);
     worksheets_ = new QTreeWidgetItem(project, {QStringLiteral("工作表")});
     analyses_ = new QTreeWidgetItem(project, {QStringLiteral("分析结果")});
@@ -21,6 +31,12 @@ ProjectNavigator::ProjectNavigator(QWidget* parent)
     worksheets_->setExpanded(true);
     analyses_->setExpanded(true);
     reports_->setExpanded(true);
+    for (QTreeWidgetItem* section : {worksheets_, analyses_, reports_}) {
+        QFont section_font = section->font(0);
+        section_font.setBold(true);
+        section->setFont(0, section_font);
+        section->setForeground(0, QColor(QStringLiteral("#385b66")));
+    }
 
     connect(this, &QTreeWidget::itemClicked, this, [this](QTreeWidgetItem* item, int) {
         if (item == nullptr) {

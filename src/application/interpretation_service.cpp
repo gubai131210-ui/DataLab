@@ -84,10 +84,13 @@ void add_doe_rules(const domain::OutputPage& page,
                    domain::InterpretationSection& advice,
                    domain::InterpretationSection& limitations)
 {
-    const double alpha = 1.0 - page.configuration.confidence_level;
-    bool has_p_value = false;
-    std::vector<std::string> significant_terms;
-    for (const auto& table : page.tables) {
+    const double alpha = 1.0 - page.configuration.inference.confidence_level;
+    bool has_p_value = page.facts.doe.has_value() && page.facts.doe->has_p_value;
+    std::vector<std::string> significant_terms =
+        page.facts.doe.has_value() ? page.facts.doe->significant_terms
+                                   : std::vector<std::string>{};
+    if (!page.facts.doe.has_value()) {
+        for (const auto& table : page.tables) {
         if (table.title.find("ANOVA") == std::string::npos) {
             continue;
         }
@@ -104,6 +107,7 @@ void add_doe_rules(const domain::OutputPage& page,
             } catch (...) {
             }
         }
+    }
     }
     if (!has_p_value) {
         limitations.bullets.push_back(
@@ -127,11 +131,11 @@ void add_doe_rules(const domain::OutputPage& page,
     }
     if (page.method_name == "2-Level Factorial Design") {
         advice.bullets.push_back(
-            "设计包含 " + std::to_string(page.configuration.doe_factor_names.size())
-            + " 个因子、" + std::to_string(page.configuration.doe_center_point_count)
+            "设计包含 " + std::to_string(page.configuration.doe.factor_names.size())
+            + " 个因子、" + std::to_string(page.configuration.doe.center_point_count)
             + " 个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。");
     }
-    if (page.configuration.doe_center_point_count == 0
+    if (page.configuration.doe.center_point_count == 0
         && page.method_name.find("Response") != std::string::npos) {
         limitations.bullets.push_back("未配置中心点，无法用中心点直接检验曲率；二水平线性模型的适用范围有限。");
         raise_severity(limitations.severity, Severity::warning);
@@ -167,9 +171,12 @@ void add_msa_rules(const domain::OutputPage& page,
         return;
     }
     if (page.method_name == "MSA Bias and Linearity") {
-        const auto slope = number_in_column(*summary, "Slope");
-        const auto bias_low = number_in_column(*summary, "Bias Low");
-        const auto bias_high = number_in_column(*summary, "Bias High");
+        const auto slope = page.facts.msa.has_value()
+            ? page.facts.msa->slope : number_in_column(*summary, "Slope");
+        const auto bias_low = page.facts.msa.has_value()
+            ? page.facts.msa->bias_low : number_in_column(*summary, "Bias Low");
+        const auto bias_high = page.facts.msa.has_value()
+            ? page.facts.msa->bias_high : number_in_column(*summary, "Bias High");
         if (!slope.has_value() || !bias_low.has_value() || !bias_high.has_value()) {
             limitations.bullets.push_back("偏倚/线性表缺少斜率或端点偏倚，不能作完整判定。");
             raise_severity(limitations.severity, Severity::warning);
@@ -182,14 +189,18 @@ void add_msa_rules(const domain::OutputPage& page,
                                      "回归关系不能替代跨操作者、跨部件的完整 Gage R&R。");
         }
     } else {
-        const auto p_value = number_in_column(*summary, "P");
-        const auto cgk = number_in_column(*summary, "Cgk");
-        const auto tolerance = number_in_column(*summary, "%Tolerance");
+        const auto p_value = page.facts.msa.has_value()
+            ? page.facts.msa->p_value : number_in_column(*summary, "P");
+        const auto cgk = page.facts.msa.has_value()
+            ? page.facts.msa->cgk : number_in_column(*summary, "Cgk");
+        const auto tolerance = page.facts.msa.has_value()
+            ? page.facts.msa->tolerance_percent
+            : number_in_column(*summary, "%Tolerance");
         if (!p_value.has_value() || !cgk.has_value()) {
             limitations.bullets.push_back("Type 1 表缺少 P 或 Cgk，不能完整评价偏倚与重复性。");
             raise_severity(limitations.severity, Severity::warning);
         } else {
-            const double alpha = 1.0 - page.configuration.confidence_level;
+            const double alpha = 1.0 - page.configuration.inference.confidence_level;
             conclusion.bullets.push_back("偏倚检验 P = " + std::to_string(*p_value)
                                          + (*p_value < alpha ? "，与参考值差异具有统计证据。" :
                                             "，未发现与参考值差异的统计证据。"));
@@ -209,13 +220,18 @@ void add_reliability_rules(const domain::OutputPage& page,
                            domain::InterpretationSection& limitations)
 {
     if (page.method_name == "Kaplan-Meier") {
-        if (page.tables.empty() || page.tables.front().rows.empty()) {
+        if (!page.facts.reliability.has_value()
+            && (page.tables.empty() || page.tables.front().rows.empty())) {
             limitations.bullets.push_back("Kaplan-Meier 生存表为空，不能估计生存曲线或中位寿命。");
             raise_severity(limitations.severity, Severity::warning);
             return;
         }
-        const auto& table = page.tables.front();
-        const std::size_t censor_count = [&] {
+        const std::size_t row_count = page.tables.empty()
+            ? 0 : page.tables.front().rows.size();
+        const std::size_t censor_count = page.facts.reliability.has_value()
+            && page.facts.reliability->censored_count.has_value()
+            ? *page.facts.reliability->censored_count : [&] {
+            const auto& table = page.tables.front();
             std::size_t value = 0;
             const auto column = std::find(table.headers.cbegin(), table.headers.cend(), "Censored");
             if (column == table.headers.cend()) return value;
@@ -228,7 +244,7 @@ void add_reliability_rules(const domain::OutputPage& page,
             }
             return value;
         }();
-        conclusion.bullets.push_back("Kaplan-Meier 曲线基于 " + std::to_string(table.rows.size())
+        conclusion.bullets.push_back("Kaplan-Meier 曲线基于 " + std::to_string(row_count)
                                      + " 个时间点；删失数合计 " + std::to_string(censor_count) + "。");
         if (censor_count > 0) {
             limitations.bullets.push_back("存在右删失；尾部生存率由较少的风险集支持，不能把删失时间当作失效时间。");
@@ -236,9 +252,10 @@ void add_reliability_rules(const domain::OutputPage& page,
         }
         advice.bullets.push_back("按目标任务时间读取生存概率，并报告置信区间；需要比较产品/方案时使用分层或组间检验。");
     } else {
-        const auto shape = page.method_name == "Weibull Lifetime"
-            && !page.tables.empty()
-            ? number_after(page.tables.front(), "Shape") : std::nullopt;
+        const auto shape = page.facts.reliability.has_value()
+            ? page.facts.reliability->shape
+            : (page.method_name == "Weibull Lifetime" && !page.tables.empty()
+                   ? number_after(page.tables.front(), "Shape") : std::nullopt);
         if (page.method_name == "Weibull Lifetime" && !shape.has_value()) {
             limitations.bullets.push_back("Weibull 参数缺失，不能解释失效率随时间的变化。");
             raise_severity(limitations.severity, Severity::warning);
@@ -261,14 +278,18 @@ void add_power_rules(const domain::OutputPage& page,
                      domain::InterpretationSection& advice,
                      domain::InterpretationSection& limitations)
 {
-    if (page.tables.empty() || page.tables.front().rows.empty()) {
+    if (!page.facts.power.has_value()
+        && (page.tables.empty() || page.tables.front().rows.empty())) {
         limitations.bullets.push_back("功效/样本量结果表为空，不能给出设计建议。");
         raise_severity(limitations.severity, Severity::warning);
         return;
     }
-    const auto& table = page.tables.front();
-    const auto power = number_in_column(table, "Power");
-    const auto effect = number_in_column(table, "Effect Size");
+    const auto power = page.facts.power.has_value()
+        ? page.facts.power->power
+        : number_in_column(page.tables.front(), "Power");
+    const auto effect = page.facts.power.has_value()
+        ? page.facts.power->effect_size
+        : number_in_column(page.tables.front(), "Effect Size");
     if (!power.has_value() || !effect.has_value()) {
         limitations.bullets.push_back("缺少 Power 或 Effect Size；结果不能用于样本量决策。");
         raise_severity(limitations.severity, Severity::warning);
@@ -276,16 +297,16 @@ void add_power_rules(const domain::OutputPage& page,
     }
     if (page.method_name == "T Test Power") {
         conclusion.bullets.push_back("在效应量 = " + std::to_string(*effect)
-            + "、α = " + std::to_string(page.configuration.power_alpha)
+            + "、α = " + std::to_string(page.configuration.power.alpha)
             + " 下，估计功效 = " + std::to_string(*power) + "。");
         advice.bullets.push_back("将效应量预先定义为具有工程意义的最小差异，并同时考虑实际脱落、分组和方差不确定性。");
     } else {
-        conclusion.bullets.push_back("按目标功效 " + std::to_string(page.configuration.power_target)
+        conclusion.bullets.push_back("按目标功效 " + std::to_string(page.configuration.power.target)
             + " 估计所需样本量；效应量假设为 " + std::to_string(*effect) + "。");
         advice.bullets.push_back("样本量结果是模型和效应量假设的条件结果；试验前应进行敏感性分析并向上取整到可执行的分组方案。");
     }
-    if (page.configuration.power_effect_size <= 0.0 || page.configuration.power_alpha <= 0.0
-        || page.configuration.power_alpha >= 1.0) {
+    if (page.configuration.power.effect_size <= 0.0 || page.configuration.power.alpha <= 0.0
+        || page.configuration.power.alpha >= 1.0) {
         limitations.bullets.push_back("效应量或 α 配置不在有效范围，不能把数值当作正式设计依据。");
         raise_severity(limitations.severity, Severity::error);
     }
@@ -296,10 +317,19 @@ void add_forecast_rules(const domain::OutputPage& page,
                         domain::InterpretationSection& advice,
                         domain::InterpretationSection& limitations)
 {
-    if (page.tables.empty()) {
+    if (!page.facts.forecast.has_value() && page.tables.empty()) {
         limitations.bullets.push_back("预测结果表为空，不能评价预测或未来期。");
         raise_severity(limitations.severity, Severity::warning);
         return;
+    }
+    if (page.facts.forecast.has_value()) {
+        const auto& facts = *page.facts.forecast;
+        conclusion.bullets.push_back("预测误差指标已计算；"
+            + (facts.mape.has_value()
+                   ? "MAPE = " + std::to_string(*facts.mape) + "。" : ""));
+        if (facts.mase.has_value() && *facts.mase > 1.0) {
+            advice.bullets.push_back("MASE > 1，当前模型不优于朴素基准；上线前应比较替代模型或扩大验证窗口。");
+        }
     }
     for (const auto& table : page.tables) {
         if (table.title.find("误差") != std::string::npos
@@ -314,7 +344,7 @@ void add_forecast_rules(const domain::OutputPage& page,
         }
     }
     if (page.method_name == "Holt-Winters Seasonal Forecasting") {
-        if (page.configuration.seasonal_period < 2) {
+        if (page.configuration.time_series.seasonal_period < 2) {
             limitations.bullets.push_back("季节周期小于 2，不能支持有意义的季节性解释。");
             raise_severity(limitations.severity, Severity::warning);
         }
@@ -354,19 +384,39 @@ void InterpretationService::enrich(domain::OutputPage& page)
     std::size_t out_of_control = 0;
     std::optional<double> cpk;
     std::optional<double> ppk;
+    if (page.facts.capability.has_value()) {
+        cpk = page.facts.capability->cpk;
+        ppk = page.facts.capability->ppk;
+    }
+    if (page.facts.spc.has_value()
+        && page.facts.spc->out_of_control_count.has_value()) {
+        out_of_control = *page.facts.spc->out_of_control_count;
+    }
+    const bool need_legacy_summary_scan =
+        !page.facts.capability.has_value()
+        || !page.facts.spc.has_value()
+        || !page.facts.spc->out_of_control_count.has_value();
     for (const auto& table : page.tables) {
+        if (!need_legacy_summary_scan) {
+            break;
+        }
         for (const auto& row : table.rows) {
             for (std::size_t index = 0; index < row.size(); ++index) {
-                if (row[index].find("超限点数") != std::string::npos && index + 1 < row.size()) {
+                if ((!page.facts.spc.has_value()
+                     || !page.facts.spc->out_of_control_count.has_value())
+                    && row[index].find("超限点数") != std::string::npos
+                    && index + 1 < row.size()) {
                     try {
                         out_of_control += static_cast<std::size_t>(std::stoul(row[index + 1]));
                     } catch (...) {
                     }
                 }
-                if (index + 1 < row.size() && row[index] == "Cpk") {
+                if (!page.facts.capability.has_value()
+                    && index + 1 < row.size() && row[index] == "Cpk") {
                     try { cpk = std::stod(row[index + 1]); } catch (...) {}
                 }
-                if (index + 1 < row.size() && row[index] == "Ppk") {
+                if (!page.facts.capability.has_value()
+                    && index + 1 < row.size() && row[index] == "Ppk") {
                     try { ppk = std::stod(row[index + 1]); } catch (...) {}
                 }
             }
@@ -374,21 +424,29 @@ void InterpretationService::enrich(domain::OutputPage& page)
     }
     if (cpk.has_value()) {
         raise_severity(conclusion.severity, *cpk < 1.33 ? Severity::warning : Severity::info);
+        const std::string assumption = page.facts.capability.has_value()
+            ? page.facts.capability->assumption_status : "not_verified";
         conclusion.bullets.push_back("Cpk = " + std::to_string(*cpk)
                                  + (*cpk < 1.33
-                                        ? "，低于 1.33，过程能力不足。"
-                                        : "，达到 1.33 的基本能力门槛。"));
+                                        ? "，低于项目提示基准 1.33，需要调查过程能力。"
+                                        : "，达到项目提示基准 1.33；这不是已验证的过程合格结论。"));
+        if (assumption != "verified") {
+            limitations.bullets.push_back(
+                "过程能力未验证稳定性与正态性（assumption_status=" + assumption
+                + "），不能把 Cpk/Ppk 直接写成合格判定。");
+        }
     }
     if (ppk.has_value()) {
         conclusion.bullets.push_back("Ppk = " + std::to_string(*ppk)
                                  + (*ppk < 1.33
-                                        ? "，整体过程表现低于 1.33。"
-                                        : "，整体过程表现达到 1.33。"));
+                                        ? "，整体过程表现低于 1.33 提示基准。"
+                                        : "，整体过程表现达到 1.33 提示基准。"));
     }
     if (out_of_control > 0) {
         raise_severity(conclusion.severity, Severity::warning);
-        advice.bullets.push_back("发现 " + std::to_string(out_of_control)
-                                 + " 个控制图超限点，建议回查对应原始行并确认特殊原因。");
+        conclusion.bullets.push_back(
+            "发现 " + std::to_string(out_of_control) + " 个控制图超限点。");
+        advice.bullets.push_back("建议回查对应原始行并确认特殊原因。");
     }
     if (page.method_name == "Correlation") {
         conclusion.bullets.push_back("相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，"
@@ -400,19 +458,63 @@ void InterpretationService::enrich(domain::OutputPage& page)
         conclusion.bullets.push_back("ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；"
                                  "需要后续多重比较确定具体组对。");
     }
-    for (const auto& plot : page.plots) {
-        if (plot.sigma_z > 0.0) {
-            const std::string chart_name = page.method_name.find("Laney") != std::string::npos
-                ? page.method_name : "当前";
-            conclusion.bullets.push_back(chart_name + " Sigma Z = "
-                + std::to_string(plot.sigma_z)
-                + (plot.sigma_z > 1.0
-                       ? "，存在过度离散，传统控制限可能过窄。"
-                       : "，控制限已按离散程度进行调整。"));
+    if (page.facts.regression.has_value()) {
+        const auto& regression = *page.facts.regression;
+        if (regression.r_squared.has_value()) {
+            conclusion.bullets.push_back(
+                "R² = " + std::to_string(*regression.r_squared)
+                + " 只描述当前样本拟合程度，不能单独判定模型合格。");
+        }
+        if (regression.influential_count > 0) {
+            limitations.bullets.push_back(
+                "存在 " + std::to_string(regression.influential_count)
+                + " 个影响点提示，解释层不会自动删除这些观测。");
         }
     }
-    if (page.method_name == "Pareto Chart" && !page.tables.empty()
-        && !page.tables.front().rows.empty()) {
+    std::optional<double> sigma_z;
+    if (page.facts.spc.has_value()) {
+        sigma_z = page.facts.spc->sigma_z;
+    }
+    if (sigma_z.has_value() && *sigma_z > 0.0) {
+        const std::string chart_name = page.method_name.find("Laney") != std::string::npos
+            ? page.method_name : "当前";
+        conclusion.bullets.push_back(chart_name + " Sigma Z = "
+            + std::to_string(*sigma_z)
+            + (*sigma_z > 1.0
+                   ? "，存在过度离散，传统控制限可能过窄。"
+                   : "，控制限已按离散程度进行调整。"));
+    } else {
+        for (const auto& plot : page.plots) {
+            if (plot.sigma_z > 0.0) {
+                const std::string chart_name = page.method_name.find("Laney") != std::string::npos
+                    ? page.method_name : "当前";
+                conclusion.bullets.push_back(chart_name + " Sigma Z = "
+                    + std::to_string(plot.sigma_z)
+                    + (plot.sigma_z > 1.0
+                           ? "，存在过度离散，传统控制限可能过窄。"
+                           : "，控制限已按离散程度进行调整。"));
+            }
+        }
+    }
+    if (page.method_name == "Pareto Chart"
+        && (page.facts.pareto.has_value()
+            || (!page.tables.empty() && !page.tables.front().rows.empty()))) {
+        if (page.facts.pareto.has_value()) {
+            const auto& facts = *page.facts.pareto;
+            conclusion.bullets.push_back(
+                "最大类别为“" + facts.largest_category + "”，计数 "
+                + (facts.largest_count.has_value() ? std::to_string(*facts.largest_count) : "未知")
+                + "，单项占比 "
+                + (facts.largest_percent.has_value()
+                       ? std::to_string(*facts.largest_percent) : "未知") + "%。");
+            advice.bullets.push_back(
+                "前 " + std::to_string(std::min<std::size_t>(
+                    2, page.tables.empty() ? 0 : page.tables.front().rows.size()))
+                + " 个类别累计占比 "
+                + (facts.top_categories_percent.has_value()
+                       ? std::to_string(*facts.top_categories_percent) : "未知") + "%；"
+                "应优先结合现场原因验证，而不是直接假设存在 80/20 规律。");
+        } else {
         const auto& rows = page.tables.front().rows;
         const auto& largest = rows.front();
         if (largest.size() >= 4) {
@@ -424,6 +526,7 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 + " 个类别累计占比 "
                 + rows[std::min<std::size_t>(1, rows.size() - 1)][3] + "%；"
                 "应优先结合现场原因验证，而不是直接假设存在 80/20 规律。");
+        }
         }
     }
     if (conclusion.bullets.empty()) {

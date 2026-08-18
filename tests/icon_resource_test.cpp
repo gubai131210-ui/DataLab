@@ -45,6 +45,13 @@ void IconResourceTest::loadsAllBundledIcons()
         QStringLiteral("attribute_agreement"), QStringLiteral("capability"),
         QStringLiteral("capability_sixpack"), QStringLiteral("histogram"),
         QStringLiteral("boxplot"), QStringLiteral("pareto"),
+        QStringLiteral("scatter"), QStringLiteral("interval"),
+        QStringLiteral("bubble"), QStringLiteral("probability"),
+        QStringLiteral("ecdf"), QStringLiteral("matrix"),
+        QStringLiteral("marginal"), QStringLiteral("parallel"),
+        QStringLiteral("heatmap"), QStringLiteral("time_series"),
+        QStringLiteral("area"), QStringLiteral("contour"),
+        QStringLiteral("pie"),
         QStringLiteral("import-data"), QStringLiteral("export-report")};
     for (const QString& name : names) {
         const QString path = QStringLiteral(":/icons/%1.svg").arg(name);

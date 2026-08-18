@@ -13,6 +13,7 @@ namespace datalab::domain::statistics {
 struct PairedTTestResult {
     std::size_t count = 0;
     double mean_difference = 0.0;
+    double standardized_difference = 0.0;
     double sample_standard_deviation = 0.0;
     double standard_error = 0.0;
     double t_statistic = 0.0;
@@ -27,17 +28,23 @@ struct TukeyComparison {
     std::string first_label;
     std::string second_label;
     double mean_difference = 0.0;
+    double standardized_difference = 0.0;
     double standard_error = 0.0;
     double q_statistic = 0.0;
     double confidence_lower = 0.0;
     double confidence_upper = 0.0;
     double adjusted_p_value = 1.0;
+    bool significant = false;
 };
 
 struct TukeyResult {
     double confidence_level = 0.95;
+    double family_confidence_level = 0.95;
+    double individual_confidence_level = 0.95;
+    double alpha = 0.05;
     double error_mean_square = 0.0;
     double error_degrees_of_freedom = 0.0;
+    std::string method = "conservative_sidak_t_studentized_range_approximation";
     std::vector<TukeyComparison> comparisons;
     std::vector<DiagnosticMessage> diagnostics;
 };

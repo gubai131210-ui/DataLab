@@ -5,14 +5,15 @@
 // 配置构建（apply）与执行（run）为两个可独立维护的 lambda。
 // MainWindow 只保留通用 run_from_spec(id)，新增分析 = 向 all() 追加一行。
 
+#include "application/analysis_intent.h"
 #include "domain/quality_types.h"
 
 #include <QString>
 
 #include <functional>
+#include <optional>
+#include <utility>
 #include <vector>
-
-class AnalysisSetupDialog;
 
 namespace analysis_commands {
 
@@ -21,12 +22,37 @@ struct RoleSpec {
     QString label;
     bool multi = false;
     bool optional = false;
+    std::vector<datalab::domain::ColumnType> allowed_types;
+    int minimum_count = 0;
+    int maximum_count = 0;
+    QString help;
+};
+
+enum class InputKind {
+    text,
+    integer,
+    number,
+    percentage,
+    choice,
+    boolean,
+    special_cause_tests
 };
 
 struct InputSpec {
     QString id;
     QString label;
     QString placeholder;
+    InputKind kind = InputKind::text;
+    std::optional<double> minimum;
+    std::optional<double> maximum;
+    QString unit;
+    QString group = QStringLiteral("主要选项");
+    QString help;
+    bool advanced = false;
+    std::vector<std::pair<QString, QString>> choices;
+
+    InputSpec() = default;
+    InputSpec(QString input_id, QString input_label, QString input_placeholder);
 };
 
 // apply 的校验结果：valid=false 表示中止；error_title 非空时由
@@ -35,6 +61,7 @@ struct AnalysisApplyResult {
     bool valid = true;
     QString error_title;
     QString error_message;
+    QString field_id;
 };
 
 struct AnalysisCommand {
@@ -48,10 +75,12 @@ struct AnalysisCommand {
     std::vector<RoleSpec> roles;    // 对话框 add_role 参数
     std::vector<InputSpec> inputs;  // 对话框 add_line_edit 参数
     std::function<AnalysisApplyResult(
-        datalab::domain::AnalysisConfiguration&, const AnalysisSetupDialog&)> apply;
+        datalab::domain::AnalysisConfiguration&,
+        const datalab::application::AnalysisIntent&)> apply;
     std::function<datalab::domain::OutputPage(
         const datalab::domain::DataTable&,
         const datalab::domain::AnalysisConfiguration&)> run;
+    QString menu_group;
 };
 
 // 全量命令表（表顺序即菜单项顺序，按 menu_path 分组）。

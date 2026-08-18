@@ -22,13 +22,13 @@ struct RegressionCoefficient {
 };
 
 struct RegressionObservation {
+    std::size_t source_row = 0;
     double response = 0.0;
     double fitted = 0.0;
     double residual = 0.0;
     double standardized_residual = 0.0;
-    // Internal studentized residual; kept alongside the legacy field.
+    double internally_standardized_residual = 0.0;
     double studentized_residual = 0.0;
-    // Externally studentized residual based on the leave-one-out variance.
     double deleted_studentized_residual = 0.0;
     double leverage = 0.0;
     double cooks_distance = 0.0;
@@ -46,6 +46,11 @@ struct RegressionDiagnosticsSummary {
     std::size_t high_leverage_count = 0;
     std::size_t influential_count = 0;
     std::vector<std::size_t> flagged_observations;
+    std::vector<double> residual_vs_fitted_x;
+    std::vector<double> residual_vs_fitted_y;
+    std::vector<double> residual_vs_order_x;
+    std::vector<double> residual_vs_order_y;
+    std::string durbin_watson_order = "input_order";
 };
 
 struct RegressionResult {
@@ -64,6 +69,7 @@ struct RegressionResult {
     double f_statistic = 0.0;
     double durbin_watson = 0.0;
     std::optional<double> model_p_value;
+    QualityEvidence evidence;
     std::vector<RegressionCoefficient> coefficients;
     std::vector<RegressionObservation> observations;
     RegressionDiagnosticsSummary diagnostics_summary;
@@ -74,6 +80,7 @@ RegressionResult fit_linear_regression(
     const std::vector<double>& response,
     const std::vector<std::vector<double>>& predictors,
     const std::vector<std::string>& predictor_labels = {},
-    double confidence_level = 0.95);
+    double confidence_level = 0.95,
+    const std::vector<std::size_t>& source_rows = {});
 
 }  // namespace datalab::domain::statistics

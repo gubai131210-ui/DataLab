@@ -21,7 +21,15 @@ struct MsaType1Result {
     double cg = 0.0;
     double cgk = 0.0;
     double percent_tolerance = 0.0;
+    bool inference_available = false;
     std::vector<DiagnosticMessage> diagnostics;
+};
+
+struct BiasLinearityLevel {
+    double reference = 0.0;
+    std::size_t valid_count = 0;
+    double bias = 0.0;
+    std::vector<std::size_t> source_rows;
 };
 
 struct BiasLinearityResult {
@@ -33,6 +41,7 @@ struct BiasLinearityResult {
     double r_squared = 0.0;
     double bias_at_low = 0.0;
     double bias_at_high = 0.0;
+    std::vector<BiasLinearityLevel> levels;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -43,6 +52,10 @@ struct StabilityResult {
     double upper_control_limit = 0.0;
     std::vector<double> values;
     std::vector<std::size_t> out_of_control;
+    std::vector<std::size_t> source_rows;
+    std::vector<std::vector<int>> triggered_tests;
+    std::vector<int> primary_test_by_point;
+    std::string limit_source = "estimated_individuals";
     std::vector<DiagnosticMessage> diagnostics;
 };
 

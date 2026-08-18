@@ -227,6 +227,9 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
                         return cell.second != minimum_count;
                     })) {
         add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "unbalanced_design",
+                       "因子组合的重复数不平衡；Seq SS 与 Adj SS 可能不同。");
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
                        "unbalanced_two_factor_anova",
                        "因子组合的重复数不平衡；Seq SS 与 Adj SS 可能不同。");
     }
@@ -248,40 +251,21 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
         ? observations.size() - full_fit.rank : 0;
     if (full_fit.rank < levels_a.size() * levels_b.size()) {
         add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
-                       "rank_deficient_two_factor_anova",
-                       "设计矩阵秩亏；不可估计的项已按有效秩计算。");
+                       "rank_deficient",
+                       "设计矩阵秩亏；不可估计的项不输出伪造 F/P。");
+    }
+    if (result.error_degrees_of_freedom == 0) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "no_error_degrees_of_freedom",
+                       "误差自由度为 0，无法计算 F 与 P。");
     }
     result.error_mean_square = result.error_degrees_of_freedom > 0
         ? result.error_sum_of_squares / result.error_degrees_of_freedom : 0.0;
-
-    std::map<std::string, std::vector<double>> factor_a_values;
-    std::map<std::string, std::vector<double>> factor_b_values;
-    std::map<std::pair<std::string, std::string>, std::vector<double>> cell_values;
-    for (const auto& observation : observations) {
-        factor_a_values[observation.a].push_back(observation.y);
-        factor_b_values[observation.b].push_back(observation.y);
-        cell_values[{observation.a, observation.b}].push_back(observation.y);
-    }
-    auto mean_of = [](const std::vector<double>& values) {
-        return std::accumulate(values.cbegin(), values.cend(), 0.0)
-            / static_cast<double>(values.size());
-    };
-    double direct_a_ss = 0.0;
-    for (const auto& [level, values] : factor_a_values) {
-        direct_a_ss += static_cast<double>(values.size())
-            * std::pow(mean_of(values) - result.grand_mean, 2.0);
-    }
-    double direct_b_ss = 0.0;
-    for (const auto& [level, values] : factor_b_values) {
-        direct_b_ss += static_cast<double>(values.size())
-            * std::pow(mean_of(values) - result.grand_mean, 2.0);
-    }
-    double direct_interaction_ss = 0.0;
-    for (const auto& [levels, values] : cell_values) {
-        direct_interaction_ss += static_cast<double>(values.size())
-            * std::pow(mean_of(values) - mean_of(factor_a_values[levels.first])
-                - mean_of(factor_b_values[levels.second]) + result.grand_mean, 2.0);
-    }
+    result.evidence.method_version = "2";
+    result.evidence.valid_count = observations.size();
+    result.evidence.omitted_count = result.omitted_observation_count;
+    result.evidence.assumption_status = "not_verified";
+    result.evidence.source_rows = input.source_rows;
 
     const std::vector<std::string> labels = {"Factor A", "Factor B", "A*B"};
     const std::vector<Fit> sequential_fits = {
@@ -294,20 +278,15 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
     for (std::size_t index = 0; index < 3; ++index) {
         AnovaEffectResult effect;
         effect.term = labels[index];
-        const double direct_ss = index == 0 ? direct_a_ss
-            : index == 1 ? direct_b_ss : direct_interaction_ss;
-        effect.sequential_sum_of_squares = std::max(
-            direct_ss, sequential_fits[index].rss - sequential_fits[index + 1].rss);
+        const double sequential_ss =
+            sequential_fits[index].rss - sequential_fits[index + 1].rss;
         effect.degrees_of_freedom = sequential_fits[index + 1].rank
             - sequential_fits[index].rank;
-        effect.mean_square = effect.degrees_of_freedom > 0
-            ? effect.sequential_sum_of_squares / effect.degrees_of_freedom : 0.0;
         const int reduced_model = index == 0 ? 2 : index == 1 ? 1 : 3;
         const Fit reduced_fit = fit_model(
             make_model(observations, levels_a, levels_b, input.encoding, reduced_model),
             response);
-        effect.adjusted_sum_of_squares = std::max(
-            direct_ss, reduced_fit.rss - full_fit.rss);
+        const double adjusted_ss = reduced_fit.rss - full_fit.rss;
         const std::size_t adjusted_df = index == 0
             ? full_fit.rank - fit_model(make_model(
                 observations, levels_a, levels_b, input.encoding, 6), response).rank
@@ -316,13 +295,27 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
                     observations, levels_a, levels_b, input.encoding, 5), response).rank
                 : full_fit.rank - fit_model(make_model(
                     observations, levels_a, levels_b, input.encoding, 3), response).rank;
-        effect.f_statistic = result.error_mean_square > 0.0
-            ? effect.adjusted_sum_of_squares / std::max<std::size_t>(1, adjusted_df)
-                / result.error_mean_square : 0.0;
-        if (adjusted_df > 0 && result.error_degrees_of_freedom > 0) {
-            effect.p_value = f_right_tail(
-                effect.f_statistic, static_cast<double>(adjusted_df),
-                static_cast<double>(result.error_degrees_of_freedom));
+        if (effect.degrees_of_freedom == 0 || adjusted_df == 0) {
+            effect.estimable = false;
+            effect.estimability = "rank_deficient";
+            const std::string message =
+                effect.term + " 不可估计，不输出伪造平方和或 F/P。";
+            add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                           "not_estimable", message.c_str());
+        } else {
+            effect.sequential_sum_of_squares = std::max(0.0, sequential_ss);
+            effect.adjusted_sum_of_squares = std::max(0.0, adjusted_ss);
+            effect.mean_square = *effect.adjusted_sum_of_squares
+                / static_cast<double>(adjusted_df);
+            if (result.error_degrees_of_freedom == 0
+                || !(result.error_mean_square > 0.0)) {
+                effect.estimability = "no_error_degrees_of_freedom";
+            } else {
+                effect.f_statistic = *effect.mean_square / result.error_mean_square;
+                effect.p_value = f_right_tail(
+                    *effect.f_statistic, static_cast<double>(adjusted_df),
+                    static_cast<double>(result.error_degrees_of_freedom));
+            }
         }
         result.effects.push_back(effect);
     }

@@ -4,6 +4,10 @@
 #include "reporting/chart_adapter.h"
 
 #include <QFile>
+#include <QApplication>
+#include <QAction>
+#include <QClipboard>
+#include <QFileDialog>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -12,9 +16,39 @@
 #include <QObject>
 #include <QRegularExpression>
 #include <QTableWidget>
+#include <QTextStream>
 #include <QVBoxLayout>
 
 namespace page_renderer {
+namespace {
+
+QString table_text(const datalab::domain::StatisticTable& table, QChar separator)
+{
+    QStringList lines;
+    auto encode = [separator](const std::string& value) {
+        QString text = QString::fromStdString(value);
+        if (text.contains(separator) || text.contains('"') || text.contains('\n')) {
+            text.replace('"', QStringLiteral("\"\""));
+            text = QStringLiteral("\"") + text + QStringLiteral("\"");
+        }
+        return text;
+    };
+    QStringList headers;
+    for (const auto& header : table.headers) {
+        headers.push_back(encode(header));
+    }
+    lines.push_back(headers.join(separator));
+    for (const auto& row : table.rows) {
+        QStringList cells;
+        for (std::size_t column = 0; column < table.headers.size(); ++column) {
+            cells.push_back(encode(column < row.size() ? row[column] : std::string()));
+        }
+        lines.push_back(cells.join(separator));
+    }
+    return lines.join(QLatin1Char('\n'));
+}
+
+}  // namespace
 
 QString icon_resource(const std::string& analysis_id)
 {
@@ -97,7 +131,31 @@ QWidget* build_page_widget(
             static_cast<int>(table.headers.size()),
             container);
         grid->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        grid->setSelectionMode(QAbstractItemView::NoSelection);
+        grid->setSelectionMode(QAbstractItemView::ContiguousSelection);
+        grid->setSelectionBehavior(QAbstractItemView::SelectItems);
+        grid->setContextMenuPolicy(Qt::ActionsContextMenu);
+        auto* copy_table = new QAction(QStringLiteral("复制表格（TSV）"), grid);
+        QObject::connect(copy_table, &QAction::triggered, grid, [table] {
+            QApplication::clipboard()->setText(table_text(table, QLatin1Char('\t')));
+        });
+        grid->addAction(copy_table);
+        auto* export_table = new QAction(QStringLiteral("导出表格（CSV）"), grid);
+        QObject::connect(export_table, &QAction::triggered, grid, [table, grid] {
+            const QString path = QFileDialog::getSaveFileName(
+                grid, QStringLiteral("导出统计表"),
+                QString::fromStdString(table.title) + QStringLiteral(".csv"),
+                QStringLiteral("CSV 文件 (*.csv)"));
+            if (path.isEmpty()) {
+                return;
+            }
+            QFile file(path);
+            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                QTextStream stream(&file);
+                stream.setEncoding(QStringConverter::Utf8);
+                stream << table_text(table, QLatin1Char(','));
+            }
+        });
+        grid->addAction(export_table);
         grid->setWordWrap(true);
         grid->setShowGrid(false);
         grid->setMinimumHeight(42);

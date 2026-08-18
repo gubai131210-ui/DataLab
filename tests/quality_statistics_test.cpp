@@ -56,6 +56,7 @@ private slots:
     void buildsSubgroupChartOutput();
     void calculatesLaneyCharts();
     void detectsLaneySpecialCauseTests();
+    void detectsTestEightWithoutAlternation();
     void buildsLaneyOutput();
     void buildsCapabilitySixpack();
     void buildsDoeFactorialServiceOutput();
@@ -227,9 +228,9 @@ void QualityStatisticsTest::buildsAttributeChartOutput()
     p_configuration.selection.inspected_count_column = 1;
     const auto p_page = datalab::application::AnalysisService::p_chart(
         table, p_configuration);
-    QCOMPARE(p_page.tables.size(), std::size_t{1});
-    QCOMPARE(p_page.tables.front().headers.size(), std::size_t{8});
-    QCOMPARE(p_page.tables.front().rows.size(), std::size_t{3});
+    QCOMPARE(p_page.tables.size(), std::size_t{2});
+    QCOMPARE(p_page.tables.back().headers.size(), std::size_t{10});
+    QCOMPARE(p_page.tables.back().rows.size(), std::size_t{3});
     QCOMPARE(p_page.plots.size(), std::size_t{1});
 
     datalab::domain::AnalysisConfiguration u_configuration;
@@ -238,8 +239,8 @@ void QualityStatisticsTest::buildsAttributeChartOutput()
     u_configuration.selection.inspected_count_column = 2;
     const auto u_page = datalab::application::AnalysisService::u_chart(
         table, u_configuration);
-    QCOMPARE(u_page.tables.size(), std::size_t{1});
-    QCOMPARE(u_page.tables.front().rows.front()[2], std::string{"10"});
+    QCOMPARE(u_page.tables.size(), std::size_t{2});
+    QCOMPARE(u_page.tables.back().rows.front()[3], std::string{"10"});
     QCOMPARE(u_page.plots.front().y_axis_title, std::string{"单位缺陷数"});
 }
 
@@ -297,7 +298,7 @@ void QualityStatisticsTest::buildsSubgroupChartOutput()
     datalab::domain::AnalysisConfiguration configuration;
     configuration.variable_columns = {0};
     configuration.selection.measurement_column = 0;
-    configuration.subgroup_size = 4;
+    configuration.control.subgroup_size = 4;
     const auto page = datalab::application::AnalysisService::xbar_s(
         table, configuration);
     QCOMPARE(page.plots.size(), std::size_t{2});
@@ -334,6 +335,19 @@ void QualityStatisticsTest::detectsLaneySpecialCauseTests()
     QVERIFY(!result.special_cause_points[1].empty());
 }
 
+void QualityStatisticsTest::detectsTestEightWithoutAlternation()
+{
+    datalab::domain::statistics::LaneyChartOptions options;
+    options.enabled_special_cause_tests = {8};
+    options.historical_center = 0.1;
+    options.historical_sigma_z = 1.0;
+    const auto result = ControlCharts::laney_p_chart(
+        {20, 20, 20, 20, 20, 20, 20, 20},
+        {100, 100, 100, 100, 100, 100, 100, 100},
+        options);
+    QVERIFY(!result.special_cause_points[7].empty());
+}
+
 void QualityStatisticsTest::buildsLaneyOutput()
 {
     datalab::domain::DataTable table;
@@ -344,14 +358,14 @@ void QualityStatisticsTest::buildsLaneyOutput()
     datalab::domain::AnalysisConfiguration configuration;
     configuration.selection.defect_count_column = 0;
     configuration.selection.inspected_count_column = 1;
-    configuration.stage_column = 2;
-    configuration.enabled_special_cause_tests = {1, 2};
+    configuration.control.stage_column = 2;
+    configuration.control.enabled_special_cause_tests = {1, 2};
     const auto page = datalab::application::AnalysisService::laney_p_chart(
         table, configuration);
     QCOMPARE(page.method_name, std::string{"Laney P' Chart"});
     QCOMPARE(page.tables.size(), std::size_t{2});
-    QCOMPARE(page.tables.back().headers.size(), std::size_t{14});
-    QCOMPARE(page.tables.back().rows.front()[1], std::string{"Before"});
+    QCOMPARE(page.tables.back().headers.size(), std::size_t{17});
+    QCOMPARE(page.tables.back().rows.front()[2], std::string{"Before"});
     QCOMPARE(page.plots.size(), std::size_t{1});
 }
 
@@ -582,7 +596,8 @@ void QualityStatisticsTest::calculatesTwoFactorAnovaAndArima()
     const auto anova = datalab::domain::statistics::two_factor_anova(input);
     QCOMPARE(anova.effects.size(), std::size_t{3});
     QCOMPARE(anova.error_degrees_of_freedom, std::size_t{4});
-    QVERIFY(anova.effects[0].sequential_sum_of_squares > 0.0);
+    QVERIFY(anova.effects[0].sequential_sum_of_squares.has_value());
+    QVERIFY(*anova.effects[0].sequential_sum_of_squares > 0.0);
 
     const auto arima = datalab::domain::statistics::fit_arima_candidates(
         {10.0, 10.4, 10.1, 10.8, 10.6, 11.0, 10.9, 11.3}, 3);
@@ -643,7 +658,7 @@ void QualityStatisticsTest::calculatesNextBatchAlgorithms()
     table.rows = {{"1", "2"}, {"2", "4"}, {"3", "6"}, {"4", "8"}};
     datalab::domain::AnalysisConfiguration configuration;
     configuration.variable_columns = {0, 1};
-    configuration.pca_variable_columns = {0, 1};
+    configuration.pca.variable_columns = {0, 1};
     const auto page = datalab::application::AnalysisService::pca(table, configuration);
     QCOMPARE(page.method_name, std::string("Principal Component Analysis"));
     QVERIFY(!page.tables.empty());
@@ -672,12 +687,12 @@ void QualityStatisticsTest::buildsDoeFactorialServiceOutput()
     design_table.columns = {"X"};
     design_table.rows = {{"1"}, {"2"}};
     datalab::domain::AnalysisConfiguration design_configuration;
-    design_configuration.doe_factor_names = {"Temperature", "Pressure"};
-    design_configuration.doe_low_levels = {"-1", "-1"};
-    design_configuration.doe_high_levels = {"+1", "+1"};
-    design_configuration.doe_center_point_count = 0;
-    design_configuration.doe_block_count = 1;
-    design_configuration.doe_randomize = false;
+    design_configuration.doe.factor_names = {"Temperature", "Pressure"};
+    design_configuration.doe.low_levels = {"-1", "-1"};
+    design_configuration.doe.high_levels = {"+1", "+1"};
+    design_configuration.doe.center_point_count = 0;
+    design_configuration.doe.block_count = 1;
+    design_configuration.doe.randomize = false;
     const auto design_page = datalab::application::AnalysisService::doe_factorial(
         design_table, design_configuration);
     QCOMPARE(design_page.method_name, std::string{"2-Level Factorial Design"});
@@ -696,8 +711,8 @@ void QualityStatisticsTest::buildsDoeFactorialServiceOutput()
         {"-1", "-1", "-3.5"}, {"1", "-1", "-0.5"},
         {"-1", "1", "1.5"}, {"1", "1", "6.5"}};
     datalab::domain::AnalysisConfiguration configuration;
-    configuration.doe_factor_columns = {0, 1};
-    configuration.doe_response_column = 2;
+    configuration.doe.factor_columns = {0, 1};
+    configuration.doe.response_column = 2;
     const auto page = datalab::application::AnalysisService::doe_factorial(table, configuration);
     QCOMPARE(page.method_name, std::string{"2-Level Factorial Response Analysis"});
     QVERIFY(page.id.rfind("doe_response", 0) == 0);
@@ -761,8 +776,8 @@ void QualityStatisticsTest::buildsLogisticServiceOutput()
     table.rows = {{"0", "1"}, {"0", "2"}, {"1", "3"}, {"0", "4"},
                   {"1", "5"}, {"1", "6"}, {"1", "7"}, {"1", "8"}};
     datalab::domain::AnalysisConfiguration configuration;
-    configuration.logistic_response_column = 0;
-    configuration.logistic_predictor_columns = {1};
+    configuration.inference.logistic_response_column = 0;
+    configuration.inference.logistic_predictor_columns = {1};
     const auto page =
         datalab::application::AnalysisService::logistic_regression(table, configuration);
     QCOMPARE(page.method_name, std::string{"Binary Logistic Regression"});

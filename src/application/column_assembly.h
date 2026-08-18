@@ -33,4 +33,12 @@ std::size_t first_variable(const domain::AnalysisConfiguration& configuration);
 std::vector<std::vector<double>> align_complete_rows(
     const std::vector<domain::ExtractedNumericColumn>& columns);
 
+struct AlignedNumericRows {
+    std::vector<std::vector<double>> values;
+    std::vector<std::size_t> source_rows;
+};
+
+AlignedNumericRows align_complete_rows_with_source(
+    const std::vector<domain::ExtractedNumericColumn>& columns);
+
 }  // namespace datalab::application

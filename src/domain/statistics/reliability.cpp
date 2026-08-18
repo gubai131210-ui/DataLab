@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <string>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -87,12 +88,36 @@ void add_model_metrics(double shape, double scale, std::size_t n,
     r.failures = failures;
     r.observations = n;
     r.identifiable = true;
+    r.converged = std::isfinite(shape) && std::isfinite(scale)
+        && std::isfinite(log_likelihood);
+    r.iterations = 100;
+    r.censoring_fraction = n > 0
+        ? 1.0 - static_cast<double>(failures) / static_cast<double>(n) : 0.0;
+    r.parameter_boundary_hit = shape <= 1.0e-5 || shape >= 1.0e6;
 }
+}
+
+std::optional<bool> parse_reliability_event(const std::string& text)
+{
+    if (text == "1" || text == "1.0" || text == "true" || text == "TRUE"
+        || text == "True" || text == "fail" || text == "Fail"
+        || text == "Failure" || text == "failure" || text == "F"
+        || text == "event" || text == "Event") {
+        return true;
+    }
+    if (text == "0" || text == "0.0" || text == "false" || text == "FALSE"
+        || text == "False" || text == "censor" || text == "Censor"
+        || text == "censored" || text == "Censored" || text == "suspension"
+        || text == "S" || text == "C" || text == "删失") {
+        return false;
+    }
+    return std::nullopt;
 }
 
 KaplanMeierResult kaplan_meier(const std::vector<double>& times,
                                const std::vector<bool>& events,
-                               double confidence_level)
+                               double confidence_level,
+                               const std::vector<std::size_t>& source_rows)
 {
     KaplanMeierResult r;
     if (!valid(times, events, r.diagnostics)) return r;
@@ -103,12 +128,18 @@ KaplanMeierResult kaplan_meier(const std::vector<double>& times,
     r.confidence_level = confidence_level;
     const std::size_t failure_count = static_cast<std::size_t>(
         std::count(events.begin(), events.end(), true));
+    r.failure_count = failure_count;
+    r.censored_count = times.size() - failure_count;
+    r.valid_count = times.size();
     r.censoring_fraction = static_cast<double>(times.size() - failure_count) /
         static_cast<double>(times.size());
     r.survival_identifiable = failure_count > 0;
-    if (!r.survival_identifiable)
+    if (!r.survival_identifiable) {
         error(r.diagnostics, "non_identifiable_survival",
               "全为删失，无法识别失效分布或中位寿命。");
+        r.not_computed_reason = "all_censored";
+        return r;
+    }
     std::vector<std::size_t> order(times.size());
     std::iota(order.begin(), order.end(), 0);
     std::sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
@@ -122,8 +153,14 @@ KaplanMeierResult kaplan_meier(const std::vector<double>& times,
         std::size_t failures = 0;
         std::size_t censored = 0;
         std::size_t end = pos;
+        std::vector<std::size_t> point_rows;
         while (end < order.size() && times[order[end]] == time) {
             (events[order[end]] ? failures : censored)++;
+            if (order[end] < source_rows.size()) {
+                point_rows.push_back(source_rows[order[end]]);
+            } else {
+                point_rows.push_back(order[end]);
+            }
             ++end;
         }
         if (failures > 0 && at_risk > failures) {
@@ -151,10 +188,17 @@ KaplanMeierResult kaplan_meier(const std::vector<double>& times,
             upper = 0.0;
         }
         r.points.push_back({time, at_risk, failures, censored, survival,
-                            standard_error, lower, upper});
+                            standard_error, lower, upper, point_rows});
         if (!r.median_life.has_value() && survival <= 0.5) r.median_life = time;
         at_risk -= failures + censored;
         pos = end;
+    }
+    if (!r.points.empty() && r.points.back().censored > 0 && r.points.back().survival > 0.0) {
+        r.diagnostics.push_back({DiagnosticMessage::Severity::warning, "not_estimable",
+                                 "最大观测为删失，尾部生存函数不可估计到 0。"});
+        if (r.not_computed_reason.empty()) {
+            r.not_computed_reason = "max_observation_censored";
+        }
     }
     return r;
 }
@@ -181,6 +225,8 @@ LogRankResult log_rank_test(const std::vector<double>& times,
         }
         groups[index] == 0 ? ++group_one : ++group_two;
     }
+    r.group_one_n = group_one;
+    r.group_two_n = group_two;
     if (group_one == 0 || group_two == 0) {
         error(r.diagnostics, "insufficient_log_rank_groups",
               "Log-rank 检验至少需要两个非空分组。");
@@ -232,6 +278,8 @@ LogRankResult log_rank_test(const std::vector<double>& times,
     }
     r.chi_square = observed_minus_expected * observed_minus_expected / variance;
     r.p_value = std::clamp(std::erfc(std::sqrt(r.chi_square / 2.0)), 0.0, 1.0);
+    r.group_one_censored = r.group_one_n - r.group_one_failures;
+    r.group_two_censored = r.group_two_n - r.group_two_failures;
     return r;
 }
 

@@ -5,6 +5,8 @@
 #include "application/output_builder.h"
 
 #include "domain/column_extract.h"
+#include "domain/graph_assembly.h"
+#include "domain/quality_diagnostics.h"
 #include "domain/statistics/control_charts.h"
 #include "domain/statistics/descriptive_statistics.h"
 #include "domain/statistics/process_capability.h"
@@ -43,6 +45,7 @@
 #include <iomanip>
 #include <limits>
 #include <set>
+#include <utility>
 
 namespace datalab::application {
 namespace {
@@ -53,6 +56,9 @@ using datalab::domain::DiagnosticMessage;
 using datalab::domain::ExtractedNumericColumn;
 using datalab::domain::OutputPage;
 using datalab::domain::PlotKind;
+using datalab::domain::PlotPointStyle;
+using datalab::domain::PlotSeries;
+using datalab::domain::PlotSeriesRole;
 using datalab::domain::PlotSpec;
 using datalab::domain::StatisticTable;
 using datalab::domain::SpecificationLimits;
@@ -92,8 +98,15 @@ datalab::domain::OutputPage build_capability_content(
         {"USL", format_optional(configuration.specifications.upper)},
         {"Sample Mean", format_number(capability_result.mean)},
         {"Sample N", std::to_string(capability_result.sample_size)},
+        {"Missing N*", std::to_string(capability_result.evidence.missing_count)},
+        {"规格模式", capability_result.specification_mode.empty()
+            ? "*" : capability_result.specification_mode},
         {"StDev (Within)", format_number(capability_result.within_standard_deviation)},
-        {"StDev (Overall)", format_number(capability_result.overall_standard_deviation)}};
+        {"Within σ 来源", capability_result.within_sigma_method.empty()
+            ? within_method : capability_result.within_sigma_method},
+        {"StDev (Overall)", format_number(capability_result.overall_standard_deviation)},
+        {"Overall σ 方法", capability_result.overall_sigma_method},
+        {"假设状态", capability_result.evidence.assumption_status}};
     page.tables.push_back(process);
 
     StatisticTable ppm;
@@ -121,7 +134,9 @@ datalab::domain::OutputPage build_capability_content(
         {"Cp", format_optional(capability_result.cp)},
         {"CPL", format_optional(capability_result.cpl)},
         {"CPU", format_optional(capability_result.cpu)},
-        {"Cpk", format_optional(capability_result.cpk)}};
+        {"Cpk", format_optional(capability_result.cpk)},
+        {"Cpm", format_optional(capability_result.cpm)},
+        {"Z.Bench", format_optional(capability_result.z_bench)}};
     page.tables.push_back(within);
 
     StatisticTable overall;
@@ -131,7 +146,9 @@ datalab::domain::OutputPage build_capability_content(
         {"Pp", format_optional(capability_result.pp)},
         {"PPL", format_optional(capability_result.ppl)},
         {"PPU", format_optional(capability_result.ppu)},
-        {"Ppk", format_optional(capability_result.ppk)}};
+        {"Ppk", format_optional(capability_result.ppk)},
+        {"Z.LSL", format_optional(capability_result.z_lsl)},
+        {"Z.USL", format_optional(capability_result.z_usl)}};
     page.tables.push_back(overall);
 
     const auto bins = datalab::domain::statistics::histogram(extracted.values, 0);
@@ -151,6 +168,15 @@ datalab::domain::OutputPage build_capability_content(
     hist.within_sigma = capability_result.within_standard_deviation;
     hist.overall_sigma = capability_result.overall_standard_deviation;
     page.plots.push_back(hist);
+    page.facts.capability = domain::CapabilityFacts{
+        capability_result.cpk,
+        capability_result.ppk,
+        capability_result.cpm,
+        capability_result.z_bench,
+        capability_result.evidence.assumption_status,
+        capability_result.specification_mode};
+    domain::apply_evidence(page.method_metadata, capability_result.evidence);
+    page.method_metadata.estimation_method = within_method;
     return page;
 }
 
@@ -166,8 +192,7 @@ PlotSpec probability_plot_spec(
     plot.y_axis_title = variable_name;
     plot.values = probability.ordered_values;
     plot.x_values = probability.theoretical_quantiles;
-    plot.source_rows.resize(probability.ordered_values.size());
-    std::iota(plot.source_rows.begin(), plot.source_rows.end(), 0);
+    plot.source_rows = probability.source_rows;
     plot.center.resize(probability.ordered_values.size());
     if (probability.theoretical_quantiles.size() >= 2) {
         const double x0 = probability.theoretical_quantiles.front();
@@ -236,7 +261,7 @@ LogisticImport logistic_import_rows(
             continue;
         }
         const auto& row = table.rows[row_index];
-        const std::size_t response_column = *configuration.logistic_response_column;
+        const std::size_t response_column = *configuration.inference.logistic_response_column;
         if (response_column >= row.size()) {
             continue;
         }
@@ -244,12 +269,12 @@ LogisticImport logistic_import_rows(
         if (const auto numeric = parse_numeric_cell(row[response_column]);
             numeric.has_value() && (*numeric == 0.0 || *numeric == 1.0)) {
             event = static_cast<int>(*numeric);
-        } else if (!configuration.logistic_event_level.empty()) {
-            event = row[response_column] == configuration.logistic_event_level ? 1 : 0;
+        } else if (!configuration.inference.logistic_event_level.empty()) {
+            event = row[response_column] == configuration.inference.logistic_event_level ? 1 : 0;
         }
         std::vector<double> predictor_row;
         bool complete = event >= 0;
-        for (const std::size_t column : configuration.logistic_predictor_columns) {
+        for (const std::size_t column : configuration.inference.logistic_predictor_columns) {
             if (column >= row.size()) {
                 complete = false;
                 break;
@@ -268,6 +293,153 @@ LogisticImport logistic_import_rows(
         }
     }
     return result;
+}
+
+OutputPage finalize_page(OutputPage page)
+{
+    page.method_metadata.algorithm = page.method_name;
+    page.method_metadata.parameters = page.parameter_summary;
+    page.method_metadata.source_rows.clear();
+    for (const auto& plot : page.plots) {
+        page.method_metadata.source_rows.insert(
+            page.method_metadata.source_rows.end(),
+            plot.source_rows.begin(), plot.source_rows.end());
+    }
+    std::sort(page.method_metadata.source_rows.begin(),
+              page.method_metadata.source_rows.end());
+    page.method_metadata.source_rows.erase(
+        std::unique(page.method_metadata.source_rows.begin(),
+                    page.method_metadata.source_rows.end()),
+        page.method_metadata.source_rows.end());
+    page.method_metadata.diagnostic_codes.clear();
+    for (const auto& diagnostic : page.diagnostics) {
+        if (std::find(page.method_metadata.diagnostic_codes.begin(),
+                      page.method_metadata.diagnostic_codes.end(),
+                      diagnostic.code) == page.method_metadata.diagnostic_codes.end()) {
+            page.method_metadata.diagnostic_codes.push_back(diagnostic.code);
+        }
+    }
+    std::optional<double> cpk;
+    std::optional<double> ppk;
+    std::optional<std::size_t> out_of_control;
+    domain::MsaFacts msa;
+    domain::ReliabilityFacts reliability;
+    domain::ForecastFacts forecast;
+    domain::PowerFacts power;
+    domain::ParetoFacts pareto;
+    domain::DoeFacts doe;
+    bool has_msa_fact = false;
+    bool has_reliability_fact = false;
+    bool has_forecast_fact = false;
+    bool has_power_fact = false;
+    bool has_pareto_fact = false;
+    bool has_doe_fact = false;
+
+    for (const PlotSpec& plot : page.plots) {
+        if (plot.sigma_z > 0.0) {
+            if (!page.facts.spc.has_value()) {
+                page.facts.spc = domain::SpcFacts{};
+            }
+            page.facts.spc->sigma_z = plot.sigma_z;
+        }
+    }
+
+    for (const StatisticTable& table : page.tables) {
+        for (const std::vector<std::string>& row : table.rows) {
+            for (std::size_t index = 0; index + 1 < row.size(); ++index) {
+                const std::optional<double> value = parse_numeric_cell(row[index + 1]);
+                if (row[index] == "Cpk" && value.has_value()) {
+                    cpk = value;
+                } else if (row[index] == "Ppk" && value.has_value()) {
+                    ppk = value;
+                } else if ((row[index] == "超限点数"
+                            || row[index] == "Out of Control")
+                           && value.has_value() && *value >= 0.0) {
+                    out_of_control = static_cast<std::size_t>(*value);
+                }
+                if (row[index] == "Slope" && value.has_value()) {
+                    msa.slope = value;
+                    has_msa_fact = true;
+                } else if (row[index] == "Bias Low" && value.has_value()) {
+                    msa.bias_low = value;
+                    has_msa_fact = true;
+                } else if (row[index] == "Bias High" && value.has_value()) {
+                    msa.bias_high = value;
+                    has_msa_fact = true;
+                } else if (row[index] == "P" && value.has_value()) {
+                    msa.p_value = value;
+                    has_msa_fact = true;
+                } else if (row[index] == "Cgk" && value.has_value()) {
+                    msa.cgk = value;
+                    has_msa_fact = true;
+                } else if (row[index] == "%Tolerance" && value.has_value()) {
+                    msa.tolerance_percent = value;
+                    has_msa_fact = true;
+                } else if (row[index] == "Shape" && value.has_value()) {
+                    reliability.shape = value;
+                    has_reliability_fact = true;
+                } else if (row[index] == "Censored" && value.has_value()
+                           && *value >= 0.0) {
+                    reliability.censored_count = static_cast<std::size_t>(*value);
+                    has_reliability_fact = true;
+                } else if (row[index] == "MAPE (%)" && value.has_value()) {
+                    forecast.mape = value;
+                    has_forecast_fact = true;
+                } else if (row[index] == "MASE" && value.has_value()) {
+                    forecast.mase = value;
+                    has_forecast_fact = true;
+                } else if (row[index] == "Power" && value.has_value()) {
+                    power.power = value;
+                    has_power_fact = true;
+                } else if (row[index] == "Effect Size" && value.has_value()) {
+                    power.effect_size = value;
+                    has_power_fact = true;
+                }
+            }
+            if (table.title.find("ANOVA") != std::string::npos && row.size() >= 2) {
+                const std::optional<double> p_value = parse_numeric_cell(row.back());
+                if (p_value.has_value()) {
+                    doe.has_p_value = true;
+                    has_doe_fact = true;
+                    if (*p_value < 1.0 - page.configuration.inference.confidence_level
+                        && !row.front().empty()) {
+                        doe.significant_terms.push_back(row.front());
+                    }
+                }
+            }
+        }
+        if (table.title.find("Pareto") != std::string::npos
+            && !table.rows.empty() && table.rows.front().size() >= 4) {
+            const std::vector<std::string>& row = table.rows.front();
+            pareto.largest_category = row[0];
+            pareto.largest_count = parse_numeric_cell(row[1]);
+            pareto.largest_percent = parse_numeric_cell(row[2]);
+            pareto.top_categories_percent = parse_numeric_cell(
+                table.rows[std::min<std::size_t>(1, table.rows.size() - 1)][3]);
+            has_pareto_fact = true;
+        }
+    }
+
+    if (cpk.has_value() || ppk.has_value()) {
+        if (!page.facts.capability.has_value()) {
+            page.facts.capability = domain::CapabilityFacts{};
+        }
+        page.facts.capability->cpk = cpk;
+        page.facts.capability->ppk = ppk;
+    }
+    if (out_of_control.has_value() || page.facts.spc.has_value()) {
+        if (!page.facts.spc.has_value()) {
+            page.facts.spc = domain::SpcFacts{};
+        }
+        page.facts.spc->out_of_control_count = out_of_control;
+    }
+    if (has_msa_fact) page.facts.msa = msa;
+    if (has_reliability_fact) page.facts.reliability = reliability;
+    if (has_forecast_fact) page.facts.forecast = forecast;
+    if (has_power_fact) page.facts.power = power;
+    if (has_pareto_fact) page.facts.pareto = pareto;
+    if (has_doe_fact) page.facts.doe = doe;
+    return page;
 }
 
 }  // namespace
@@ -331,7 +503,7 @@ OutputPage AnalysisService::descriptive(
     }
     page.tables.push_back(descriptive_table(rows));
     page.parameter_summary = "变量数 = " + std::to_string(columns.size());
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::normality_test(
@@ -341,7 +513,8 @@ OutputPage AnalysisService::normality_test(
     const std::size_t column = first_variable(configuration);
     const ExtractedNumericColumn extracted =
         extract_numeric_column(table, column, configuration.excluded_rows);
-    const auto result = datalab::domain::statistics::normality_test(extracted.values);
+    const auto result = datalab::domain::statistics::normality_test(
+        extracted.values, extracted.source_rows);
 
     OutputPage page;
     page.id = new_id("normality");
@@ -351,17 +524,23 @@ OutputPage AnalysisService::normality_test(
     page.parameter_summary = "变量: " + extracted.name
         + "    方法: Anderson-Darling    缺失值 N* = "
         + std::to_string(extracted.missing_count);
-    for (const std::string& diagnostic : result.diagnostics) {
-        page.diagnostics.push_back({
-            DiagnosticMessage::Severity::warning, "normality", diagnostic});
+    if (!result.messages.empty()) {
+        page.diagnostics = result.messages;
+    } else {
+        for (const std::string& diagnostic : result.diagnostics) {
+            page.diagnostics.push_back({
+                DiagnosticMessage::Severity::warning, "normality", diagnostic});
+        }
     }
     StatisticTable table_out;
     table_out.title = "正态性检验";
-    table_out.headers = {"变量", "N", "N*", "Mean", "StDev", "AD", "P-Value", "结论"};
-    std::string conclusion = "无法检验";
-    if (result.p_value.has_value()) {
-        conclusion = *result.p_value < 0.05
-            ? "拒绝正态分布假设" : "不能拒绝正态分布假设";
+    table_out.headers = {"变量", "N", "N*", "Mean", "StDev", "AD", "A²*", "Alpha",
+                         "P-Value", "判定"};
+    std::string conclusion = "无法计算";
+    if (result.decision == "reject") {
+        conclusion = "在 alpha 下拒绝正态假设";
+    } else if (result.decision == "fail_to_reject") {
+        conclusion = "在 alpha 下未拒绝正态假设";
     }
     table_out.rows.push_back({
         extracted.name,
@@ -371,6 +550,9 @@ OutputPage AnalysisService::normality_test(
         result.sample_standard_deviation > 0.0
             ? format_number(result.sample_standard_deviation) : "*",
         result.anderson_darling.has_value() ? format_number(*result.anderson_darling) : "*",
+        result.adjusted_anderson_darling.has_value()
+            ? format_number(*result.adjusted_anderson_darling) : "*",
+        format_number(result.alpha),
         result.p_value.has_value() ? format_number(*result.p_value) : "*",
         conclusion});
     page.tables.push_back(table_out);
@@ -382,9 +564,11 @@ OutputPage AnalysisService::normality_test(
     plot.y_axis_title = extracted.name;
     plot.values = result.probability_plot.ordered_values;
     plot.x_values = result.probability_plot.theoretical_quantiles;
+    plot.source_rows = result.probability_plot.source_rows;
     plot.line_width = 1.4;
     page.plots.push_back(plot);
-    return page;
+    domain::apply_evidence(page.method_metadata, result.evidence);
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::correlation(
@@ -402,19 +586,19 @@ OutputPage AnalysisService::correlation(
         columns.push_back(extracted.values);
         names.push_back(extracted.name);
     }
-    const bool spearman = configuration.correlation_method == "spearman";
+    const bool spearman = configuration.inference.correlation_method == "spearman";
     const auto result = datalab::domain::statistics::correlation_matrix(
         columns,
         spearman ? datalab::domain::statistics::CorrelationMethod::spearman
                  : datalab::domain::statistics::CorrelationMethod::pearson,
-        configuration.confidence_level);
+        configuration.inference.confidence_level);
     OutputPage page;
     page.id = new_id("correlation");
     page.title = spearman ? "Spearman 秩相关" : "Pearson 相关";
     page.method_name = "Correlation";
     page.configuration = configuration;
     page.parameter_summary = "方法 = " + std::string(spearman ? "Spearman" : "Pearson")
-        + "    置信水平 = " + format_number(configuration.confidence_level)
+        + "    置信水平 = " + format_number(configuration.inference.confidence_level)
         + "    有效变量数 = " + std::to_string(columns.size());
     page.diagnostics = result.diagnostics;
     for (std::size_t index = 0; index < configuration.variable_columns.size(); ++index) {
@@ -469,7 +653,7 @@ OutputPage AnalysisService::correlation(
         plot.values = columns[1];
         page.plots.push_back(plot);
     }
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::one_sample_t(
@@ -478,22 +662,22 @@ OutputPage AnalysisService::one_sample_t(
 {
     const ExtractedNumericColumn extracted =
         extract_numeric_column(table, first_variable(configuration), configuration.excluded_rows);
-    if (!configuration.hypothesis_mean.has_value()) {
+    if (!configuration.inference.hypothesis_mean.has_value()) {
         return error_page("单样本 t 检验", "One-Sample T", "请指定假设均值。");
     }
     const auto result = datalab::domain::statistics::one_sample_t_test(
         extracted.values,
-        *configuration.hypothesis_mean,
-        configuration.confidence_level,
-        parse_alternative(configuration.alternative));
+        *configuration.inference.hypothesis_mean,
+        configuration.inference.confidence_level,
+        parse_alternative(configuration.inference.alternative));
     OutputPage page;
     page.id = new_id("one_sample_t");
     page.title = "单样本 t 检验";
     page.method_name = "One-Sample T";
     page.configuration = configuration;
     page.parameter_summary = "变量 = " + extracted.name
-        + "    假设均值 = " + format_number(*configuration.hypothesis_mean)
-        + "    备择：总体均值 " + alternative_label(configuration.alternative)
+        + "    假设均值 = " + format_number(*configuration.inference.hypothesis_mean)
+        + "    备择：总体均值 " + alternative_label(configuration.inference.alternative)
         + " 假设均值";
     append_diagnostics(page.diagnostics, result.diagnostics, "单样本 t：");
     if (extracted.missing_count > 0) {
@@ -504,7 +688,7 @@ OutputPage AnalysisService::one_sample_t(
                 + " 个缺失或非法单元格。"});
     }
     page.tables.push_back(t_test_table("单样本 t 检验", result, extracted.name));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::two_sample_t(
@@ -521,17 +705,17 @@ OutputPage AnalysisService::two_sample_t(
     const auto result = datalab::domain::statistics::two_sample_t_test(
         first.values,
         second.values,
-        configuration.confidence_level,
-        parse_alternative(configuration.alternative),
-        parse_variance_method(configuration.variance_method));
+        configuration.inference.confidence_level,
+        parse_alternative(configuration.inference.alternative),
+        parse_variance_method(configuration.inference.variance_method));
     OutputPage page;
     page.id = new_id("two_sample_t");
     page.title = "双样本 t 检验";
     page.method_name = "Two-Sample T";
     page.configuration = configuration;
     page.parameter_summary = "方法 = "
-        + std::string(configuration.variance_method == "pooled" ? "合并方差" : "Welch")
-        + "    置信水平 = " + format_number(configuration.confidence_level);
+        + std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch")
+        + "    置信水平 = " + format_number(configuration.inference.confidence_level);
     append_diagnostics(page.diagnostics, result.diagnostics, "双样本 t：");
     if (first.missing_count > 0 || second.missing_count > 0) {
         page.diagnostics.push_back({
@@ -565,7 +749,7 @@ OutputPage AnalysisService::two_sample_t(
         result.p_value.has_value() ? format_number(*result.p_value) : "*",
         interval});
     page.tables.push_back(test);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::one_way_anova(
@@ -635,13 +819,14 @@ OutputPage AnalysisService::one_way_anova(
          format_number(result.total_sum_of_squares), "", "", ""}};
     page.tables.push_back(anova);
     const auto tukey = datalab::domain::statistics::tukey_multiple_comparisons(
-        groups, group_labels, configuration.confidence_level);
+        groups, group_labels, configuration.inference.confidence_level);
     append_diagnostics(page.diagnostics, tukey.diagnostics, "Tukey: ");
     if (!tukey.comparisons.empty()) {
         StatisticTable comparisons;
         comparisons.title = "Tukey 同时比较";
         comparisons.headers = {"差值", "Difference", "SE Difference", "q",
-                               "同时置信区间", "Adjusted P-Value"};
+                               "同时置信区间", "Adjusted P-Value", "显著",
+                               "族置信水平", "误差 DF", "MSE", "方法"};
         for (const auto& comparison : tukey.comparisons) {
             comparisons.rows.push_back({
                 comparison.first_label + " - " + comparison.second_label,
@@ -650,11 +835,16 @@ OutputPage AnalysisService::one_way_anova(
                 format_number(comparison.q_statistic),
                 "[" + format_number(comparison.confidence_lower) + ", "
                     + format_number(comparison.confidence_upper) + "]",
-                format_number(comparison.adjusted_p_value)});
+                format_number(comparison.adjusted_p_value),
+                comparison.significant ? "是（区间不含 0）" : "否（区间含 0）",
+                format_number(tukey.family_confidence_level),
+                format_number(tukey.error_degrees_of_freedom),
+                format_number(tukey.error_mean_square),
+                tukey.method});
         }
         page.tables.push_back(comparisons);
     }
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::paired_t(
@@ -678,8 +868,8 @@ OutputPage AnalysisService::paired_t(
         second_values.push_back(row[1]);
     }
     const auto result = datalab::domain::statistics::paired_t_test(
-        first_values, second_values, configuration.confidence_level,
-        parse_alternative(configuration.alternative));
+        first_values, second_values, configuration.inference.confidence_level,
+        parse_alternative(configuration.inference.alternative));
     OutputPage page;
     page.id = new_id("paired_t");
     page.title = "配对 t 检验";
@@ -714,7 +904,7 @@ OutputPage AnalysisService::paired_t(
     plot.x_values = first_values;
     plot.values = second_values;
     page.plots.push_back(plot);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::regression(
@@ -736,12 +926,12 @@ OutputPage AnalysisService::regression(
     columns.reserve(predictors.size() + 1);
     columns.push_back(response);
     columns.insert(columns.end(), predictors.begin(), predictors.end());
-    const auto aligned = align_complete_rows(columns);
+    const auto aligned = align_complete_rows_with_source(columns);
     std::vector<double> response_values;
     std::vector<std::vector<double>> predictor_values;
-    response_values.reserve(aligned.size());
-    predictor_values.reserve(aligned.size());
-    for (const auto& row : aligned) {
+    response_values.reserve(aligned.values.size());
+    predictor_values.reserve(aligned.values.size());
+    for (const auto& row : aligned.values) {
         response_values.push_back(row[0]);
         predictor_values.emplace_back(row.begin() + 1, row.end());
     }
@@ -750,7 +940,8 @@ OutputPage AnalysisService::regression(
         labels.push_back(column_label(table, configuration.variable_columns[index]));
     }
     const auto result = datalab::domain::statistics::fit_linear_regression(
-        response_values, predictor_values, labels, configuration.confidence_level);
+        response_values, predictor_values, labels,
+        configuration.inference.confidence_level, aligned.source_rows);
     OutputPage page;
     page.id = new_id("regression");
     page.title = "线性回归";
@@ -808,13 +999,16 @@ OutputPage AnalysisService::regression(
     page.tables.push_back(anova_table);
     StatisticTable diagnostics;
     diagnostics.title = "拟合与诊断";
-    diagnostics.headers = {"观测", "拟合值", "残差", "标准化残差", "删除学生化残差",
+    diagnostics.headers = {"观测", "原始行", "拟合值", "残差", "内部标准化残差", "删除学生化残差",
                            "杠杆值", "Cook 距离", "DFITS", "诊断标记"};
     for (std::size_t index = 0; index < result.observations.size(); ++index) {
         const auto& observation = result.observations[index];
         diagnostics.rows.push_back({
-            std::to_string(index + 1), format_number(observation.fitted),
-            format_number(observation.residual), format_number(observation.standardized_residual),
+            std::to_string(index + 1),
+            std::to_string(observation.source_row + 1),
+            format_number(observation.fitted),
+            format_number(observation.residual),
+            format_number(observation.internally_standardized_residual),
             format_number(observation.deleted_studentized_residual),
             format_number(observation.leverage), format_number(observation.cooks_distance),
             format_number(observation.dfits),
@@ -831,6 +1025,7 @@ OutputPage AnalysisService::regression(
         residual_plot.x_values.push_back(observation.fitted);
         residual_plot.values.push_back(observation.residual);
     }
+    residual_plot.source_rows = aligned.source_rows;
     page.plots.push_back(residual_plot);
     PlotSpec order_plot;
     order_plot.kind = PlotKind::scatter;
@@ -841,6 +1036,7 @@ OutputPage AnalysisService::regression(
         order_plot.x_values.push_back(static_cast<double>(index + 1));
         order_plot.values.push_back(result.observations[index].residual);
     }
+    order_plot.source_rows = aligned.source_rows;
     page.plots.push_back(order_plot);
     if (!predictors.empty()) {
         PlotSpec predictor_plot;
@@ -853,38 +1049,49 @@ OutputPage AnalysisService::regression(
             predictor_plot.x_values.push_back(predictor_values[index].front());
             predictor_plot.values.push_back(result.observations[index].residual);
         }
+        predictor_plot.source_rows = aligned.source_rows;
         page.plots.push_back(predictor_plot);
     }
     if (result.diagnostics_summary.residual_normality.has_value()) {
         const auto& normality = *result.diagnostics_summary.residual_normality;
         page.interpretation.push_back({
             "残差正态性",
-            {"Anderson-Darling = " + format_number(normality.anderson_darling.value_or(0.0))
-                 + "，请结合正态概率图和 P 值判断残差正态性。"},
+            {"Anderson-Darling = " + format_optional(normality.anderson_darling)
+                 + (normality.decision == "fail_to_reject"
+                        ? "，在 alpha 下未拒绝残差正态假设，不能据此宣称模型合格。"
+                        : "，请结合正态概率图和 P 值判断残差正态性，不能只看 R²。")},
             DiagnosticMessage::Severity::info});
     }
-    return page;
+    page.facts.regression = domain::RegressionFacts{
+        result.r_squared,
+        result.diagnostics_summary.residual_normality.has_value()
+            ? result.diagnostics_summary.residual_normality->p_value
+            : std::nullopt,
+        result.diagnostics_summary.influential_count,
+        result.evidence.assumption_status};
+    domain::apply_evidence(page.method_metadata, result.evidence);
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::two_proportions(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.first_events_column.has_value()
-        || !configuration.first_trials_column.has_value()
-        || !configuration.second_events_column.has_value()
-        || !configuration.second_trials_column.has_value()) {
+    if (!configuration.inference.first_events_column.has_value()
+        || !configuration.inference.first_trials_column.has_value()
+        || !configuration.inference.second_events_column.has_value()
+        || !configuration.inference.second_trials_column.has_value()) {
         return error_page("两比例检验", "2 Proportions",
                           "请选择两组事件数和试验数列。");
     }
     const auto first_events = extract_numeric_column(
-        table, *configuration.first_events_column, configuration.excluded_rows);
+        table, *configuration.inference.first_events_column, configuration.excluded_rows);
     const auto first_trials = extract_numeric_column(
-        table, *configuration.first_trials_column, configuration.excluded_rows);
+        table, *configuration.inference.first_trials_column, configuration.excluded_rows);
     const auto second_events = extract_numeric_column(
-        table, *configuration.second_events_column, configuration.excluded_rows);
+        table, *configuration.inference.second_events_column, configuration.excluded_rows);
     const auto second_trials = extract_numeric_column(
-        table, *configuration.second_trials_column, configuration.excluded_rows);
+        table, *configuration.inference.second_trials_column, configuration.excluded_rows);
     std::vector<std::size_t> values;
     auto count_at = [](const ExtractedNumericColumn& column) {
         std::vector<std::size_t> counts;
@@ -903,7 +1110,7 @@ OutputPage AnalysisService::two_proportions(
     const auto result = datalab::domain::statistics::two_proportions_test(
         first_event_values.front(), first_trial_values.front(),
         second_event_values.front(), second_trial_values.front(),
-        configuration.confidence_level, parse_alternative(configuration.alternative));
+        configuration.inference.confidence_level, parse_alternative(configuration.inference.alternative));
     OutputPage page;
     page.id = new_id("two_proportions");
     page.title = "两比例检验";
@@ -937,20 +1144,20 @@ OutputPage AnalysisService::two_proportions(
         result.fisher_p_value.has_value()
             ? format_number(*result.fisher_p_value) : "*"});
     page.tables.push_back(test);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::chi_square(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.row_category_column.has_value()
-        || !configuration.column_category_column.has_value()) {
+    if (!configuration.inference.row_category_column.has_value()
+        || !configuration.inference.column_category_column.has_value()) {
         return error_page("列联表卡方", "Chi-Square Association",
                           "请选择行分类列和列分类列。");
     }
-    const auto rows = extract_text_column(table, *configuration.row_category_column);
-    const auto columns = extract_text_column(table, *configuration.column_category_column);
+    const auto rows = extract_text_column(table, *configuration.inference.row_category_column);
+    const auto columns = extract_text_column(table, *configuration.inference.column_category_column);
     std::map<std::string, std::size_t> row_indices;
     std::map<std::string, std::size_t> column_indices;
     std::vector<std::vector<double>> observed;
@@ -1007,7 +1214,7 @@ OutputPage AnalysisService::chi_square(
             format_number(cell.contribution)});
     }
     page.tables.push_back(cells);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::box_cox(
@@ -1017,8 +1224,8 @@ OutputPage AnalysisService::box_cox(
     const auto extracted = extract_numeric_column(
         table, first_variable(configuration), configuration.excluded_rows);
     std::optional<double> requested_lambda;
-    if (configuration.hypothesis_mean.has_value()) {
-        requested_lambda = configuration.hypothesis_mean;
+    if (configuration.inference.hypothesis_mean.has_value()) {
+        requested_lambda = configuration.inference.hypothesis_mean;
     }
     const auto result = datalab::domain::statistics::box_cox_transform(
         extracted.values, requested_lambda);
@@ -1088,23 +1295,23 @@ OutputPage AnalysisService::box_cox(
         plot.values.push_back(result.transformed_values[index]);
     }
     page.plots.push_back(plot);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::gage_rr(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.gage_measurement_column.has_value()
-        || !configuration.gage_part_column.has_value()
-        || !configuration.gage_operator_column.has_value()) {
+    if (!configuration.msa.gage_measurement_column.has_value()
+        || !configuration.msa.gage_part_column.has_value()
+        || !configuration.msa.gage_operator_column.has_value()) {
         return error_page("Crossed Gage R&R", "Crossed Gage R&R",
                           "请选择测量值、零件和操作员列。");
     }
     const auto measurements = extract_numeric_column(
-        table, *configuration.gage_measurement_column, configuration.excluded_rows);
-    const auto parts = extract_text_column(table, *configuration.gage_part_column);
-    const auto operators = extract_text_column(table, *configuration.gage_operator_column);
+        table, *configuration.msa.gage_measurement_column, configuration.excluded_rows);
+    const auto parts = extract_text_column(table, *configuration.msa.gage_part_column);
+    const auto operators = extract_text_column(table, *configuration.msa.gage_operator_column);
     std::map<std::size_t, double> measurement_by_row;
     for (std::size_t index = 0; index < measurements.values.size(); ++index) {
         measurement_by_row[measurements.source_rows[index]] = measurements.values[index];
@@ -1134,8 +1341,8 @@ OutputPage AnalysisService::gage_rr(
     page.method_name = "Crossed Gage R&R (ANOVA)";
     page.configuration = configuration;
     page.parameter_summary = "测量值 = " + measurements.name
-        + "    零件 = " + column_label(table, *configuration.gage_part_column)
-        + "    操作员 = " + column_label(table, *configuration.gage_operator_column);
+        + "    零件 = " + column_label(table, *configuration.msa.gage_part_column)
+        + "    操作员 = " + column_label(table, *configuration.msa.gage_operator_column);
     page.diagnostics = result.diagnostics;
     StatisticTable anova;
     anova.title = "Gage R&R 方差分析";
@@ -1168,7 +1375,7 @@ OutputPage AnalysisService::gage_rr(
         std::to_string(result.part_count), std::to_string(result.operator_count),
         std::to_string(result.replicate_count), format_number(result.ndc)});
     page.tables.push_back(summary);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::mann_whitney(
@@ -1183,7 +1390,7 @@ OutputPage AnalysisService::mann_whitney(
     const auto second = extract_numeric_column(
         table, configuration.variable_columns[1], configuration.excluded_rows);
     const auto result = datalab::domain::statistics::mann_whitney(
-        first.values, second.values, parse_alternative(configuration.alternative));
+        first.values, second.values, parse_alternative(configuration.inference.alternative));
     OutputPage page;
     page.id = new_id("mann_whitney");
     page.title = "Mann-Whitney 检验";
@@ -1198,7 +1405,7 @@ OutputPage AnalysisService::mann_whitney(
         format_number(result.rank_sum), format_number(result.z_statistic),
         format_optional(result.p_value), format_optional(result.location_difference)});
     page.tables.push_back(output);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::wilcoxon_signed_rank(
@@ -1213,7 +1420,7 @@ OutputPage AnalysisService::wilcoxon_signed_rank(
     const auto second = extract_numeric_column(
         table, configuration.variable_columns[1], configuration.excluded_rows);
     const auto result = datalab::domain::statistics::wilcoxon_signed_rank(
-        first.values, second.values, parse_alternative(configuration.alternative));
+        first.values, second.values, parse_alternative(configuration.inference.alternative));
     OutputPage page;
     page.id = new_id("wilcoxon");
     page.title = "Wilcoxon 符号秩检验";
@@ -1228,7 +1435,7 @@ OutputPage AnalysisService::wilcoxon_signed_rank(
         format_number(result.negative_rank_sum), format_number(result.z_statistic),
         format_optional(result.p_value)});
     page.tables.push_back(output);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::kruskal_wallis(
@@ -1279,7 +1486,7 @@ OutputPage AnalysisService::kruskal_wallis(
         format_number(result.adjusted_h_statistic), format_number(result.degrees_of_freedom),
         format_optional(result.p_value)});
     page.tables.push_back(summary);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::ewma(
@@ -1289,9 +1496,13 @@ OutputPage AnalysisService::ewma(
     const auto extracted = extract_numeric_column(
         table, first_variable(configuration), configuration.excluded_rows);
     datalab::domain::statistics::EwmaOptions options;
-    options.lambda = configuration.ewma_lambda;
-    options.limit_sigma = configuration.ewma_limit_sigma;
-    options.historical_mean = configuration.historical_center;
+    options.lambda = configuration.control.ewma_lambda;
+    options.limit_sigma = configuration.control.ewma_limit_sigma;
+    options.historical_mean = configuration.control.historical_center;
+    options.special_causes =
+        datalab::domain::statistics::special_cause_selection_from_configuration(
+            configuration.control.enabled_special_cause_tests,
+            configuration.control.special_cause_rule_policy);
     const auto chart = datalab::domain::statistics::ControlCharts::ewma_chart(
         extracted.values, options);
     OutputPage page;
@@ -1303,8 +1514,20 @@ OutputPage AnalysisService::ewma(
         + "    λ = " + format_number(options.lambda)
         + "    控制限倍数 = " + format_number(options.limit_sigma);
     page.diagnostics = chart.diagnostics;
+    StatisticTable parameters;
+    parameters.title = "EWMA 方法与参数";
+    parameters.headers = {"指标", "数值"};
+    parameters.rows = {
+        {"规则策略", configuration.control.special_cause_rule_policy == "explicit"
+            ? "用户指定" : "默认全选适用规则"},
+        {"启用测试", datalab::domain::statistics::format_special_cause_tests(
+            datalab::domain::statistics::resolve_special_cause_tests(
+                options.special_causes,
+                datalab::domain::statistics::ControlChartKind::ewma))},
+        {"适用性", "EWMA 只开放 Test 1；Tests 2–8 不附加到 EWMA。"}};
+    page.tables.push_back(parameters);
     page.plots.push_back(control_plot("EWMA 控制图", "EWMA", chart, extracted.source_rows));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::cusum(
@@ -1314,11 +1537,11 @@ OutputPage AnalysisService::cusum(
     const auto extracted = extract_numeric_column(
         table, first_variable(configuration), configuration.excluded_rows);
     datalab::domain::statistics::CusumOptions options;
-    options.target = configuration.cusum_target;
-    options.sigma = configuration.cusum_sigma;
-    options.k = configuration.cusum_k;
-    options.h = configuration.cusum_h;
-    options.fast_initial_response = configuration.cusum_fast_initial_response;
+    options.target = configuration.control.cusum_target;
+    options.sigma = configuration.control.cusum_sigma;
+    options.k = configuration.control.cusum_k;
+    options.h = configuration.control.cusum_h;
+    options.fast_initial_response = configuration.control.cusum_fast_initial_response;
     const auto chart = datalab::domain::statistics::ControlCharts::cusum_chart(
         extracted.values, options);
     OutputPage page;
@@ -1331,8 +1554,40 @@ OutputPage AnalysisService::cusum(
         + "    k = " + format_number(options.k)
         + "    h = " + format_number(options.h);
     page.diagnostics = chart.diagnostics;
-    page.plots.push_back(control_plot("CUSUM 控制图", "CUSUM", chart.primary, extracted.source_rows));
-    return page;
+    StatisticTable parameters;
+    parameters.title = "CUSUM 方法与参数";
+    parameters.headers = {"指标", "数值"};
+    parameters.rows = {
+        {"规则策略", "CUSUM 专用信号"},
+        {"启用测试", "无（不套用 Tests 1–8）"},
+        {"判定口径", "上侧/下侧累计和首次超过决策间隔 hσ 记为信号，原因待调查。"}};
+    page.tables.push_back(parameters);
+    StatisticTable signals;
+    signals.title = "CUSUM 信号";
+    signals.headers = {"方向", "首次信号点", "累计值"};
+    if (!chart.upper_signal_points.empty()) {
+        const std::size_t index = chart.upper_signal_points.front();
+        signals.rows.push_back({
+            "上侧",
+            std::to_string(index + 1),
+            index < chart.primary.plotted_values.size()
+                ? format_number(chart.primary.plotted_values[index]) : "*"});
+    }
+    if (!chart.lower_signal_points.empty()) {
+        const std::size_t index = chart.lower_signal_points.front();
+        signals.rows.push_back({
+            "下侧",
+            std::to_string(index + 1),
+            index < chart.secondary.plotted_values.size()
+                ? format_number(chart.secondary.plotted_values[index]) : "*"});
+    }
+    if (signals.rows.empty()) {
+        signals.rows.push_back({"无", "*", "*"});
+    }
+    page.tables.push_back(signals);
+    page.plots.push_back(control_plot("上侧 CUSUM", "CUSUM+", chart.primary, extracted.source_rows));
+    page.plots.push_back(control_plot("下侧 CUSUM", "CUSUM-", chart.secondary, extracted.source_rows));
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::time_series_smoothing(
@@ -1341,14 +1596,14 @@ OutputPage AnalysisService::time_series_smoothing(
 {
     const auto extracted = extract_numeric_column(
         table, first_variable(configuration), configuration.excluded_rows);
-    const bool double_method = configuration.smoothing_method != "single";
+    const bool double_method = configuration.time_series.smoothing_method != "single";
     const auto result = double_method
         ? datalab::domain::statistics::double_exponential_smoothing(
-            extracted.values, configuration.smoothing_alpha, configuration.smoothing_gamma,
-            static_cast<std::size_t>(std::max(1, configuration.forecast_periods)))
+            extracted.values, configuration.time_series.smoothing_alpha, configuration.time_series.smoothing_gamma,
+            static_cast<std::size_t>(std::max(1, configuration.time_series.forecast_periods)))
         : datalab::domain::statistics::single_exponential_smoothing(
-            extracted.values, configuration.smoothing_alpha,
-            static_cast<std::size_t>(std::max(1, configuration.forecast_periods)));
+            extracted.values, configuration.time_series.smoothing_alpha,
+            static_cast<std::size_t>(std::max(1, configuration.time_series.forecast_periods)));
     OutputPage page;
     page.id = new_id("time_series");
     page.title = "时间序列平滑";
@@ -1406,24 +1661,24 @@ OutputPage AnalysisService::time_series_smoothing(
     plot.series = {std::move(actual), std::move(fitted), std::move(forecast),
                    std::move(confidence)};
     page.plots.push_back(std::move(plot));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::arima(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.arima_value_column.has_value()) {
+    if (!configuration.time_series.arima_value_column.has_value()) {
         return error_page("ARIMA", "ARIMA", "请选择时间序列数值列。");
     }
     const auto values = extract_numeric_column(
-        table, *configuration.arima_value_column, configuration.excluded_rows);
+        table, *configuration.time_series.arima_value_column, configuration.excluded_rows);
     if (values.values.empty()) {
         return error_page("ARIMA", "ARIMA", "时间序列没有有效数值观测。");
     }
-    if (configuration.arima_time_column.has_value()) {
+    if (configuration.time_series.arima_time_column.has_value()) {
         const auto time = extract_numeric_column(
-            table, *configuration.arima_time_column, configuration.excluded_rows);
+            table, *configuration.time_series.arima_time_column, configuration.excluded_rows);
         if (time.values.size() != values.values.size()) {
             return error_page("ARIMA", "ARIMA", "时间列与数值列的有效行不一致。");
         }
@@ -1434,18 +1689,18 @@ OutputPage AnalysisService::arima(
             }
         }
     }
-    const std::size_t forecast_periods = configuration.forecast_periods > 0
-        ? static_cast<std::size_t>(configuration.forecast_periods) : 1;
+    const std::size_t forecast_periods = configuration.time_series.forecast_periods > 0
+        ? static_cast<std::size_t>(configuration.time_series.forecast_periods) : 1;
     const auto candidates = datalab::domain::statistics::fit_arima_candidates(
         values.values, forecast_periods);
     if (candidates.empty()) {
         return error_page("ARIMA", "ARIMA", "没有可拟合的候选模型。");
     }
     auto criterion_value = [&](const datalab::domain::statistics::ArimaResult& result) {
-        if (configuration.arima_selection_criterion == "aic") {
+        if (configuration.time_series.arima_selection_criterion == "aic") {
             return result.aic;
         }
-        if (configuration.arima_selection_criterion == "bic") {
+        if (configuration.time_series.arima_selection_criterion == "bic") {
             return result.bic;
         }
         return result.aicc;
@@ -1472,8 +1727,8 @@ OutputPage AnalysisService::arima(
     page.method_name = "ARIMA";
     page.configuration = configuration;
     page.parameter_summary = "响应列 = "
-        + column_label(table, *configuration.arima_value_column)
-        + "    选择准则 = " + configuration.arima_selection_criterion;
+        + column_label(table, *configuration.time_series.arima_value_column)
+        + "    选择准则 = " + configuration.time_series.arima_selection_criterion;
     for (const auto& candidate : candidates) {
         page.diagnostics.insert(page.diagnostics.end(),
                                 candidate.diagnostics.cbegin(),
@@ -1507,7 +1762,7 @@ OutputPage AnalysisService::arima(
     plot.kind = PlotKind::scatter;
     plot.title = "ARIMA 拟合与预测";
     plot.x_axis_title = "Period";
-    plot.y_axis_title = column_label(table, *configuration.arima_value_column);
+    plot.y_axis_title = column_label(table, *configuration.time_series.arima_value_column);
     plot.x_values.reserve(best->fitted.size() + best->forecasts.size());
     plot.values.reserve(best->fitted.size() + best->forecasts.size());
     for (std::size_t index = 0; index < best->fitted.size(); ++index) {
@@ -1555,16 +1810,16 @@ OutputPage AnalysisService::arima(
     plot.series = {std::move(actual), std::move(fitted_series),
                    std::move(forecast_series), std::move(confidence)};
     page.plots.push_back(plot);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::two_factor_anova(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.anova_response_column.has_value()
-        || !configuration.anova_factor_a_column.has_value()
-        || !configuration.anova_factor_b_column.has_value()) {
+    if (!configuration.inference.anova_response_column.has_value()
+        || !configuration.inference.anova_factor_a_column.has_value()
+        || !configuration.inference.anova_factor_b_column.has_value()) {
         return error_page("双因素 ANOVA", "Two-Factor ANOVA",
                           "请选择响应变量、因子 A 和因子 B。");
     }
@@ -1576,9 +1831,9 @@ OutputPage AnalysisService::two_factor_anova(
             continue;
         }
         const auto& row = table.rows[row_index];
-        const std::size_t response_column = *configuration.anova_response_column;
-        const std::size_t factor_a_column = *configuration.anova_factor_a_column;
-        const std::size_t factor_b_column = *configuration.anova_factor_b_column;
+        const std::size_t response_column = *configuration.inference.anova_response_column;
+        const std::size_t factor_a_column = *configuration.inference.anova_factor_a_column;
+        const std::size_t factor_b_column = *configuration.inference.anova_factor_b_column;
         if (response_column >= row.size() || factor_a_column >= row.size()
             || factor_b_column >= row.size()) {
             continue;
@@ -1591,8 +1846,9 @@ OutputPage AnalysisService::two_factor_anova(
         input.response.push_back(*response);
         input.factor_a.push_back(row[factor_a_column]);
         input.factor_b.push_back(row[factor_b_column]);
+        input.source_rows.push_back(row_index);
     }
-    input.encoding = configuration.anova_factor_encoding == "effect"
+    input.encoding = configuration.inference.anova_factor_encoding == "effect"
         ? datalab::domain::statistics::AnovaFactorEncoding::effect
         : datalab::domain::statistics::AnovaFactorEncoding::reference;
     const auto result = datalab::domain::statistics::two_factor_anova(input);
@@ -1602,24 +1858,25 @@ OutputPage AnalysisService::two_factor_anova(
     page.method_name = "Two-Factor ANOVA";
     page.configuration = configuration;
     page.parameter_summary = "响应 = "
-        + column_label(table, *configuration.anova_response_column)
-        + "    因子 A = " + column_label(table, *configuration.anova_factor_a_column)
-        + "    因子 B = " + column_label(table, *configuration.anova_factor_b_column);
+        + column_label(table, *configuration.inference.anova_response_column)
+        + "    因子 A = " + column_label(table, *configuration.inference.anova_factor_a_column)
+        + "    因子 B = " + column_label(table, *configuration.inference.anova_factor_b_column);
     page.diagnostics = result.diagnostics;
     StatisticTable effects;
     effects.title = "ANOVA 表";
-    effects.headers = {"来源", "Seq SS", "Adj SS", "DF", "MS", "F", "P-Value"};
+    effects.headers = {"来源", "Seq SS", "Adj SS", "DF", "MS", "F", "P-Value", "可估计性"};
     for (const auto& effect : result.effects) {
         effects.rows.push_back({
-            effect.term, format_number(effect.sequential_sum_of_squares),
-            format_number(effect.adjusted_sum_of_squares),
-            std::to_string(effect.degrees_of_freedom), format_number(effect.mean_square),
-            format_number(effect.f_statistic),
-            effect.p_value.has_value() ? format_number(*effect.p_value) : "*"});
+            effect.term, format_optional(effect.sequential_sum_of_squares),
+            format_optional(effect.adjusted_sum_of_squares),
+            std::to_string(effect.degrees_of_freedom), format_optional(effect.mean_square),
+            format_optional(effect.f_statistic),
+            effect.p_value.has_value() ? format_number(*effect.p_value) : "*",
+            effect.estimability});
     }
     effects.rows.push_back({"Error", "", "", std::to_string(result.error_degrees_of_freedom),
                             format_number(result.error_mean_square),
-                            "", ""});
+                            "", "", ""});
     page.tables.push_back(effects);
     StatisticTable means_a;
     means_a.title = "因子 A 均值";
@@ -1643,15 +1900,15 @@ OutputPage AnalysisService::two_factor_anova(
                                     std::to_string(mean.count), format_number(mean.mean)});
     }
     page.tables.push_back(interaction);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::logistic_regression(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.logistic_response_column.has_value()
-        || configuration.logistic_predictor_columns.empty()) {
+    if (!configuration.inference.logistic_response_column.has_value()
+        || configuration.inference.logistic_predictor_columns.empty()) {
         return error_page("二元 Logistic 回归", "Binary Logistic Regression",
                           "请选择二元响应列和至少一个预测变量。");
     }
@@ -1660,21 +1917,21 @@ OutputPage AnalysisService::logistic_regression(
     const std::vector<std::vector<double>>& predictors = imported.predictors;
     const std::vector<std::size_t>& source_rows = imported.source_rows;
     std::vector<std::string> labels;
-    for (const std::size_t column : configuration.logistic_predictor_columns) {
+    for (const std::size_t column : configuration.inference.logistic_predictor_columns) {
         labels.push_back(column_label(table, column));
     }
     const auto result = datalab::domain::statistics::fit_logistic_regression(
-        response, predictors, labels, configuration.confidence_level,
-        static_cast<std::size_t>(std::max(1, configuration.logistic_max_iterations)),
-        configuration.logistic_tolerance);
+        response, predictors, labels, configuration.inference.confidence_level,
+        static_cast<std::size_t>(std::max(1, configuration.inference.logistic_max_iterations)),
+        configuration.inference.logistic_tolerance);
     OutputPage page;
     page.id = new_id("logistic");
     page.title = "二元 Logistic 回归";
     page.method_name = "Binary Logistic Regression";
     page.configuration = configuration;
     page.parameter_summary = "响应 = "
-        + column_label(table, *configuration.logistic_response_column)
-        + "    事件水平 = " + configuration.logistic_event_level
+        + column_label(table, *configuration.inference.logistic_response_column)
+        + "    事件水平 = " + configuration.inference.logistic_event_level
         + "    预测变量数 = " + std::to_string(labels.size());
     page.diagnostics = result.diagnostics;
     if (source_rows.size() < table.rows.size()) {
@@ -1731,38 +1988,38 @@ OutputPage AnalysisService::logistic_regression(
             index < source_rows.size() ? source_rows[index] : index);
     }
     page.plots.push_back(probability);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::variance_test(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.variance_first_column.has_value()) {
+    if (!configuration.inference.variance_first_column.has_value()) {
         return error_page("方差检验", "Variance Test", "请选择第一样本列。");
     }
     const auto first = extract_numeric_column(
-        table, *configuration.variance_first_column, configuration.excluded_rows);
-    const auto alternative = parse_alternative(configuration.variance_alternative);
+        table, *configuration.inference.variance_first_column, configuration.excluded_rows);
+    const auto alternative = parse_alternative(configuration.inference.variance_alternative);
     OutputPage page;
     page.id = new_id("variance");
     page.title = "方差检验";
     page.method_name = "Variance Test";
     page.configuration = configuration;
     page.parameter_summary = "第一样本 = "
-        + column_label(table, *configuration.variance_first_column)
-        + "    方法 = " + configuration.variance_test_method;
+        + column_label(table, *configuration.inference.variance_first_column)
+        + "    方法 = " + configuration.inference.variance_test_method;
     StatisticTable summary;
     summary.title = "方差检验结果";
     summary.headers = {"方法", "N", "统计量", "DF", "P-Value", "置信区间"};
-    if (!configuration.variance_second_column.has_value()) {
-        if (!configuration.hypothesized_variance.has_value()) {
+    if (!configuration.inference.variance_second_column.has_value()) {
+        if (!configuration.inference.hypothesized_variance.has_value()) {
             return error_page("一方差检验", "1 Variance",
                               "一方差检验需要输入假设方差。");
         }
         const auto result = datalab::domain::statistics::chi_square_one_variance_test(
-            first.values, *configuration.hypothesized_variance,
-            configuration.confidence_level, alternative);
+            first.values, *configuration.inference.hypothesized_variance,
+            configuration.inference.confidence_level, alternative);
         page.diagnostics = result.diagnostics;
         summary.rows.push_back({
             "Chi-Square", std::to_string(result.count),
@@ -1774,9 +2031,9 @@ OutputPage AnalysisService::variance_test(
                     + format_number(*result.confidence_upper) + "]" : "*"});
     } else {
         const auto second = extract_numeric_column(
-            table, *configuration.variance_second_column, configuration.excluded_rows);
+            table, *configuration.inference.variance_second_column, configuration.excluded_rows);
         const auto f_result = datalab::domain::statistics::f_test_two_variances(
-            first.values, second.values, configuration.confidence_level, alternative);
+            first.values, second.values, configuration.inference.confidence_level, alternative);
         page.diagnostics = f_result.diagnostics;
         summary.rows.push_back({
             "F-test", std::to_string(f_result.first_count) + " / "
@@ -1788,15 +2045,15 @@ OutputPage AnalysisService::variance_test(
             f_result.confidence_lower.has_value() && f_result.confidence_upper.has_value()
                 ? "[" + format_number(*f_result.confidence_lower) + ", "
                     + format_number(*f_result.confidence_upper) + "]" : "*"});
-        const auto robust = configuration.variance_test_method == "brown_forsythe"
+        const auto robust = configuration.inference.variance_test_method == "brown_forsythe"
             ? datalab::domain::statistics::brown_forsythe_two_variances(
-                first.values, second.values, configuration.confidence_level, alternative)
+                first.values, second.values, configuration.inference.confidence_level, alternative)
             : datalab::domain::statistics::levene_two_variances(
-                first.values, second.values, configuration.confidence_level, alternative);
+                first.values, second.values, configuration.inference.confidence_level, alternative);
         page.diagnostics.insert(page.diagnostics.end(), robust.diagnostics.cbegin(),
                                 robust.diagnostics.cend());
         summary.rows.push_back({
-            configuration.variance_test_method == "brown_forsythe"
+            configuration.inference.variance_test_method == "brown_forsythe"
                 ? "Brown-Forsythe" : "Levene",
             std::to_string(robust.total_count),
             format_number(robust.f_statistic),
@@ -1805,24 +2062,24 @@ OutputPage AnalysisService::variance_test(
             robust.p_value.has_value() ? format_number(*robust.p_value) : "*", "*"});
     }
     page.tables.push_back(summary);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::time_series_decomposition(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.decomposition_value_column.has_value()
-        || configuration.decomposition_seasonal_period < 1) {
+    if (!configuration.time_series.decomposition_value_column.has_value()
+        || configuration.time_series.decomposition_seasonal_period < 1) {
         return error_page("时间序列分解", "Time Series Decomposition",
                           "请选择时间序列值列并输入正整数季节周期。");
     }
     const auto values = extract_numeric_column(
-        table, *configuration.decomposition_value_column, configuration.excluded_rows);
+        table, *configuration.time_series.decomposition_value_column, configuration.excluded_rows);
     std::vector<double> time;
-    if (configuration.decomposition_time_column.has_value()) {
+    if (configuration.time_series.decomposition_time_column.has_value()) {
         const auto extracted = extract_numeric_column(
-            table, *configuration.decomposition_time_column, configuration.excluded_rows);
+            table, *configuration.time_series.decomposition_time_column, configuration.excluded_rows);
         time = extracted.values;
     } else {
         time.reserve(values.values.size());
@@ -1832,20 +2089,20 @@ OutputPage AnalysisService::time_series_decomposition(
     }
     const auto result = datalab::domain::statistics::decompose_time_series(
         {time, values.values},
-        {configuration.decomposition_model == "multiplicative"
+        {configuration.time_series.decomposition_model == "multiplicative"
              ? datalab::domain::statistics::DecompositionModel::multiplicative
              : datalab::domain::statistics::DecompositionModel::additive,
-         static_cast<std::size_t>(configuration.decomposition_seasonal_period),
-         static_cast<std::size_t>(std::max(1, configuration.forecast_periods))});
+         static_cast<std::size_t>(configuration.time_series.decomposition_seasonal_period),
+         static_cast<std::size_t>(std::max(1, configuration.time_series.forecast_periods))});
     OutputPage page;
     page.id = new_id("decomposition");
     page.title = "时间序列分解";
     page.method_name = "Time Series Decomposition";
     page.configuration = configuration;
     page.parameter_summary = "值列 = "
-        + column_label(table, *configuration.decomposition_value_column)
-        + "    周期 = " + std::to_string(configuration.decomposition_seasonal_period)
-        + "    模型 = " + configuration.decomposition_model;
+        + column_label(table, *configuration.time_series.decomposition_value_column)
+        + "    周期 = " + std::to_string(configuration.time_series.decomposition_seasonal_period)
+        + "    模型 = " + configuration.time_series.decomposition_model;
     page.diagnostics = result.diagnostics;
     StatisticTable summary;
     summary.title = "分解模型摘要";
@@ -1872,7 +2129,7 @@ OutputPage AnalysisService::time_series_decomposition(
     plot.kind = PlotKind::scatter;
     plot.title = "时间序列分解拟合";
     plot.x_axis_title = "Time";
-    plot.y_axis_title = column_label(table, *configuration.decomposition_value_column);
+    plot.y_axis_title = column_label(table, *configuration.time_series.decomposition_value_column);
     plot.x_values = result.time;
     plot.values = result.observations;
     datalab::domain::PlotSeries observed;
@@ -1899,31 +2156,31 @@ OutputPage AnalysisService::time_series_decomposition(
     plot.series = {std::move(observed), std::move(trend), std::move(fitted),
                    std::move(remainder)};
     page.plots.push_back(plot);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::doe_factorial(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (configuration.doe_response_column.has_value()
-        || !configuration.doe_factor_columns.empty()) {
-        if (!configuration.doe_response_column.has_value()
-            || configuration.doe_factor_columns.empty()) {
+    if (configuration.doe.response_column.has_value()
+        || !configuration.doe.factor_columns.empty()) {
+        if (!configuration.doe.response_column.has_value()
+            || configuration.doe.factor_columns.empty()) {
             return error_page("DOE 响应分析", "DOE Response Analysis",
                               "请选择响应列和至少一个设计因子列。");
         }
-        if (configuration.doe_factor_columns.size()
+        if (configuration.doe.factor_columns.size()
             >= std::numeric_limits<std::size_t>::digits) {
             return error_page("DOE 响应分析", "DOE Response Analysis",
                               "因子数量过大，无法建立 2 水平模型。");
         }
-        if (*configuration.doe_response_column >= table.columns.size()) {
+        if (*configuration.doe.response_column >= table.columns.size()) {
             return error_page("DOE 响应分析", "DOE Response Analysis",
                               "响应列索引超出当前数据表范围。");
         }
         datalab::domain::statistics::DoeFactorialDesign imported_design;
-        for (const std::size_t column : configuration.doe_factor_columns) {
+        for (const std::size_t column : configuration.doe.factor_columns) {
             if (column >= table.columns.size()) {
                 return error_page("DOE 响应分析", "DOE Response Analysis",
                                   "设计因子列索引超出当前数据表范围。");
@@ -1939,23 +2196,23 @@ OutputPage AnalysisService::doe_factorial(
                 continue;
             }
             const auto& row = table.rows[row_index];
-            if (*configuration.doe_response_column >= row.size()) {
+            if (*configuration.doe.response_column >= row.size()) {
                 continue;
             }
             std::vector<int> levels;
             bool valid_levels = true;
             for (std::size_t factor = 0;
-                 factor < configuration.doe_factor_columns.size(); ++factor) {
-                const std::size_t column = configuration.doe_factor_columns[factor];
+                 factor < configuration.doe.factor_columns.size(); ++factor) {
+                const std::size_t column = configuration.doe.factor_columns[factor];
                 const std::string value = column < row.size() ? row[column] : "";
                 const auto numeric = parse_numeric_cell(value);
                 if (numeric.has_value() && (*numeric == -1.0 || *numeric == 1.0)) {
                     levels.push_back(static_cast<int>(*numeric));
                 } else {
-                    const std::string low = factor < configuration.doe_low_levels.size()
-                        ? configuration.doe_low_levels[factor] : "-1";
-                    const std::string high = factor < configuration.doe_high_levels.size()
-                        ? configuration.doe_high_levels[factor] : "+1";
+                    const std::string low = factor < configuration.doe.low_levels.size()
+                        ? configuration.doe.low_levels[factor] : "-1";
+                    const std::string high = factor < configuration.doe.high_levels.size()
+                        ? configuration.doe.high_levels[factor] : "+1";
                     levels.push_back(value == low ? -1 : value == high ? 1 : 0);
                     if (levels.back() == 0) {
                         valid_levels = false;
@@ -1973,30 +2230,30 @@ OutputPage AnalysisService::doe_factorial(
             run.run_order = imported_design.runs.size();
             run.coded_levels = std::move(levels);
             imported_design.runs.push_back(std::move(run));
-            responses.push_back(parse_numeric_cell(row[*configuration.doe_response_column])
+            responses.push_back(parse_numeric_cell(row[*configuration.doe.response_column])
                                     .value_or(std::numeric_limits<double>::quiet_NaN()));
         }
         const auto fit = datalab::domain::statistics::fit_response_analysis(
             imported_design, responses,
-            column_label(table, *configuration.doe_response_column));
+            column_label(table, *configuration.doe.response_column));
         return doe_response_page(table, configuration, imported_design, responses, fit);
     }
     std::vector<datalab::domain::statistics::DoeFactor> factors;
-    for (std::size_t index = 0; index < configuration.doe_factor_names.size(); ++index) {
+    for (std::size_t index = 0; index < configuration.doe.factor_names.size(); ++index) {
         datalab::domain::statistics::DoeFactor factor;
-        factor.name = configuration.doe_factor_names[index];
-        factor.low_level = index < configuration.doe_low_levels.size()
-            ? configuration.doe_low_levels[index] : "-1";
-        factor.high_level = index < configuration.doe_high_levels.size()
-            ? configuration.doe_high_levels[index] : "+1";
+        factor.name = configuration.doe.factor_names[index];
+        factor.low_level = index < configuration.doe.low_levels.size()
+            ? configuration.doe.low_levels[index] : "-1";
+        factor.high_level = index < configuration.doe.high_levels.size()
+            ? configuration.doe.high_levels[index] : "+1";
         factors.push_back(std::move(factor));
     }
     const auto design = datalab::domain::statistics::generate_2_level_factorial({
         factors,
-        configuration.doe_center_point_count,
-        configuration.doe_block_count,
-        configuration.doe_randomize,
-        configuration.doe_random_seed});
+        configuration.doe.center_point_count,
+        configuration.doe.block_count,
+        configuration.doe.randomize,
+        configuration.doe.random_seed});
     return doe_design_page(configuration, factors, design);
 }
 
@@ -2004,13 +2261,13 @@ OutputPage AnalysisService::msa_type1(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.gage_measurement_column.has_value()) {
+    if (!configuration.msa.gage_measurement_column.has_value()) {
         return error_page("MSA Type 1", "MSA Type 1",
                           "请选择测量值列，并在配置中提供参考值。");
     }
     const auto measurements = extract_numeric_column(
-        table, *configuration.gage_measurement_column, configuration.excluded_rows);
-    if (configuration.msa_mode == "stability") {
+        table, *configuration.msa.gage_measurement_column, configuration.excluded_rows);
+    if (configuration.msa.mode == "stability") {
         const auto result = datalab::domain::statistics::gage_stability(measurements.values);
         OutputPage page;
         page.id = new_id("msa_stability");
@@ -2036,17 +2293,29 @@ OutputPage AnalysisService::msa_type1(
         plot.center.assign(result.values.size(), result.center);
         plot.lower.assign(result.values.size(), result.lower_control_limit);
         plot.upper.assign(result.values.size(), result.upper_control_limit);
+        plot.source_rows = measurements.source_rows;
+        plot.triggered_tests = result.triggered_tests;
+        plot.primary_test_by_point = result.primary_test_by_point;
         page.plots.push_back(std::move(plot));
-        return page;
+        return finalize_page(std::move(page));
     }
-    if (configuration.msa_mode == "bias_linearity") {
-        if (!configuration.msa_reference_column.has_value()) {
+    if (configuration.msa.mode == "bias_linearity") {
+        if (!configuration.msa.reference_column.has_value()) {
             return error_page("Bias/Linearity", "Bias/Linearity", "请选择参考值列。");
         }
         const auto references = extract_numeric_column(
-            table, *configuration.msa_reference_column, configuration.excluded_rows);
+            table, *configuration.msa.reference_column, configuration.excluded_rows);
+        const auto aligned = align_complete_rows_with_source({references, measurements});
+        std::vector<double> aligned_references;
+        std::vector<double> aligned_measurements;
+        aligned_references.reserve(aligned.values.size());
+        aligned_measurements.reserve(aligned.values.size());
+        for (const auto& row : aligned.values) {
+            aligned_references.push_back(row[0]);
+            aligned_measurements.push_back(row[1]);
+        }
         const auto result = datalab::domain::statistics::bias_linearity(
-            references.values, measurements.values, configuration.confidence_level);
+            aligned_references, aligned_measurements, configuration.inference.confidence_level);
         OutputPage page;
         page.id = new_id("msa_bias_linearity");
         page.title = "Bias/Linearity";
@@ -2078,21 +2347,21 @@ OutputPage AnalysisService::msa_type1(
             plot.values.push_back(measurements.values[i] - references.values[i]);
         }
         page.plots.push_back(std::move(plot));
-        return page;
+        return finalize_page(std::move(page));
     }
-    if (!configuration.msa_reference_value.has_value()) {
+    if (!configuration.msa.reference_value.has_value()) {
         return error_page("MSA Type 1", "MSA Type 1", "请输入参考值。");
     }
     const auto result = datalab::domain::statistics::msa_type1(
-        measurements.values, *configuration.msa_reference_value,
-        configuration.gage_tolerance, configuration.confidence_level);
+        measurements.values, *configuration.msa.reference_value,
+        configuration.msa.gage_tolerance, configuration.inference.confidence_level);
     OutputPage page;
     page.id = new_id("msa_type1");
     page.title = "MSA Type 1 Gage";
     page.method_name = "MSA Type 1 Gage + Bias";
     page.configuration = configuration;
     page.parameter_summary = "测量值 = " + measurements.name
-        + "    参考值 = " + format_number(*configuration.msa_reference_value);
+        + "    参考值 = " + format_number(*configuration.msa.reference_value);
     page.diagnostics = result.diagnostics;
     StatisticTable table_result;
     table_result.title = "Type 1 Gage 结果";
@@ -2115,36 +2384,41 @@ OutputPage AnalysisService::msa_type1(
     plot.y_axis_title = "测量值";
     plot.center_label = "Reference";
     plot.values = measurements.values;
-    plot.center.assign(plot.values.size(), *configuration.msa_reference_value);
+    plot.center.assign(plot.values.size(), *configuration.msa.reference_value);
     page.plots.push_back(std::move(plot));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::reliability(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.reliability_time_column.has_value()
-        || !configuration.reliability_event_column.has_value()) {
+    if (!configuration.reliability.time_column.has_value()
+        || !configuration.reliability.event_column.has_value()) {
         return error_page("Reliability", "Reliability", "请选择寿命列和失效/删失指示列。");
     }
     const auto times = extract_numeric_column(
-        table, *configuration.reliability_time_column, configuration.excluded_rows);
+        table, *configuration.reliability.time_column, configuration.excluded_rows);
     const auto event_text = extract_text_column(
-        table, *configuration.reliability_event_column);
+        table, *configuration.reliability.event_column);
     std::vector<double> aligned_times;
     std::vector<bool> events;
     std::vector<int> aligned_groups;
     std::vector<std::string> group_levels;
-    const auto group_text = configuration.reliability_group_column.has_value()
-        ? extract_text_column(table, *configuration.reliability_group_column)
+    std::vector<std::size_t> aligned_source_rows;
+    std::vector<std::size_t> invalid_event_rows;
+    const auto group_text = configuration.reliability.group_column.has_value()
+        ? extract_text_column(table, *configuration.reliability.group_column)
         : std::vector<std::string>{};
     for (std::size_t index = 0; index < times.source_rows.size(); ++index) {
         const std::size_t row = times.source_rows[index];
         if (row >= event_text.size() || is_missing_cell(event_text[row])) continue;
-        const std::string value = event_text[row];
-        const bool event = value == "1" || value == "1.0" || value == "true"
-            || value == "TRUE" || value == "fail" || value == "Failure";
+        const auto parsed_event = datalab::domain::statistics::parse_reliability_event(
+            event_text[row]);
+        if (!parsed_event.has_value()) {
+            invalid_event_rows.push_back(row);
+            continue;
+        }
         if (!group_text.empty()) {
             if (row >= group_text.size()) {
                 continue;
@@ -2166,9 +2440,22 @@ OutputPage AnalysisService::reliability(
                 static_cast<int>(std::distance(group_levels.begin(), level)));
         }
         aligned_times.push_back(times.values[index]);
-        events.push_back(event);
+        events.push_back(*parsed_event);
+        aligned_source_rows.push_back(row);
     }
-    const std::string model = configuration.reliability_model;
+    if (!invalid_event_rows.empty()) {
+        OutputPage page = error_page(
+            "Reliability", "Reliability",
+            "事件列只接受明确的失效/删失编码；未知值不会被静默当作删失。");
+        page.diagnostics.front().code = "invalid_event_value";
+        page.diagnostics.front().related_rows.clear();
+        for (const std::size_t row : invalid_event_rows) {
+            page.diagnostics.front().related_rows.push_back(
+                static_cast<datalab::domain::RowId>(row));
+        }
+        return page;
+    }
+    const std::string model = configuration.reliability.model;
     OutputPage page;
     page.id = new_id("reliability");
     page.title = "Reliability Analysis";
@@ -2184,7 +2471,7 @@ OutputPage AnalysisService::reliability(
         summary.title = "Weibull 参数";
         summary.headers = {
             "Shape", "Scale", "B10", "B50", "B90", "LogLik", "AIC", "BIC",
-            "Failures", "Observations"};
+            "Failures", "Observations", "Censoring", "Converged"};
         summary.rows.push_back({format_number(result.shape), format_number(result.scale),
                                 result.b10.has_value() ? format_number(*result.b10) : "*",
                                 result.b50.has_value() ? format_number(*result.b50) : "*",
@@ -2192,7 +2479,9 @@ OutputPage AnalysisService::reliability(
                                 format_number(result.log_likelihood),
                                 format_number(result.aic), format_number(result.bic),
                                 std::to_string(result.failures),
-                                std::to_string(result.observations)});
+                                std::to_string(result.observations),
+                                format_number(result.censoring_fraction),
+                                result.converged ? "是" : "否"});
         page.tables.push_back(std::move(summary));
     } else if (model == "exponential") {
         const auto result = datalab::domain::statistics::fit_exponential(aligned_times, events);
@@ -2212,7 +2501,8 @@ OutputPage AnalysisService::reliability(
             std::to_string(result.observations)});
         page.tables.push_back(std::move(summary));
     } else {
-        const auto result = datalab::domain::statistics::kaplan_meier(aligned_times, events);
+        const auto result = datalab::domain::statistics::kaplan_meier(
+            aligned_times, events, 0.95, aligned_source_rows);
         page.diagnostics = result.diagnostics;
         StatisticTable summary;
         summary.title = "Kaplan-Meier 生存表";
@@ -2235,6 +2525,8 @@ OutputPage AnalysisService::reliability(
             plot.values.push_back(point.survival);
             plot.lower.push_back(point.confidence_lower);
             plot.upper.push_back(point.confidence_upper);
+            plot.source_rows.insert(plot.source_rows.end(),
+                                    point.source_rows.begin(), point.source_rows.end());
         }
         page.tables.push_back(std::move(summary));
         page.plots.push_back(std::move(plot));
@@ -2247,88 +2539,93 @@ OutputPage AnalysisService::reliability(
             StatisticTable comparison;
             comparison.title = "Log-rank 分组比较";
             comparison.headers = {"Chi-Square", "DF", "P-Value",
-                                  "Group 1 Failures", "Group 2 Failures"};
+                                  "Group 1 N", "Group 1 Failures", "Group 1 Censored",
+                                  "Group 2 N", "Group 2 Failures", "Group 2 Censored"};
             comparison.rows.push_back({
                 format_number(log_rank.chi_square),
                 format_number(log_rank.degrees_of_freedom),
                 format_number(log_rank.p_value),
+                std::to_string(log_rank.group_one_n),
                 std::to_string(log_rank.group_one_failures),
-                std::to_string(log_rank.group_two_failures)});
+                std::to_string(log_rank.group_one_censored),
+                std::to_string(log_rank.group_two_n),
+                std::to_string(log_rank.group_two_failures),
+                std::to_string(log_rank.group_two_censored)});
             page.tables.push_back(std::move(comparison));
         }
     }
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::t_power(
     const DataTable&,
     const AnalysisConfiguration& configuration)
 {
-    const bool two_sample = configuration.power_mode.find("two_sample") == 0;
-    const bool calculate_power = configuration.power_mode.find("_power") != std::string::npos;
+    const bool two_sample = configuration.power.mode.find("two_sample") == 0;
+    const bool calculate_power = configuration.power.mode.find("_power") != std::string::npos;
     datalab::domain::statistics::TPowerResult result;
-    if (configuration.power_mode.find("anova") == 0) {
-        result = configuration.power_mode.find("_power") != std::string::npos
+    if (configuration.power.mode.find("anova") == 0) {
+        result = configuration.power.mode.find("_power") != std::string::npos
             ? datalab::domain::statistics::one_way_anova_power(
-                configuration.power_sample_size, configuration.power_group_count,
-                configuration.power_effect_size, configuration.power_alpha)
+                configuration.power.sample_size, configuration.power.group_count,
+                configuration.power.effect_size, configuration.power.alpha)
             : datalab::domain::statistics::one_way_anova_sample_size(
-                configuration.power_group_count, configuration.power_effect_size,
-                configuration.power_target, configuration.power_alpha);
-    } else if (configuration.power_mode.find("one_proportion") == 0) {
-        const auto alternative = configuration.alternative == "greater"
+                configuration.power.group_count, configuration.power.effect_size,
+                configuration.power.target, configuration.power.alpha);
+    } else if (configuration.power.mode.find("one_proportion") == 0) {
+        const auto alternative = configuration.inference.alternative == "greater"
             ? datalab::domain::statistics::PowerAlternative::greater
-            : configuration.alternative == "less"
+            : configuration.inference.alternative == "less"
                 ? datalab::domain::statistics::PowerAlternative::less
                 : datalab::domain::statistics::PowerAlternative::two_sided;
         result = calculate_power
             ? datalab::domain::statistics::one_sample_proportion_power(
-                configuration.power_sample_size, configuration.power_null_proportion,
-                configuration.power_second_proportion, configuration.power_alpha, alternative)
+                configuration.power.sample_size, configuration.power.null_proportion,
+                configuration.power.second_proportion, configuration.power.alpha, alternative)
             : datalab::domain::statistics::one_sample_proportion_sample_size(
-                configuration.power_null_proportion, configuration.power_second_proportion,
-                configuration.power_target, configuration.power_alpha, alternative);
-    } else if (configuration.power_mode.find("two_proportion") == 0) {
-        const auto alternative = configuration.alternative == "greater"
+                configuration.power.null_proportion, configuration.power.second_proportion,
+                configuration.power.target, configuration.power.alpha, alternative);
+    } else if (configuration.power.mode.find("two_proportion") == 0) {
+        const auto alternative = configuration.inference.alternative == "greater"
             ? datalab::domain::statistics::PowerAlternative::greater
-            : configuration.alternative == "less"
+            : configuration.inference.alternative == "less"
                 ? datalab::domain::statistics::PowerAlternative::less
                 : datalab::domain::statistics::PowerAlternative::two_sided;
-        const auto variance_method = configuration.power_variance_method == "unpooled"
+        const auto variance_method = configuration.power.variance_method == "unpooled"
             ? datalab::domain::statistics::ProportionVarianceMethod::unpooled
             : datalab::domain::statistics::ProportionVarianceMethod::pooled;
         result = calculate_power
             ? datalab::domain::statistics::two_proportion_power(
-                configuration.power_sample_size, configuration.power_null_proportion,
-                configuration.power_second_proportion, configuration.power_alpha,
+                configuration.power.sample_size, configuration.power.null_proportion,
+                configuration.power.second_proportion, configuration.power.alpha,
                 alternative, variance_method)
             : datalab::domain::statistics::two_proportion_sample_size(
-                configuration.power_null_proportion, configuration.power_second_proportion,
-                configuration.power_target, configuration.power_alpha,
+                configuration.power.null_proportion, configuration.power.second_proportion,
+                configuration.power.target, configuration.power.alpha,
                 alternative, variance_method);
     } else if (calculate_power) {
         result = two_sample
             ? datalab::domain::statistics::two_sample_t_power(
-                configuration.power_sample_size, configuration.power_effect_size,
-                configuration.power_alpha)
+                configuration.power.sample_size, configuration.power.effect_size,
+                configuration.power.alpha)
             : datalab::domain::statistics::one_sample_t_power(
-                configuration.power_sample_size, configuration.power_effect_size,
-                configuration.power_alpha);
+                configuration.power.sample_size, configuration.power.effect_size,
+                configuration.power.alpha);
     } else {
         result = two_sample
             ? datalab::domain::statistics::two_sample_t_sample_size(
-                configuration.power_effect_size, configuration.power_target,
-                configuration.power_alpha)
+                configuration.power.effect_size, configuration.power.target,
+                configuration.power.alpha)
             : datalab::domain::statistics::one_sample_t_sample_size(
-                configuration.power_effect_size, configuration.power_target,
-                configuration.power_alpha);
+                configuration.power.effect_size, configuration.power.target,
+                configuration.power.alpha);
     }
     OutputPage page;
     page.id = new_id("t_power");
     page.title = "T 功效与样本量";
     page.method_name = calculate_power ? "T Test Power" : "T Test Sample Size";
     page.configuration = configuration;
-    page.parameter_summary = "模式 = " + configuration.power_mode;
+    page.parameter_summary = "模式 = " + configuration.power.mode;
     page.diagnostics = result.diagnostics;
     StatisticTable summary;
     summary.title = "功效计算结果";
@@ -2343,25 +2640,25 @@ OutputPage AnalysisService::t_power(
         format_number(result.degrees_of_freedom),
         format_number(result.noncentrality_parameter),
         format_number(result.critical_value),
-        format_number(configuration.power_alpha)});
+        format_number(configuration.power.alpha)});
     page.tables.push_back(std::move(summary));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::nested_gage_rr(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.nested_gage_measurement_column.has_value()
-        || !configuration.nested_gage_part_column.has_value()
-        || !configuration.nested_gage_operator_column.has_value()) {
+    if (!configuration.msa.nested_measurement_column.has_value()
+        || !configuration.msa.nested_part_column.has_value()
+        || !configuration.msa.nested_operator_column.has_value()) {
         return error_page("Nested Gage R&R", "Nested Gage R&R",
                           "请选择测量值、部件和操作者列。");
     }
     const auto measurements = extract_numeric_column(
-        table, *configuration.nested_gage_measurement_column, configuration.excluded_rows);
-    const auto parts = extract_text_column(table, *configuration.nested_gage_part_column);
-    const auto operators = extract_text_column(table, *configuration.nested_gage_operator_column);
+        table, *configuration.msa.nested_measurement_column, configuration.excluded_rows);
+    const auto parts = extract_text_column(table, *configuration.msa.nested_part_column);
+    const auto operators = extract_text_column(table, *configuration.msa.nested_operator_column);
     std::vector<std::string> aligned_parts;
     std::vector<std::string> aligned_operators;
     for (const std::size_t source_row : measurements.source_rows) {
@@ -2371,7 +2668,7 @@ OutputPage AnalysisService::nested_gage_rr(
         }
     }
     const auto result = datalab::domain::statistics::nested_gage_rr(
-        measurements.values, aligned_parts, aligned_operators, configuration.gage_tolerance);
+        measurements.values, aligned_parts, aligned_operators, configuration.msa.gage_tolerance);
     OutputPage page;
     page.id = new_id("nested_gage");
     page.title = "Nested Gage R&R";
@@ -2400,28 +2697,28 @@ OutputPage AnalysisService::nested_gage_rr(
             format_number(row.percent_tolerance)});
     }
     page.tables.push_back(std::move(components));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::attribute_agreement(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (!configuration.attribute_rating_column.has_value()
-        || !configuration.attribute_part_column.has_value()
-        || !configuration.attribute_appraiser_column.has_value()) {
+    if (!configuration.msa.attribute_rating_column.has_value()
+        || !configuration.msa.attribute_part_column.has_value()
+        || !configuration.msa.attribute_appraiser_column.has_value()) {
         return error_page("属性一致性分析", "Attribute Agreement Analysis",
                           "请选择评级、部件和评估者列。");
     }
-    const auto ratings = extract_text_column(table, *configuration.attribute_rating_column);
-    const auto parts = extract_text_column(table, *configuration.attribute_part_column);
-    const auto appraisers = extract_text_column(table, *configuration.attribute_appraiser_column);
+    const auto ratings = extract_text_column(table, *configuration.msa.attribute_rating_column);
+    const auto parts = extract_text_column(table, *configuration.msa.attribute_part_column);
+    const auto appraisers = extract_text_column(table, *configuration.msa.attribute_appraiser_column);
     std::vector<std::string> standards;
-    if (configuration.attribute_standard_column.has_value()) {
-        standards = extract_text_column(table, *configuration.attribute_standard_column);
+    if (configuration.msa.attribute_standard_column.has_value()) {
+        standards = extract_text_column(table, *configuration.msa.attribute_standard_column);
     }
     const auto result = datalab::domain::statistics::attribute_agreement(
-        ratings, parts, appraisers, standards, configuration.confidence_level);
+        ratings, parts, appraisers, standards, configuration.inference.confidence_level);
     OutputPage page;
     page.id = new_id("attribute_agreement");
     page.title = "属性一致性分析";
@@ -2450,37 +2747,37 @@ OutputPage AnalysisService::attribute_agreement(
             format_number(row.estimate.kappa)});
     }
     page.tables.push_back(std::move(between));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::seasonal_forecasting(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const std::size_t value_column = configuration.decomposition_value_column.value_or(
+    const std::size_t value_column = configuration.time_series.decomposition_value_column.value_or(
         configuration.selection.measurement_column);
     const auto extracted = extract_numeric_column(table, value_column, configuration.excluded_rows);
     const auto result = datalab::domain::statistics::fit_seasonal_forecasting(
         extracted.values,
-        {configuration.seasonal_error_model == "multiplicative"
+        {configuration.time_series.seasonal_error_model == "multiplicative"
              ? datalab::domain::statistics::SeasonalErrorModel::multiplicative
              : datalab::domain::statistics::SeasonalErrorModel::additive,
-         configuration.seasonal_trend_model == "none"
+         configuration.time_series.seasonal_trend_model == "none"
              ? datalab::domain::statistics::TrendModel::none
-             : configuration.seasonal_trend_model == "multiplicative"
+             : configuration.time_series.seasonal_trend_model == "multiplicative"
                  ? datalab::domain::statistics::TrendModel::multiplicative
                  : datalab::domain::statistics::TrendModel::additive,
-         configuration.seasonal_period, static_cast<std::size_t>(
-             std::max(1, configuration.forecast_periods)), configuration.seasonal_damped_trend,
-         configuration.smoothing_alpha, configuration.seasonal_beta, configuration.smoothing_gamma,
-         configuration.seasonal_damping_phi, configuration.confidence_level});
+         configuration.time_series.seasonal_period, static_cast<std::size_t>(
+             std::max(1, configuration.time_series.forecast_periods)), configuration.time_series.seasonal_damped_trend,
+         configuration.time_series.smoothing_alpha, configuration.time_series.seasonal_beta, configuration.time_series.smoothing_gamma,
+         configuration.time_series.seasonal_damping_phi, configuration.inference.confidence_level});
     OutputPage page;
     page.id = new_id("seasonal_forecast");
     page.title = "季节性预测";
     page.method_name = "Holt-Winters Seasonal Forecasting";
     page.configuration = configuration;
-    page.parameter_summary = "周期 = " + std::to_string(configuration.seasonal_period)
-        + "    模型 = " + configuration.seasonal_error_model;
+    page.parameter_summary = "周期 = " + std::to_string(configuration.time_series.seasonal_period)
+        + "    模型 = " + configuration.time_series.seasonal_error_model;
     page.diagnostics = result.diagnostics;
     StatisticTable metrics;
     metrics.title = "预测准确度";
@@ -2500,15 +2797,15 @@ OutputPage AnalysisService::seasonal_forecasting(
         plot.x_values.push_back(static_cast<double>(index + 1));
     }
     page.plots.push_back(std::move(plot));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::pca(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    const std::vector<std::size_t>& columns = configuration.pca_variable_columns.empty()
-        ? configuration.variable_columns : configuration.pca_variable_columns;
+    const std::vector<std::size_t>& columns = configuration.pca.variable_columns.empty()
+        ? configuration.variable_columns : configuration.pca.variable_columns;
     if (columns.size() < 2) {
         return error_page("PCA 主成分分析", "Principal Component Analysis",
                           "至少需要选择两个数值变量。");
@@ -2541,11 +2838,11 @@ OutputPage AnalysisService::pca(
         }
     }
     const auto result = datalab::domain::statistics::principal_component_analysis(
-        rows, {configuration.pca_mode == "standardized"
+        rows, {configuration.pca.mode == "standardized"
                    ? datalab::domain::statistics::PcaMode::standardized
                    : datalab::domain::statistics::PcaMode::covariance,
-               configuration.pca_component_count, 100, 1.0e-10,
-               configuration.pca_anomaly_quantile});
+               configuration.pca.component_count, 100, 1.0e-10,
+               configuration.pca.anomaly_quantile});
     OutputPage page;
     page.id = new_id("pca");
     page.title = "主成分分析";
@@ -2591,7 +2888,7 @@ OutputPage AnalysisService::pca(
         plot.source_rows = source_rows;
         page.plots.push_back(std::move(plot));
     }
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::individuals_moving_range(
@@ -2605,10 +2902,14 @@ OutputPage AnalysisService::individuals_moving_range(
     }
 
     datalab::domain::statistics::IndividualsMovingRangeOptions options;
-    options.moving_range_length = std::max(2, configuration.moving_range_length);
-    options.method = configuration.sigma_method == "median_moving_range"
+    options.moving_range_length = std::max(2, configuration.control.moving_range_length);
+    options.method = configuration.control.sigma_method == "median_moving_range"
         ? datalab::domain::statistics::SigmaEstimateMethod::median_moving_range
         : datalab::domain::statistics::SigmaEstimateMethod::average_moving_range;
+    options.special_causes =
+        datalab::domain::statistics::special_cause_selection_from_configuration(
+            configuration.control.enabled_special_cause_tests,
+            configuration.control.special_cause_rule_policy);
     const auto dual = datalab::domain::statistics::ControlCharts::individuals_moving_range_dual(
         extracted.values, options);
 
@@ -2620,6 +2921,8 @@ OutputPage AnalysisService::individuals_moving_range(
     page.diagnostics = dual.diagnostics;
     page.diagnostics.insert(
         page.diagnostics.end(), dual.primary.diagnostics.begin(), dual.primary.diagnostics.end());
+    page.diagnostics.insert(
+        page.diagnostics.end(), dual.secondary.diagnostics.begin(), dual.secondary.diagnostics.end());
     page.parameter_summary =
         "变量: " + extracted.name
         + "    移动极差长度 = " + std::to_string(options.moving_range_length)
@@ -2633,11 +2936,18 @@ OutputPage AnalysisService::individuals_moving_range(
         {"均值", format_number(dual.primary.center_line.empty() ? 0.0 : dual.primary.center_line.front())},
         {"MR̄", format_number(dual.average_moving_range)},
         {"σ (within)", format_number(dual.sigma)},
+        {"规则策略", configuration.control.special_cause_rule_policy == "explicit"
+            ? "用户指定" : "默认全选适用规则"},
+        {"I 图启用测试", datalab::domain::statistics::format_special_cause_tests(
+            datalab::domain::statistics::resolve_special_cause_tests(
+                options.special_causes,
+                datalab::domain::statistics::ControlChartKind::individuals))},
+        {"MR 图适用规则", "Test 1–4（Minitab 不在 MR 图上启用 Test 5–8）"},
         {"Test 1 超限点数", std::to_string(dual.primary.test1_points.size())}};
     page.tables.push_back(table_out);
     page.plots.push_back(control_plot("单值图 (I)", "测量值", dual.primary, extracted.source_rows));
     page.plots.push_back(control_plot("移动极差图 (MR)", "移动极差", dual.secondary, extracted.source_rows));
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::xbar_range(
@@ -2655,8 +2965,9 @@ OutputPage AnalysisService::xbar_range(
     spec.secondary_axis = "子组极差";
     spec.parameter_table_title = "Xbar-R 参数";
     spec.subgroup_table_title = "Xbar-R 逐子组统计";
-    spec.compute = [](const std::vector<std::vector<double>>& subgroups) {
-        return datalab::domain::statistics::ControlCharts::xbar_range_dual(subgroups);
+    spec.compute = [](const std::vector<std::vector<double>>& subgroups,
+                      const datalab::domain::statistics::SpecialCauseSelection& tests) {
+        return datalab::domain::statistics::ControlCharts::xbar_range_dual(subgroups, tests);
     };
     spec.validate = [](const std::vector<std::vector<double>>& subgroups) -> std::string {
         return subgroups.front().size() > 8
@@ -2681,8 +2992,9 @@ OutputPage AnalysisService::xbar_s(
     spec.parameter_table_title = "Xbar-S 参数";
     spec.subgroup_table_title = "Xbar-S 逐子组统计";
     spec.use_config_subgroup_size_in_summary = true;
-    spec.compute = [](const std::vector<std::vector<double>>& subgroups) {
-        return datalab::domain::statistics::ControlCharts::xbar_s_dual(subgroups);
+    spec.compute = [](const std::vector<std::vector<double>>& subgroups,
+                      const datalab::domain::statistics::SpecialCauseSelection& tests) {
+        return datalab::domain::statistics::ControlCharts::xbar_s_dual(subgroups, tests);
     };
     return subgroup_dual_chart_page(table, configuration, spec);
 }
@@ -2740,8 +3052,9 @@ OutputPage AnalysisService::p_chart(
         return data;
     };
     spec.compute = [](const std::vector<std::size_t>& defectives,
-                      const std::vector<std::size_t>& inspected) {
-        return datalab::domain::statistics::ControlCharts::p_chart(defectives, inspected);
+                      const std::vector<std::size_t>& inspected,
+                      const datalab::domain::statistics::SpecialCauseSelection& tests) {
+        return datalab::domain::statistics::ControlCharts::p_chart(defectives, inspected, tests);
     };
     return attribute_chart_page(table, configuration, spec);
 }
@@ -2795,8 +3108,9 @@ OutputPage AnalysisService::np_chart(
         return data;
     };
     spec.compute = [](const std::vector<std::size_t>& defectives,
-                      const std::vector<std::size_t>& inspected) {
-        return datalab::domain::statistics::ControlCharts::np_chart(defectives, inspected);
+                      const std::vector<std::size_t>& inspected,
+                      const datalab::domain::statistics::SpecialCauseSelection& tests) {
+        return datalab::domain::statistics::ControlCharts::np_chart(defectives, inspected, tests);
     };
     return attribute_chart_page(table, configuration, spec);
 }
@@ -2833,9 +3147,10 @@ OutputPage AnalysisService::c_chart(
         return data;
     };
     spec.compute = [](const std::vector<std::size_t>& counts,
-                      const std::vector<std::size_t>& denominators) {
+                      const std::vector<std::size_t>& denominators,
+                      const datalab::domain::statistics::SpecialCauseSelection& tests) {
         return datalab::domain::statistics::ControlCharts::c_chart(
-            counts, denominators.empty() ? 1 : denominators.front());
+            counts, denominators.empty() ? 1 : denominators.front(), tests);
     };
     return attribute_chart_page(table, configuration, spec);
 }
@@ -2882,8 +3197,9 @@ OutputPage AnalysisService::u_chart(
         return data;
     };
     spec.compute = [](const std::vector<std::size_t>& defects,
-                      const std::vector<std::size_t>& units) {
-        return datalab::domain::statistics::ControlCharts::u_chart(defects, units);
+                      const std::vector<std::size_t>& units,
+                      const datalab::domain::statistics::SpecialCauseSelection& tests) {
+        return datalab::domain::statistics::ControlCharts::u_chart(defects, units, tests);
     };
     return attribute_chart_page(table, configuration, spec);
 }
@@ -2953,6 +3269,7 @@ OutputPage AnalysisService::laney_u_chart(
     spec.count_header = "缺陷数";
     spec.denominator_header = "单位数";
     spec.y_axis = "单位缺陷数";
+    spec.include_enabled_tests_row = true;
     spec.assemble = [spec](const DataTable& table,
                            const AnalysisConfiguration& effective,
                            std::string& error) -> std::optional<AttributeChartData> {
@@ -3000,13 +3317,13 @@ OutputPage AnalysisService::capability(
         return error_page("正态过程能力", "Normal Capability Analysis", "请输入 LSL 或 USL。");
     }
 
-    const int subgroup_size = configuration.subgroup_size.value_or(1);
+    const int subgroup_size = configuration.control.subgroup_size.value_or(1);
     double within_sigma = 0.0;
     std::string within_method = "样本标准差";
     if (subgroup_size <= 1) {
         datalab::domain::statistics::IndividualsMovingRangeOptions options;
-        options.moving_range_length = std::max(2, configuration.moving_range_length);
-        options.method = configuration.sigma_method == "median_moving_range"
+        options.moving_range_length = std::max(2, configuration.control.moving_range_length);
+        options.method = configuration.control.sigma_method == "median_moving_range"
             ? datalab::domain::statistics::SigmaEstimateMethod::median_moving_range
             : datalab::domain::statistics::SigmaEstimateMethod::average_moving_range;
         const auto dual = datalab::domain::statistics::ControlCharts::individuals_moving_range_dual(
@@ -3042,12 +3359,12 @@ OutputPage AnalysisService::capability(
 
     if (subgroup_size <= 1) {
         datalab::domain::statistics::IndividualsMovingRangeOptions options;
-        options.moving_range_length = std::max(2, configuration.moving_range_length);
+        options.moving_range_length = std::max(2, configuration.control.moving_range_length);
         const auto dual = datalab::domain::statistics::ControlCharts::individuals_moving_range_dual(
             extracted.values, options);
         page.plots.push_back(control_plot("I 图", "测量值", dual.primary, extracted.source_rows));
     }
-    return page;
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::capability_sixpack(
@@ -3067,7 +3384,7 @@ OutputPage AnalysisService::capability_sixpack(
         return capability_page;
     }
 
-    const int subgroup_size = configuration.subgroup_size.value_or(1);
+    const int subgroup_size = configuration.control.subgroup_size.value_or(1);
     std::vector<PlotSpec> primary_plots;
     datalab::domain::statistics::ControlChartResult primary;
     datalab::domain::statistics::ControlChartResult secondary;
@@ -3087,7 +3404,7 @@ OutputPage AnalysisService::capability_sixpack(
         primary_plots.push_back(control_plot("Xbar 控制图", "子组均值", primary, subgroup_rows));
     } else {
         datalab::domain::statistics::IndividualsMovingRangeOptions options;
-        options.moving_range_length = std::max(2, configuration.moving_range_length);
+        options.moving_range_length = std::max(2, configuration.control.moving_range_length);
         const auto imr =
             datalab::domain::statistics::ControlCharts::individuals_moving_range_dual(
                 extracted.values, options);
@@ -3101,7 +3418,8 @@ OutputPage AnalysisService::capability_sixpack(
         secondary,
         subgroup_size > 1 ? subgroup_rows : extracted.source_rows));
     const auto probability =
-        datalab::domain::statistics::normal_probability_plot(extracted.values);
+        datalab::domain::statistics::normal_probability_plot(
+            extracted.values, extracted.source_rows);
 
     capability_page.id = new_id("sixpack");
     capability_page.title = "过程能力 Sixpack";
@@ -3148,24 +3466,66 @@ OutputPage AnalysisService::histogram(
     if (extracted.values.empty()) {
         return error_page("直方图", "Histogram", "所选列没有数值观测。");
     }
-    const auto bins = datalab::domain::statistics::histogram(extracted.values, 0);
+    const auto bins = datalab::domain::statistics::histogram(
+        extracted.values, configuration.graph.bin_count);
     OutputPage page;
     page.id = new_id("hist");
     page.title = "直方图";
     page.method_name = "Histogram";
     page.configuration = configuration;
-    page.parameter_summary = "变量: " + extracted.name + "    N = " + std::to_string(extracted.values.size());
-    PlotSpec hist;
-    hist.kind = PlotKind::histogram;
-    hist.title = extracted.name;
-    hist.x_axis_title = extracted.name;
-    hist.y_axis_title = "频数";
-    hist.histogram_edges = bins.edges;
-    hist.histogram_counts = bins.counts;
-    hist.values = extracted.values;
-    hist.source_rows = extracted.source_rows;
-    page.plots.push_back(hist);
-    return page;
+    const std::string bin_rule = configuration.graph.bin_count > 0
+        ? "手工 " + std::to_string(configuration.graph.bin_count)
+        : "Sturges";
+    page.parameter_summary = "变量: " + extracted.name
+        + "    N = " + std::to_string(extracted.values.size())
+        + "    组数 = " + std::to_string(bins.counts.size())
+        + "    分箱规则 = " + bin_rule;
+
+    const auto append_histogram = [&](const std::string& title,
+                                      const datalab::domain::statistics::HistogramResult& result,
+                                      const std::vector<double>& values,
+                                      const std::vector<std::size_t>& source_rows) {
+        PlotSpec hist;
+        hist.kind = PlotKind::histogram;
+        hist.title = title;
+        hist.x_axis_title = extracted.name;
+        hist.y_axis_title = "频数";
+        hist.histogram_edges = result.edges;
+        hist.histogram_counts = result.counts;
+        hist.values = values;
+        hist.source_rows = source_rows;
+        page.plots.push_back(std::move(hist));
+    };
+
+    const std::optional<std::size_t> group_column =
+        configuration.graph.by_column.has_value()
+            ? configuration.graph.by_column : configuration.by_column;
+    if (group_column.has_value()) {
+        const std::vector<std::string> labels = extract_text_column(table, *group_column);
+        std::vector<std::string> order;
+        std::vector<std::vector<double>> grouped_values;
+        std::vector<std::vector<std::size_t>> grouped_rows;
+        for (std::size_t index = 0; index < extracted.values.size(); ++index) {
+            const std::size_t row = extracted.source_rows[index];
+            const std::string group = row < labels.size() ? labels[row] : "*";
+            const std::size_t group_index = datalab::domain::stable_group_index(order, group);
+            if (group_index >= grouped_values.size()) {
+                grouped_values.emplace_back();
+                grouped_rows.emplace_back();
+            }
+            grouped_values[group_index].push_back(extracted.values[index]);
+            grouped_rows[group_index].push_back(row);
+        }
+        for (std::size_t group = 0; group < order.size(); ++group) {
+            const auto grouped_bins = datalab::domain::statistics::histogram_with_edges(
+                grouped_values[group], bins.edges);
+            append_histogram(extracted.name + " | " + order[group], grouped_bins,
+                             grouped_values[group], grouped_rows[group]);
+        }
+    } else {
+        append_histogram(extracted.name, bins, extracted.values, extracted.source_rows);
+    }
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::boxplot(
@@ -3188,35 +3548,72 @@ OutputPage AnalysisService::boxplot(
     plot.y_axis_title = extracted.name;
     plot.x_axis_title = "分组";
     plot.source_rows = extracted.source_rows;
+    PlotSeries outliers;
+    outliers.role = PlotSeriesRole::generic;
+    outliers.label = "异常点";
+    outliers.style.color = "#c62828";
+    outliers.style.point_style = PlotPointStyle::circle;
+    outliers.show_points = true;
+    StatisticTable summary_table;
+    summary_table.title = "箱线统计";
+    summary_table.headers = {
+        "分组", "N", "最小值", "Q1", "中位数", "Q3", "最大值", "IQR", "下须", "上须", "异常点数"};
 
-    if (configuration.by_column.has_value()) {
-        const std::vector<std::string> groups = extract_text_column(table, *configuration.by_column);
-        std::map<std::string, std::vector<double>> grouped;
-        for (std::size_t index = 0; index < extracted.values.size(); ++index) {
-            const std::size_t row = extracted.source_rows[index];
-            grouped[row < groups.size() ? groups[row] : "*"].push_back(extracted.values[index]);
-        }
-        for (const auto& [label, values] : grouped) {
-            const auto summary = datalab::domain::statistics::box_plot_summary(values);
-            plot.box_labels.push_back(label);
-            plot.box_min.push_back(summary.minimum);
-            plot.box_q1.push_back(summary.first_quartile);
-            plot.box_median.push_back(summary.median);
-            plot.box_q3.push_back(summary.third_quartile);
-            plot.box_max.push_back(summary.maximum);
-        }
-    } else {
-        const auto summary = datalab::domain::statistics::box_plot_summary(extracted.values);
-        plot.box_labels.push_back(extracted.name);
-        plot.box_min.push_back(summary.minimum);
+    const auto append_group = [&](const std::string& label, const std::vector<double>& values) {
+        const auto summary = datalab::domain::statistics::box_plot_summary(values);
+        const std::size_t group_index = plot.box_labels.size();
+        plot.box_labels.push_back(label);
+        plot.box_min.push_back(summary.whisker_low);
         plot.box_q1.push_back(summary.first_quartile);
         plot.box_median.push_back(summary.median);
         plot.box_q3.push_back(summary.third_quartile);
-        plot.box_max.push_back(summary.maximum);
+        plot.box_max.push_back(summary.whisker_high);
+        for (const double outlier : summary.outliers) {
+            outliers.x_values.push_back(static_cast<double>(group_index));
+            outliers.values.push_back(outlier);
+        }
+        summary_table.rows.push_back({
+            label,
+            std::to_string(summary.count),
+            format_number(summary.minimum),
+            format_number(summary.first_quartile),
+            format_number(summary.median),
+            format_number(summary.third_quartile),
+            format_number(summary.maximum),
+            format_number(summary.iqr),
+            format_number(summary.whisker_low),
+            format_number(summary.whisker_high),
+            std::to_string(summary.outliers.size())});
+    };
+
+    if (configuration.by_column.has_value()) {
+        const std::vector<std::string> groups = extract_text_column(table, *configuration.by_column);
+        std::vector<std::string> order;
+        std::vector<std::vector<double>> grouped;
+        for (std::size_t index = 0; index < extracted.values.size(); ++index) {
+            const std::size_t row = extracted.source_rows[index];
+            const std::string group = row < groups.size() ? groups[row] : "*";
+            const std::size_t group_index = datalab::domain::stable_group_index(order, group);
+            if (group_index >= grouped.size()) {
+                grouped.emplace_back();
+            }
+            grouped[group_index].push_back(extracted.values[index]);
+        }
+        for (std::size_t group = 0; group < order.size(); ++group) {
+            append_group(order[group], grouped[group]);
+        }
+    } else {
+        append_group(extracted.name, extracted.values);
+    }
+    if (!outliers.values.empty()) {
+        plot.series.push_back(std::move(outliers));
     }
     page.plots.push_back(plot);
-    page.parameter_summary = "变量: " + extracted.name;
-    return page;
+    page.tables.push_back(std::move(summary_table));
+    page.parameter_summary = "变量: " + extracted.name
+        + "    须线 = Tukey 1.5×IQR    组数 = "
+        + std::to_string(plot.box_labels.size());
+    return finalize_page(std::move(page));
 }
 
 OutputPage AnalysisService::pareto(
@@ -3307,7 +3704,7 @@ OutputPage AnalysisService::pareto(
     }
     page.tables.push_back(table_out);
     page.plots.push_back(plot);
-    return page;
+    return finalize_page(std::move(page));
 }
 
 }  // namespace datalab::application

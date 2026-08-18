@@ -131,7 +131,7 @@ domain::OutputPage doe_response_page(
     const domain::statistics::DoeResponseAnalysisResult& fit)
 {
     const std::string response_label =
-        column_label(table, *configuration.doe_response_column);
+        column_label(table, *configuration.doe.response_column);
     domain::OutputPage page;
     page.id = new_id("doe_response");
     page.title = "DOE 响应分析";

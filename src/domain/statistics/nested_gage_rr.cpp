@@ -15,6 +15,12 @@ void add_error(std::vector<DiagnosticMessage>& diagnostics, const char* code,
     diagnostics.push_back({DiagnosticMessage::Severity::error, code, message});
 }
 
+void add_warning(std::vector<DiagnosticMessage>& diagnostics, const char* code,
+                 const char* message)
+{
+    diagnostics.push_back({DiagnosticMessage::Severity::warning, code, message});
+}
+
 struct Cell {
     std::vector<double> values;
 };
@@ -29,11 +35,16 @@ NestedGageRrResult nested_gage_rr(
 {
     NestedGageRrResult result;
     result.tolerance = tolerance;
+    result.method = "nested_anova";
+    if (!std::isfinite(tolerance) || tolerance < 0.0) {
+        add_error(result.diagnostics, "invalid_tolerance",
+                  "公差必须为有限非负数。");
+        return result;
+    }
     if (measurements.size() < 4 || measurements.size() != parts.size()
-        || measurements.size() != operators.size() || tolerance < 0.0
-        || !std::isfinite(tolerance)) {
+        || measurements.size() != operators.size()) {
         add_error(result.diagnostics, "invalid_nested_gage_shape",
-                  "Nested Gage R&R 要求长度一致、至少四条记录且公差非负。");
+                  "Nested Gage R&R 要求长度一致、至少四条记录。");
         return result;
     }
 
@@ -146,35 +157,58 @@ NestedGageRrResult nested_gage_rr(
         {"Repeatability", df_repeatability, ss_repeatability,
          ms_repeatability, 0.0}};
 
-    const double repeatability = std::max(0.0, ms_repeatability);
-    const double part_variance = std::max(
-        0.0, (ms_part - ms_repeatability) / static_cast<double>(replicates));
-    const double operator_variance = std::max(
-        0.0, (ms_operator - ms_part)
-            / static_cast<double>(result.parts_per_operator * replicates));
+    const double raw_repeatability = ms_repeatability;
+    const double raw_part = (ms_part - ms_repeatability)
+        / static_cast<double>(replicates);
+    const double raw_operator = (ms_operator - ms_part)
+        / static_cast<double>(result.parts_per_operator * replicates);
+    const double repeatability = std::max(0.0, raw_repeatability);
+    const double part_variance = std::max(0.0, raw_part);
+    const double operator_variance = std::max(0.0, raw_operator);
     const double gage_rr = repeatability + operator_variance;
     const double total = gage_rr + part_variance;
     const std::vector<std::pair<std::string, double>> components = {
-        {"Repeatability", repeatability},
+        {"Repeatability", raw_repeatability},
         {"Reproducibility", operator_variance},
         {"Total Gage R&R", gage_rr},
-        {"Part-To-Part", part_variance},
+        {"Part-To-Part", raw_part},
         {"Total Variation", total}};
-    for (const auto& [source, variance] : components) {
+    for (const auto& [source, raw_variance] : components) {
         NestedGageVarianceComponent component;
         component.source = source;
-        component.variance_component = variance;
-        component.standard_deviation = std::sqrt(variance);
-        component.percent_contribution = total > 0.0 ? variance / total * 100.0 : 0.0;
-        component.study_variation = 6.0 * component.standard_deviation;
+        component.raw_variance_component = raw_variance;
+        component.truncated = raw_variance < 0.0;
+        component.variance_component = std::max(0.0, raw_variance);
+        if (component.truncated) {
+            add_warning(result.diagnostics, "negative_variance_component",
+                        "方差分量原始估计为负，已截断为 0。");
+        }
+        component.standard_deviation = std::sqrt(component.variance_component);
+        component.percent_contribution = total > 0.0
+            ? component.variance_component / total * 100.0 : 0.0;
+        component.study_variation = result.study_var_multiplier
+            * component.standard_deviation;
         component.percent_study_variation = total > 0.0
             ? component.standard_deviation / std::sqrt(total) * 100.0 : 0.0;
-        component.percent_tolerance = tolerance > 0.0
-            ? component.study_variation / tolerance * 100.0 : 0.0;
+        if (tolerance > 0.0) {
+            component.percent_tolerance_available = true;
+            component.percent_tolerance = component.study_variation / tolerance * 100.0;
+        }
         result.variance_components.push_back(component);
     }
-    result.ndc = gage_rr > 0.0
-        ? std::floor(1.41 * std::sqrt(part_variance / gage_rr)) : 0.0;
+    if (gage_rr > 0.0) {
+        result.ndc = std::floor(1.41 * std::sqrt(part_variance / gage_rr));
+        if (result.ndc < 1.0) {
+            result.ndc = 1.0;
+        }
+        result.ndc_available = true;
+        if (result.ndc < 5.0) {
+            add_warning(result.diagnostics, "ndc_investigation",
+                        "ndc<5 只作为调查提示。");
+        }
+    } else {
+        add_error(result.diagnostics, "not_estimable", "Gage 标准差为 0，ndc 不可估计。");
+    }
     if (total == 0.0) {
         add_error(result.diagnostics, "zero_nested_total_variation",
                   "所有测量值相同，无法估计 Nested Gage R&R 方差分量。");

@@ -232,6 +232,8 @@ TukeyResult tukey_multiple_comparisons(
 {
     TukeyResult result;
     result.confidence_level = confidence_level;
+    result.family_confidence_level = confidence_level;
+    result.alpha = 1.0 - confidence_level;
     if (groups.size() < 2 || (!labels.empty() && labels.size() != groups.size())) {
         add_error(result.diagnostics, "invalid_groups",
                   "Tukey 比较至少需要两个且标签数量必须匹配的有效组。");
@@ -250,6 +252,12 @@ TukeyResult tukey_multiple_comparisons(
         if (group.empty()) {
             add_error(result.diagnostics, "empty_group",
                       "Tukey 比较不允许空组。");
+            return result;
+        }
+        if (!std::all_of(group.cbegin(), group.cend(),
+                         [](double value) { return std::isfinite(value); })) {
+            add_error(result.diagnostics, "non_finite_group",
+                      "Tukey 比较不允许无穷或非数值观测。");
             return result;
         }
         const double mean = std::accumulate(group.cbegin(), group.cend(), 0.0)
@@ -278,6 +286,8 @@ TukeyResult tukey_multiple_comparisons(
     result.error_degrees_of_freedom = static_cast<double>(error_df);
     const std::size_t comparison_count = groups.size() * (groups.size() - 1) / 2;
     const double alpha = 1.0 - confidence_level;
+    result.individual_confidence_level =
+        1.0 - alpha / static_cast<double>(comparison_count);
     const double critical = std::sqrt(2.0) * student_t_quantile(
         1.0 - alpha / static_cast<double>(comparison_count * 2), result.error_degrees_of_freedom);
     for (std::size_t first = 0; first < groups.size(); ++first) {
@@ -291,6 +301,22 @@ TukeyResult tukey_multiple_comparisons(
             comparison.standard_error = std::sqrt(result.error_mean_square / 2.0
                 * (1.0 / static_cast<double>(groups[first].size())
                     + 1.0 / static_cast<double>(groups[second].size())));
+            if (!(comparison.standard_error > 0.0)
+                || !std::isfinite(comparison.standard_error)) {
+                comparison.standardized_difference = 0.0;
+                comparison.q_statistic =
+                    std::abs(comparison.mean_difference) > 0.0
+                    ? std::numeric_limits<double>::infinity() : 0.0;
+                comparison.adjusted_p_value =
+                    std::abs(comparison.mean_difference) > 0.0 ? 0.0 : 1.0;
+                comparison.confidence_lower = comparison.mean_difference;
+                comparison.confidence_upper = comparison.mean_difference;
+                result.comparisons.push_back(comparison);
+                continue;
+            } else {
+                comparison.standardized_difference =
+                    comparison.mean_difference / std::sqrt(result.error_mean_square);
+            }
             comparison.q_statistic = std::abs(comparison.mean_difference)
                 / comparison.standard_error * std::sqrt(2.0);
             comparison.confidence_lower = comparison.mean_difference - critical
@@ -303,6 +329,8 @@ TukeyResult tukey_multiple_comparisons(
                 static_cast<double>(comparison_count) * 2.0
                     * (1.0 - student_t_cdf(t, result.error_degrees_of_freedom)),
                 0.0, 1.0);
+            comparison.significant = comparison.confidence_lower > 0.0
+                || comparison.confidence_upper < 0.0;
             result.comparisons.push_back(comparison);
         }
     }

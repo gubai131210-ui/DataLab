@@ -1,25 +1,34 @@
 #include "infrastructure/python_table_importer.h"
 
+#include "domain/column_extract.h"
+
 #include <QCoreApplication>
+#include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
 #include <QStandardPaths>
+#include <QTemporaryFile>
 #include <QTextStream>
 
 namespace datalab::infrastructure {
 
 std::optional<domain::DataTable> PythonTableImporter::import_file(
     const QString& file_path,
-    QString* error_message)
+    QString* error_message,
+    const QString& interpreter_path,
+    const QString& script_path)
 {
     const QString python_path =
         QCoreApplication::applicationDirPath() + QStringLiteral("/.venv/Scripts/python.exe");
-    QString interpreter = QFileInfo::exists(python_path)
-        ? python_path
-        : QStandardPaths::findExecutable(QStringLiteral("python"));
+    QString interpreter = interpreter_path;
+    if (interpreter.isEmpty()) {
+        interpreter = QFileInfo::exists(python_path)
+            ? python_path
+            : QStandardPaths::findExecutable(QStringLiteral("python"));
+    }
     if (interpreter.isEmpty()) {
         interpreter = QStandardPaths::findExecutable(QStringLiteral("python3"));
     }
@@ -29,11 +38,31 @@ std::optional<domain::DataTable> PythonTableImporter::import_file(
         }
         return std::nullopt;
     }
-    const QString script_path =
-        QStringLiteral(DATALAB_SOURCE_DIR "/tools/import_table.py");
+    QString effective_script_path = script_path;
+    QTemporaryFile temporary_file;
+    if (effective_script_path.isEmpty()) {
+        QFile resource(QStringLiteral(":/tools/import_table.py"));
+        if (!resource.open(QIODevice::ReadOnly)) {
+            if (error_message != nullptr) {
+                *error_message = QStringLiteral("未找到内置 Python 导入脚本。");
+            }
+            return std::nullopt;
+        }
+        temporary_file.setFileTemplate(
+            QDir::tempPath() + QStringLiteral("/datalab-import-XXXXXX.py"));
+        if (!temporary_file.open()
+            || temporary_file.write(resource.readAll()) < 0) {
+            if (error_message != nullptr) {
+                *error_message = QStringLiteral("无法释放内置 Python 导入脚本。");
+            }
+            return std::nullopt;
+        }
+        temporary_file.close();
+        effective_script_path = temporary_file.fileName();
+    }
 
     QProcess process;
-    process.start(interpreter, {script_path, file_path});
+    process.start(interpreter, {effective_script_path, file_path});
     if (!process.waitForStarted(5000)) {
         if (error_message != nullptr) {
             *error_message = process.errorString();
@@ -65,6 +94,13 @@ std::optional<domain::DataTable> PythonTableImporter::import_file(
         return std::nullopt;
     }
     const QJsonObject object = document.object();
+    if (object.value(QStringLiteral("schema_version")).toInt(-1) != 1) {
+        if (error_message != nullptr) {
+            *error_message = QStringLiteral(
+                "Python importer returned an unsupported schema version.");
+        }
+        return std::nullopt;
+    }
     if (object.contains(QStringLiteral("error"))) {
         if (error_message != nullptr) {
             *error_message = object.value(QStringLiteral("error")).toString();
@@ -85,6 +121,29 @@ std::optional<domain::DataTable> PythonTableImporter::import_file(
         }
         table.rows.push_back(std::move(row));
     }
+    if (table.columns.empty()) {
+        if (error_message != nullptr) {
+            *error_message = QStringLiteral("Python importer returned no columns.");
+        }
+        return std::nullopt;
+    }
+    for (const auto& row : table.rows) {
+        if (row.size() != table.columns.size()) {
+            if (error_message != nullptr) {
+                *error_message = QStringLiteral(
+                    "Python importer returned rows with inconsistent column counts.");
+            }
+            return std::nullopt;
+        }
+    }
+    domain::populate_data_table_contract(table);
+    table.import_metadata.schema_version =
+        object.value(QStringLiteral("schema_version")).toInt(1);
+    table.import_metadata.sheet_name =
+        object.value(QStringLiteral("sheet_name")).toString().toStdString();
+    table.import_metadata.sheet_index =
+        static_cast<std::size_t>(object.value(QStringLiteral("sheet_index")).toInt(0));
+    table.import_metadata.warnings = table.import_warnings;
     return table;
 }
 

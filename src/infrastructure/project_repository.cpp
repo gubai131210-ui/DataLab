@@ -1,6 +1,8 @@
 #include "infrastructure/project_repository.h"
 #include "infrastructure/output_serialization.h"
 
+#include "domain/column_extract.h"
+
 #include <QDateTime>
 #include <QHash>
 #include <QJsonDocument>
@@ -10,6 +12,36 @@
 #include <QVariant>
 
 namespace datalab::infrastructure {
+namespace {
+
+constexpr int kProjectSchemaVersion = 1;
+
+bool ensure_schema_version(QSqlQuery& query, QString* error_message)
+{
+    if (!query.exec(QStringLiteral("PRAGMA user_version"))) {
+        if (error_message != nullptr) {
+            *error_message = query.lastError().text();
+        }
+        return false;
+    }
+    const int version = query.next() ? query.value(0).toInt() : 0;
+    if (version > kProjectSchemaVersion) {
+        if (error_message != nullptr) {
+            *error_message = QStringLiteral("项目文件版本高于当前程序支持的版本。");
+        }
+        return false;
+    }
+    if (version < kProjectSchemaVersion
+        && !query.exec(QStringLiteral("PRAGMA user_version = 1"))) {
+        if (error_message != nullptr) {
+            *error_message = query.lastError().text();
+        }
+        return false;
+    }
+    return true;
+}
+
+}  // namespace
 
 bool ProjectRepository::save(
     const QString& project_path,
@@ -58,6 +90,10 @@ bool ProjectRepository::save(
         if (!query.exec(statement)) {
             return fail(query.lastError().text());
         }
+    }
+    if (!ensure_schema_version(query, error_message)) {
+        return fail(error_message != nullptr
+            ? *error_message : QStringLiteral("项目文件版本初始化失败。"));
     }
 
     if (!database.transaction()) {
@@ -194,6 +230,13 @@ bool ProjectRepository::load(
         return false;
     }
     QSqlQuery query(database);
+    if (!ensure_schema_version(query, error_message)) {
+        query.clear();
+        database.close();
+        database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(connection_name);
+        return false;
+    }
     auto fail = [&](const QString& message) {
         if (error_message != nullptr) {
             *error_message = message;
@@ -274,6 +317,7 @@ bool ProjectRepository::load(
             }
         }
     }
+    domain::populate_data_table_contract(loaded);
     query.clear();
     database.close();
     database = QSqlDatabase();

@@ -3,8 +3,10 @@
 #include "domain/statistics/spc_constants.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <numeric>
+#include <sstream>
 #include <unordered_map>
 
 namespace datalab::domain::statistics {
@@ -15,7 +17,10 @@ void add_error(std::vector<DiagnosticMessage>& diagnostics, const char* code, co
     diagnostics.push_back({DiagnosticMessage::Severity::error, code, message});
 }
 
-void add_warning(std::vector<DiagnosticMessage>& diagnostics, const char* code, const char* message)
+void add_warning(
+    std::vector<DiagnosticMessage>& diagnostics,
+    const std::string& code,
+    const std::string& message)
 {
     diagnostics.push_back({DiagnosticMessage::Severity::warning, code, message});
 }
@@ -50,24 +55,70 @@ bool omitted(const std::vector<std::size_t>& omit, std::size_t index)
     return std::find(omit.begin(), omit.end(), index) != omit.end();
 }
 
-void mark_test1(ControlChartResult& result)
+bool usable_point(const ControlChartResult& result, std::size_t index)
 {
-    result.test1_points.clear();
-    const std::size_t count = result.plotted_values.size();
-    for (std::size_t index = 0; index < count; ++index) {
-        if (index >= result.lower_control_limit.size() || index >= result.upper_control_limit.size()) {
-            continue;
-        }
-        if (result.plotted_values[index] < result.lower_control_limit[index]
-            || result.plotted_values[index] > result.upper_control_limit[index]) {
-            result.test1_points.push_back(index);
+    return index < result.plotted_values.size()
+        && index < result.center_line.size()
+        && std::isfinite(result.plotted_values[index])
+        && std::isfinite(result.center_line[index]);
+}
+
+bool same_segment(const ControlChartResult& result, std::size_t left, std::size_t right)
+{
+    if (!usable_point(result, left) || !usable_point(result, right)) {
+        return false;
+    }
+    if (!result.phase_labels.empty()) {
+        if (left >= result.phase_labels.size() || right >= result.phase_labels.size()
+            || result.phase_labels[left] != result.phase_labels[right]) {
+            return false;
         }
     }
-    if (!result.test1_points.empty()) {
-        add_warning(
-            result.diagnostics,
-            "test1",
-            "Test 1: one or more points are outside the control limits.");
+    return true;
+}
+
+bool contiguous_window(const ControlChartResult& result, std::size_t start, std::size_t count)
+{
+    if (start + count > result.plotted_values.size()) {
+        return false;
+    }
+    for (std::size_t index = start; index < start + count; ++index) {
+        if (!usable_point(result, index)) {
+            return false;
+        }
+        if (index > start && !same_segment(result, index - 1, index)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+double sigma_at(const ControlChartResult& result, std::size_t index)
+{
+    if (index < result.point_sigma.size() && result.point_sigma[index] > 0.0
+        && std::isfinite(result.point_sigma[index])) {
+        return result.point_sigma[index];
+    }
+    if (index >= result.center_line.size() || index >= result.upper_control_limit.size()) {
+        return 0.0;
+    }
+    const double sigma = (result.upper_control_limit[index] - result.center_line[index]) / 3.0;
+    return std::isfinite(sigma) && sigma > 0.0 ? sigma : 0.0;
+}
+
+int side_at(const ControlChartResult& result, std::size_t index)
+{
+    const double difference = result.plotted_values[index] - result.center_line[index];
+    return difference > 0.0 ? 1 : (difference < 0.0 ? -1 : 0);
+}
+
+void record_window(ControlChartResult& result, int test, std::size_t start, std::size_t count)
+{
+    if (test < 1 || test > 8) {
+        return;
+    }
+    for (std::size_t index = start; index < start + count; ++index) {
+        result.special_cause_points[static_cast<std::size_t>(test - 1)].push_back(index);
     }
 }
 
@@ -82,12 +133,18 @@ void mark_special_cause_tests(
 {
     result.special_cause_points.assign(8, {});
     result.test1_points.clear();
+    const std::size_t count = result.plotted_values.size();
     if (enabled_test(enabled_tests, 1)) {
-        for (std::size_t index = 0; index < result.plotted_values.size(); ++index) {
-            if (index < result.lower_control_limit.size()
-                && index < result.upper_control_limit.size()
-                && (result.plotted_values[index] < result.lower_control_limit[index]
-                    || result.plotted_values[index] > result.upper_control_limit[index])) {
+        for (std::size_t index = 0; index < count; ++index) {
+            if (!usable_point(result, index)
+                || index >= result.lower_control_limit.size()
+                || index >= result.upper_control_limit.size()
+                || !std::isfinite(result.lower_control_limit[index])
+                || !std::isfinite(result.upper_control_limit[index])) {
+                continue;
+            }
+            if (result.plotted_values[index] < result.lower_control_limit[index]
+                || result.plotted_values[index] > result.upper_control_limit[index]) {
                 result.special_cause_points[0].push_back(index);
                 result.test1_points.push_back(index);
             }
@@ -96,9 +153,13 @@ void mark_special_cause_tests(
     if (enabled_test(enabled_tests, 2)) {
         int side = 0;
         std::size_t run_start = 0;
-        for (std::size_t index = 0; index < result.plotted_values.size(); ++index) {
-            const double difference = result.plotted_values[index] - result.center_line[index];
-            const int current_side = difference > 0.0 ? 1 : (difference < 0.0 ? -1 : 0);
+        for (std::size_t index = 0; index < count; ++index) {
+            if (!usable_point(result, index)
+                || (index > 0 && !same_segment(result, index - 1, index))) {
+                side = 0;
+                continue;
+            }
+            const int current_side = side_at(result, index);
             if (current_side == 0) {
                 side = 0;
                 continue;
@@ -108,126 +169,119 @@ void mark_special_cause_tests(
                 run_start = index;
             }
             if (index - run_start + 1 >= 9) {
-                for (std::size_t point = run_start; point <= index; ++point) {
-                    result.special_cause_points[1].push_back(point);
-                }
+                record_window(result, 2, run_start, index - run_start + 1);
             }
         }
     }
-    if (enabled_test(enabled_tests, 3) && result.plotted_values.size() >= 6) {
-        for (std::size_t start = 0; start + 6 <= result.plotted_values.size(); ++start) {
+    if (enabled_test(enabled_tests, 3) && count >= 6) {
+        for (std::size_t start = 0; start + 6 <= count; ++start) {
+            if (!contiguous_window(result, start, 6)) {
+                continue;
+            }
             bool increasing = true;
             bool decreasing = true;
             for (std::size_t index = start + 1; index < start + 6; ++index) {
-                increasing = increasing && result.plotted_values[index] > result.plotted_values[index - 1];
-                decreasing = decreasing && result.plotted_values[index] < result.plotted_values[index - 1];
+                increasing = increasing
+                    && result.plotted_values[index] > result.plotted_values[index - 1];
+                decreasing = decreasing
+                    && result.plotted_values[index] < result.plotted_values[index - 1];
             }
             if (increasing || decreasing) {
-                for (std::size_t point = start; point < start + 6; ++point) {
-                    result.special_cause_points[2].push_back(point);
-                }
+                record_window(result, 3, start, 6);
             }
         }
     }
-    if (enabled_test(enabled_tests, 4) && result.plotted_values.size() >= 14) {
-        for (std::size_t start = 0; start + 14 <= result.plotted_values.size(); ++start) {
+    if (enabled_test(enabled_tests, 4) && count >= 14) {
+        for (std::size_t start = 0; start + 14 <= count; ++start) {
+            if (!contiguous_window(result, start, 14)) {
+                continue;
+            }
             bool alternating = true;
-            for (std::size_t index = start + 2; index < start + 14; ++index) {
-                const double previous = result.plotted_values[index - 1];
-                const double before = result.plotted_values[index - 2];
-                alternating = alternating
-                    && ((previous - result.center_line[index - 1])
-                        * (result.plotted_values[index] - result.center_line[index]) < 0.0)
-                    && ((before - result.center_line[index - 2])
-                        * (previous - result.center_line[index - 1]) < 0.0);
+            for (std::size_t index = start + 1; index < start + 14; ++index) {
+                const double step =
+                    result.plotted_values[index] - result.plotted_values[index - 1];
+                if (index == start + 1) {
+                    alternating = step != 0.0;
+                    continue;
+                }
+                const double previous_step =
+                    result.plotted_values[index - 1] - result.plotted_values[index - 2];
+                alternating = alternating && previous_step * step < 0.0;
             }
             if (alternating) {
-                for (std::size_t point = start; point < start + 14; ++point) {
-                    result.special_cause_points[3].push_back(point);
-                }
+                record_window(result, 4, start, 14);
             }
         }
     }
-    auto sigma_at = [&result](std::size_t index) {
-        if (index >= result.upper_control_limit.size()
-            || index >= result.lower_control_limit.size()) {
-            return 0.0;
-        }
-        return (result.upper_control_limit[index]
-            - result.lower_control_limit[index]) / 6.0;
-    };
-    auto side_at = [&result](std::size_t index) {
-        const double difference = result.plotted_values[index]
-            - result.center_line[index];
-        return difference > 0.0 ? 1 : (difference < 0.0 ? -1 : 0);
-    };
-    if (enabled_test(enabled_tests, 5) && result.plotted_values.size() >= 3) {
-        for (std::size_t start = 0; start + 3 <= result.plotted_values.size(); ++start) {
+    if (enabled_test(enabled_tests, 5) && count >= 3) {
+        for (std::size_t start = 0; start + 3 <= count; ++start) {
+            if (!contiguous_window(result, start, 3)) {
+                continue;
+            }
             for (const int side : {-1, 1}) {
                 std::size_t outside = 0;
                 for (std::size_t index = start; index < start + 3; ++index) {
-                    const double sigma = sigma_at(index);
-                    outside += side_at(index) == side && sigma > 0.0
+                    const double sigma = sigma_at(result, index);
+                    outside += side_at(result, index) == side && sigma > 0.0
                         && side * (result.plotted_values[index]
                             - result.center_line[index]) > 2.0 * sigma;
                 }
                 if (outside >= 2) {
-                    for (std::size_t index = start; index < start + 3; ++index) {
-                        result.special_cause_points[4].push_back(index);
-                    }
+                    record_window(result, 5, start, 3);
                 }
             }
         }
     }
-    if (enabled_test(enabled_tests, 6) && result.plotted_values.size() >= 5) {
-        for (std::size_t start = 0; start + 5 <= result.plotted_values.size(); ++start) {
+    if (enabled_test(enabled_tests, 6) && count >= 5) {
+        for (std::size_t start = 0; start + 5 <= count; ++start) {
+            if (!contiguous_window(result, start, 5)) {
+                continue;
+            }
             for (const int side : {-1, 1}) {
                 std::size_t outside = 0;
                 for (std::size_t index = start; index < start + 5; ++index) {
-                    const double sigma = sigma_at(index);
-                    outside += side_at(index) == side && sigma > 0.0
+                    const double sigma = sigma_at(result, index);
+                    outside += side_at(result, index) == side && sigma > 0.0
                         && side * (result.plotted_values[index]
                             - result.center_line[index]) > sigma;
                 }
                 if (outside >= 4) {
-                    for (std::size_t index = start; index < start + 5; ++index) {
-                        result.special_cause_points[5].push_back(index);
-                    }
+                    record_window(result, 6, start, 5);
                 }
             }
         }
     }
-    if (enabled_test(enabled_tests, 7) && result.plotted_values.size() >= 15) {
-        for (std::size_t start = 0; start + 15 <= result.plotted_values.size(); ++start) {
+    if (enabled_test(enabled_tests, 7) && count >= 15) {
+        for (std::size_t start = 0; start + 15 <= count; ++start) {
+            if (!contiguous_window(result, start, 15)) {
+                continue;
+            }
             bool inside = true;
             for (std::size_t index = start; index < start + 15; ++index) {
-                const double sigma = sigma_at(index);
+                const double sigma = sigma_at(result, index);
                 inside = inside && sigma > 0.0
                     && std::abs(result.plotted_values[index]
-                        - result.center_line[index]) < sigma;
+                        - result.center_line[index]) <= sigma;
             }
             if (inside) {
-                for (std::size_t index = start; index < start + 15; ++index) {
-                    result.special_cause_points[6].push_back(index);
-                }
+                record_window(result, 7, start, 15);
             }
         }
     }
-    if (enabled_test(enabled_tests, 8) && result.plotted_values.size() >= 8) {
-        for (std::size_t start = 0; start + 8 <= result.plotted_values.size(); ++start) {
-            bool alternating = true;
-            for (std::size_t index = start + 1; index < start + 8; ++index) {
-                const double sigma = sigma_at(index);
-                alternating = alternating && sigma > 0.0
-                    && std::abs(result.plotted_values[index]
-                        - result.center_line[index]) >= sigma
-                    && side_at(index) != 0
-                    && side_at(index) != side_at(index - 1);
+    if (enabled_test(enabled_tests, 8) && count >= 8) {
+        for (std::size_t start = 0; start + 8 <= count; ++start) {
+            if (!contiguous_window(result, start, 8)) {
+                continue;
             }
-            if (alternating) {
-                for (std::size_t index = start; index < start + 8; ++index) {
-                    result.special_cause_points[7].push_back(index);
-                }
+            bool outside = true;
+            for (std::size_t index = start; index < start + 8; ++index) {
+                const double sigma = sigma_at(result, index);
+                outside = outside && sigma > 0.0 && side_at(result, index) != 0
+                    && std::abs(result.plotted_values[index]
+                        - result.center_line[index]) > sigma;
+            }
+            if (outside) {
+                record_window(result, 8, start, 8);
             }
         }
     }
@@ -235,9 +289,37 @@ void mark_special_cause_tests(
         std::sort(points.begin(), points.end());
         points.erase(std::unique(points.begin(), points.end()), points.end());
     }
-    if (!result.test1_points.empty()) {
-        add_warning(result.diagnostics, "test1",
-                    "Test 1: one or more points are outside the control limits.");
+    result.triggered_tests.assign(result.plotted_values.size(), {});
+    result.primary_test_by_point.assign(result.plotted_values.size(), 0);
+    for (std::size_t test = 0; test < result.special_cause_points.size(); ++test) {
+        for (const std::size_t point : result.special_cause_points[test]) {
+            if (point >= result.triggered_tests.size()) {
+                continue;
+            }
+            result.triggered_tests[point].push_back(static_cast<int>(test + 1));
+            if (result.primary_test_by_point[point] == 0) {
+                result.primary_test_by_point[point] = static_cast<int>(test + 1);
+            }
+        }
+    }
+    static const char* messages[] = {
+        "检测到 1 点超出 3σ 控制限，建议复核该观测、测量和记录过程。",
+        "检测到连续 9 点位于中心线同侧，建议复核阶段、设备或批次因素。",
+        "检测到连续 6 点单调上升或下降，建议复核趋势、刀具磨损或过程漂移。",
+        "检测到连续 14 点上下交替，建议复核系统性周期或两台设备交替影响。",
+        "检测到 3 点中有 2 点同侧超过 2σ，提示可能存在较小的过程偏移。",
+        "检测到 5 点中有 4 点同侧超过 1σ，提示可能存在较小的过程偏移。",
+        "检测到连续 15 点落在 1σ 以内，控制限可能过宽或数据存在分层。",
+        "检测到连续 8 点落在 1σ 以外，提示可能存在混合总体或双群模式。"
+    };
+    for (std::size_t test = 0; test < result.special_cause_points.size(); ++test) {
+        if (result.special_cause_points[test].empty()) {
+            continue;
+        }
+        add_warning(
+            result.diagnostics,
+            "test" + std::to_string(test + 1),
+            messages[test]);
     }
 }
 
@@ -314,7 +396,11 @@ ControlChartResult laney_chart(
         result.upper_control_limit[index] = proportion_chart
             ? std::min(1.0, center + deviation) : center + deviation;
     }
-    mark_special_cause_tests(result, options.enabled_special_cause_tests);
+    mark_special_cause_tests(result, resolve_special_cause_tests(
+        special_cause_selection_from_configuration(
+            options.enabled_special_cause_tests, options.special_cause_rule_policy),
+        ControlChartKind::laney,
+        &result.diagnostics));
     if (result.sigma_z > 1.0 + 1.0e-9) {
         add_warning(result.diagnostics, "overdispersion",
                     "Sigma Z > 1: traditional control limits may be too narrow.");
@@ -342,6 +428,13 @@ DualControlChartResult ControlCharts::individuals_moving_range_dual(
     result.primary.plotted_values = observations;
     if (observations.size() < static_cast<std::size_t>(length)) {
         add_error(result.diagnostics, "insufficient_data", "I-MR requires enough observations for the moving range.");
+        result.primary.diagnostics = result.diagnostics;
+        return result;
+    }
+    if (!std::all_of(observations.begin(), observations.end(),
+                     [](double value) { return std::isfinite(value); })) {
+        add_error(result.diagnostics, "non_finite_input",
+                  "I-MR 不允许 NaN 或无穷观测。");
         result.primary.diagnostics = result.diagnostics;
         return result;
     }
@@ -414,8 +507,8 @@ DualControlChartResult ControlCharts::individuals_moving_range_dual(
     result.primary.center_line.assign(observations.size(), center);
     result.primary.lower_control_limit.assign(observations.size(), lower);
     result.primary.upper_control_limit.assign(observations.size(), upper);
-    mark_test1(result.primary);
-
+    result.primary.point_sigma.assign(observations.size(), result.sigma);
+    apply_special_cause_tests(result.primary, ControlChartKind::individuals, options.special_causes);
     const std::optional<double> d3_limit = SpcConstants::d3_limit(static_cast<std::size_t>(length));
     const std::optional<double> d4 = SpcConstants::d4(static_cast<std::size_t>(length));
     result.secondary.plotted_values = plotted_ranges;
@@ -428,7 +521,7 @@ DualControlChartResult ControlCharts::individuals_moving_range_dual(
          && index < result.secondary.plotted_values.size(); ++index) {
         result.secondary.plotted_values[index] = range_center;
     }
-    mark_test1(result.secondary);
+    apply_special_cause_tests(result.secondary, ControlChartKind::moving_range, options.special_causes);
     result.primary.diagnostics.insert(
         result.primary.diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
     return result;
@@ -441,7 +534,8 @@ ControlChartResult ControlCharts::xbar_range(
 }
 
 DualControlChartResult ControlCharts::xbar_range_dual(
-    const std::vector<std::vector<double>>& subgroups)
+    const std::vector<std::vector<double>>& subgroups,
+    const SpecialCauseSelection& special_causes)
 {
     DualControlChartResult result;
     if (subgroups.empty()) {
@@ -451,14 +545,26 @@ DualControlChartResult ControlCharts::xbar_range_dual(
     }
 
     std::vector<double> ranges;
-    std::size_t subgroup_size = subgroups.front().size();
+    const std::size_t subgroup_size = subgroups.front().size();
     for (const auto& subgroup : subgroups) {
         if (subgroup.size() < 2) {
             add_error(result.diagnostics, "invalid_subgroup", "Each Xbar-R subgroup needs at least two values.");
             result.primary.diagnostics = result.diagnostics;
             return result;
         }
-        subgroup_size = subgroup.size();
+        if (subgroup.size() != subgroup_size) {
+            add_error(result.diagnostics, "unbalanced_design",
+                      "Xbar-R 要求各组样本量相等，不能用最后一组的 d2/A2 代替。");
+            result.primary.diagnostics = result.diagnostics;
+            return result;
+        }
+        if (!std::all_of(subgroup.begin(), subgroup.end(),
+                         [](double value) { return std::isfinite(value); })) {
+            add_error(result.diagnostics, "non_finite_input",
+                      "Xbar-R 子组不允许 NaN 或无穷观测。");
+            result.primary.diagnostics = result.diagnostics;
+            return result;
+        }
         const auto [minimum, maximum] =
             std::minmax_element(subgroup.begin(), subgroup.end());
         result.primary.plotted_values.push_back(mean(subgroup));
@@ -484,20 +590,21 @@ DualControlChartResult ControlCharts::xbar_range_dual(
         result.primary.plotted_values.size(), xbar - (*a2) * average_range);
     result.primary.upper_control_limit.assign(
         result.primary.plotted_values.size(), xbar + (*a2) * average_range);
-    mark_test1(result.primary);
+    apply_special_cause_tests(result.primary, ControlChartKind::xbar, special_causes);
 
     result.secondary.plotted_values = ranges;
     result.secondary.center_line.assign(ranges.size(), average_range);
     result.secondary.lower_control_limit.assign(ranges.size(), d3_limit.value_or(0.0) * average_range);
     result.secondary.upper_control_limit.assign(ranges.size(), (*d4) * average_range);
-    mark_test1(result.secondary);
+    apply_special_cause_tests(result.secondary, ControlChartKind::range, special_causes);
     result.primary.diagnostics.insert(
         result.primary.diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
     return result;
 }
 
 DualControlChartResult ControlCharts::xbar_s_dual(
-    const std::vector<std::vector<double>>& subgroups)
+    const std::vector<std::vector<double>>& subgroups,
+    const SpecialCauseSelection& special_causes)
 {
     DualControlChartResult result;
     if (subgroups.empty()) {
@@ -551,7 +658,7 @@ DualControlChartResult ControlCharts::xbar_s_dual(
         result.primary.plotted_values.size(), xbar - a3 * average_s);
     result.primary.upper_control_limit.assign(
         result.primary.plotted_values.size(), xbar + a3 * average_s);
-    mark_test1(result.primary);
+    apply_special_cause_tests(result.primary, ControlChartKind::xbar, special_causes);
 
     result.secondary.plotted_values = standard_deviations;
     result.secondary.center_line.assign(standard_deviations.size(), average_s);
@@ -559,7 +666,7 @@ DualControlChartResult ControlCharts::xbar_s_dual(
         standard_deviations.size(), b3 * average_s);
     result.secondary.upper_control_limit.assign(
         standard_deviations.size(), b4 * average_s);
-    mark_test1(result.secondary);
+    apply_special_cause_tests(result.secondary, ControlChartKind::stdev, special_causes);
     result.primary.diagnostics.insert(
         result.primary.diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
     return result;
@@ -567,7 +674,8 @@ DualControlChartResult ControlCharts::xbar_s_dual(
 
 ControlChartResult ControlCharts::p_chart(
     const std::vector<std::size_t>& defectives,
-    const std::vector<std::size_t>& inspected)
+    const std::vector<std::size_t>& inspected,
+    const SpecialCauseSelection& special_causes)
 {
     ControlChartResult result;
     if (defectives.empty() || defectives.size() != inspected.size()) {
@@ -591,17 +699,19 @@ ControlChartResult ControlCharts::p_chart(
     const double pbar = static_cast<double>(total_defectives) / static_cast<double>(total_inspected);
     for (const std::size_t sample_size : inspected) {
         const double sigma = std::sqrt(pbar * (1.0 - pbar) / static_cast<double>(sample_size));
+        result.point_sigma.push_back(sigma);
         result.center_line.push_back(pbar);
         result.lower_control_limit.push_back(std::max(0.0, pbar - 3.0 * sigma));
         result.upper_control_limit.push_back(std::min(1.0, pbar + 3.0 * sigma));
     }
-    mark_test1(result);
+    apply_special_cause_tests(result, ControlChartKind::attribute, special_causes);
     return result;
 }
 
 ControlChartResult ControlCharts::np_chart(
     const std::vector<std::size_t>& defectives,
-    const std::vector<std::size_t>& inspected)
+    const std::vector<std::size_t>& inspected,
+    const SpecialCauseSelection& special_causes)
 {
     ControlChartResult result;
     if (defectives.empty() || defectives.size() != inspected.size()) {
@@ -633,16 +743,18 @@ ControlChartResult ControlCharts::np_chart(
         const double deviation = 3.0 * std::sqrt(n * pbar * (1.0 - pbar));
         result.plotted_values.push_back(static_cast<double>(defectives[index]));
         result.center_line.push_back(center);
+        result.point_sigma.push_back(deviation / 3.0);
         result.lower_control_limit.push_back(std::max(0.0, center - deviation));
         result.upper_control_limit.push_back(center + deviation);
     }
-    mark_test1(result);
+    apply_special_cause_tests(result, ControlChartKind::attribute, special_causes);
     return result;
 }
 
 ControlChartResult ControlCharts::c_chart(
     const std::vector<std::size_t>& defects,
-    std::size_t constant_units)
+    std::size_t constant_units,
+    const SpecialCauseSelection& special_causes)
 {
     ControlChartResult result;
     if (defects.empty() || constant_units == 0) {
@@ -655,16 +767,18 @@ ControlChartResult ControlCharts::c_chart(
     for (const std::size_t value : defects) {
         result.plotted_values.push_back(static_cast<double>(value));
         result.center_line.push_back(center);
+        result.point_sigma.push_back(std::sqrt(center));
         result.lower_control_limit.push_back(std::max(0.0, center - deviation));
         result.upper_control_limit.push_back(center + deviation);
     }
-    mark_test1(result);
+    apply_special_cause_tests(result, ControlChartKind::attribute, special_causes);
     return result;
 }
 
 ControlChartResult ControlCharts::u_chart(
     const std::vector<std::size_t>& defects,
-    const std::vector<std::size_t>& units)
+    const std::vector<std::size_t>& units,
+    const SpecialCauseSelection& special_causes)
 {
     ControlChartResult result;
     if (defects.empty() || defects.size() != units.size()) {
@@ -687,10 +801,11 @@ ControlChartResult ControlCharts::u_chart(
         const double deviation = 3.0 * std::sqrt(ubar / n);
         result.plotted_values.push_back(static_cast<double>(defects[index]) / n);
         result.center_line.push_back(ubar);
+        result.point_sigma.push_back(std::sqrt(ubar / n));
         result.lower_control_limit.push_back(std::max(0.0, ubar - deviation));
         result.upper_control_limit.push_back(ubar + deviation);
     }
-    mark_test1(result);
+    apply_special_cause_tests(result, ControlChartKind::attribute, special_causes);
     return result;
 }
 
@@ -753,12 +868,9 @@ ControlChartResult ControlCharts::ewma_chart(
                                2.0 * static_cast<double>(index + 1))));
         result.lower_control_limit[index] = mean - options.limit_sigma * standard_error;
         result.upper_control_limit[index] = mean + options.limit_sigma * standard_error;
-        if (ewma < result.lower_control_limit[index]
-            || ewma > result.upper_control_limit[index]) {
-            result.test1_points.push_back(index);
-        }
+        result.point_sigma.push_back(standard_error);
     }
-    mark_special_cause_tests(result, {1});
+    apply_special_cause_tests(result, ControlChartKind::ewma, options.special_causes);
     return result;
 }
 
@@ -782,6 +894,8 @@ TimeWeightedControlChartResult ControlCharts::cusum_chart(
     result.primary.upper_control_limit.assign(count, options.h * options.sigma);
     result.secondary.lower_control_limit.assign(count, -options.h * options.sigma);
     result.secondary.upper_control_limit.assign(count, options.h * options.sigma);
+    result.primary.signal_direction.assign(count, 0);
+    result.secondary.signal_direction.assign(count, 0);
     double upper = options.fast_initial_response ? options.h * options.sigma / 2.0 : 0.0;
     double lower = options.fast_initial_response ? options.h * options.sigma / 2.0 : 0.0;
     for (std::size_t index = 0; index < count; ++index) {
@@ -793,9 +907,11 @@ TimeWeightedControlChartResult ControlCharts::cusum_chart(
         result.secondary.plotted_values[index] = -lower;
         if (upper > options.h * options.sigma) {
             result.upper_signal_points.push_back(index);
+            result.primary.signal_direction[index] = 1;
         }
         if (lower > options.h * options.sigma) {
             result.lower_signal_points.push_back(index);
+            result.secondary.signal_direction[index] = -1;
         }
     }
     return result;
@@ -839,6 +955,216 @@ std::vector<std::vector<double>> build_subgroups_by_label(
         }
     }
     return subgroups;
+}
+
+const std::vector<SpecialCauseTestSpec>& all_special_cause_tests()
+{
+    static const std::vector<SpecialCauseTestSpec> tests = {
+        {1, 3, "1 点超出 3σ", "1 点与中心线的距离严格超过 3σ 控制限。"},
+        {2, 9, "9 点同侧", "连续 9 点位于中心线同一侧；中心线上的点会打断该连续段。"},
+        {3, 6, "6 点趋势", "连续 6 点严格单调上升或下降；相等点会打断趋势。"},
+        {4, 14, "14 点交替", "连续 14 点相邻升降交替；零差分会打断模式。"},
+        {5, 2, "3 点中 2 点超 2σ", "连续 3 点中至少 2 点位于中心线同侧且超过 2σ。"},
+        {6, 1, "5 点中 4 点超 1σ", "连续 5 点中至少 4 点位于中心线同侧且超过 1σ。"},
+        {7, 15, "15 点在 1σ 内", "连续 15 点都落在中心线 ±1σ 以内，允许任一侧。"},
+        {8, 8, "8 点在 1σ 外", "连续 8 点都落在 ±1σ 以外，允许全部位于同一侧。"}
+    };
+    return tests;
+}
+
+std::vector<int> applicable_special_cause_tests(ControlChartKind kind)
+{
+    switch (kind) {
+    case ControlChartKind::moving_range:
+    case ControlChartKind::range:
+    case ControlChartKind::stdev:
+        return {1, 2, 3, 4};
+    case ControlChartKind::ewma:
+        return {1};
+    case ControlChartKind::cusum:
+        return {};
+    case ControlChartKind::individuals:
+    case ControlChartKind::xbar:
+    case ControlChartKind::attribute:
+    case ControlChartKind::laney:
+        break;
+    }
+    return {1, 2, 3, 4, 5, 6, 7, 8};
+}
+
+std::vector<int> default_special_cause_tests(ControlChartKind kind)
+{
+    return applicable_special_cause_tests(kind);
+}
+
+ControlChartKind control_chart_kind_from_name(const std::string& name)
+{
+    if (name == "moving_range" || name == "mr") {
+        return ControlChartKind::moving_range;
+    }
+    if (name == "xbar") {
+        return ControlChartKind::xbar;
+    }
+    if (name == "range" || name == "r") {
+        return ControlChartKind::range;
+    }
+    if (name == "stdev" || name == "s") {
+        return ControlChartKind::stdev;
+    }
+    if (name == "attribute" || name == "p" || name == "np" || name == "c" || name == "u") {
+        return ControlChartKind::attribute;
+    }
+    if (name == "laney") {
+        return ControlChartKind::laney;
+    }
+    if (name == "ewma") {
+        return ControlChartKind::ewma;
+    }
+    if (name == "cusum") {
+        return ControlChartKind::cusum;
+    }
+    return ControlChartKind::individuals;
+}
+
+std::string control_chart_kind_name(ControlChartKind kind)
+{
+    switch (kind) {
+    case ControlChartKind::moving_range:
+        return "moving_range";
+    case ControlChartKind::xbar:
+        return "xbar";
+    case ControlChartKind::range:
+        return "range";
+    case ControlChartKind::stdev:
+        return "stdev";
+    case ControlChartKind::attribute:
+        return "attribute";
+    case ControlChartKind::laney:
+        return "laney";
+    case ControlChartKind::ewma:
+        return "ewma";
+    case ControlChartKind::cusum:
+        return "cusum";
+    case ControlChartKind::individuals:
+        break;
+    }
+    return "individuals";
+}
+
+SpecialCauseSelection special_cause_selection_from_configuration(
+    const std::vector<int>& enabled_tests,
+    const std::string& policy)
+{
+    return SpecialCauseSelection{enabled_tests, policy};
+}
+
+std::vector<int> parse_special_cause_tests(const std::string& text)
+{
+    std::string normalized = text;
+    for (char& character : normalized) {
+        if (character == ',' || character == ';' || character == '+' ) {
+            character = ' ';
+        }
+    }
+    std::string lowered = normalized;
+    std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                   [](unsigned char character) {
+                       return static_cast<char>(std::tolower(character));
+                   });
+    if (lowered.find("none") != std::string::npos && lowered.find_first_of("12345678") == std::string::npos) {
+        return {};
+    }
+    std::vector<int> tests;
+    std::stringstream stream(normalized);
+    std::string token;
+    while (stream >> token) {
+        bool ok = !token.empty();
+        int value = 0;
+        for (const char character : token) {
+            if (character < '0' || character > '9') {
+                ok = false;
+                break;
+            }
+            value = value * 10 + (character - '0');
+        }
+        if (ok && value >= 1 && value <= 8
+            && std::find(tests.begin(), tests.end(), value) == tests.end()) {
+            tests.push_back(value);
+        }
+    }
+    std::sort(tests.begin(), tests.end());
+    return tests;
+}
+
+std::string format_special_cause_tests(const std::vector<int>& tests)
+{
+    if (tests.empty()) {
+        return "无";
+    }
+    std::ostringstream stream;
+    for (std::size_t index = 0; index < tests.size(); ++index) {
+        if (index > 0) {
+            stream << ", ";
+        }
+        stream << "Test " << tests[index];
+    }
+    return stream.str();
+}
+
+std::vector<int> resolve_special_cause_tests(
+    const SpecialCauseSelection& selection,
+    ControlChartKind kind,
+    std::vector<DiagnosticMessage>* diagnostics)
+{
+    const std::vector<int> applicable = applicable_special_cause_tests(kind);
+    std::vector<int> chosen;
+    if (selection.policy == "default_all_applicable" && selection.enabled_tests.empty()) {
+        chosen = applicable;
+    } else if (!selection.enabled_tests.empty()) {
+        chosen = selection.enabled_tests;
+    } else if (selection.policy == "explicit") {
+        chosen.clear();
+    } else if (selection.policy == "default_all_applicable") {
+        chosen = applicable;
+    } else {
+        chosen = {1};
+    }
+    std::vector<int> filtered;
+    std::vector<int> ignored;
+    for (const int test : chosen) {
+        if (std::find(applicable.begin(), applicable.end(), test) != applicable.end()) {
+            if (std::find(filtered.begin(), filtered.end(), test) == filtered.end()) {
+                filtered.push_back(test);
+            }
+        } else if (test >= 1 && test <= 8) {
+            ignored.push_back(test);
+        }
+    }
+    std::sort(filtered.begin(), filtered.end());
+    if (diagnostics != nullptr && !ignored.empty()) {
+        add_warning(
+            *diagnostics,
+            "test_not_applicable",
+            "已忽略不适用于此控制图的特殊原因测试：" + format_special_cause_tests(ignored)
+                + "。");
+    }
+    if (diagnostics != nullptr && kind == ControlChartKind::cusum) {
+        add_warning(
+            *diagnostics,
+            "cusum_signals_only",
+            "CUSUM 不使用 Tests 1–8，改用上/下侧累计和首次信号。");
+    }
+    return filtered;
+}
+
+void apply_special_cause_tests(
+    ControlChartResult& result,
+    ControlChartKind kind,
+    const SpecialCauseSelection& selection)
+{
+    const std::vector<int> enabled = resolve_special_cause_tests(
+        selection, kind, &result.diagnostics);
+    mark_special_cause_tests(result, enabled);
 }
 
 }  // namespace datalab::domain::statistics

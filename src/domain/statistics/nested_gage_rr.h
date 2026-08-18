@@ -18,12 +18,15 @@ struct NestedGageAnovaRow {
 
 struct NestedGageVarianceComponent {
     std::string source;
+    double raw_variance_component = 0.0;
     double variance_component = 0.0;
+    bool truncated = false;
     double standard_deviation = 0.0;
     double percent_contribution = 0.0;
     double study_variation = 0.0;
     double percent_study_variation = 0.0;
     double percent_tolerance = 0.0;
+    bool percent_tolerance_available = false;
 };
 
 struct NestedGageRrResult {
@@ -33,6 +36,9 @@ struct NestedGageRrResult {
     std::size_t replicate_count = 0;
     double tolerance = 0.0;
     double ndc = 0.0;
+    double study_var_multiplier = 6.0;
+    std::string method = "nested_anova";
+    bool ndc_available = false;
     std::vector<NestedGageAnovaRow> anova_rows;
     std::vector<NestedGageVarianceComponent> variance_components;
     std::vector<DiagnosticMessage> diagnostics;

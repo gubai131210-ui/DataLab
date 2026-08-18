@@ -48,9 +48,32 @@ double inverse_normal(double p)
 NormalProbabilityResult normal_probability_plot(
     const std::vector<double>& observations)
 {
+    std::vector<std::size_t> source_rows(observations.size());
+    std::iota(source_rows.begin(), source_rows.end(), 0);
+    return normal_probability_plot(observations, source_rows);
+}
+
+NormalProbabilityResult normal_probability_plot(
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows)
+{
     NormalProbabilityResult result;
-    result.ordered_values = observations;
-    std::sort(result.ordered_values.begin(), result.ordered_values.end());
+    std::vector<std::pair<double, std::size_t>> ordered;
+    const std::size_t count = std::min(observations.size(), source_rows.size());
+    ordered.reserve(count);
+    for (std::size_t index = 0; index < count; ++index) {
+        ordered.emplace_back(observations[index], source_rows[index]);
+    }
+    std::stable_sort(ordered.begin(), ordered.end(),
+                     [](const auto& left, const auto& right) {
+                         return left.first < right.first;
+                     });
+    result.ordered_values.reserve(ordered.size());
+    result.source_rows.reserve(ordered.size());
+    for (const auto& item : ordered) {
+        result.ordered_values.push_back(item.first);
+        result.source_rows.push_back(item.second);
+    }
     const std::size_t n = result.ordered_values.size();
     result.theoretical_quantiles.reserve(n);
     for (std::size_t index = 0; index < n; ++index) {

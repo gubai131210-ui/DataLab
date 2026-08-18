@@ -9,6 +9,8 @@
 namespace datalab::domain {
 
 bool is_missing_cell(const std::string& cell);
+bool parse_finite_number(const std::string& cell, double& value);
+void populate_data_table_contract(DataTable& table);
 
 struct ExtractedNumericColumn {
     std::string name;

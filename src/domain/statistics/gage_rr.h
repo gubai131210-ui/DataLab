@@ -18,12 +18,15 @@ struct GageAnovaRow {
 
 struct GageVarianceComponent {
     std::string source;
+    double raw_variance_component = 0.0;
     double variance_component = 0.0;
+    bool truncated = false;
     double standard_deviation = 0.0;
     double percent_contribution = 0.0;
     double study_variation = 0.0;
     double percent_study_variation = 0.0;
     double percent_tolerance = 0.0;
+    bool percent_tolerance_available = false;
 };
 
 struct GageRrResult {
@@ -32,6 +35,9 @@ struct GageRrResult {
     std::size_t replicate_count = 0;
     double tolerance = 0.0;
     double ndc = 0.0;
+    double study_var_multiplier = 6.0;
+    std::string method = "anova";
+    bool ndc_available = false;
     std::vector<GageAnovaRow> anova_rows;
     std::vector<GageVarianceComponent> variance_components;
     std::vector<DiagnosticMessage> diagnostics;

@@ -1,4 +1,5 @@
 #include "reporting/chart_coordinate_mapper.h"
+#include "reporting/chart_geometry.h"
 
 #include <QtTest/QtTest>
 
@@ -8,6 +9,7 @@ class ChartGeometryTest final : public QObject {
 private slots:
     void mapsDataToPlotAndBack();
     void zoomKeepsBoundsValid();
+    void usesExpandedParetoLabelArea();
 };
 
 void ChartGeometryTest::mapsDataToPlotAndBack()
@@ -34,6 +36,18 @@ void ChartGeometryTest::zoomKeepsBoundsValid()
     QVERIFY(mapper.x_max() < 10.0);
     QVERIFY(mapper.y_min() > 0.0);
     QVERIFY(mapper.y_max() < 100.0);
+}
+
+void ChartGeometryTest::usesExpandedParetoLabelArea()
+{
+    const QRectF normal = chart_geometry::plot_rect(QRectF(0.0, 0.0, 500.0, 400.0),
+                                                    ChartKind::Control);
+    const QRectF pareto = chart_geometry::plot_rect(QRectF(0.0, 0.0, 500.0, 400.0),
+                                                    ChartKind::Pareto);
+
+    QVERIFY(pareto.bottom() < normal.bottom());
+    QVERIFY(pareto.left() > normal.left());
+    QVERIFY(pareto.right() < normal.right());
 }
 
 QTEST_APPLESS_MAIN(ChartGeometryTest)

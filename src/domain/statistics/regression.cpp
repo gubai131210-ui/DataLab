@@ -21,6 +21,14 @@ void add_error(
     diagnostics.push_back({DiagnosticMessage::Severity::error, code, message});
 }
 
+void add_warning(
+    std::vector<DiagnosticMessage>& diagnostics,
+    const char* code,
+    const char* message)
+{
+    diagnostics.push_back({DiagnosticMessage::Severity::warning, code, message});
+}
+
 bool invert_matrix(const Matrix& input, Matrix& inverse)
 {
     const std::size_t size = input.size();
@@ -81,18 +89,24 @@ RegressionResult fit_linear_regression(
     const std::vector<double>& response,
     const std::vector<std::vector<double>>& predictors,
     const std::vector<std::string>& predictor_labels,
-    double confidence_level)
+    double confidence_level,
+    const std::vector<std::size_t>& source_rows)
 {
     RegressionResult result;
+    result.evidence.method_version = "2";
+    result.evidence.assumption_status = "not_verified";
+    result.evidence.confidence_level = confidence_level;
+    result.evidence.source_rows = source_rows;
     if (response.size() < 3 || predictors.empty()
         || predictors.size() != response.size()) {
         add_error(result.diagnostics, "invalid_regression_shape",
                   "回归至少需要三个观测、一个响应列和一个预测列。");
         return result;
     }
-    if (!(confidence_level > 0.0 && confidence_level < 1.0)) {
+    if (!std::isfinite(confidence_level)
+        || !(confidence_level > 0.0 && confidence_level < 1.0)) {
         add_error(result.diagnostics, "invalid_confidence_level",
-                  "置信水平必须大于 0 且小于 1。");
+                  "置信水平必须为 (0,1) 内的有限数。");
         return result;
     }
     const std::size_t predictor_count = predictors.front().size();
@@ -111,11 +125,17 @@ RegressionResult fit_linear_regression(
     }
     result.observation_count = response.size();
     result.predictor_count = predictor_count;
+    result.evidence.valid_count = response.size();
     const std::size_t parameter_count = predictor_count + 1;
-    if (result.observation_count <= parameter_count) {
-        add_error(result.diagnostics, "insufficient_error_degrees_of_freedom",
-                  "回归需要正的误差自由度。");
+    if (result.observation_count < parameter_count) {
+        add_error(result.diagnostics, "insufficient_data",
+                  "回归观测数必须不少于参数个数。");
         return result;
+    }
+    const bool inference_available = result.observation_count > parameter_count;
+    if (!inference_available) {
+        add_warning(result.diagnostics, "no_error_degrees_of_freedom",
+                    "误差自由度 N-p-1 ≤ 0，不输出 t、F 与 P。");
     }
 
     Matrix design(result.observation_count,
@@ -203,6 +223,7 @@ RegressionResult fit_linear_regression(
             * (response[row] - response_mean);
         result.error_sum_of_squares += residual * residual;
         RegressionObservation observation;
+        observation.source_row = row < source_rows.size() ? source_rows[row] : row;
         observation.response = response[row];
         observation.fitted = fitted;
         observation.residual = residual;
@@ -213,19 +234,25 @@ RegressionResult fit_linear_regression(
         - result.error_sum_of_squares;
     const double error_df = static_cast<double>(
         result.observation_count - parameter_count);
-    result.error_mean_square = result.error_sum_of_squares / error_df;
-    result.residual_standard_deviation = std::sqrt(result.error_mean_square);
-    result.regression_mean_square = result.regression_sum_of_squares
-        / static_cast<double>(predictor_count);
-    result.r_squared = result.total_sum_of_squares > 0.0
-        ? 1.0 - result.error_sum_of_squares / result.total_sum_of_squares : 0.0;
-    result.adjusted_r_squared = 1.0
-        - (1.0 - result.r_squared)
-            * static_cast<double>(result.observation_count - 1) / error_df;
-    result.f_statistic = result.error_mean_square > 0.0
-        ? result.regression_mean_square / result.error_mean_square : 0.0;
-    result.model_p_value = f_right_tail(
-        result.f_statistic, static_cast<double>(predictor_count), error_df);
+    result.evidence.degrees_of_freedom = error_df;
+    if (inference_available && error_df > 0.0) {
+        result.error_mean_square = result.error_sum_of_squares / error_df;
+        result.residual_standard_deviation = std::sqrt(result.error_mean_square);
+        result.regression_mean_square = result.regression_sum_of_squares
+            / static_cast<double>(predictor_count);
+        result.r_squared = result.total_sum_of_squares > 0.0
+            ? 1.0 - result.error_sum_of_squares / result.total_sum_of_squares : 0.0;
+        result.adjusted_r_squared = 1.0
+            - (1.0 - result.r_squared)
+                * static_cast<double>(result.observation_count - 1) / error_df;
+        result.f_statistic = result.error_mean_square > 0.0
+            ? result.regression_mean_square / result.error_mean_square : 0.0;
+        result.model_p_value = f_right_tail(
+            result.f_statistic, static_cast<double>(predictor_count), error_df);
+    } else {
+        result.r_squared = result.total_sum_of_squares > 0.0
+            ? 1.0 - result.error_sum_of_squares / result.total_sum_of_squares : 0.0;
+    }
 
     Matrix cross_product(parameter_count,
                          std::vector<double>(parameter_count, 0.0));
@@ -242,8 +269,9 @@ RegressionResult fit_linear_regression(
                   "无法计算回归系数协方差矩阵。");
         return result;
     }
-    const double critical = student_t_quantile(
-        0.5 + confidence_level / 2.0, error_df);
+    const double critical = inference_available
+        ? student_t_quantile(0.5 + confidence_level / 2.0, error_df)
+        : std::numeric_limits<double>::quiet_NaN();
     for (std::size_t index = 0; index < parameter_count; ++index) {
         RegressionCoefficient coefficient;
         coefficient.term = index == 0 ? "Constant"
@@ -251,27 +279,34 @@ RegressionResult fit_linear_regression(
                 ? "X" + std::to_string(index)
                 : predictor_labels[index - 1];
         coefficient.coefficient = coefficients[index];
-        coefficient.standard_error = std::sqrt(
-            std::max(0.0, result.error_mean_square * cross_inverse[index][index]));
-        coefficient.t_statistic = coefficient.standard_error > 0.0
-            ? coefficient.coefficient / coefficient.standard_error : 0.0;
-        coefficient.p_value = two_sided_p(coefficient.t_statistic, error_df);
-        coefficient.confidence_lower = coefficient.coefficient
-            - critical * coefficient.standard_error;
-        coefficient.confidence_upper = coefficient.coefficient
-            + critical * coefficient.standard_error;
+        if (inference_available) {
+            coefficient.standard_error = std::sqrt(
+                std::max(0.0, result.error_mean_square * cross_inverse[index][index]));
+            coefficient.t_statistic = coefficient.standard_error > 0.0
+                ? coefficient.coefficient / coefficient.standard_error : 0.0;
+            coefficient.p_value = two_sided_p(coefficient.t_statistic, error_df);
+            coefficient.confidence_lower = coefficient.coefficient
+                - critical * coefficient.standard_error;
+            coefficient.confidence_upper = coefficient.coefficient
+                + critical * coefficient.standard_error;
+        }
         if (index > 0) {
             coefficient.vif = cross_inverse[index][index]
                 * std::max(0.0, cross_product[index][index]);
+            if (coefficient.vif.has_value() && *coefficient.vif > 5.0) {
+                add_warning(result.diagnostics, "collinearity_investigation",
+                            "VIF>5 提示共线性调查，不会自动删除预测变量。");
+            }
         }
         result.coefficients.push_back(coefficient);
     }
     for (auto& observation : result.observations) {
         const double residual_scale = result.residual_standard_deviation
             * std::sqrt(std::max(1.0e-15, 1.0 - observation.leverage));
-        observation.standardized_residual = residual_scale > 0.0
+        observation.internally_standardized_residual = residual_scale > 0.0
             ? observation.residual / residual_scale : 0.0;
-        observation.studentized_residual = observation.standardized_residual;
+        observation.standardized_residual = observation.internally_standardized_residual;
+        observation.studentized_residual = observation.internally_standardized_residual;
         observation.cooks_distance = result.error_mean_square > 0.0
             ? observation.standardized_residual * observation.standardized_residual
                 * observation.leverage / (static_cast<double>(parameter_count)
@@ -356,6 +391,11 @@ RegressionResult fit_linear_regression(
         if (!observation.diagnostic_flags.empty()) {
             result.diagnostics_summary.flagged_observations.push_back(index);
         }
+        result.diagnostics_summary.residual_vs_fitted_x.push_back(observation.fitted);
+        result.diagnostics_summary.residual_vs_fitted_y.push_back(observation.residual);
+        result.diagnostics_summary.residual_vs_order_x.push_back(
+            static_cast<double>(index + 1));
+        result.diagnostics_summary.residual_vs_order_y.push_back(observation.residual);
     }
     return result;
 }

@@ -17,6 +17,11 @@ struct AgreementEstimate {
     double confidence_level = 0.95;
     double kappa_ci_low = 0.0;
     double kappa_ci_high = 0.0;
+    double expected_agreement = 0.0;
+    bool identifiable = true;
+    std::string method = "cohen_unweighted";
+    std::string variance_method = "simple_binomial";
+    std::string ci_method = "normal_approximation";
 };
 
 struct AttributeEvaluatorAgreement {

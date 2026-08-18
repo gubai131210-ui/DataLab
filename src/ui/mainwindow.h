@@ -61,4 +61,5 @@ private:
     QLineEdit* formula_bar_ = nullptr;
     CommandRegistry* commands_ = nullptr;
     QUndoStack* undo_stack_ = nullptr;
+    bool import_in_progress_ = false;
 };

@@ -42,6 +42,8 @@ By 变量：按分类水平分别计算上表。
 - IQR = `Q3 - Q1`
 - Range = `Maximum - Minimum`
 - Sum = `Σx_i`
+- Skewness 和 Excess Kurtosis 在 `n` 足够且样本方差大于零时使用有限样本修正；
+  `n` 不足或常量列显示为不可用，不填充 0。
 - 输出表同时回显 `N`、`N*` 和缺失处理口径。
 
 ## 相关分析
@@ -193,9 +195,11 @@ A²  = -n - (1/n) Σ_{i=1..n} [(2i-1) ln(F_i) + (2n+1-2i) ln(1-F_i)]
 ```
 
 其中 `Φ` 为标准正态 CDF。计算前对 `F_i` 做极小值裁剪以避免 `ln(0)`。
-DataLab 使用 Minitab 文档中的 Stephens 修正与分段近似求 p 值；当
-`p < 0.05` 时提示拒绝正态分布假设。`n < 8` 或 `s = 0` 时返回诊断，不给出
-虚假 p 值。
+DataLab 同时输出原始 `A²` 与 Stephens 修正 `A²*`，并用分段近似求 p 值。
+判定为 `reject` / `fail_to_reject` / `not_computed`：`p < alpha` 时拒绝正态假设；
+`p ≥ alpha` 时输出“未拒绝正态假设”，不得写成“数据服从正态分布”。
+契约：`n < 3` 或 `s = 0` 不计算 AD；`3 ≤ n < 8` 仍计算但发出 `sample_size_warning` /
+`assumption_not_verified`。默认 `alpha = 0.05`。p 值限制在 `[0,1]`。
 
 正态概率图默认使用 Blom 作图位置（代码中 `index` 从 0 起算，等价于 1-based 的
 `i - 0.375`）：
@@ -300,7 +304,16 @@ Laney 输出包含：`p̄/ū`、`Sigma Z`、`MR̄(Z)`、逐子组 `p_i/u_i`、`Z
 
 ## 正态过程能力
 
-规格限 LSL/USL/Target 由工程输入，不从样本推导。
+规格限 LSL/USL/Target 由工程输入，不从样本推导。每个存在的限必须为有限数。
+
+- 双侧规格要求 `LSL < USL`；`LSL = USL` 返回 `invalid_specification`，不输出指数。
+- 仅 LSL 时只计算 CPL/PPL；仅 USL 时只计算 CPU/PPU；另一侧保持空值。
+- Within/Overall sigma 必须有限且 `> 0`，禁止输出无限 Cp/Cpk/Pp/Ppk。
+- 观测先筛选有限值；观测 PPM 分母为有效 N；恰好等于规格限的值不计入超规。
+- Target 缺失不计算 Cpm；Target 非有限返回 `invalid_target`，不能静默跳过。
+- 领域层不假设过程已经稳定或正态，结果带 `assumption_status = not_verified`。
+- 诊断码包括 `invalid_specification`、`invalid_target`、`invalid_within_sigma`、
+  `invalid_overall_sigma`、`assumption_not_verified`。
 
 ## 过程能力 Sixpack
 
@@ -311,7 +324,7 @@ Sixpack 对个体数据同时展示 I 图、MR 图、能力直方图、正态概
 - 理论分位数为标准正态分布分位数 `z_i = Φ⁻¹(p_i)`。
 - 图中相关系数为 `corr(z_i, x_(i))`，用于辅助判断正态关系，不能替代正式正态性检验。
 - I 图的 `σ_within` 必须与能力分析的 Within StDev 使用同一 MR-bar/d2 估计。
-- 结论卡默认以 `Cpk/Ppk = 1.33` 作为基本能力提示阈值；实际放行仍应结合客户规范和行业要求。
+- 结论卡默认以 `Cpk/Ppk = 1.33` 作为调查提示阈值，不是已验证的过程合格结论。
 
 子组大小 = 1 时，`σ_within` 必须与同一数据的 I-MR 默认估计一致（`MR̄/d2`）。
 子组大小 > 1 时，`σ_within = R̄/d2`。
@@ -330,7 +343,7 @@ PPM（正态假设）：
 
 - 期望低于 LSL：`1e6 * Φ((LSL-mean)/sigma)`
 - 期望高于 USL：`1e6 * (1-Φ((USL-mean)/sigma))`
-- 观测 PPM：样本中超出规格的比例 × 1e6
+- 观测 PPM：有效样本中严格低于 LSL 或严格高于 USL 的比例 × 1e6。等于规格限不计超规。
 
 `Φ` 使用 `0.5 * (1 + erf(z / sqrt(2)))`。
 
@@ -352,8 +365,10 @@ Fisher 精确检验。列联表卡方输出 Pearson χ²、似然比 χ²、期�
 标准化残差、调整残差和单元贡献。期望频数小于 1 时不显示近似 P 值。
 
 ANOVA 后续比较输出每一对组均值差、标准误、同时置信区间、q 统计量和调整后
-P 值，并复用总体 ANOVA 的误差均方和误差自由度。当前实现对
-Studentized range 使用保守的多重 t 尾概率近似，并在诊断中明确回显。
+P 值，并复用总体 ANOVA 的误差均方和误差自由度。当前实现是
+`conservative_sidak_t_studentized_range_approximation`，不是精确 Studentized Range。
+区间包含 0 时不得标记为显著差异。输出回显族置信水平、个体置信水平、alpha、
+误差 DF 和 MSE。不平衡样本或误差 DF 不足时返回结构化诊断。
 
 ## 线性回归
 
@@ -368,10 +383,11 @@ R² = 1 - SSE/SST
 R²(adj) = 1 - [SSE/(n-p-1)]/[SST/(n-1)]
 ```
 
-实现使用 QR 分解求解系数并拒绝秩亏设计矩阵。输出包括系数、标准误、t、P、
-置信区间、VIF、S、R-sq、调整 R-sq、预测 R-sq、PRESS、模型 ANOVA、拟合值、
-残差、标准化残差、杠杆值和 Cook 距离。回归输入使用 complete-case，工作表
-原始行不修改。
+实现使用 QR 分解求解系数并拒绝秩亏设计矩阵。`error_df = N-p-1`；当
+`error_df ≤ 0` 时仍可给出系数点估计，但不输出 t/F/P。内部标准化残差为
+`e_i / (s√(1-h_ii))`；删除学生化残差使用 leave-one-out 方差。Durbin-Watson
+只按用户输入顺序计算，不静默按时间重排。VIF>5 只作为共线性调查提示，不自动删列。
+解释层不得只看 R² 或残差 AD p 值判定模型合格。
 
 ## Box-Cox 变换
 
@@ -393,7 +409,7 @@ DataLab 在 `[-5, 5]` 网格搜索使变换后样本标准差最小的 λ，并�
 - Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。
 - Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。
 - Test 7：连续 15 点均位于中心线 1σ 内。
-- Test 8：连续 8 点位于中心线两侧且没有点落在 1σ 内。
+- Test 8：连续 8 点均在中心线任一侧的 1σ 外（不要求上下交替）。
 
 每个测试独立保留失败点集；同一点触发多个测试时，图面仍显示最小测试编号，
 表格和悬停信息保留完整测试集合。
@@ -465,6 +481,10 @@ Study Var = 6 * SD
 %Tolerance = Study Var / (USL - LSL) * 100
 ndc = floor(1.41 * SD_part / SD_gage_rr)
 ```
+
+`ndc < 1` 时报告为 1；`ndc < 5` 只作为调查提示。负方差分量截断为 0 时保存
+截断前值并发出 `negative_variance_component`。公差为 NaN/无穷/负数返回
+`invalid_tolerance`；公差为 0 时不计算 %Tolerance。
 
 非平衡设计、组合缺失、重复次数不足或总变异为 0 时返回诊断。
 
@@ -633,7 +653,9 @@ CI = Kappa ± z_(1-alpha/2) * SE(Kappa)
 ```
 
 报告评估者内一致性、评估者间两两一致性以及与标准的一致性。空评级不进入
-分母，但缺失数量必须在诊断中显示。
+分母，但缺失数量必须在诊断中显示。`P_expected = 1` 时 Kappa 不可识别，不计算
+无限标准误。重复次数不一致返回 `unbalanced_replicates`，不静默截断。当前实现
+是未加权 Cohen Kappa；UI 不得宣称支持 weighted Kappa。临界值使用标准正态分位数。
 
 ## Holt-Winters 季节性预测
 
@@ -712,7 +734,11 @@ t_p = η[-ln(1-p)]^(1/β)
 ```
 
 指数分布是 `β=1` 的特例，`R(t)=exp(-t/η)`。删失观测只进入风险集，不计入
-失效数；寿命和删失指示列必须一一对应且寿命为正。两组 Kaplan-Meier 曲线的
+失效数。寿命必须为有限正数。事件列只接受明确的失效/删失编码（如 `1/0`、
+`fail/censored`）；`yes`、`unknown`、`2` 等未知值进入 `invalid_event_value`
+并关联原始 RowId，不得静默成为删失。同一时间多个失效一次性处理。全删失、
+无失效或最大观测为删失时给出不可估计原因。拟合结果回显 `converged`、
+迭代次数和参数边界命中。
 Log-rank 检验按每个失效时点比较观测失效数与风险集期望失效数：
 
 ```text

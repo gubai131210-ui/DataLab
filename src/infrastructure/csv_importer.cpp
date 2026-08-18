@@ -1,8 +1,9 @@
 #include "infrastructure/csv_importer.h"
 
+#include "domain/column_extract.h"
+
 #include <QFile>
 #include <QFileInfo>
-#include <QTextStream>
 
 #include <algorithm>
 
@@ -34,6 +35,38 @@ std::vector<std::string> split_line(const QString& line, QChar delimiter)
     return fields;
 }
 
+QStringList split_records(const QString& content)
+{
+    QStringList records;
+    QString record;
+    bool quoted = false;
+    for (int index = 0; index < content.size(); ++index) {
+        const QChar character = content.at(index);
+        if (character == '"') {
+            if (quoted && index + 1 < content.size() && content.at(index + 1) == '"') {
+                record += character;
+                record += content.at(++index);
+            } else {
+                quoted = !quoted;
+                record += character;
+            }
+        } else if ((character == '\n' || character == '\r') && !quoted) {
+            if (character == '\r' && index + 1 < content.size()
+                && content.at(index + 1) == '\n') {
+                ++index;
+            }
+            records.push_back(record);
+            record.clear();
+        } else {
+            record += character;
+        }
+    }
+    if (!record.isEmpty() || !records.isEmpty()) {
+        records.push_back(record);
+    }
+    return records;
+}
+
 }  // namespace
 
 std::optional<domain::DataTable> CsvImporter::import_file(
@@ -48,15 +81,16 @@ std::optional<domain::DataTable> CsvImporter::import_file(
         return std::nullopt;
     }
 
-    QTextStream stream(&file);
-    if (stream.atEnd()) {
+    const QString content = QString::fromUtf8(file.readAll());
+    const QStringList records = split_records(content);
+    if (records.isEmpty()) {
         if (error_message != nullptr) {
             *error_message = QStringLiteral("The CSV file is empty.");
         }
         return std::nullopt;
     }
 
-    QString header_line = stream.readLine();
+    QString header_line = records.front();
     if (!header_line.isEmpty() && header_line.front() == QChar(0xFEFF)) {
         header_line.remove(0, 1);
     }
@@ -79,8 +113,8 @@ std::optional<domain::DataTable> CsvImporter::import_file(
         }
     }
     std::size_t line_number = 2;
-    while (!stream.atEnd()) {
-        const QString line = stream.readLine();
+    for (int record_index = 1; record_index < records.size(); ++record_index) {
+        const QString& line = records.at(record_index);
         if (!line.trimmed().isEmpty()) {
             auto row = split_line(line, delimiter);
             if (row.size() != table.columns.size()) {
@@ -94,6 +128,9 @@ std::optional<domain::DataTable> CsvImporter::import_file(
         }
         ++line_number;
     }
+    domain::populate_data_table_contract(table);
+    table.import_metadata.schema_version = 1;
+    table.import_metadata.warnings = table.import_warnings;
     return table;
 }
 

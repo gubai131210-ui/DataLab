@@ -72,6 +72,33 @@ std::optional<DescriptiveStatisticsResult> DescriptiveStatistics::calculate(
     result.variance = observations.size() >= 2
         ? static_cast<double>(squared_deviations / (observations.size() - 1))
         : 0.0;
+    if (observations.size() >= 3 && population_variance > 0.0L) {
+        long double third_moment = 0.0L;
+        for (const double observation : observations) {
+            const long double deviation =
+                static_cast<long double>(observation) - result.mean;
+            third_moment += deviation * deviation * deviation;
+        }
+        const long double n = static_cast<long double>(observations.size());
+        const long double m3 = third_moment / n;
+        const long double m2 = population_variance;
+        result.skewness = static_cast<double>(
+            std::sqrt(n * (n - 1.0L)) / (n - 2.0L) * m3 / std::pow(m2, 1.5L));
+    }
+    if (observations.size() >= 4 && population_variance > 0.0L) {
+        long double fourth_moment = 0.0L;
+        for (const double observation : observations) {
+            const long double deviation =
+                static_cast<long double>(observation) - result.mean;
+            fourth_moment += deviation * deviation * deviation * deviation;
+        }
+        const long double n = static_cast<long double>(observations.size());
+        const long double m4 = fourth_moment / n;
+        const long double m2 = population_variance;
+        result.excess_kurtosis = static_cast<double>(
+            ((n - 1.0L) / ((n - 2.0L) * (n - 3.0L)))
+                * ((n + 1.0L) * (m4 / (m2 * m2) - 3.0L) + 6.0L));
+    }
 
     if (observations.size() >= 2) {
         const long double sample_variance =

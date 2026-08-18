@@ -26,7 +26,8 @@ struct DualSubgroupChartSpec {
     // xbar_s 的 parameter_summary 用"子组大小 = value_or(5)"，xbar_range 用"子组数 = 实际数量"
     bool use_config_subgroup_size_in_summary = false;
     std::function<domain::statistics::DualControlChartResult(
-        const std::vector<std::vector<double>>&)> compute;
+        const std::vector<std::vector<double>>&,
+        const domain::statistics::SpecialCauseSelection&)> compute;
     // 返回错误消息；空串表示通过。空函数表示不做额外校验。
     std::function<std::string(const std::vector<std::vector<double>>&)> validate = {};
 };
@@ -61,7 +62,8 @@ struct AttributeChartSpec {
         std::string&)> assemble;
     std::function<domain::statistics::ControlChartResult(
         const std::vector<std::size_t>&,
-        const std::vector<std::size_t>&)> compute;
+        const std::vector<std::size_t>&,
+        const domain::statistics::SpecialCauseSelection&)> compute;
 };
 
 domain::OutputPage attribute_chart_page(
