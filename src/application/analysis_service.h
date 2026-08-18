@@ -117,6 +117,10 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage response_optimization(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage nested_gage_rr(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
@@ -173,6 +177,14 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration,
         std::vector<double>* capability_indices = nullptr);
+
+    static domain::OutputPage distribution_identification(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage between_within_capability(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
 
     static domain::OutputPage capability_sixpack(
         const domain::DataTable& table,

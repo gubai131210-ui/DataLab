@@ -3,26 +3,92 @@
 
 #include "reporting/chart_coordinate_mapper.h"
 #include "reporting/chart_geometry.h"
+#include "reporting/chart_interaction.h"
 #include "reporting/chart_renderer.h"
 
 #include <QContextMenuEvent>
 #include <QApplication>
+#include <QBuffer>
 #include <QClipboard>
 #include <QFileDialog>
+#include <QGuiApplication>
+#include <QImage>
+#include <QIODevice>
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QLineF>
 #include <QMenu>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QScreen>
 #include <QStringList>
 #include <QToolTip>
 #include <QWheelEvent>
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
+
+namespace {
+
+chart_interaction::Element element_for_hit(const ChartModel& model, const std::size_t index)
+{
+    using chart_interaction::ElementKind;
+    switch (model.kind) {
+    case ChartKind::Histogram:
+    case ChartKind::Pareto:
+        return {ElementKind::Bar, index};
+    case ChartKind::BoxPlot:
+        return {ElementKind::Box, index};
+    case ChartKind::Correlation:
+    case ChartKind::Heatmap:
+    case ChartKind::Matrix:
+        return {ElementKind::Cell, index};
+    case ChartKind::Pie:
+        return {ElementKind::Slice, index};
+    case ChartKind::Parallel:
+        return {ElementKind::ParallelObservation, index};
+    case ChartKind::Contour:
+        return {ElementKind::ContourCell, index};
+    case ChartKind::Control:
+    case ChartKind::Probability:
+    case ChartKind::Scatter:
+    case ChartKind::Interval:
+    case ChartKind::Bubble:
+    case ChartKind::Ecdf:
+    case ChartKind::Marginal:
+    case ChartKind::TimeSeries:
+    case ChartKind::Area:
+    default:
+        return {ElementKind::Point, index};
+    }
+}
+
+QPoint clamp_tooltip_position(const QPoint position, const QString& text)
+{
+    QScreen* screen = QGuiApplication::screenAt(position);
+    if (screen == nullptr) {
+        return position + QPoint(12, 18);
+    }
+    const QRect bounds = screen->availableGeometry();
+    const int estimated_width = std::min(
+        360, std::max(180, static_cast<int>(text.size()) * 7));
+    const int estimated_height = std::min(
+        180, 28 + static_cast<int>(text.count(QLatin1Char('\n'))) * 20);
+    QPoint result = position + QPoint(12, 18);
+    if (result.x() + estimated_width > bounds.right()) {
+        result.setX(position.x() - estimated_width - 12);
+    }
+    if (result.y() + estimated_height > bounds.bottom()) {
+        result.setY(position.y() - estimated_height - 12);
+    }
+    return result;
+}
+
+}  // namespace
 
 AnalysisChartWidget::AnalysisChartWidget(QWidget* parent)
     : QWidget(parent)
@@ -31,6 +97,16 @@ AnalysisChartWidget::AnalysisChartWidget(QWidget* parent)
     setAutoFillBackground(true);
     setMouseTracking(true);
     setContextMenuPolicy(Qt::DefaultContextMenu);
+    setFocusPolicy(Qt::StrongFocus);
+    tooltip_timer_.setSingleShot(true);
+    tooltip_timer_.setInterval(180);
+    connect(&tooltip_timer_, &QTimer::timeout, this, [this]() {
+        if (!pending_tooltip_.isEmpty()) {
+            QToolTip::showText(
+                clamp_tooltip_position(pending_tooltip_position_, pending_tooltip_),
+                pending_tooltip_, this);
+        }
+    });
 }
 
 void AnalysisChartWidget::set_data(
@@ -45,14 +121,16 @@ void AnalysisChartWidget::set_data(
     model_.upper = upper;
     model_.source_rows.resize(values.size());
     std::iota(model_.source_rows.begin(), model_.source_rows.end(), 0);
-    fit_to_window();
+    model_.view.zoom_factor = 1.0;
+    model_.view.pan_offset = {};
     update();
 }
 
 void AnalysisChartWidget::set_model(const ChartModel& model)
 {
     model_ = model;
-    fit_to_window();
+    model_.view.zoom_factor = 1.0;
+    model_.view.pan_offset = {};
     update();
 }
 
@@ -76,6 +154,11 @@ void AnalysisChartWidget::set_selected_source_rows(const std::vector<std::size_t
     update();
 }
 
+void AnalysisChartWidget::set_editor_enabled(const bool enabled)
+{
+    editor_enabled_ = enabled;
+}
+
 void AnalysisChartWidget::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event)
@@ -92,6 +175,8 @@ void AnalysisChartWidget::paintEvent(QPaintEvent* event)
 void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
 {
     if (panning_) {
+        tooltip_timer_.stop();
+        QToolTip::hideText();
         const QPoint current = event->position().toPoint();
         model_.view.pan_offset += current - last_mouse_position_;
         last_mouse_position_ = current;
@@ -99,6 +184,8 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
         return;
     }
     if (selecting_) {
+        tooltip_timer_.stop();
+        QToolTip::hideText();
         selection_end_ = event->position().toPoint();
         update();
         return;
@@ -107,8 +194,16 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
     if (point.has_value()) {
         const std::size_t index = *point;
         model_.view.hovered_point = index;
+        emit element_selected(chart_interaction::element_path(
+            model_, element_for_hit(model_, index)));
         QString text;
-        if (model_.kind == ChartKind::Control && index < model_.values.size()) {
+        if (model_.kind == ChartKind::Parallel) {
+            text = chart_interaction::tooltip_text(
+                model_, {chart_interaction::HitKind::ParallelObservation, index});
+        } else if (model_.kind == ChartKind::Contour) {
+            text = chart_interaction::tooltip_text(
+                model_, {chart_interaction::HitKind::ContourCell, index});
+        } else if (model_.kind == ChartKind::Control && index < model_.values.size()) {
             const QString source = index < model_.source_rows.size()
                 ? QString::number(static_cast<qulonglong>(model_.source_rows[index] + 1))
                 : QStringLiteral("-");
@@ -171,7 +266,8 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
             text = QStringLiteral("%1\n中位数: %2")
                 .arg(model_.box_labels[index])
                 .arg(index < model_.box_median.size() ? model_.box_median[index] : 0.0);
-        } else if ((model_.kind == ChartKind::Scatter || model_.kind == ChartKind::Bubble)
+        } else if ((model_.kind == ChartKind::Scatter || model_.kind == ChartKind::Bubble
+                    || model_.kind == ChartKind::Marginal)
                    && index < model_.values.size()
                    && index < model_.x_values.size()) {
             text = QStringLiteral("点 %1\nX: %2\nY: %3")
@@ -186,6 +282,12 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
             if (model_.kind == ChartKind::Bubble && index < model_.bubble_sizes.size()) {
                 text += QStringLiteral("\n气泡大小: ")
                     + QString::number(model_.bubble_sizes[index], 'g', 8);
+            }
+            if (index < model_.point_labels.size() && !model_.point_labels[index].isEmpty()) {
+                text += QStringLiteral("\n标签: ") + model_.point_labels[index];
+            }
+            if (index < model_.point_groups.size() && !model_.point_groups[index].isEmpty()) {
+                text += QStringLiteral("\n分组: ") + model_.point_groups[index];
             }
         } else if (model_.kind == ChartKind::Interval
                    && index < model_.categories.size()
@@ -259,8 +361,18 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
                 .arg(model_.values[index], 0, 'g', 8)
                 .arg(model_.x_values[index], 0, 'g', 8);
         }
-        QToolTip::showText(event->globalPosition().toPoint(), text, this);
+        if (text.isEmpty()) {
+            tooltip_timer_.stop();
+            pending_tooltip_.clear();
+            QToolTip::hideText();
+        } else {
+            pending_tooltip_ = text;
+            pending_tooltip_position_ = event->globalPosition().toPoint();
+            tooltip_timer_.start();
+        }
     } else {
+        tooltip_timer_.stop();
+        pending_tooltip_.clear();
         model_.view.hovered_point.reset();
         QToolTip::hideText();
     }
@@ -290,6 +402,8 @@ void AnalysisChartWidget::mousePressEvent(QMouseEvent* event)
                 std::unique(model_.view.selected_points.begin(), model_.view.selected_points.end()),
                 model_.view.selected_points.end());
             emit_selected_rows();
+            emit element_selected(chart_interaction::element_path(
+                model_, element_for_hit(model_, *point)));
             update();
         }
     }
@@ -302,18 +416,62 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
     } else if (event->button() == Qt::LeftButton) {
         if ((selection_end_ - selection_start_).manhattanLength() > 8
             && !model_.values.empty()) {
-            // 与 hit_test 相同的映射（数据范围 + zoom + pan），框选在缩放/平移下不错位。
             const QRectF plot = chart_geometry::plot_rect(rect(), model_.kind);
             const auto x_at = [&](std::size_t index) {
                 return model_.x_values.size() == model_.values.size()
                     ? model_.x_values[index] : static_cast<double>(index);
             };
+            double y_min = *std::min_element(model_.values.cbegin(), model_.values.cend());
+            double y_max = *std::max_element(model_.values.cbegin(), model_.values.cend());
+            if (qFuzzyCompare(y_min, y_max)) {
+                y_min -= 1.0;
+                y_max += 1.0;
+            }
+            const double y_padding = (y_max - y_min) * 0.08;
+            double x_min = x_at(0);
+            double x_max = std::max(x_at(0) + 1.0, x_at(model_.values.size() - 1));
+            if (model_.x_min.has_value() && std::isfinite(*model_.x_min)) {
+                x_min = *model_.x_min;
+            }
+            if (model_.x_max.has_value() && std::isfinite(*model_.x_max)) {
+                x_max = *model_.x_max;
+            }
+            if (model_.y_min.has_value() && std::isfinite(*model_.y_min)) {
+                y_min = *model_.y_min;
+            } else {
+                y_min -= y_padding;
+            }
+            if (model_.y_max.has_value() && std::isfinite(*model_.y_max)) {
+                y_max = *model_.y_max;
+            } else {
+                y_max += y_padding;
+            }
             ChartCoordinateMapper mapper(plot);
-            mapper.set_data_range(
-                x_at(0), std::max(x_at(0) + 1.0, x_at(model_.values.size() - 1)),
-                0.0, 1.0);
+            mapper.set_data_range(x_min, std::max(x_min + 1.0, x_max), y_min, y_max);
             mapper.zoom(model_.view.zoom_factor, plot.center());
             mapper.pan(model_.view.pan_offset);
+            if (event->modifiers() & Qt::ShiftModifier) {
+                const QPointF first = mapper.to_data(selection_start_);
+                const QPointF second = mapper.to_data(selection_end_);
+                model_.x_min = std::min(first.x(), second.x());
+                model_.x_max = std::max(first.x(), second.x());
+                model_.y_min = std::min(first.y(), second.y());
+                model_.y_max = std::max(first.y(), second.y());
+                if (!(*model_.x_min < *model_.x_max)) {
+                    const double mid = 0.5 * (*model_.x_min + *model_.x_max);
+                    model_.x_min = mid - 1.0;
+                    model_.x_max = mid + 1.0;
+                }
+                if (!(*model_.y_min < *model_.y_max)) {
+                    const double mid = 0.5 * (*model_.y_min + *model_.y_max);
+                    model_.y_min = mid - 1.0;
+                    model_.y_max = mid + 1.0;
+                }
+                model_.view.zoom_factor = 1.0;
+                model_.view.pan_offset = {};
+                emit display_properties_changed(model_);
+                update();
+            } else {
             const auto to_index = [&](int x) {
                 const double data_x =
                     mapper.to_data(QPointF(static_cast<double>(x), 0.0)).x();
@@ -331,6 +489,7 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
             }
             emit_selected_rows();
             update();
+            }
         }
         selecting_ = false;
     }
@@ -338,6 +497,11 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
 
 void AnalysisChartWidget::keyPressEvent(QKeyEvent* event)
 {
+    if (event->matches(QKeySequence::Copy)) {
+        copy_to_clipboard();
+        event->accept();
+        return;
+    }
     if (event->key() == Qt::Key_Space) {
         space_pressed_ = true;
         event->accept();
@@ -370,7 +534,16 @@ void AnalysisChartWidget::wheelEvent(QWheelEvent* event)
 
 void AnalysisChartWidget::contextMenuEvent(QContextMenuEvent* event)
 {
+    event->accept();
     QMenu menu(this);
+    QAction* element_edit_action = nullptr;
+    const auto element = hit_test(event->pos());
+    if (element.has_value()) {
+        const chart_interaction::Element selected_element =
+            element_for_hit(model_, *element);
+        emit element_selected(chart_interaction::element_path(model_, selected_element));
+        element_edit_action = menu.addAction(QStringLiteral("编辑当前对象…"));
+    }
     QAction* edit_action = menu.addAction(QStringLiteral("编辑图形…"));
     QAction* save_action = menu.addAction(QStringLiteral("保存图形为 PNG…"));
     QAction* copy_action = menu.addAction(QStringLiteral("复制图形"));
@@ -378,34 +551,32 @@ void AnalysisChartWidget::contextMenuEvent(QContextMenuEvent* event)
     QAction* fit_action = menu.addAction(QStringLiteral("适合窗口"));
     QAction* clear_action = menu.addAction(QStringLiteral("清除刷选"));
     QAction* chosen = menu.exec(event->globalPos());
-    if (chosen == edit_action) {
+    if (chosen == edit_action || chosen == element_edit_action) {
         edit_graph();
     } else if (chosen == save_action) {
         save_graph();
     } else if (chosen == copy_action) {
-        copy_graph();
+        copy_to_clipboard();
     } else if (chosen == fit_action) {
         fit_to_window();
         update();
     } else if (chosen == clear_action) {
         model_.view.selected_points.clear();
+        model_.view.hovered_point.reset();
+        tooltip_timer_.stop();
+        pending_tooltip_.clear();
+        QToolTip::hideText();
         emit_selected_rows();
         update();
     }
 }
 
-void AnalysisChartWidget::mouseDoubleClickEvent(QMouseEvent* event)
-{
-    if (event->button() == Qt::LeftButton
-        && event->position().y() < 50.0) {
-        edit_graph();
-        return;
-    }
-    QWidget::mouseDoubleClickEvent(event);
-}
-
 void AnalysisChartWidget::edit_graph()
 {
+    if (editor_enabled_) {
+        emit edit_requested();
+        return;
+    }
     GraphPropertiesDialog dialog(model_, this);
     if (dialog.exec() == QDialog::Accepted) {
         model_ = dialog.model();
@@ -422,19 +593,47 @@ void AnalysisChartWidget::save_graph()
         QString(),
         QStringLiteral("PNG 图片 (*.png)"));
     if (!path.isEmpty()) {
-        grab().save(path, "PNG");
+        const QPixmap pixmap = ChartRenderer::render_to_pixmap(
+            model_, size(), devicePixelRatioF());
+        pixmap.save(path, "PNG");
     }
+}
+
+void AnalysisChartWidget::copy_to_clipboard()
+{
+    const QPixmap pixmap = ChartRenderer::render_to_pixmap(
+        model_, size(), devicePixelRatioF());
+    if (pixmap.isNull()) {
+        return;
+    }
+    const QImage image = pixmap.toImage();
+    QByteArray png;
+    QBuffer buffer(&png);
+    buffer.open(QIODevice::WriteOnly);
+    image.save(&buffer, "PNG");
+    auto* mime = new QMimeData();
+    mime->setImageData(image);
+    if (!png.isEmpty()) {
+        mime->setData(QStringLiteral("image/png"), png);
+    }
+    QApplication::clipboard()->setMimeData(mime);
 }
 
 void AnalysisChartWidget::copy_graph()
 {
-    QApplication::clipboard()->setPixmap(grab());
+    copy_to_clipboard();
 }
 
 void AnalysisChartWidget::fit_to_window()
 {
     model_.view.zoom_factor = 1.0;
     model_.view.pan_offset = {};
+    model_.x_min.reset();
+    model_.x_max.reset();
+    model_.y_min.reset();
+    model_.y_max.reset();
+    emit display_properties_changed(model_);
+    update();
 }
 
 void AnalysisChartWidget::emit_selected_rows()
@@ -491,6 +690,63 @@ std::optional<std::size_t> AnalysisChartWidget::hit_test(const QPoint& position)
         const auto index = static_cast<long long>(std::llround(mapper.to_data(position).x()));
         if (index >= 0 && index < static_cast<long long>(model_.box_median.size())) {
             return static_cast<std::size_t>(index);
+        }
+        return std::nullopt;
+    }
+    if (model_.kind == ChartKind::Parallel && !model_.matrix_values.empty()) {
+        const std::size_t axes = model_.matrix_labels.size();
+        if (axes < 2) {
+            return std::nullopt;
+        }
+        const QRectF parallel_plot = chart_geometry::plot_rect(rect(), model_.kind);
+        std::optional<std::size_t> result;
+        double distance = 14.0;
+        for (std::size_t row = 0; row < model_.matrix_values.size(); ++row) {
+            double row_distance = std::numeric_limits<double>::max();
+            for (std::size_t axis = 0;
+                 axis < axes && axis < model_.matrix_values[row].size(); ++axis) {
+                const double minimum = axis < model_.lower.size() ? model_.lower[axis] : 0.0;
+                const double maximum = axis < model_.upper.size() ? model_.upper[axis] : 1.0;
+                const double value = model_.matrix_values[row][axis];
+                if (!std::isfinite(value) || maximum <= minimum) {
+                    continue;
+                }
+                const double fraction = std::clamp(
+                    (value - minimum) / (maximum - minimum), 0.0, 1.0);
+                const double x = parallel_plot.left()
+                    + parallel_plot.width() * static_cast<double>(axis)
+                        / static_cast<double>(axes - 1);
+                row_distance = std::min(
+                    row_distance, QLineF(QPointF(x, parallel_plot.bottom()
+                        - fraction * parallel_plot.height()), position).length());
+            }
+            if (row_distance < distance) {
+                distance = row_distance;
+                result = row;
+            }
+        }
+        return result;
+    }
+    if (model_.kind == ChartKind::Contour
+        && model_.contour_x.size() >= 2 && model_.contour_y.size() >= 2
+        && model_.matrix_values.size() >= model_.contour_y.size()) {
+        ChartCoordinateMapper mapper(plot);
+        mapper.set_data_range(model_.contour_x.front(), model_.contour_x.back(),
+                              model_.contour_y.front(), model_.contour_y.back());
+        const QPointF data = mapper.to_data(position);
+        const auto column = static_cast<long long>(
+            std::upper_bound(model_.contour_x.cbegin(), model_.contour_x.cend(), data.x())
+            - model_.contour_x.cbegin()) - 1;
+        const auto row = static_cast<long long>(
+            std::upper_bound(model_.contour_y.cbegin(), model_.contour_y.cend(), data.y())
+            - model_.contour_y.cbegin()) - 1;
+        const long long columns = static_cast<long long>(model_.contour_x.size() - 1);
+        const long long rows = static_cast<long long>(model_.contour_y.size() - 1);
+        if (row >= 0 && row < rows && column >= 0 && column < columns
+            && static_cast<std::size_t>(row) < model_.matrix_values.size()
+            && static_cast<std::size_t>(column) < model_.matrix_values[row].size()) {
+            return static_cast<std::size_t>(row) * static_cast<std::size_t>(columns)
+                + static_cast<std::size_t>(column);
         }
         return std::nullopt;
     }

@@ -7,6 +7,8 @@
 #include <vector>
 
 class AnalysisChartWidget;
+class QLabel;
+class QResizeEvent;
 
 class OutputWorkspace final : public QTabWidget {
     Q_OBJECT
@@ -25,9 +27,17 @@ public:
 signals:
     void rows_selected(const std::vector<std::size_t>& rows);
     void page_title_changed(const QString& id, const QString& title);
+    void page_closed(const QString& id);
+    void pages_changed();
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     bool eventFilter(QObject* watched, QEvent* event) override;
+    void close_page_at(int index);
+    void update_empty_state();
 
     std::vector<datalab::domain::OutputPage> pages_;
+    QLabel* empty_label_ = nullptr;
 };

@@ -1,9 +1,12 @@
 #include "domain/statistics/gage_rr.h"
 
+#include "domain/statistics/hypothesis_tests.h"
+
 #include <algorithm>
 #include <cmath>
 #include <map>
 #include <numeric>
+#include <optional>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -69,6 +72,9 @@ GageRrResult crossed_gage_rr(
     GageRrResult result;
     result.tolerance = tolerance;
     result.method = "anova";
+    result.evidence.method_version = "2";
+    result.evidence.assumption_status = "not_verified";
+    result.design_balanced = true;
     if (!std::isfinite(tolerance) || tolerance < 0.0) {
         add_error(result.diagnostics, "invalid_tolerance",
                   "公差必须为有限非负数；NaN、无穷或负数不可用。");
@@ -116,6 +122,11 @@ GageRrResult crossed_gage_rr(
             if (cell.values.size() != expected_replicates) {
                 add_error(result.diagnostics, "unbalanced_gage_design",
                           "每个零件×操作员组合必须具有相同的重复次数。");
+                result.design_balanced = false;
+                result.rules.push_back({
+                    "design_balance", "triggered",
+                    "零件×操作员单元重复次数不一致。", {},
+                    "交叉设计需要平衡重复后才能解释方差分量。"});
                 return result;
             }
         }
@@ -179,14 +190,41 @@ GageRrResult crossed_gage_rr(
         ? ss_interaction / static_cast<double>(df_interaction) : 0.0;
     const double ms_repeatability = ss_repeatability
         / static_cast<double>(df_repeatability);
+    const double f_part = ms_interaction > 0.0 ? ms_part / ms_interaction : 0.0;
+    const double f_operator = ms_interaction > 0.0 ? ms_operator / ms_interaction : 0.0;
+    const double f_interaction = ms_repeatability > 0.0
+        ? ms_interaction / ms_repeatability : 0.0;
+    const std::optional<double> p_part = ms_interaction > 0.0
+        ? std::optional<double>(f_right_tail(
+              f_part, static_cast<double>(df_part),
+              static_cast<double>(df_interaction)))
+        : std::nullopt;
+    const std::optional<double> p_operator = ms_interaction > 0.0
+        ? std::optional<double>(f_right_tail(
+              f_operator, static_cast<double>(df_operator),
+              static_cast<double>(df_interaction)))
+        : std::nullopt;
+    const std::optional<double> p_interaction = ms_repeatability > 0.0
+        ? std::optional<double>(f_right_tail(
+              f_interaction, static_cast<double>(df_interaction),
+              static_cast<double>(df_repeatability)))
+        : std::nullopt;
     result.anova_rows = {
-        {"Part", df_part, ss_part, ms_part,
-         ms_interaction > 0.0 ? ms_part / ms_interaction : 0.0},
-        {"Operator", df_operator, ss_operator, ms_operator,
-         ms_interaction > 0.0 ? ms_operator / ms_interaction : 0.0},
+        {"Part", df_part, ss_part, ms_part, f_part, p_part},
+        {"Operator", df_operator, ss_operator, ms_operator, f_operator, p_operator},
         {"Part * Operator", df_interaction, ss_interaction, ms_interaction,
-         ms_repeatability > 0.0 ? ms_interaction / ms_repeatability : 0.0},
-        {"Repeatability", df_repeatability, ss_repeatability, ms_repeatability, 0.0}};
+         f_interaction, p_interaction},
+        {"Repeatability", df_repeatability, ss_repeatability, ms_repeatability, 0.0,
+         std::nullopt}};
+    result.interaction_p_value = p_interaction;
+    result.interaction_retained = true;
+    result.interaction_reduction_recommended =
+        p_interaction.has_value() && *p_interaction > 0.25;
+    if (result.interaction_reduction_recommended) {
+        add_warning(result.diagnostics, "interaction_pooling_investigation",
+                    "Part×Operator 交互 p>0.25，传统 AIAG 流程可考虑将交互并入重复性；"
+                    "当前结果保留完整交互模型，不自动缩减。");
+    }
     const double raw_repeatability = ms_repeatability;
     const double raw_interaction = (ms_interaction - ms_repeatability)
         / static_cast<double>(expected_replicates);
@@ -201,8 +239,17 @@ GageRrResult crossed_gage_rr(
     const double reproducibility = interaction + operator_variance;
     const double gage_rr = repeatability + reproducibility;
     const double total = gage_rr + part_variance;
+    result.negative_variance_truncated =
+        raw_repeatability < 0.0 || raw_interaction < 0.0
+        || raw_operator < 0.0 || raw_part < 0.0;
     result.variance_components.push_back(make_component(
         "Repeatability", raw_repeatability, total, tolerance,
+        result.study_var_multiplier, result.diagnostics));
+    result.variance_components.push_back(make_component(
+        "Operator", raw_operator, total, tolerance,
+        result.study_var_multiplier, result.diagnostics));
+    result.variance_components.push_back(make_component(
+        "Operator * Part", raw_interaction, total, tolerance,
         result.study_var_multiplier, result.diagnostics));
     result.variance_components.push_back(make_component(
         "Reproducibility", reproducibility, total, tolerance,
@@ -233,6 +280,38 @@ GageRrResult crossed_gage_rr(
     if (total == 0.0) {
         add_error(result.diagnostics, "zero_total_variation",
                   "所有测量值相同，无法估计 Gage R&R 方差分量。");
+    }
+    result.evidence.valid_count = measurements.size();
+    result.rules.push_back({
+        "design_balance", "not_triggered",
+        "交叉设计单元重复次数平衡。", {},
+        "平衡设计是 ANOVA 方差分量解释的前提。"});
+    result.rules.push_back({
+        "interaction_model",
+        result.interaction_reduction_recommended ? "triggered" : "not_triggered",
+        result.interaction_reduction_recommended
+            ? "交互项 p>0.25，可考虑缩减，但当前保留完整模型。"
+            : "当前保留 Part×Operator 交互模型。",
+        {},
+        "交互是否缩减必须回显；本实现不自动并入重复性。"});
+    result.rules.push_back({
+        "negative_variance",
+        result.negative_variance_truncated ? "triggered" : "not_triggered",
+        result.negative_variance_truncated
+            ? "存在负方差分量，已截断为 0，并保留原始估计。"
+            : "方差分量原始估计均非负。",
+        {},
+        "截断后的分量用于 %Contribution；解释时同时查看原始值。"});
+    result.rules.push_back({
+        "percent_metrics", "not_triggered",
+        "%Contribution 基于方差，%Study Var 基于标准差，口径不同。",
+        {},
+        "不要把 %Contribution 与 %Study Var 当成同一个百分比。"});
+    if (tolerance <= 0.0) {
+        result.rules.push_back({
+            "invalid_tolerance", "triggered",
+            "未提供有效公差，%Tolerance 不可用。", {},
+            "只有有限正公差才能计算 %Tolerance。"});
     }
     return result;
 }

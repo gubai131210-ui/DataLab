@@ -443,6 +443,16 @@ LeveneTestResult levene_two_variances(
     TestAlternative alternative)
 {
     return robust_test(first, second, confidence_level, alternative,
+                       VarianceRobustMethod::brown_forsythe_median);
+}
+
+LeveneTestResult levene_mean_two_variances(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    double confidence_level,
+    TestAlternative alternative)
+{
+    return robust_test(first, second, confidence_level, alternative,
                        VarianceRobustMethod::levene_mean);
 }
 
@@ -454,6 +464,86 @@ LeveneTestResult brown_forsythe_two_variances(
 {
     return robust_test(first, second, confidence_level, alternative,
                        VarianceRobustMethod::brown_forsythe_median);
+}
+
+LeveneTestResult levene_k_groups(
+    const std::vector<std::vector<double>>& groups,
+    double confidence_level,
+    VarianceRobustMethod method)
+{
+    LeveneTestResult result;
+    result.method = method;
+    result.group_count = groups.size();
+    result.confidence_level = confidence_level;
+    if (!valid_confidence(confidence_level)) {
+        add_error(result.diagnostics, "invalid_confidence_level",
+                  "置信水平必须大于 0 且小于 1。");
+        return result;
+    }
+    if (groups.size() < 2) {
+        add_error(result.diagnostics, "insufficient_groups",
+                  "Levene 检验至少需要两个有效组。");
+        return result;
+    }
+    std::vector<std::vector<double>> deviations;
+    deviations.reserve(groups.size());
+    std::size_t total = 0;
+    for (const auto& group : groups) {
+        std::vector<double> values;
+        if (!finite_observations(group, values, result.diagnostics) || values.size() < 2) {
+            add_error(result.diagnostics, "insufficient_observations",
+                      "Levene 检验要求每组至少有两个有效观测。");
+            return result;
+        }
+        const double center = group_center(values, method);
+        std::vector<double> group_deviations;
+        group_deviations.reserve(values.size());
+        for (const double value : values) {
+            group_deviations.push_back(std::abs(value - center));
+        }
+        total += group_deviations.size();
+        deviations.push_back(std::move(group_deviations));
+    }
+    result.total_count = total;
+    std::vector<double> group_means;
+    double grand = 0.0;
+    for (const auto& group : deviations) {
+        const double mean = std::accumulate(group.cbegin(), group.cend(), 0.0)
+            / static_cast<double>(group.size());
+        group_means.push_back(mean);
+        grand += mean * static_cast<double>(group.size());
+    }
+    grand /= static_cast<double>(total);
+    double between = 0.0;
+    double within = 0.0;
+    for (std::size_t index = 0; index < deviations.size(); ++index) {
+        between += static_cast<double>(deviations[index].size())
+            * (group_means[index] - grand) * (group_means[index] - grand);
+        for (const double value : deviations[index]) {
+            within += (value - group_means[index]) * (value - group_means[index]);
+        }
+    }
+    result.numerator_degrees_of_freedom = static_cast<double>(groups.size() - 1);
+    result.denominator_degrees_of_freedom = static_cast<double>(
+        total - groups.size());
+    if (within == 0.0) {
+        if (between == 0.0) {
+            result.f_statistic = 0.0;
+            result.p_value = 1.0;
+            result.p_value_two_sided = 1.0;
+        } else {
+            add_error(result.diagnostics, "zero_within_variance",
+                      "绝对偏差的组内平方和为 0，无法计算有限 F 统计量。");
+        }
+        return result;
+    }
+    result.f_statistic = (between / result.numerator_degrees_of_freedom)
+        / (within / result.denominator_degrees_of_freedom);
+    result.p_value = f_right_tail(
+        result.f_statistic, result.numerator_degrees_of_freedom,
+        result.denominator_degrees_of_freedom);
+    result.p_value_two_sided = result.p_value;
+    return result;
 }
 
 }  // namespace datalab::domain::statistics

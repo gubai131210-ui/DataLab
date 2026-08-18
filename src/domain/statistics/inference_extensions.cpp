@@ -1,11 +1,13 @@
 #include "domain/statistics/inference_extensions.h"
 
+#include "domain/statistics/hypothesis_tests.h"
 #include "domain/statistics/normal_distribution.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <string>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -336,6 +338,13 @@ TukeyResult tukey_multiple_comparisons(
     }
     add_warning(result.diagnostics, "tukey_studentized_range_approximation",
                 "当前 Tukey 调整使用 Studentized range 的保守 t 分布近似。");
+    result.rules.push_back({
+        "family_error_rate", "not_triggered",
+        "Tukey 同时置信水平 = "
+            + std::to_string(result.family_confidence_level)
+            + "；显著性由同时置信区间是否包含 0 决定。",
+        {},
+        "不要把逐比较 alpha 当成家族错误率。"});
     return result;
 }
 

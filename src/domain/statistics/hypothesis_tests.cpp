@@ -2,6 +2,8 @@
 
 #include "domain/statistics/descriptive_statistics.h"
 #include "domain/statistics/normal_distribution.h"
+#include "domain/statistics/normality_test.h"
+#include "domain/statistics/variance_tests.h"
 
 #include <algorithm>
 #include <cmath>
@@ -358,6 +360,10 @@ AnovaResult one_way_anova(
     if (result.error_degrees_of_freedom == 0 || result.error_sum_of_squares == 0.0) {
         add_error(result.diagnostics, "zero_error_variance",
                   "组内误差平方和为 0，无法计算有限 F 统计量。");
+        result.rules.push_back({
+            "estimability", "triggered",
+            "误差自由度或组内平方和为 0，不输出伪造 F/P。", {},
+            "增加组内重复或检查是否所有观测完全相同。"});
         return result;
     }
     result.between_mean_square = result.between_sum_of_squares
@@ -369,6 +375,52 @@ AnovaResult one_way_anova(
         result.f_statistic,
         static_cast<double>(result.between_degrees_of_freedom),
         static_cast<double>(result.error_degrees_of_freedom));
+    result.evidence.method_version = "2";
+    result.evidence.valid_count = result.total_count;
+    result.evidence.degrees_of_freedom =
+        static_cast<double>(result.error_degrees_of_freedom);
+    result.evidence.assumption_status = "not_verified";
+    result.residuals.reserve(result.total_count);
+    result.fitted.reserve(result.total_count);
+    for (std::size_t index = 0; index < groups.size(); ++index) {
+        for (const double value : groups[index]) {
+            result.fitted.push_back(result.groups[index].mean);
+            result.residuals.push_back(value - result.groups[index].mean);
+        }
+    }
+    const auto residual_normality = normality_test(result.residuals);
+    result.residual_normality_p = residual_normality.p_value;
+    result.assumptions.push_back({
+        "residual_normality",
+        residual_normality.decision == "reject" ? "evidence_against"
+            : residual_normality.decision == "fail_to_reject" ? "no_evidence_against"
+            : "not_computed",
+        residual_normality.anderson_darling, residual_normality.p_value,
+        "ANOVA 残差正态性只能拒绝或未拒绝假设，不能证明组内误差正态。"});
+    const auto levene = levene_k_groups(groups);
+    result.levene_p_value = levene.p_value;
+    const std::string homogeneity = !levene.p_value.has_value()
+        ? "not_computed"
+        : *levene.p_value < 0.05 ? "evidence_against" : "no_evidence_against";
+    result.assumptions.push_back({
+        "homogeneity", homogeneity, levene.f_statistic, levene.p_value,
+        "Levene 检验只作为方差齐性调查证据，不能单独决定模型是否可用。"});
+    if (homogeneity == "evidence_against"
+        || residual_normality.decision == "reject") {
+        result.evidence.assumption_status = "evidence_against";
+    }
+    result.rules.push_back({
+        "estimability", "not_triggered",
+        "误差自由度大于 0，F/P 可计算。", {},
+        "总体 F 显著只说明至少一组均值不同，需要多重比较。"});
+    result.rules.push_back({
+        "homogeneity",
+        homogeneity == "evidence_against" ? "triggered" : "not_triggered",
+        homogeneity == "evidence_against"
+            ? "Levene 检验提供了组方差不同的证据。"
+            : "当前 Levene 检验未提供组方差不同的证据。",
+        {},
+        "方差不齐时应结合图形和非参数替代方法，而不是直接宣称 ANOVA 无效。"});
     return result;
 }
 

@@ -1,6 +1,7 @@
 #include "ui/page_renderer.h"
 
 #include "ui/analysis_chart_widget.h"
+#include "ui/graph_properties_panel.h"
 #include "reporting/chart_adapter.h"
 
 #include <QFile>
@@ -15,6 +16,7 @@
 #include <QLabel>
 #include <QObject>
 #include <QRegularExpression>
+#include <QSplitter>
 #include <QTableWidget>
 #include <QTextStream>
 #include <QVBoxLayout>
@@ -238,11 +240,50 @@ QWidget* build_page_widget(
     for (std::size_t plot_index = 0; plot_index < page.plots.size(); ++plot_index) {
         const auto& plot = page.plots[plot_index];
         auto* chart = new AnalysisChartWidget(container);
-        chart->set_model(chart_model_from_plot(plot));
+        const ChartModel chart_model = chart_model_from_plot(plot);
+        chart->set_model(chart_model);
+        chart->set_editor_enabled(options.interactive_charts);
         chart->setMinimumHeight(280);
         chart->setStyleSheet(QStringLiteral(
             "background:#ffffff; border:1px solid #d6e1e5; border-radius:8px;"));
+        QWidget* chart_content = chart;
+        QSplitter* chart_splitter = nullptr;
+        GraphPropertiesPanel* properties_panel = nullptr;
         if (options.interactive_charts) {
+            chart_splitter = new QSplitter(Qt::Horizontal, container);
+            chart_splitter->setChildrenCollapsible(false);
+            chart_splitter->addWidget(chart);
+            properties_panel = new GraphPropertiesPanel(chart_model, chart_splitter);
+            properties_panel->setVisible(false);
+            chart_splitter->addWidget(properties_panel);
+            chart_splitter->setStretchFactor(0, 1);
+            chart_splitter->setStretchFactor(1, 0);
+            chart_content = chart_splitter;
+            QObject::connect(
+                chart, &AnalysisChartWidget::edit_requested, chart,
+                [chart_splitter, properties_panel]() {
+                    properties_panel->setVisible(true);
+                    chart_splitter->setSizes({chart_splitter->width() - 340, 340});
+                    properties_panel->setFocus();
+                });
+            QObject::connect(
+                chart, &AnalysisChartWidget::element_selected, properties_panel,
+                &GraphPropertiesPanel::set_selected_path);
+            QObject::connect(
+                properties_panel, &GraphPropertiesPanel::close_requested,
+                properties_panel, [chart_splitter, properties_panel]() {
+                    properties_panel->setVisible(false);
+                    chart_splitter->setSizes({chart_splitter->width(), 0});
+                });
+            QObject::connect(
+                properties_panel, &GraphPropertiesPanel::model_changed, chart,
+                [chart, handler = options.on_display_properties_changed, plot_index](
+                    const ChartModel& model) {
+                    chart->set_model(model);
+                    if (handler) {
+                        handler(plot_index, model);
+                    }
+                });
             if (options.on_rows_selected) {
                 QObject::connect(chart, &AnalysisChartWidget::rows_selected, chart,
                                  [handler = options.on_rows_selected](
@@ -260,10 +301,10 @@ QWidget* build_page_widget(
             }
         }
         if (plot_grid != nullptr) {
-            plot_grid->addWidget(chart, static_cast<int>(plot_index / 2),
+            plot_grid->addWidget(chart_content, static_cast<int>(plot_index / 2),
                                  static_cast<int>(plot_index % 2));
         } else {
-            layout->addWidget(chart);
+            layout->addWidget(chart_content);
         }
     }
     layout->addStretch();

@@ -28,6 +28,9 @@ struct ImportMetadata {
     std::string sheet_name;
     std::size_t sheet_index = 0;
     std::size_t original_row_count = 0;
+    std::size_t column_count = 0;
+    std::string dataset_id;
+    std::string imported_at;
     std::vector<std::string> warnings;
 };
 
@@ -88,6 +91,7 @@ struct InferenceConfiguration {
     double logistic_tolerance = 1.0e-8;
     std::optional<std::size_t> variance_first_column;
     std::optional<std::size_t> variance_second_column;
+    std::optional<std::size_t> variance_group_column;
     std::optional<double> hypothesized_variance;
     std::string variance_test_method = "f";
     std::string variance_alternative = "two_sided";
@@ -145,6 +149,12 @@ struct DoeConfiguration {
     std::size_t block_count = 1;
     bool randomize = false;
     std::uint64_t random_seed = 0;
+    std::string optimization_goal = "maximize";
+    std::optional<double> optimization_lower;
+    std::optional<double> optimization_upper;
+    std::optional<double> optimization_target;
+    double optimization_weight = 1.0;
+    double optimization_confidence = 0.95;
 };
 
 struct MsaConfiguration {
@@ -160,6 +170,8 @@ struct MsaConfiguration {
     std::optional<std::size_t> attribute_appraiser_column;
     std::optional<std::size_t> attribute_standard_column;
     std::string attribute_agreement_method = "kappa";
+    std::string kappa_weight_scheme = "none";
+    bool ratings_are_ordinal = false;
     std::optional<std::size_t> reference_column;
     std::optional<std::size_t> time_column;
     std::optional<double> reference_value;
@@ -171,6 +183,7 @@ struct ReliabilityConfiguration {
     std::optional<std::size_t> event_column;
     std::optional<std::size_t> group_column;
     std::string model = "kaplan_meier";
+    std::vector<double> percentile_levels = {10.0, 50.0, 90.0};
 };
 
 struct PowerConfiguration {
@@ -220,6 +233,8 @@ struct GraphConfiguration {
 struct AnalysisConfiguration {
     std::string analysis_name;
     std::string chart_type;
+    std::string capability_method = "normal";
+    std::string nonnormal_distribution = "weibull";
     DataSelection selection;
     SpecificationLimits specifications;
     std::vector<std::size_t> excluded_rows;
@@ -344,6 +359,7 @@ struct StatisticTable {
 };
 
 struct PlotSpec {
+    int schema_version = 1;
     PlotKind kind = PlotKind::control;
     std::string title;
     std::string x_axis_title;
@@ -354,6 +370,9 @@ struct PlotSpec {
     bool show_legend = true;
     double line_width = 1.8;
     int legend_font_size = 8;
+    int title_font_size = 11;
+    int axis_font_size = 9;
+    std::string theme_preset = "default";
     std::string grid_color = "#e3e7eb";
     PlotSeriesStyle value_style{
         true, "#1565c0", {}, PlotLineStyle::solid,
@@ -410,12 +429,33 @@ struct PlotSpec {
     std::vector<double> contour_levels;
     std::optional<double> color_min;
     std::optional<double> color_max;
+    std::optional<double> y_min;
+    std::optional<double> y_max;
+    std::optional<double> x_min;
+    std::optional<double> x_max;
+    std::string data_region_fill;
 };
 
 struct InterpretationSection {
     std::string heading;
     std::vector<std::string> bullets;
     DiagnosticMessage::Severity severity = DiagnosticMessage::Severity::info;
+};
+
+struct AssumptionCheck {
+    std::string name;
+    std::string status = "not_verified";
+    std::optional<double> statistic;
+    std::optional<double> p_value;
+    std::string evidence_summary;
+};
+
+struct RuleEvidence {
+    std::string id;
+    std::string status = "not_applicable";
+    std::string message;
+    std::vector<RowId> related_rows;
+    std::string suggested_action;
 };
 
 struct CapabilityFacts {
@@ -425,6 +465,8 @@ struct CapabilityFacts {
     std::optional<double> z_bench;
     std::string assumption_status = "not_verified";
     std::string specification_mode;
+    std::string method;
+    std::string johnson_family;
 };
 
 struct RegressionFacts {
@@ -432,6 +474,28 @@ struct RegressionFacts {
     std::optional<double> residual_normality_p;
     std::size_t influential_count = 0;
     std::string assumption_status = "not_verified";
+    std::size_t outlier_count = 0;
+    std::size_t high_leverage_count = 0;
+    std::optional<double> max_vif;
+    std::optional<double> durbin_watson;
+    std::optional<double> error_degrees_of_freedom;
+    bool rank_deficient = false;
+    std::vector<AssumptionCheck> assumptions;
+    std::vector<RuleEvidence> rules;
+};
+
+struct AnovaFacts {
+    std::optional<double> p_value;
+    std::size_t error_degrees_of_freedom = 0;
+    bool estimable = true;
+    std::size_t not_estimable_term_count = 0;
+    std::vector<std::string> significant_terms;
+    std::optional<double> family_confidence_level;
+    std::size_t tukey_significant_pairs = 0;
+    std::string tukey_method;
+    std::string assumption_status = "not_verified";
+    std::vector<AssumptionCheck> assumptions;
+    std::vector<RuleEvidence> rules;
 };
 
 struct SpcFacts {
@@ -451,16 +515,108 @@ struct MsaFacts {
     std::optional<double> p_value;
     std::optional<double> cgk;
     std::optional<double> tolerance_percent;
+    std::optional<double> ndc;
+    bool ndc_available = false;
+    bool design_balanced = true;
+    bool interaction_retained = true;
+    std::optional<double> interaction_p_value;
+    bool interaction_reduction_recommended = false;
+    bool negative_variance_truncated = false;
+    std::optional<double> gage_percent_study_variation;
+    std::optional<double> gage_percent_contribution;
+    bool ratings_are_ordinal = false;
+    bool kendall_available = false;
+    std::optional<double> kendall_w;
+    std::optional<double> kendall_w_p;
+    std::optional<double> kendall_tau;
+    std::optional<double> kendall_tau_p;
+    std::string assumption_status = "not_verified";
+    std::vector<RuleEvidence> rules;
 };
 
 struct ReliabilityFacts {
     std::optional<double> shape;
     std::optional<std::size_t> censored_count;
+    std::optional<std::size_t> failure_count;
+    std::optional<std::size_t> valid_count;
+    std::optional<double> median_life;
+    bool identifiable = false;
+    bool converged = false;
+    std::string not_computed_reason;
+    std::string event_encoding = "failure_suspension";
+    std::string distribution;
+    std::optional<double> location;
+    std::optional<double> scale;
+    std::optional<double> threshold;
+    std::vector<RuleEvidence> rules;
 };
 
 struct ForecastFacts {
     std::optional<double> mape;
     std::optional<double> mase;
+    std::optional<double> rolling_origin_mape;
+    std::optional<double> rolling_origin_mase;
+};
+
+struct DescriptiveFacts {
+    std::size_t n = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> mean;
+    std::optional<double> standard_deviation;
+};
+
+struct ChiSquareFacts {
+    std::optional<double> statistic;
+    std::optional<double> p_value;
+    std::optional<double> degrees_of_freedom;
+    bool expected_count_warning = false;
+};
+
+struct NonparametricFacts {
+    std::string method;
+    std::optional<double> statistic;
+    std::optional<double> p_value;
+    bool tie_correction = false;
+    bool continuity_correction = true;
+    std::string approximation = "normal";
+    bool small_sample_warning = false;
+    std::optional<double> effect_size;
+    std::optional<double> p_value_unadjusted;
+};
+
+struct LogisticFacts {
+    bool converged = false;
+    bool complete_separation = false;
+    std::optional<double> hosmer_lemeshow_statistic;
+    std::optional<double> hosmer_lemeshow_p;
+    std::optional<std::size_t> hosmer_lemeshow_df;
+    std::size_t hosmer_lemeshow_groups = 0;
+    std::string hosmer_lemeshow_status = "not_computed";
+    std::size_t high_leverage_count = 0;
+};
+
+struct PcaFacts {
+    std::string mode = "covariance";
+    std::size_t retained_component_count = 0;
+    std::size_t anomaly_count = 0;
+    std::size_t observation_count = 0;
+    std::optional<double> t2_limit;
+    std::optional<double> q_limit;
+    bool converged = false;
+};
+
+struct VarianceFacts {
+    std::string method;
+    std::optional<double> statistic;
+    std::optional<double> p_value;
+    std::size_t group_count = 0;
+};
+
+struct DistributionIdentificationFacts {
+    std::string best_distribution;
+    std::optional<double> best_anderson_darling;
+    std::optional<double> best_p_value;
+    bool did_not_change_capability_defaults = true;
 };
 
 struct PowerFacts {
@@ -514,6 +670,14 @@ struct InterpretationFacts {
     std::optional<PowerFacts> power;
     std::optional<ParetoFacts> pareto;
     std::optional<RegressionFacts> regression;
+    std::optional<AnovaFacts> anova;
+    std::optional<DescriptiveFacts> descriptive;
+    std::optional<ChiSquareFacts> chi_square;
+    std::optional<NonparametricFacts> nonparametric;
+    std::optional<LogisticFacts> logistic;
+    std::optional<DistributionIdentificationFacts> distribution_identification;
+    std::optional<PcaFacts> pca;
+    std::optional<VarianceFacts> variance;
 };
 
 struct OutputPage {

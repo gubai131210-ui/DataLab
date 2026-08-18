@@ -132,6 +132,104 @@ std::string term_name(std::size_t index, const std::vector<std::string>& labels)
     return labels.empty() ? "X" + std::to_string(index) : labels[index - 1];
 }
 
+double chi_square_right_tail(double value, double degrees_of_freedom)
+{
+    if (!(value >= 0.0) || !(degrees_of_freedom > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    const double shape = degrees_of_freedom / 2.0;
+    const double x = value / 2.0;
+    if (x == 0.0) {
+        return 1.0;
+    }
+    double term = 1.0 / shape;
+    double sum = term;
+    for (int index = 1; index < 200; ++index) {
+        term *= x / (shape + index);
+        sum += term;
+        if (std::abs(term) < std::abs(sum) * 1.0e-14) {
+            break;
+        }
+    }
+    if (x < shape + 1.0) {
+        return std::clamp(1.0 - sum * std::exp(-x + shape * std::log(x)
+            - std::lgamma(shape)), 0.0, 1.0);
+    }
+    double continued = 1.0;
+    double factor = 1.0;
+    for (int index = 1; index < 200; ++index) {
+        factor *= (shape - index) / x;
+        continued += factor;
+        if (std::abs(factor) < std::abs(continued) * 1.0e-14) {
+            break;
+        }
+    }
+    return std::clamp(std::exp(-x + shape * std::log(x)
+        - std::lgamma(shape)) * continued, 0.0, 1.0);
+}
+
+void compute_hosmer_lemeshow(LogisticRegressionResult& result)
+{
+    result.hosmer_lemeshow_status = "not_computed";
+    if (result.observations.size() < 20 || result.complete_separation || !result.converged) {
+        result.hosmer_lemeshow_status = "not_computed";
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                       "hosmer_lemeshow_not_computed",
+                       "Hosmer–Lemeshow 在样本量不足、未收敛或完全分离时不计算。");
+        return;
+    }
+    std::vector<std::size_t> order(result.observations.size());
+    for (std::size_t index = 0; index < order.size(); ++index) {
+        order[index] = index;
+    }
+    std::sort(order.begin(), order.end(), [&](std::size_t first, std::size_t second) {
+        return result.observations[first].probability
+            < result.observations[second].probability;
+    });
+    const std::size_t groups = 10;
+    const std::size_t count = result.observations.size();
+    double statistic = 0.0;
+    std::size_t used_groups = 0;
+    for (std::size_t group = 0; group < groups; ++group) {
+        const std::size_t start = group * count / groups;
+        const std::size_t end = (group + 1) * count / groups;
+        if (end <= start) {
+            continue;
+        }
+        double observed = 0.0;
+        double expected = 0.0;
+        for (std::size_t index = start; index < end; ++index) {
+            const LogisticObservation& observation = result.observations[order[index]];
+            observed += static_cast<double>(observation.response);
+            expected += observation.probability;
+        }
+        const double n = static_cast<double>(end - start);
+        const double mean_p = expected / n;
+        const double variance = n * mean_p * (1.0 - mean_p);
+        if (variance <= 1.0e-12) {
+            add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                           "hosmer_lemeshow_not_computed",
+                           "Hosmer–Lemeshow 分组期望方差过小，检验不可用。");
+            return;
+        }
+        const double residual = observed - expected;
+        statistic += residual * residual / variance;
+        ++used_groups;
+    }
+    if (used_groups < 6) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                       "hosmer_lemeshow_not_computed",
+                       "Hosmer–Lemeshow 有效组数不足，检验不可用。");
+        return;
+    }
+    result.hosmer_lemeshow_statistic = statistic;
+    result.hosmer_lemeshow_groups = used_groups;
+    result.hosmer_lemeshow_df = used_groups - 2;
+    result.hosmer_lemeshow_p = chi_square_right_tail(
+        statistic, static_cast<double>(used_groups) - 2.0);
+    result.hosmer_lemeshow_status = "computed";
+}
+
 }  // namespace
 
 LogisticRegressionResult fit_logistic_regression(
@@ -291,6 +389,7 @@ LogisticRegressionResult fit_logistic_regression(
         }
     }
     if (boundary_count > 0 && boundary_matches_response) {
+        result.complete_separation = true;
         add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
                        "complete_separation",
                        "预测变量完全分离了 0/1 响应，极大似然估计可能不存在。");
@@ -340,6 +439,28 @@ LogisticRegressionResult fit_logistic_regression(
             + critical * coefficient.standard_error;
         result.coefficients.push_back(coefficient);
     }
+    for (std::size_t row = 0; row < result.observations.size(); ++row) {
+        const double weight = std::max(
+            kProbabilityFloor,
+            result.observations[row].probability
+                * (1.0 - result.observations[row].probability));
+        double quadratic = 0.0;
+        for (std::size_t first = 0; first < parameter_count; ++first) {
+            double inner = 0.0;
+            for (std::size_t second = 0; second < parameter_count; ++second) {
+                inner += covariance[first][second] * design[row][second];
+            }
+            quadratic += design[row][first] * inner;
+        }
+        result.observations[row].leverage = weight * quadratic;
+    }
+    const double leverage_threshold =
+        2.0 * static_cast<double>(predictor_count + 1)
+        / static_cast<double>(response.size());
+    for (auto& observation : result.observations) {
+        observation.high_leverage = observation.leverage > leverage_threshold;
+    }
+    compute_hosmer_lemeshow(result);
     const double parameter_count_value = static_cast<double>(parameter_count);
     result.aic = -2.0 * result.log_likelihood + 2.0 * parameter_count_value;
     result.bic = -2.0 * result.log_likelihood

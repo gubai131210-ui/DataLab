@@ -51,6 +51,19 @@ struct RegressionDiagnosticsSummary {
     std::vector<double> residual_vs_order_x;
     std::vector<double> residual_vs_order_y;
     std::string durbin_watson_order = "input_order";
+    std::vector<AssumptionCheck> assumptions;
+    std::vector<RuleEvidence> rules;
+};
+
+struct RegressionAnovaEffect {
+    std::string term;
+    std::optional<double> sequential_sum_of_squares;
+    std::optional<double> adjusted_sum_of_squares;
+    std::size_t degrees_of_freedom = 1;
+    std::optional<double> mean_square;
+    std::optional<double> f_statistic;
+    std::optional<double> p_value;
+    bool estimable = true;
 };
 
 struct RegressionResult {
@@ -71,6 +84,7 @@ struct RegressionResult {
     std::optional<double> model_p_value;
     QualityEvidence evidence;
     std::vector<RegressionCoefficient> coefficients;
+    std::vector<RegressionAnovaEffect> anova_effects;
     std::vector<RegressionObservation> observations;
     RegressionDiagnosticsSummary diagnostics_summary;
     std::vector<DiagnosticMessage> diagnostics;

@@ -22,6 +22,7 @@ struct MsaType1Result {
     double cgk = 0.0;
     double percent_tolerance = 0.0;
     bool inference_available = false;
+    std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -42,6 +43,7 @@ struct BiasLinearityResult {
     double bias_at_low = 0.0;
     double bias_at_high = 0.0;
     std::vector<BiasLinearityLevel> levels;
+    std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -56,6 +58,7 @@ struct StabilityResult {
     std::vector<std::vector<int>> triggered_tests;
     std::vector<int> primary_test_by_point;
     std::string limit_source = "estimated_individuals";
+    std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

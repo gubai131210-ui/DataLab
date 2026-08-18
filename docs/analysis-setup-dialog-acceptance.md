@@ -5,6 +5,7 @@
 - [x] `analysis_setup_dialog_test` 验证整数、数值、默认值和统一控件高度。
 - [x] 校验失败时弹窗保持打开，并显示顶部错误摘要。
 - [x] 命令表中的命令、角色和输入均具有稳定 ID。
+- [x] 确定按钮文案为“运行分析”，取消按钮文案为“取消”。
 - [x] CTest 在 `QT_QPA_PLATFORM=offscreen` 下通过。
 
 ## 中文路径 Qt Creator 手工验收

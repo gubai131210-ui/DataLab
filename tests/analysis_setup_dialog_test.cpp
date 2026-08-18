@@ -16,6 +16,7 @@ private slots:
     void inputSchemaCreatesTypedControls();
     void invalidSubmissionKeepsDialogOpen();
     void commandSchemaHasStableIdentifiers();
+    void runButtonUsesAnalysisLabel();
 };
 
 void AnalysisSetupDialogTest::inputSchemaCreatesTypedControls()
@@ -81,6 +82,18 @@ void AnalysisSetupDialogTest::commandSchemaHasStableIdentifiers()
             QVERIFY(has_tests);
         }
     }
+}
+
+void AnalysisSetupDialogTest::runButtonUsesAnalysisLabel()
+{
+    AnalysisSetupDialog dialog(QStringLiteral("测试"), {QStringLiteral("C1  Value")});
+    const auto* buttons = dialog.findChild<QDialogButtonBox*>();
+    QVERIFY(buttons != nullptr);
+    QVERIFY(buttons->button(QDialogButtonBox::Ok) != nullptr);
+    QCOMPARE(buttons->button(QDialogButtonBox::Ok)->text(), QStringLiteral("运行分析"));
+    QVERIFY(buttons->button(QDialogButtonBox::Cancel) != nullptr);
+    QCOMPARE(buttons->button(QDialogButtonBox::Cancel)->text(), QStringLiteral("取消"));
+    QVERIFY(dialog.findChild<QPushButton*>(QStringLiteral("run_button")) != nullptr);
 }
 
 QTEST_MAIN(AnalysisSetupDialogTest)

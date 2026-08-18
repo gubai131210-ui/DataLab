@@ -46,6 +46,7 @@ struct TukeyResult {
     double error_degrees_of_freedom = 0.0;
     std::string method = "conservative_sidak_t_studentized_range_approximation";
     std::vector<TukeyComparison> comparisons;
+    std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

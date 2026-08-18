@@ -96,6 +96,7 @@ struct ChartSeries {
 };
 
 struct ChartModel final {
+    int schema_version = 1;
     ChartKind kind = ChartKind::Control;
     QString title = QStringLiteral("控制图");
     QString x_axis_title = QStringLiteral("观测序号");
@@ -106,6 +107,9 @@ struct ChartModel final {
     bool show_legend = true;
     double line_width = 1.8;
     int legend_font_size = 8;
+    int title_font_size = 11;
+    int axis_font_size = 9;
+    QString theme_preset = QStringLiteral("default");
     QString grid_color = QStringLiteral("#e3e7eb");
     ChartSeriesStyle value_style{
         true, QStringLiteral("#1565c0"), {}, ChartLineStyle::Solid,
@@ -166,4 +170,9 @@ struct ChartModel final {
     std::vector<double> contour_levels;
     std::optional<double> color_min;
     std::optional<double> color_max;
+    std::optional<double> y_min;
+    std::optional<double> y_max;
+    std::optional<double> x_min;
+    std::optional<double> x_max;
+    QString data_region_fill;
 };

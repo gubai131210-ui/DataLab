@@ -39,8 +39,12 @@ struct NestedGageRrResult {
     double study_var_multiplier = 6.0;
     std::string method = "nested_anova";
     bool ndc_available = false;
+    bool design_balanced = true;
+    bool negative_variance_truncated = false;
+    QualityEvidence evidence;
     std::vector<NestedGageAnovaRow> anova_rows;
     std::vector<NestedGageVarianceComponent> variance_components;
+    std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

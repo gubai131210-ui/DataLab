@@ -11,8 +11,22 @@
 | UnansweredCalls | P 图 | Unanswered Calls / Total Calls | 21 行、两列计数 |
 | CableWires | Xbar-R/能力分析 | Diameter、Subgroup，0.50/0.60 | 缺失值保留为 `*` |
 | factorial_2x2 | 双因素 ANOVA | Response，FactorA，FactorB | Seq/Adj SS、交互项和秩亏诊断 |
-| arima_trend | ARIMA 基础预测 | Period、Value，AICc，4 期预测 | 候选模型、AICc 和预测区间 |
-| regression.csv | 线性回归 | Response，Temperature，Pressure | DW、学生化残差、Cook's D、DFITS |
+| arima_trend | ARIMA 基础预测 | Period、Value，AICc，4 期预测，max_d=1 | `expected/arima_trend_golden.tsv`；当前最优 ARIMA(2,1,0)（CSS 近似，待 Minitab 导出核对） |
+| regression.csv | 线性回归 | Response，Temperature，Pressure | `expected/regression_golden.tsv`；Seq/Adj SS、S、DW |
+
+## Golden 文件与容差
+
+| 文件 | 来源 | 容差 |
+|---|---|---|
+| `expected/regression_golden.tsv` | OLS 公式参考（`docs/statistical-methodology.md`）；**请用 Minitab 导出替换 `# source` 行** | 系数/SS：相对 ≤1e-4；DW：相对 ≤1e-4 |
+| `expected/arima_trend_golden.tsv` | 镜像 `arima.cpp` 候选网格；**请用 Minitab Best ARIMA 导出替换** | AICc：绝对 ≤0.01；Forecast：绝对 ≤0.05 |
+| `expected/EXPORT_GUIDE.md` | 导出格式说明 | — |
+
+重新生成公式参考值（非 Minitab 猜测）：
+
+```powershell
+.\.venv\Scripts\python.exe tools\dump_minitab_golden_reference.py
+```
 
 ## Minitab 对照记录格式
 
@@ -33,11 +47,16 @@ DataLab 结果：
 相对误差：
 ```
 
-当前仓库只自动验证文件转换和输入完整性，不虚构尚未从 Minitab 导出的统计结果。
+自动化测试在 golden 文件缺失时 `QSKIP`；只有实际从 Minitab 导出的结果才应作为最终 golden 基准。
+
+Johnson 变换、非正态 Z-score、对数正态可靠性、乘法 SARIMA CSS、三参数 Weibull、
+Fleiss Kappa、Kendall W/τ、两参数指数、三参数对数正态、PCA 系数/T²Q、非参数 ties
+与 Levene 中位数等方差的自动化测试是 **公式参考**（`# source: formula_reference`），
+**不是** Minitab 导出。不要把它们登记为数值对齐。
 
 ## 本批黄金检查项
 
 - 双因素 ANOVA：`DF`、`SS`、`MS`、`F`、`P-Value`、因子均值和交互均值。
-- 回归诊断：`Durbin-Watson`、内部/删除学生化残差、Cook's D、DFITS 和 VIF。
+- 回归诊断：`Durbin-Watson`、内部/删除学生化残差、Cook's D、DFITS 和 VIF；ANOVA `Seq SS` / `Adj SS`。
 - ARIMA：候选模型名称、AIC/AICc/BIC、Forecast、Lower、Upper。
 - 输出页面：长中文标题、11 列以上表格、诊断卡片和多图布局不发生文字重叠。

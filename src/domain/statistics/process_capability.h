@@ -9,10 +9,20 @@
 
 namespace datalab::domain::statistics {
 
+enum class CapabilityMethod {
+    normal,
+    johnson,
+    non_normal,
+    between_within
+};
+
 struct ProcessCapabilityResult {
     double mean = 0.0;
     double within_standard_deviation = 0.0;
     double overall_standard_deviation = 0.0;
+    std::optional<double> subgroup_within_standard_deviation;
+    std::optional<double> between_standard_deviation;
+    std::optional<double> between_within_standard_deviation;
     std::size_t sample_size = 0;
     std::optional<double> cp;
     std::optional<double> cpl;
@@ -38,6 +48,10 @@ struct ProcessCapabilityResult {
     std::string specification_mode;
     std::string within_sigma_method;
     std::string overall_sigma_method = "sample_standard_deviation";
+    std::string between_sigma_method;
+    std::string between_within_sigma_method;
+    std::string capability_method = "normal";
+    std::string johnson_family;
     QualityEvidence evidence;
     std::vector<DiagnosticMessage> diagnostics;
 };
@@ -53,6 +67,21 @@ public:
     static ProcessCapabilityResult calculate(
         const std::vector<double>& observations,
         double within_standard_deviation,
+        const SpecificationLimits& specifications);
+
+    static ProcessCapabilityResult calculate_johnson(
+        const std::vector<double>& observations,
+        const SpecificationLimits& specifications,
+        double p_criterion = 0.10);
+
+    static ProcessCapabilityResult calculate_nonnormal(
+        const std::vector<double>& observations,
+        const SpecificationLimits& specifications,
+        const std::string& distribution);
+
+    static ProcessCapabilityResult calculate_between_within(
+        const std::vector<double>& observations,
+        const std::vector<std::vector<double>>& subgroups,
         const SpecificationLimits& specifications);
 };
 

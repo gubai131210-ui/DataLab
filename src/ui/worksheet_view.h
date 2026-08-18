@@ -9,6 +9,7 @@ public:
     explicit WorksheetView(QWidget* parent = nullptr);
 
     bool is_editing() const;
+    void commit_editing();
 
 signals:
     void active_cell_changed(const QModelIndex& index);

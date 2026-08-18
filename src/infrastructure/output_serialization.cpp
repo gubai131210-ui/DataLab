@@ -1,6 +1,7 @@
 #include "infrastructure/output_serialization.h"
 
 #include <QJsonArray>
+#include <QJsonObject>
 #include <algorithm>
 #include <optional>
 #include <utility>
@@ -137,6 +138,68 @@ QJsonValue optional_size(const std::optional<std::size_t>& value)
 std::optional<std::size_t> read_optional_size(const QJsonValue& value);
 std::optional<double> read_optional(const QJsonValue& value);
 
+QJsonArray write_assumptions(const std::vector<domain::AssumptionCheck>& checks)
+{
+    QJsonArray array;
+    for (const auto& check : checks) {
+        QJsonObject object;
+        object.insert(QStringLiteral("name"), QString::fromStdString(check.name));
+        object.insert(QStringLiteral("status"), QString::fromStdString(check.status));
+        object.insert(QStringLiteral("statistic"), optional_number(check.statistic));
+        object.insert(QStringLiteral("p_value"), optional_number(check.p_value));
+        object.insert(QStringLiteral("evidence_summary"),
+                      QString::fromStdString(check.evidence_summary));
+        array.append(object);
+    }
+    return array;
+}
+
+std::vector<domain::AssumptionCheck> read_assumptions(const QJsonArray& array)
+{
+    std::vector<domain::AssumptionCheck> checks;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        checks.push_back({
+            object.value(QStringLiteral("name")).toString().toStdString(),
+            object.value(QStringLiteral("status")).toString("not_verified").toStdString(),
+            read_optional(object.value(QStringLiteral("statistic"))),
+            read_optional(object.value(QStringLiteral("p_value"))),
+            object.value(QStringLiteral("evidence_summary")).toString().toStdString()});
+    }
+    return checks;
+}
+
+QJsonArray write_rules(const std::vector<domain::RuleEvidence>& rules)
+{
+    QJsonArray array;
+    for (const auto& rule : rules) {
+        QJsonObject object;
+        object.insert(QStringLiteral("id"), QString::fromStdString(rule.id));
+        object.insert(QStringLiteral("status"), QString::fromStdString(rule.status));
+        object.insert(QStringLiteral("message"), QString::fromStdString(rule.message));
+        object.insert(QStringLiteral("related_rows"), row_array(rule.related_rows));
+        object.insert(QStringLiteral("suggested_action"),
+                      QString::fromStdString(rule.suggested_action));
+        array.append(object);
+    }
+    return array;
+}
+
+std::vector<domain::RuleEvidence> read_rules(const QJsonArray& array)
+{
+    std::vector<domain::RuleEvidence> rules;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        rules.push_back({
+            object.value(QStringLiteral("id")).toString().toStdString(),
+            object.value(QStringLiteral("status")).toString("not_applicable").toStdString(),
+            object.value(QStringLiteral("message")).toString().toStdString(),
+            to_rows(object.value(QStringLiteral("related_rows")).toArray()),
+            object.value(QStringLiteral("suggested_action")).toString().toStdString()});
+    }
+    return rules;
+}
+
 void write_interpretation_facts(
     QJsonObject& object,
     const domain::InterpretationFacts& facts)
@@ -153,6 +216,10 @@ void write_interpretation_facts(
                           QString::fromStdString(facts.capability->assumption_status));
         capability.insert(QStringLiteral("specification_mode"),
                           QString::fromStdString(facts.capability->specification_mode));
+        capability.insert(QStringLiteral("method"),
+                          QString::fromStdString(facts.capability->method));
+        capability.insert(QStringLiteral("johnson_family"),
+                          QString::fromStdString(facts.capability->johnson_family));
         serialized.insert(QStringLiteral("capability"), capability);
     }
     if (facts.spc.has_value()) {
@@ -172,7 +239,225 @@ void write_interpretation_facts(
                           static_cast<int>(facts.regression->influential_count));
         regression.insert(QStringLiteral("assumption_status"),
                           QString::fromStdString(facts.regression->assumption_status));
+        regression.insert(QStringLiteral("outlier_count"),
+                          static_cast<int>(facts.regression->outlier_count));
+        regression.insert(QStringLiteral("high_leverage_count"),
+                          static_cast<int>(facts.regression->high_leverage_count));
+        regression.insert(QStringLiteral("max_vif"),
+                          optional_number(facts.regression->max_vif));
+        regression.insert(QStringLiteral("durbin_watson"),
+                          optional_number(facts.regression->durbin_watson));
+        regression.insert(QStringLiteral("error_degrees_of_freedom"),
+                          optional_number(facts.regression->error_degrees_of_freedom));
+        regression.insert(QStringLiteral("rank_deficient"),
+                          facts.regression->rank_deficient);
+        regression.insert(QStringLiteral("assumptions"),
+                          write_assumptions(facts.regression->assumptions));
+        regression.insert(QStringLiteral("rules"), write_rules(facts.regression->rules));
         serialized.insert(QStringLiteral("regression"), regression);
+    }
+    if (facts.anova.has_value()) {
+        QJsonObject anova;
+        anova.insert(QStringLiteral("p_value"), optional_number(facts.anova->p_value));
+        anova.insert(QStringLiteral("error_degrees_of_freedom"),
+                     static_cast<int>(facts.anova->error_degrees_of_freedom));
+        anova.insert(QStringLiteral("estimable"), facts.anova->estimable);
+        anova.insert(QStringLiteral("not_estimable_term_count"),
+                     static_cast<int>(facts.anova->not_estimable_term_count));
+        anova.insert(QStringLiteral("significant_terms"),
+                     string_array(facts.anova->significant_terms));
+        anova.insert(QStringLiteral("family_confidence_level"),
+                     optional_number(facts.anova->family_confidence_level));
+        anova.insert(QStringLiteral("tukey_significant_pairs"),
+                     static_cast<int>(facts.anova->tukey_significant_pairs));
+        anova.insert(QStringLiteral("tukey_method"),
+                     QString::fromStdString(facts.anova->tukey_method));
+        anova.insert(QStringLiteral("assumption_status"),
+                     QString::fromStdString(facts.anova->assumption_status));
+        anova.insert(QStringLiteral("assumptions"),
+                     write_assumptions(facts.anova->assumptions));
+        anova.insert(QStringLiteral("rules"), write_rules(facts.anova->rules));
+        serialized.insert(QStringLiteral("anova"), anova);
+    }
+    if (facts.msa.has_value()) {
+        QJsonObject msa;
+        msa.insert(QStringLiteral("slope"), optional_number(facts.msa->slope));
+        msa.insert(QStringLiteral("bias_low"), optional_number(facts.msa->bias_low));
+        msa.insert(QStringLiteral("bias_high"), optional_number(facts.msa->bias_high));
+        msa.insert(QStringLiteral("p_value"), optional_number(facts.msa->p_value));
+        msa.insert(QStringLiteral("cgk"), optional_number(facts.msa->cgk));
+        msa.insert(QStringLiteral("tolerance_percent"),
+                   optional_number(facts.msa->tolerance_percent));
+        msa.insert(QStringLiteral("ndc"), optional_number(facts.msa->ndc));
+        msa.insert(QStringLiteral("ndc_available"), facts.msa->ndc_available);
+        msa.insert(QStringLiteral("design_balanced"), facts.msa->design_balanced);
+        msa.insert(QStringLiteral("interaction_retained"), facts.msa->interaction_retained);
+        msa.insert(QStringLiteral("interaction_p_value"),
+                   optional_number(facts.msa->interaction_p_value));
+        msa.insert(QStringLiteral("interaction_reduction_recommended"),
+                   facts.msa->interaction_reduction_recommended);
+        msa.insert(QStringLiteral("negative_variance_truncated"),
+                   facts.msa->negative_variance_truncated);
+        msa.insert(QStringLiteral("gage_percent_study_variation"),
+                   optional_number(facts.msa->gage_percent_study_variation));
+        msa.insert(QStringLiteral("gage_percent_contribution"),
+                   optional_number(facts.msa->gage_percent_contribution));
+        msa.insert(QStringLiteral("ratings_are_ordinal"), facts.msa->ratings_are_ordinal);
+        msa.insert(QStringLiteral("kendall_available"), facts.msa->kendall_available);
+        msa.insert(QStringLiteral("kendall_w"), optional_number(facts.msa->kendall_w));
+        msa.insert(QStringLiteral("kendall_w_p"), optional_number(facts.msa->kendall_w_p));
+        msa.insert(QStringLiteral("kendall_tau"), optional_number(facts.msa->kendall_tau));
+        msa.insert(QStringLiteral("kendall_tau_p"), optional_number(facts.msa->kendall_tau_p));
+        msa.insert(QStringLiteral("assumption_status"),
+                   QString::fromStdString(facts.msa->assumption_status));
+        msa.insert(QStringLiteral("rules"), write_rules(facts.msa->rules));
+        serialized.insert(QStringLiteral("msa"), msa);
+    }
+    if (facts.reliability.has_value()) {
+        QJsonObject reliability;
+        reliability.insert(QStringLiteral("shape"),
+                           optional_number(facts.reliability->shape));
+        reliability.insert(QStringLiteral("censored_count"),
+                           optional_size(facts.reliability->censored_count));
+        reliability.insert(QStringLiteral("failure_count"),
+                           optional_size(facts.reliability->failure_count));
+        reliability.insert(QStringLiteral("valid_count"),
+                           optional_size(facts.reliability->valid_count));
+        reliability.insert(QStringLiteral("median_life"),
+                           optional_number(facts.reliability->median_life));
+        reliability.insert(QStringLiteral("identifiable"), facts.reliability->identifiable);
+        reliability.insert(QStringLiteral("converged"), facts.reliability->converged);
+        reliability.insert(QStringLiteral("not_computed_reason"),
+                           QString::fromStdString(facts.reliability->not_computed_reason));
+        reliability.insert(QStringLiteral("event_encoding"),
+                           QString::fromStdString(facts.reliability->event_encoding));
+        reliability.insert(QStringLiteral("distribution"),
+                           QString::fromStdString(facts.reliability->distribution));
+        reliability.insert(QStringLiteral("location"),
+                           optional_number(facts.reliability->location));
+        reliability.insert(QStringLiteral("scale"),
+                           optional_number(facts.reliability->scale));
+        reliability.insert(QStringLiteral("threshold"),
+                           optional_number(facts.reliability->threshold));
+        reliability.insert(QStringLiteral("rules"), write_rules(facts.reliability->rules));
+        serialized.insert(QStringLiteral("reliability"), reliability);
+    }
+    if (facts.forecast.has_value()) {
+        QJsonObject forecast;
+        forecast.insert(QStringLiteral("mape"), optional_number(facts.forecast->mape));
+        forecast.insert(QStringLiteral("mase"), optional_number(facts.forecast->mase));
+        forecast.insert(QStringLiteral("rolling_origin_mape"),
+                        optional_number(facts.forecast->rolling_origin_mape));
+        forecast.insert(QStringLiteral("rolling_origin_mase"),
+                        optional_number(facts.forecast->rolling_origin_mase));
+        serialized.insert(QStringLiteral("forecast"), forecast);
+    }
+    if (facts.descriptive.has_value()) {
+        QJsonObject descriptive;
+        descriptive.insert(QStringLiteral("n"), static_cast<int>(facts.descriptive->n));
+        descriptive.insert(QStringLiteral("missing_count"),
+                           static_cast<int>(facts.descriptive->missing_count));
+        descriptive.insert(QStringLiteral("mean"), optional_number(facts.descriptive->mean));
+        descriptive.insert(QStringLiteral("standard_deviation"),
+                           optional_number(facts.descriptive->standard_deviation));
+        serialized.insert(QStringLiteral("descriptive"), descriptive);
+    }
+    if (facts.chi_square.has_value()) {
+        QJsonObject chi_square;
+        chi_square.insert(QStringLiteral("statistic"),
+                          optional_number(facts.chi_square->statistic));
+        chi_square.insert(QStringLiteral("p_value"),
+                          optional_number(facts.chi_square->p_value));
+        chi_square.insert(QStringLiteral("degrees_of_freedom"),
+                          optional_number(facts.chi_square->degrees_of_freedom));
+        chi_square.insert(QStringLiteral("expected_count_warning"),
+                          facts.chi_square->expected_count_warning);
+        serialized.insert(QStringLiteral("chi_square"), chi_square);
+    }
+    if (facts.nonparametric.has_value()) {
+        QJsonObject nonparametric;
+        nonparametric.insert(QStringLiteral("method"),
+                             QString::fromStdString(facts.nonparametric->method));
+        nonparametric.insert(QStringLiteral("statistic"),
+                             optional_number(facts.nonparametric->statistic));
+        nonparametric.insert(QStringLiteral("p_value"),
+                             optional_number(facts.nonparametric->p_value));
+        nonparametric.insert(QStringLiteral("tie_correction"),
+                             facts.nonparametric->tie_correction);
+        nonparametric.insert(QStringLiteral("continuity_correction"),
+                             facts.nonparametric->continuity_correction);
+        nonparametric.insert(QStringLiteral("approximation"),
+                             QString::fromStdString(facts.nonparametric->approximation));
+        nonparametric.insert(QStringLiteral("small_sample_warning"),
+                             facts.nonparametric->small_sample_warning);
+        nonparametric.insert(QStringLiteral("effect_size"),
+                             optional_number(facts.nonparametric->effect_size));
+        nonparametric.insert(QStringLiteral("p_value_unadjusted"),
+                             optional_number(facts.nonparametric->p_value_unadjusted));
+        serialized.insert(QStringLiteral("nonparametric"), nonparametric);
+    }
+    if (facts.logistic.has_value()) {
+        QJsonObject logistic;
+        logistic.insert(QStringLiteral("converged"), facts.logistic->converged);
+        logistic.insert(QStringLiteral("complete_separation"),
+                        facts.logistic->complete_separation);
+        logistic.insert(QStringLiteral("hosmer_lemeshow_p"),
+                        optional_number(facts.logistic->hosmer_lemeshow_p));
+        logistic.insert(QStringLiteral("hosmer_lemeshow_statistic"),
+                        optional_number(facts.logistic->hosmer_lemeshow_statistic));
+        if (facts.logistic->hosmer_lemeshow_df.has_value()) {
+            logistic.insert(QStringLiteral("hosmer_lemeshow_df"),
+                            static_cast<qint64>(*facts.logistic->hosmer_lemeshow_df));
+        }
+        logistic.insert(QStringLiteral("hosmer_lemeshow_groups"),
+                        static_cast<qint64>(facts.logistic->hosmer_lemeshow_groups));
+        logistic.insert(QStringLiteral("hosmer_lemeshow_status"),
+                        QString::fromStdString(facts.logistic->hosmer_lemeshow_status));
+        logistic.insert(QStringLiteral("high_leverage_count"),
+                        static_cast<qint64>(facts.logistic->high_leverage_count));
+        serialized.insert(QStringLiteral("logistic"), logistic);
+    }
+    if (facts.distribution_identification.has_value()) {
+        QJsonObject distribution_id;
+        distribution_id.insert(QStringLiteral("best_distribution"),
+                               QString::fromStdString(
+                                   facts.distribution_identification->best_distribution));
+        distribution_id.insert(QStringLiteral("best_anderson_darling"),
+                               optional_number(
+                                   facts.distribution_identification->best_anderson_darling));
+        distribution_id.insert(QStringLiteral("best_p_value"),
+                               optional_number(
+                                   facts.distribution_identification->best_p_value));
+        distribution_id.insert(QStringLiteral("did_not_change_capability_defaults"),
+                             facts.distribution_identification
+                                 ->did_not_change_capability_defaults);
+        serialized.insert(QStringLiteral("distribution_identification"), distribution_id);
+    }
+    if (facts.pca.has_value()) {
+        QJsonObject pca;
+        pca.insert(QStringLiteral("mode"), QString::fromStdString(facts.pca->mode));
+        pca.insert(QStringLiteral("retained_component_count"),
+                   static_cast<int>(facts.pca->retained_component_count));
+        pca.insert(QStringLiteral("anomaly_count"),
+                   static_cast<int>(facts.pca->anomaly_count));
+        pca.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.pca->observation_count));
+        pca.insert(QStringLiteral("t2_limit"), optional_number(facts.pca->t2_limit));
+        pca.insert(QStringLiteral("q_limit"), optional_number(facts.pca->q_limit));
+        pca.insert(QStringLiteral("converged"), facts.pca->converged);
+        serialized.insert(QStringLiteral("pca"), pca);
+    }
+    if (facts.variance.has_value()) {
+        QJsonObject variance;
+        variance.insert(QStringLiteral("method"),
+                        QString::fromStdString(facts.variance->method));
+        variance.insert(QStringLiteral("statistic"),
+                        optional_number(facts.variance->statistic));
+        variance.insert(QStringLiteral("p_value"),
+                        optional_number(facts.variance->p_value));
+        variance.insert(QStringLiteral("group_count"),
+                        static_cast<int>(facts.variance->group_count));
+        serialized.insert(QStringLiteral("variance"), variance);
     }
     if (!serialized.isEmpty()) {
         object.insert(QStringLiteral("facts"), serialized);
@@ -196,7 +481,9 @@ void read_interpretation_facts(
             read_optional(capability.value(QStringLiteral("z_bench"))),
             capability.value(QStringLiteral("assumption_status"))
                 .toString("not_verified").toStdString(),
-            capability.value(QStringLiteral("specification_mode")).toString().toStdString()};
+            capability.value(QStringLiteral("specification_mode")).toString().toStdString(),
+            capability.value(QStringLiteral("method")).toString().toStdString(),
+            capability.value(QStringLiteral("johnson_family")).toString().toStdString()};
     }
     const QJsonObject spc = serialized.value(QStringLiteral("spc")).toObject();
     if (!spc.isEmpty()) {
@@ -206,13 +493,228 @@ void read_interpretation_facts(
     }
     const QJsonObject regression = serialized.value(QStringLiteral("regression")).toObject();
     if (!regression.isEmpty()) {
-        facts.regression = domain::RegressionFacts{
-            read_optional(regression.value(QStringLiteral("r_squared"))),
-            read_optional(regression.value(QStringLiteral("residual_normality_p"))),
+        domain::RegressionFacts value;
+        value.r_squared = read_optional(regression.value(QStringLiteral("r_squared")));
+        value.residual_normality_p =
+            read_optional(regression.value(QStringLiteral("residual_normality_p")));
+        value.influential_count = static_cast<std::size_t>(
+            regression.value(QStringLiteral("influential_count")).toInt(0));
+        value.assumption_status = regression.value(QStringLiteral("assumption_status"))
+            .toString("not_verified").toStdString();
+        value.outlier_count = static_cast<std::size_t>(
+            regression.value(QStringLiteral("outlier_count")).toInt(0));
+        value.high_leverage_count = static_cast<std::size_t>(
+            regression.value(QStringLiteral("high_leverage_count")).toInt(0));
+        value.max_vif = read_optional(regression.value(QStringLiteral("max_vif")));
+        value.durbin_watson = read_optional(regression.value(QStringLiteral("durbin_watson")));
+        value.error_degrees_of_freedom =
+            read_optional(regression.value(QStringLiteral("error_degrees_of_freedom")));
+        value.rank_deficient = regression.value(QStringLiteral("rank_deficient")).toBool(false);
+        value.assumptions = read_assumptions(
+            regression.value(QStringLiteral("assumptions")).toArray());
+        value.rules = read_rules(regression.value(QStringLiteral("rules")).toArray());
+        facts.regression = std::move(value);
+    }
+    const QJsonObject anova = serialized.value(QStringLiteral("anova")).toObject();
+    if (!anova.isEmpty()) {
+        domain::AnovaFacts value;
+        value.p_value = read_optional(anova.value(QStringLiteral("p_value")));
+        value.error_degrees_of_freedom = static_cast<std::size_t>(
+            anova.value(QStringLiteral("error_degrees_of_freedom")).toInt(0));
+        value.estimable = anova.value(QStringLiteral("estimable")).toBool(true);
+        value.not_estimable_term_count = static_cast<std::size_t>(
+            anova.value(QStringLiteral("not_estimable_term_count")).toInt(0));
+        value.significant_terms = to_strings(
+            anova.value(QStringLiteral("significant_terms")).toArray());
+        value.family_confidence_level =
+            read_optional(anova.value(QStringLiteral("family_confidence_level")));
+        value.tukey_significant_pairs = static_cast<std::size_t>(
+            anova.value(QStringLiteral("tukey_significant_pairs")).toInt(0));
+        value.tukey_method = anova.value(QStringLiteral("tukey_method")).toString().toStdString();
+        value.assumption_status = anova.value(QStringLiteral("assumption_status"))
+            .toString("not_verified").toStdString();
+        value.assumptions = read_assumptions(
+            anova.value(QStringLiteral("assumptions")).toArray());
+        value.rules = read_rules(anova.value(QStringLiteral("rules")).toArray());
+        facts.anova = std::move(value);
+    }
+    const QJsonObject msa = serialized.value(QStringLiteral("msa")).toObject();
+    if (!msa.isEmpty()) {
+        domain::MsaFacts value;
+        value.slope = read_optional(msa.value(QStringLiteral("slope")));
+        value.bias_low = read_optional(msa.value(QStringLiteral("bias_low")));
+        value.bias_high = read_optional(msa.value(QStringLiteral("bias_high")));
+        value.p_value = read_optional(msa.value(QStringLiteral("p_value")));
+        value.cgk = read_optional(msa.value(QStringLiteral("cgk")));
+        value.tolerance_percent = read_optional(msa.value(QStringLiteral("tolerance_percent")));
+        value.ndc = read_optional(msa.value(QStringLiteral("ndc")));
+        value.ndc_available = msa.value(QStringLiteral("ndc_available")).toBool(false);
+        value.design_balanced = msa.value(QStringLiteral("design_balanced")).toBool(true);
+        value.interaction_retained =
+            msa.value(QStringLiteral("interaction_retained")).toBool(true);
+        value.interaction_p_value =
+            read_optional(msa.value(QStringLiteral("interaction_p_value")));
+        value.interaction_reduction_recommended =
+            msa.value(QStringLiteral("interaction_reduction_recommended")).toBool(false);
+        value.negative_variance_truncated =
+            msa.value(QStringLiteral("negative_variance_truncated")).toBool(false);
+        value.gage_percent_study_variation =
+            read_optional(msa.value(QStringLiteral("gage_percent_study_variation")));
+        value.gage_percent_contribution =
+            read_optional(msa.value(QStringLiteral("gage_percent_contribution")));
+        value.ratings_are_ordinal =
+            msa.value(QStringLiteral("ratings_are_ordinal")).toBool(false);
+        value.kendall_available =
+            msa.value(QStringLiteral("kendall_available")).toBool(false);
+        value.kendall_w = read_optional(msa.value(QStringLiteral("kendall_w")));
+        value.kendall_w_p = read_optional(msa.value(QStringLiteral("kendall_w_p")));
+        value.kendall_tau = read_optional(msa.value(QStringLiteral("kendall_tau")));
+        value.kendall_tau_p = read_optional(msa.value(QStringLiteral("kendall_tau_p")));
+        value.assumption_status = msa.value(QStringLiteral("assumption_status"))
+            .toString("not_verified").toStdString();
+        value.rules = read_rules(msa.value(QStringLiteral("rules")).toArray());
+        facts.msa = std::move(value);
+    }
+    const QJsonObject reliability = serialized.value(QStringLiteral("reliability")).toObject();
+    if (!reliability.isEmpty()) {
+        domain::ReliabilityFacts value;
+        value.shape = read_optional(reliability.value(QStringLiteral("shape")));
+        value.censored_count =
+            read_optional_size(reliability.value(QStringLiteral("censored_count")));
+        value.failure_count =
+            read_optional_size(reliability.value(QStringLiteral("failure_count")));
+        value.valid_count =
+            read_optional_size(reliability.value(QStringLiteral("valid_count")));
+        value.median_life = read_optional(reliability.value(QStringLiteral("median_life")));
+        value.identifiable = reliability.value(QStringLiteral("identifiable")).toBool(false);
+        value.converged = reliability.value(QStringLiteral("converged")).toBool(false);
+        value.not_computed_reason =
+            reliability.value(QStringLiteral("not_computed_reason")).toString().toStdString();
+        value.event_encoding = reliability.value(QStringLiteral("event_encoding"))
+            .toString("failure_suspension").toStdString();
+        value.distribution = reliability.value(QStringLiteral("distribution"))
+            .toString().toStdString();
+        value.location = read_optional(reliability.value(QStringLiteral("location")));
+        value.scale = read_optional(reliability.value(QStringLiteral("scale")));
+        value.threshold = read_optional(reliability.value(QStringLiteral("threshold")));
+        value.rules = read_rules(reliability.value(QStringLiteral("rules")).toArray());
+        facts.reliability = std::move(value);
+    }
+    const QJsonObject forecast = serialized.value(QStringLiteral("forecast")).toObject();
+    if (!forecast.isEmpty()) {
+        facts.forecast = domain::ForecastFacts{
+            read_optional(forecast.value(QStringLiteral("mape"))),
+            read_optional(forecast.value(QStringLiteral("mase"))),
+            read_optional(forecast.value(QStringLiteral("rolling_origin_mape"))),
+            read_optional(forecast.value(QStringLiteral("rolling_origin_mase")))};
+    }
+    const QJsonObject descriptive = serialized.value(QStringLiteral("descriptive")).toObject();
+    if (!descriptive.isEmpty()) {
+        domain::DescriptiveFacts value;
+        value.n = static_cast<std::size_t>(descriptive.value(QStringLiteral("n")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            descriptive.value(QStringLiteral("missing_count")).toInt(0));
+        value.mean = read_optional(descriptive.value(QStringLiteral("mean")));
+        value.standard_deviation =
+            read_optional(descriptive.value(QStringLiteral("standard_deviation")));
+        facts.descriptive = std::move(value);
+    }
+    const QJsonObject chi_square = serialized.value(QStringLiteral("chi_square")).toObject();
+    if (!chi_square.isEmpty()) {
+        domain::ChiSquareFacts value;
+        value.statistic = read_optional(chi_square.value(QStringLiteral("statistic")));
+        value.p_value = read_optional(chi_square.value(QStringLiteral("p_value")));
+        value.degrees_of_freedom =
+            read_optional(chi_square.value(QStringLiteral("degrees_of_freedom")));
+        value.expected_count_warning =
+            chi_square.value(QStringLiteral("expected_count_warning")).toBool(false);
+        facts.chi_square = std::move(value);
+    }
+    const QJsonObject nonparametric = serialized.value(QStringLiteral("nonparametric")).toObject();
+    if (!nonparametric.isEmpty()) {
+        domain::NonparametricFacts value;
+        value.method = nonparametric.value(QStringLiteral("method")).toString().toStdString();
+        value.statistic = read_optional(nonparametric.value(QStringLiteral("statistic")));
+        value.p_value = read_optional(nonparametric.value(QStringLiteral("p_value")));
+        value.tie_correction = nonparametric.value(QStringLiteral("tie_correction")).toBool(false);
+        value.continuity_correction =
+            nonparametric.value(QStringLiteral("continuity_correction")).toBool(true);
+        value.approximation = nonparametric.value(QStringLiteral("approximation"))
+                                  .toString(QStringLiteral("normal")).toStdString();
+        value.small_sample_warning =
+            nonparametric.value(QStringLiteral("small_sample_warning")).toBool(false);
+        value.effect_size = read_optional(nonparametric.value(QStringLiteral("effect_size")));
+        value.p_value_unadjusted =
+            read_optional(nonparametric.value(QStringLiteral("p_value_unadjusted")));
+        facts.nonparametric = std::move(value);
+    }
+    const QJsonObject logistic = serialized.value(QStringLiteral("logistic")).toObject();
+    if (!logistic.isEmpty()) {
+        domain::LogisticFacts value;
+        value.converged = logistic.value(QStringLiteral("converged")).toBool(false);
+        value.complete_separation =
+            logistic.value(QStringLiteral("complete_separation")).toBool(false);
+        value.hosmer_lemeshow_p =
+            read_optional(logistic.value(QStringLiteral("hosmer_lemeshow_p")));
+        value.hosmer_lemeshow_statistic =
+            read_optional(logistic.value(QStringLiteral("hosmer_lemeshow_statistic")));
+        if (logistic.contains(QStringLiteral("hosmer_lemeshow_df"))) {
+            value.hosmer_lemeshow_df =
+                static_cast<std::size_t>(
+                    logistic.value(QStringLiteral("hosmer_lemeshow_df")).toInteger(0));
+        }
+        value.hosmer_lemeshow_groups =
             static_cast<std::size_t>(
-                regression.value(QStringLiteral("influential_count")).toInt(0)),
-            regression.value(QStringLiteral("assumption_status"))
-                .toString("not_verified").toStdString()};
+                logistic.value(QStringLiteral("hosmer_lemeshow_groups")).toInteger(0));
+        value.hosmer_lemeshow_status =
+            logistic.value(QStringLiteral("hosmer_lemeshow_status"))
+                .toString(QStringLiteral("not_computed")).toStdString();
+        value.high_leverage_count =
+            static_cast<std::size_t>(
+                logistic.value(QStringLiteral("high_leverage_count")).toInteger(0));
+        facts.logistic = std::move(value);
+    }
+    const QJsonObject distribution_id =
+        serialized.value(QStringLiteral("distribution_identification")).toObject();
+    if (!distribution_id.isEmpty()) {
+        domain::DistributionIdentificationFacts value;
+        value.best_distribution =
+            distribution_id.value(QStringLiteral("best_distribution"))
+                .toString().toStdString();
+        value.best_anderson_darling =
+            read_optional(distribution_id.value(QStringLiteral("best_anderson_darling")));
+        value.best_p_value =
+            read_optional(distribution_id.value(QStringLiteral("best_p_value")));
+        value.did_not_change_capability_defaults =
+            distribution_id.value(QStringLiteral("did_not_change_capability_defaults"))
+                .toBool(true);
+        facts.distribution_identification = std::move(value);
+    }
+    const QJsonObject pca = serialized.value(QStringLiteral("pca")).toObject();
+    if (!pca.isEmpty()) {
+        domain::PcaFacts value;
+        value.mode = pca.value(QStringLiteral("mode"))
+                         .toString(QStringLiteral("covariance")).toStdString();
+        value.retained_component_count = static_cast<std::size_t>(
+            pca.value(QStringLiteral("retained_component_count")).toInt(0));
+        value.anomaly_count = static_cast<std::size_t>(
+            pca.value(QStringLiteral("anomaly_count")).toInt(0));
+        value.observation_count = static_cast<std::size_t>(
+            pca.value(QStringLiteral("observation_count")).toInt(0));
+        value.t2_limit = read_optional(pca.value(QStringLiteral("t2_limit")));
+        value.q_limit = read_optional(pca.value(QStringLiteral("q_limit")));
+        value.converged = pca.value(QStringLiteral("converged")).toBool(false);
+        facts.pca = std::move(value);
+    }
+    const QJsonObject variance = serialized.value(QStringLiteral("variance")).toObject();
+    if (!variance.isEmpty()) {
+        domain::VarianceFacts value;
+        value.method = variance.value(QStringLiteral("method")).toString().toStdString();
+        value.statistic = read_optional(variance.value(QStringLiteral("statistic")));
+        value.p_value = read_optional(variance.value(QStringLiteral("p_value")));
+        value.group_count = static_cast<std::size_t>(
+            variance.value(QStringLiteral("group_count")).toInt(0));
+        facts.variance = std::move(value);
     }
 }
 
@@ -269,6 +771,10 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     object.insert(QStringLiteral("method_not_computed_reason"),
                   QString::fromStdString(page.method_metadata.not_computed_reason));
     object.insert(QStringLiteral("chart_type"), QString::fromStdString(page.configuration.chart_type));
+    object.insert(QStringLiteral("capability_method"),
+                  QString::fromStdString(page.configuration.capability_method));
+    object.insert(QStringLiteral("nonnormal_distribution"),
+                  QString::fromStdString(page.configuration.nonnormal_distribution));
     object.insert(QStringLiteral("analysis_name"), QString::fromStdString(page.configuration.analysis_name));
     object.insert(QStringLiteral("graph_kind"),
                   QString::fromStdString(page.configuration.graph.graph_kind));
@@ -428,6 +934,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   optional_size(page.configuration.inference.variance_first_column));
     object.insert(QStringLiteral("variance_second_column"),
                   optional_size(page.configuration.inference.variance_second_column));
+    object.insert(QStringLiteral("variance_group_column"),
+                  optional_size(page.configuration.inference.variance_group_column));
     object.insert(QStringLiteral("hypothesized_variance"),
                   optional_number(page.configuration.inference.hypothesized_variance));
     object.insert(QStringLiteral("variance_test_method"),
@@ -459,6 +967,18 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     object.insert(QStringLiteral("doe_randomize"), page.configuration.doe.randomize);
     object.insert(QStringLiteral("doe_random_seed"),
                   static_cast<qint64>(page.configuration.doe.random_seed));
+    object.insert(QStringLiteral("doe_optimization_goal"),
+                  QString::fromStdString(page.configuration.doe.optimization_goal));
+    object.insert(QStringLiteral("doe_optimization_lower"),
+                  optional_number(page.configuration.doe.optimization_lower));
+    object.insert(QStringLiteral("doe_optimization_upper"),
+                  optional_number(page.configuration.doe.optimization_upper));
+    object.insert(QStringLiteral("doe_optimization_target"),
+                  optional_number(page.configuration.doe.optimization_target));
+    object.insert(QStringLiteral("doe_optimization_weight"),
+                  page.configuration.doe.optimization_weight);
+    object.insert(QStringLiteral("doe_optimization_confidence"),
+                  page.configuration.doe.optimization_confidence);
     object.insert(QStringLiteral("nested_gage_measurement_column"),
                   optional_size(page.configuration.msa.nested_measurement_column));
     object.insert(QStringLiteral("nested_gage_part_column"),
@@ -507,6 +1027,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   optional_size(page.configuration.msa.attribute_standard_column));
     object.insert(QStringLiteral("attribute_agreement_method"),
                   QString::fromStdString(page.configuration.msa.attribute_agreement_method));
+    object.insert(QStringLiteral("ratings_are_ordinal"),
+                  page.configuration.msa.ratings_are_ordinal);
     object.insert(QStringLiteral("seasonal_period"),
                   static_cast<qint64>(page.configuration.time_series.seasonal_period));
     object.insert(QStringLiteral("seasonal_error_model"),
@@ -549,6 +1071,7 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     QJsonArray plots;
     for (const auto& plot : page.plots) {
         QJsonObject plot_object;
+        plot_object.insert(QStringLiteral("schema_version"), plot.schema_version);
         plot_object.insert(QStringLiteral("kind"), static_cast<int>(plot.kind));
         plot_object.insert(QStringLiteral("title"), QString::fromStdString(plot.title));
         plot_object.insert(QStringLiteral("x_axis_title"), QString::fromStdString(plot.x_axis_title));
@@ -559,6 +1082,16 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
         plot_object.insert(QStringLiteral("show_legend"), plot.show_legend);
         plot_object.insert(QStringLiteral("line_width"), plot.line_width);
         plot_object.insert(QStringLiteral("legend_font_size"), plot.legend_font_size);
+        plot_object.insert(QStringLiteral("title_font_size"), plot.title_font_size);
+        plot_object.insert(QStringLiteral("axis_font_size"), plot.axis_font_size);
+        plot_object.insert(QStringLiteral("theme_preset"),
+                           QString::fromStdString(plot.theme_preset));
+        plot_object.insert(QStringLiteral("y_min"), optional_number(plot.y_min));
+        plot_object.insert(QStringLiteral("y_max"), optional_number(plot.y_max));
+        plot_object.insert(QStringLiteral("x_min"), optional_number(plot.x_min));
+        plot_object.insert(QStringLiteral("x_max"), optional_number(plot.x_max));
+        plot_object.insert(QStringLiteral("data_region_fill"),
+                           QString::fromStdString(plot.data_region_fill));
         plot_object.insert(QStringLiteral("grid_color"), QString::fromStdString(plot.grid_color));
         const auto write_series_style = [](QJsonObject& target,
                                            const domain::PlotSeriesStyle& style) {
@@ -745,6 +1278,12 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
     page.method_metadata.not_computed_reason =
         object.value(QStringLiteral("method_not_computed_reason")).toString().toStdString();
     page.configuration.chart_type = object.value(QStringLiteral("chart_type")).toString().toStdString();
+    page.configuration.capability_method =
+        object.value(QStringLiteral("capability_method"))
+            .toString(QStringLiteral("normal")).toStdString();
+    page.configuration.nonnormal_distribution =
+        object.value(QStringLiteral("nonnormal_distribution"))
+            .toString(QStringLiteral("weibull")).toStdString();
     page.configuration.analysis_name = object.value(QStringLiteral("analysis_name")).toString().toStdString();
     page.configuration.graph.graph_kind =
         object.value(QStringLiteral("graph_kind")).toString().toStdString();
@@ -936,6 +1475,8 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         read_optional_size(object.value(QStringLiteral("variance_first_column")));
     page.configuration.inference.variance_second_column =
         read_optional_size(object.value(QStringLiteral("variance_second_column")));
+    page.configuration.inference.variance_group_column =
+        read_optional_size(object.value(QStringLiteral("variance_group_column")));
     page.configuration.inference.hypothesized_variance =
         read_optional(object.value(QStringLiteral("hypothesized_variance")));
     page.configuration.inference.variance_test_method =
@@ -970,6 +1511,19 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         object.value(QStringLiteral("doe_randomize")).toBool(false);
     page.configuration.doe.random_seed =
         static_cast<std::uint64_t>(object.value(QStringLiteral("doe_random_seed")).toInteger());
+    page.configuration.doe.optimization_goal =
+        object.value(QStringLiteral("doe_optimization_goal"))
+            .toString(QStringLiteral("maximize")).toStdString();
+    page.configuration.doe.optimization_lower =
+        read_optional(object.value(QStringLiteral("doe_optimization_lower")));
+    page.configuration.doe.optimization_upper =
+        read_optional(object.value(QStringLiteral("doe_optimization_upper")));
+    page.configuration.doe.optimization_target =
+        read_optional(object.value(QStringLiteral("doe_optimization_target")));
+    page.configuration.doe.optimization_weight =
+        object.value(QStringLiteral("doe_optimization_weight")).toDouble(1.0);
+    page.configuration.doe.optimization_confidence =
+        object.value(QStringLiteral("doe_optimization_confidence")).toDouble(0.95);
     page.configuration.msa.nested_measurement_column =
         read_optional_size(object.value(QStringLiteral("nested_gage_measurement_column")));
     page.configuration.msa.nested_part_column =
@@ -1026,6 +1580,8 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
     page.configuration.msa.attribute_agreement_method =
         object.value(QStringLiteral("attribute_agreement_method"))
             .toString("kappa").toStdString();
+    page.configuration.msa.ratings_are_ordinal =
+        object.value(QStringLiteral("ratings_are_ordinal")).toBool(false);
     page.configuration.time_series.seasonal_period =
         static_cast<std::size_t>(object.value(QStringLiteral("seasonal_period")).toInteger(1));
     page.configuration.time_series.seasonal_error_model =
@@ -1074,6 +1630,7 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
     for (const QJsonValue& plot_value : object.value(QStringLiteral("plots")).toArray()) {
         const QJsonObject plot_object = plot_value.toObject();
         domain::PlotSpec plot;
+        plot.schema_version = plot_object.value(QStringLiteral("schema_version")).toInt(1);
         plot.kind = static_cast<domain::PlotKind>(plot_object.value(QStringLiteral("kind")).toInt());
         plot.title = plot_object.value(QStringLiteral("title")).toString().toStdString();
         plot.x_axis_title = plot_object.value(QStringLiteral("x_axis_title")).toString().toStdString();
@@ -1084,6 +1641,17 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         plot.show_legend = plot_object.value(QStringLiteral("show_legend")).toBool(true);
         plot.line_width = plot_object.value(QStringLiteral("line_width")).toDouble(1.8);
         plot.legend_font_size = plot_object.value(QStringLiteral("legend_font_size")).toInt(8);
+        plot.title_font_size = plot_object.value(QStringLiteral("title_font_size")).toInt(11);
+        plot.axis_font_size = plot_object.value(QStringLiteral("axis_font_size")).toInt(9);
+        plot.theme_preset =
+            plot_object.value(QStringLiteral("theme_preset")).toString(QStringLiteral("default"))
+                .toStdString();
+        plot.y_min = read_optional(plot_object.value(QStringLiteral("y_min")));
+        plot.y_max = read_optional(plot_object.value(QStringLiteral("y_max")));
+        plot.x_min = read_optional(plot_object.value(QStringLiteral("x_min")));
+        plot.x_max = read_optional(plot_object.value(QStringLiteral("x_max")));
+        plot.data_region_fill = plot_object.value(QStringLiteral("data_region_fill"))
+                                    .toString().toStdString();
         plot.grid_color = plot_object.value(QStringLiteral("grid_color"))
                               .toString(QStringLiteral("#e3e7eb")).toStdString();
         const auto read_series_style = [](const QJsonObject& source,

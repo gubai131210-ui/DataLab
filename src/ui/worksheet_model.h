@@ -28,6 +28,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
     bool setHeaderData(int section, Qt::Orientation orientation,
                        const QVariant& value, int role = Qt::EditRole) override;
+    bool clear_cells(const QModelIndexList& indexes);
 
 private:
     datalab::domain::DataTable table_;

@@ -4,6 +4,10 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <functional>
+#include <sstream>
+#include <string>
+#include <unordered_set>
 
 namespace datalab::domain {
 namespace {
@@ -72,10 +76,21 @@ bool is_missing_cell(const std::string& cell)
 void populate_data_table_contract(DataTable& table)
 {
     table.import_metadata.original_row_count = table.rows.size();
+    table.import_metadata.column_count = table.columns.size();
+    for (auto& row : table.rows) {
+        row.resize(table.columns.size());
+    }
     table.row_ids.resize(table.rows.size());
     for (std::size_t row = 0; row < table.rows.size(); ++row) {
         table.row_ids[row] = static_cast<RowId>(row);
     }
+
+    std::ostringstream identity;
+    identity << table.source_path << '|' << table.rows.size() << '|';
+    for (const std::string& column : table.columns) {
+        identity << column << ',';
+    }
+    table.import_metadata.dataset_id = std::to_string(std::hash<std::string>{}(identity.str()));
 
     table.column_types.assign(table.columns.size(), ColumnType::unknown);
     table.cell_states.assign(
@@ -118,6 +133,39 @@ void populate_data_table_contract(DataTable& table)
             }
         }
     }
+}
+
+std::string validate_data_table_contract(const DataTable& table)
+{
+    if (table.column_types.size() != table.columns.size()) {
+        return "导入结果的列类型数量与列名不一致。";
+    }
+    if (table.row_ids.size() != table.rows.size()) {
+        return "导入结果的 RowId 数量与数据行不一致。";
+    }
+    if (table.cell_states.size() != table.rows.size()) {
+        return "导入结果的单元格状态行数与数据行不一致。";
+    }
+    if (table.import_metadata.original_row_count != table.rows.size()) {
+        return "导入元数据中的原始行数与数据行不一致。";
+    }
+    if (table.import_metadata.column_count != table.columns.size()) {
+        return "导入元数据中的列数与列名不一致。";
+    }
+    std::unordered_set<RowId> seen;
+    seen.reserve(table.row_ids.size());
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (table.rows[row].size() != table.columns.size()) {
+            return "第 " + std::to_string(row + 1) + " 行的字段数与列数不一致。";
+        }
+        if (table.cell_states[row].size() != table.columns.size()) {
+            return "第 " + std::to_string(row + 1) + " 行的单元格状态数与列数不一致。";
+        }
+        if (!seen.insert(table.row_ids[row]).second) {
+            return "导入结果包含重复的 RowId。";
+        }
+    }
+    return {};
 }
 
 ExtractedNumericColumn extract_numeric_column(

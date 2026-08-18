@@ -65,6 +65,10 @@ MsaType1Result msa_type1(const std::vector<double>& measurements,
         r.t_statistic = 0.0;
         r.bias_ci_lower = r.bias;
         r.bias_ci_upper = r.bias;
+        r.rules.push_back({
+            "zero_repeatability", "triggered",
+            "重复性为零，偏倚推断不可识别。", {},
+            "不要把 p=1 或缺失推断解释为“无偏倚”。"});
     }
     if (tolerance > 0.0 && r.standard_deviation > 0.0) {
         r.cg = tolerance / (6.0 * r.standard_deviation);
@@ -74,6 +78,12 @@ MsaType1Result msa_type1(const std::vector<double>& measurements,
     }
     r.percent_tolerance = tolerance > 0.0
         ? 6.0 * r.standard_deviation / tolerance * 100.0 : 0.0;
+    if (tolerance <= 0.0) {
+        r.rules.push_back({
+            "invalid_tolerance", "triggered",
+            "未提供有效公差，Cg/Cgk/%Tolerance 不可用作能力证据。", {},
+            "Type 1 能力指数需要有限正公差。"});
+    }
     return r;
 }
 
@@ -143,6 +153,10 @@ BiasLinearityResult bias_linearity(const std::vector<double>& references,
         level.bias /= static_cast<double>(level.valid_count);
         r.levels.push_back(level);
     }
+    r.rules.push_back({
+        "bias_linearity", "not_triggered",
+        "已估计偏倚对参考值的线性关系，端点偏倚需与公差比较。", {},
+        "回归关系不能替代跨操作者、跨部件的完整 Gage R&R。"});
     return r;
 }
 
@@ -177,6 +191,14 @@ StabilityResult gage_stability(const std::vector<double>& measurements)
     for (std::size_t i = 0; i < measurements.size(); ++i) {
         r.source_rows.push_back(i);
     }
+    r.rules.push_back({
+        "stability_signals",
+        r.out_of_control.empty() ? "not_triggered" : "triggered",
+        r.out_of_control.empty()
+            ? "当前观测未发现稳定性图超限点。"
+            : "量具稳定性图存在超限点，需要调查特殊原因。",
+        {},
+        "超限只是调查提示，不能直接判定量具合格或不合格。"});
     return r;
 }
 }  // namespace datalab::domain::statistics

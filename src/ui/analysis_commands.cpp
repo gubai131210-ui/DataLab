@@ -157,6 +157,29 @@ const RunFn doe_run = [](const DataTable& table,
     return AnalysisService::doe_factorial(table, configuration);
 };
 
+const ApplyFn response_optimization_apply = [](
+    AnalysisConfiguration& c,
+    const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+    const AnalysisApplyResult base = doe_apply(c, d);
+    if (!base.valid) {
+        return base;
+    }
+    if (!c.doe.response_column.has_value() || c.doe.factor_columns.empty()) {
+        return apply_error(QStringLiteral("响应优化"),
+                           QStringLiteral("响应优化需要选择响应列和至少一个因子列。"));
+    }
+    c.analysis_name = "DOE 响应优化";
+    c.chart_type = "response_optimization";
+    const std::string goal = normalize(d.line_text("goal"));
+    c.doe.optimization_goal = goal.empty() ? "maximize" : goal;
+    c.doe.optimization_lower = d.line_number("lower");
+    c.doe.optimization_upper = d.line_number("upper");
+    c.doe.optimization_target = d.line_number("target");
+    c.doe.optimization_weight = d.line_number("weight").value_or(1.0);
+    c.doe.optimization_confidence = d.line_number("confidence").value_or(0.95);
+    return {};
+};
+
 }  // namespace
 
 InputSpec::InputSpec(QString input_id, QString input_label, QString input_placeholder)
@@ -180,6 +203,11 @@ InputSpec::InputSpec(QString input_id, QString input_label, QString input_placeh
         kind = InputKind::choice;
         choices = {{QStringLiteral("single"), QStringLiteral("单指数")},
                    {QStringLiteral("double"), QStringLiteral("双指数")}};
+    } else if (normalized == QStringLiteral("goal")) {
+        kind = InputKind::choice;
+        choices = {{QStringLiteral("maximize"), QStringLiteral("最大化")},
+                   {QStringLiteral("minimize"), QStringLiteral("最小化")},
+                   {QStringLiteral("target"), QStringLiteral("目标值")}};
     }
     if (normalized == QStringLiteral("confidence")) {
         if (placeholder.contains(QStringLiteral("0.95"))) {
@@ -216,6 +244,8 @@ InputSpec::InputSpec(QString input_id, QString input_label, QString input_placeh
     } else if (normalized == QStringLiteral("seed")) {
         kind = InputKind::integer;
         minimum = 0.0;
+    } else if (normalized == QStringLiteral("ordinal")) {
+        kind = InputKind::boolean;
     } else if (normalized == QStringLiteral("lsl")
                || normalized == QStringLiteral("usl")
                || normalized == QStringLiteral("tolerance")
@@ -223,7 +253,8 @@ InputSpec::InputSpec(QString input_id, QString input_label, QString input_placeh
                || normalized == QStringLiteral("k")
                || normalized == QStringLiteral("h")
                || normalized == QStringLiteral("limit")
-               || normalized == QStringLiteral("effect")) {
+               || normalized == QStringLiteral("effect")
+               || normalized == QStringLiteral("weight")) {
         kind = InputKind::number;
     }
     if (normalized == QStringLiteral("tests")) {
@@ -757,20 +788,22 @@ const std::vector<AnalysisCommand>& all()
             QStringLiteral("统计"),
             QStringLiteral("variance_test"),
             false, true,
-            {{QStringLiteral("first"), QStringLiteral("第一样本"), false, false},
-             {QStringLiteral("second"), QStringLiteral("第二样本（两方差）"), false, false}},
+            {{QStringLiteral("first"), QStringLiteral("第一样本 / 测量列"), false, false},
+             {QStringLiteral("second"), QStringLiteral("第二样本（两方差）"), false, false},
+             {QStringLiteral("group"), QStringLiteral("分组列（k 组等方差）"), false, false}},
             {{QStringLiteral("hypothesis"), QStringLiteral("假设方差（一方差）"),
               QStringLiteral("例如 1.0")},
-             {QStringLiteral("method"), QStringLiteral("两方差方法"),
-              QStringLiteral("f / levene / brown_forsythe")},
+             {QStringLiteral("method"), QStringLiteral("两方差 / 等方差方法"),
+              QStringLiteral("f / levene / levene_mean / brown_forsythe")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const int first = d.first_role_index("first");
                 const int second = d.first_role_index("second");
+                const int group = d.first_role_index("group");
                 if (first < 0) {
                     return apply_error(QStringLiteral("参数不足"),
-                                       QStringLiteral("请选择第一样本列。"));
+                                       QStringLiteral("请选择第一样本列或测量列。"));
                 }
                 c.analysis_name = "方差检验";
                 c.chart_type = "variance_test";
@@ -778,10 +811,17 @@ const std::vector<AnalysisCommand>& all()
                 if (second >= 0) {
                     c.inference.variance_second_column = static_cast<std::size_t>(second);
                 }
+                if (group >= 0) {
+                    c.inference.variance_group_column = static_cast<std::size_t>(group);
+                }
                 c.inference.hypothesized_variance = d.line_number("hypothesis");
                 c.inference.variance_test_method = normalize(d.line_text("method"));
-                if (c.inference.variance_test_method != "levene"
-                    && c.inference.variance_test_method != "brown_forsythe") {
+                if (c.inference.variance_test_method == "levene_mean") {
+                    c.inference.variance_test_method = "levene_mean";
+                } else if (c.inference.variance_test_method == "levene"
+                           || c.inference.variance_test_method == "brown_forsythe") {
+                    c.inference.variance_test_method = "levene";
+                } else {
                     c.inference.variance_test_method = "f";
                 }
                 c.inference.variance_alternative = normalize(d.line_text("alternative"));
@@ -897,7 +937,7 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("event"), QStringLiteral("失效指示（1=失效，0=删失）"), false, false},
              {QStringLiteral("group"), QStringLiteral("分组列（Log-rank，可选）"), false, true}},
             {{QStringLiteral("model"), QStringLiteral("模型"),
-              QStringLiteral("kaplan_meier / weibull / exponential")}},
+              QStringLiteral("kaplan_meier / weibull / weibull3 / exponential / exponential2 / lognormal / lognormal3")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const int time = d.first_role_index("time");
                 const int event = d.first_role_index("event");
@@ -915,7 +955,11 @@ const std::vector<AnalysisCommand>& all()
                 }
                 c.reliability.model = normalize(d.line_text("model"));
                 if (c.reliability.model != "weibull"
-                    && c.reliability.model != "exponential") {
+                    && c.reliability.model != "weibull3"
+                    && c.reliability.model != "exponential"
+                    && c.reliability.model != "exponential2"
+                    && c.reliability.model != "lognormal"
+                    && c.reliability.model != "lognormal3") {
                     c.reliability.model = "kaplan_meier";
                 }
                 return {};
@@ -1844,7 +1888,9 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("subgroup_size"), QStringLiteral("子组大小"), QStringLiteral("1")},
              {QStringLiteral("lsl"), QStringLiteral("LSL"), QStringLiteral("例如 73.95")},
              {QStringLiteral("usl"), QStringLiteral("USL"), QStringLiteral("例如 74.05")},
-             {QStringLiteral("target"), QStringLiteral("Target"), QStringLiteral("可选")}},
+             {QStringLiteral("target"), QStringLiteral("Target"), QStringLiteral("可选")},
+             {QStringLiteral("transform"), QStringLiteral("变换"),
+              QStringLiteral("none / johnson")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "正态过程能力";
                 c.chart_type = "capability";
@@ -1859,6 +1905,104 @@ const std::vector<AnalysisCommand>& all()
                 c.specifications.lower = d.line_number("lsl");
                 c.specifications.upper = d.line_number("usl");
                 c.specifications.target = d.line_number("target");
+                const std::string transform = normalize(d.line_text("transform"));
+                c.capability_method = transform == "johnson" ? "johnson" : "normal";
+                return {};
+            },
+            [](const DataTable& table, const AnalysisConfiguration& configuration) {
+                return AnalysisService::capability(table, configuration);
+            }},
+        {
+            QStringLiteral("distribution_identification"),
+            QStringLiteral("个体分布识别"),
+            QStringLiteral("个体分布识别"),
+            QStringLiteral("质量工具"),
+            QStringLiteral("normality_test"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("测量值"), false, false}},
+            {},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "个体分布识别";
+                c.chart_type = "distribution_identification";
+                const int column = d.first_role_index("variables");
+                if (column < 0) {
+                    return apply_error(QStringLiteral("未选择变量"),
+                                       QStringLiteral("请选择测量值列。"));
+                }
+                c.variable_columns = {static_cast<std::size_t>(column)};
+                c.selection.measurement_column = static_cast<std::size_t>(column);
+                return {};
+            },
+            [](const DataTable& table, const AnalysisConfiguration& configuration) {
+                return AnalysisService::distribution_identification(table, configuration);
+            }},
+        {
+            QStringLiteral("between_within_capability"),
+            QStringLiteral("组间/组内过程能力"),
+            QStringLiteral("组间/组内过程能力分析"),
+            QStringLiteral("质量工具"),
+            QStringLiteral("capability"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("测量值"), false, false},
+             {QStringLiteral("subgroup"), QStringLiteral("子组"), false, false}},
+            {{QStringLiteral("lsl"), QStringLiteral("LSL"), QStringLiteral("例如 73.95")},
+             {QStringLiteral("usl"), QStringLiteral("USL"), QStringLiteral("例如 74.05")},
+             {QStringLiteral("target"), QStringLiteral("Target"), QStringLiteral("可选")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "组间/组内过程能力";
+                c.chart_type = "between_within_capability";
+                const int column = d.first_role_index("variables");
+                if (column < 0) {
+                    return apply_error(QStringLiteral("未选择变量"),
+                                       QStringLiteral("请选择测量值列。"));
+                }
+                const int subgroup = d.first_role_index("subgroup");
+                if (subgroup < 0) {
+                    return apply_error(QStringLiteral("未选择子组"),
+                                       QStringLiteral("组间/组内能力需要子组标识列。"));
+                }
+                c.variable_columns.push_back(static_cast<std::size_t>(column));
+                c.selection.measurement_column = static_cast<std::size_t>(column);
+                c.selection.subgroup_column = static_cast<std::size_t>(subgroup);
+                c.specifications.lower = d.line_number("lsl");
+                c.specifications.upper = d.line_number("usl");
+                c.specifications.target = d.line_number("target");
+                c.capability_method = "between_within";
+                return {};
+            },
+            [](const DataTable& table, const AnalysisConfiguration& configuration) {
+                return AnalysisService::between_within_capability(table, configuration);
+            }},
+        {
+            QStringLiteral("nonnormal_capability"),
+            QStringLiteral("非正态过程能力"),
+            QStringLiteral("非正态过程能力分析"),
+            QStringLiteral("质量工具"),
+            QStringLiteral("capability"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("变量"), false, false}},
+            {{QStringLiteral("lsl"), QStringLiteral("LSL"), QStringLiteral("例如 73.95")},
+             {QStringLiteral("usl"), QStringLiteral("USL"), QStringLiteral("例如 74.05")},
+             {QStringLiteral("target"), QStringLiteral("Target"), QStringLiteral("可选")},
+             {QStringLiteral("distribution"), QStringLiteral("分布"),
+              QStringLiteral("weibull / lognormal")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "非正态过程能力";
+                c.chart_type = "capability";
+                const int column = d.first_role_index("variables");
+                if (column < 0) {
+                    return apply_error(QStringLiteral("未选择变量"),
+                                       QStringLiteral("请选择测量值列。"));
+                }
+                c.variable_columns.push_back(static_cast<std::size_t>(column));
+                c.selection.measurement_column = static_cast<std::size_t>(column);
+                c.specifications.lower = d.line_number("lsl");
+                c.specifications.upper = d.line_number("usl");
+                c.specifications.target = d.line_number("target");
+                c.capability_method = "non_normal";
+                const std::string distribution = normalize(d.line_text("distribution"));
+                c.nonnormal_distribution =
+                    distribution == "lognormal" ? "lognormal" : "weibull";
                 return {};
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
@@ -2020,7 +2164,8 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("part"), QStringLiteral("部件"), false, false},
              {QStringLiteral("appraiser"), QStringLiteral("评估者"), false, false},
              {QStringLiteral("standard"), QStringLiteral("标准（可选）"), false, true}},
-            {},
+            {{QStringLiteral("ordinal"), QStringLiteral("有序评级（true 时计算 Kendall W/τ）"),
+              QStringLiteral("false")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 c.analysis_name = "属性一致性分析";
                 c.chart_type = "attribute_agreement";
@@ -2034,6 +2179,9 @@ const std::vector<AnalysisCommand>& all()
                 if (standard >= 0) {
                     c.msa.attribute_standard_column = static_cast<std::size_t>(standard);
                 }
+                const std::string ordinal = normalize(d.line_text("ordinal"));
+                c.msa.ratings_are_ordinal = ordinal == "true" || ordinal == "1"
+                    || ordinal == "yes";
                 return {};
             },
             AnalysisService::attribute_agreement},
@@ -2077,6 +2225,26 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("seed"), QStringLiteral("随机种子"), QStringLiteral("0")}},
             doe_apply,
             doe_run},
+        {
+            QStringLiteral("response_optimization"),
+            QStringLiteral("DOE 响应优化"),
+            QStringLiteral("DOE 响应优化"),
+            QStringLiteral("质量工具"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应列"), false, false},
+             {QStringLiteral("factor_columns"), QStringLiteral("已导入因子列（多选）"),
+              true, false}},
+            {{QStringLiteral("goal"), QStringLiteral("优化目标"), QStringLiteral("maximize")},
+             {QStringLiteral("lower"), QStringLiteral("下限（可空，默认观测最小）"), QStringLiteral("")},
+             {QStringLiteral("upper"), QStringLiteral("上限（可空，默认观测最大）"), QStringLiteral("")},
+             {QStringLiteral("target"), QStringLiteral("目标值（目标优化时使用）"), QStringLiteral("")},
+             {QStringLiteral("weight"), QStringLiteral("权重"), QStringLiteral("1")},
+             {QStringLiteral("confidence"), QStringLiteral("置信水平"), QStringLiteral("0.95")},
+             {QStringLiteral("low"), QStringLiteral("低水平（逗号分隔，可选）"), QStringLiteral("-1,-1")},
+             {QStringLiteral("high"), QStringLiteral("高水平（逗号分隔，可选）"), QStringLiteral("1,1")}},
+            response_optimization_apply,
+            AnalysisService::response_optimization},
     };
     return commands;
 }

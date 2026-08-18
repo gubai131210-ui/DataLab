@@ -72,6 +72,13 @@ struct AnovaResult {
     double error_mean_square = 0.0;
     double f_statistic = 0.0;
     std::optional<double> p_value;
+    QualityEvidence evidence;
+    std::vector<AssumptionCheck> assumptions;
+    std::vector<RuleEvidence> rules;
+    std::vector<double> residuals;
+    std::vector<double> fitted;
+    std::optional<double> levene_p_value;
+    std::optional<double> residual_normality_p;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

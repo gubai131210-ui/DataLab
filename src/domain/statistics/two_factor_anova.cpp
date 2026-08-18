@@ -1,6 +1,8 @@
 #include "domain/statistics/two_factor_anova.h"
 
 #include "domain/statistics/hypothesis_tests.h"
+#include "domain/statistics/normality_test.h"
+#include "domain/statistics/variance_tests.h"
 
 #include <algorithm>
 #include <cmath>
@@ -18,9 +20,10 @@ void add_diagnostic(
     std::vector<DiagnosticMessage>& diagnostics,
     DiagnosticMessage::Severity severity,
     const char* code,
-    const char* message)
+    const std::string& message)
 {
-    diagnostics.push_back({severity, code, message});
+    diagnostics.push_back(
+        {severity, std::string{code}, message, {}});
 }
 
 struct Observation {
@@ -72,20 +75,20 @@ Fit fit_model(const Matrix& matrix, const std::vector<double>& response)
             q.push_back(std::move(vector));
         }
     }
-    double explained = 0.0;
+    std::vector<double> fitted(n, 0.0);
     for (const auto& basis : q) {
         const double projection = std::inner_product(
             basis.cbegin(), basis.cend(), response.cbegin(), 0.0);
-        explained += projection * projection;
+        for (std::size_t row = 0; row < n; ++row) {
+            fitted[row] += projection * basis[row];
+        }
     }
-    double total = 0.0;
-    const double mean = std::accumulate(
-        response.cbegin(), response.cend(), 0.0)
-        / static_cast<double>(response.size());
-    for (const double value : response) {
-        total += (value - mean) * (value - mean);
+    double rss = 0.0;
+    for (std::size_t row = 0; row < n; ++row) {
+        const double residual = response[row] - fitted[row];
+        rss += residual * residual;
     }
-    return {std::max(0.0, total - explained), q.size()};
+    return {std::max(0.0, rss), q.size()};
 }
 
 Matrix make_model(
@@ -200,11 +203,16 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
                        "含缺失因子或响应值的观测已从分析中排除。");
     }
     if (levels_a_set.size() < 2 || levels_b_set.size() < 2
-        || observations.size() < 4) {
+        || observations.size() < 3) {
         add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::error,
                        "insufficient_two_factor_anova_levels",
-                       "双因素 ANOVA 需要两个因子各至少两个水平及足够观测。");
+                       "双因素 ANOVA 需要两个因子各至少两个水平及至少三个观测。");
         return result;
+    }
+    if (observations.size() < 4) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "small_two_factor_anova_sample",
+                       "观测数较少；部分效应可能不可估计或误差自由度不足。");
     }
     const std::vector<std::string> levels_a(levels_a_set.cbegin(), levels_a_set.cend());
     const std::vector<std::string> levels_b(levels_b_set.cbegin(), levels_b_set.cend());
@@ -232,6 +240,7 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
         add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
                        "unbalanced_two_factor_anova",
                        "因子组合的重复数不平衡；Seq SS 与 Adj SS 可能不同。");
+        result.design_balanced = false;
     }
 
     std::vector<double> response;
@@ -265,7 +274,19 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
     result.evidence.valid_count = observations.size();
     result.evidence.omitted_count = result.omitted_observation_count;
     result.evidence.assumption_status = "not_verified";
-    result.evidence.source_rows = input.source_rows;
+    result.evidence.source_rows.clear();
+    result.observation_source_rows.clear();
+    for (std::size_t index = 0; index < count; ++index) {
+        if (index >= input.factor_a.size() || input.factor_a[index].empty()
+            || input.factor_b[index].empty()
+            || !std::isfinite(input.response[index])) {
+            continue;
+        }
+        const std::size_t source = index < input.source_rows.size()
+            ? input.source_rows[index] : index;
+        result.observation_source_rows.push_back(source);
+        result.evidence.source_rows.push_back(source);
+    }
 
     const std::vector<std::string> labels = {"Factor A", "Factor B", "A*B"};
     const std::vector<Fit> sequential_fits = {
@@ -298,10 +319,10 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
         if (effect.degrees_of_freedom == 0 || adjusted_df == 0) {
             effect.estimable = false;
             effect.estimability = "rank_deficient";
-            const std::string message =
-                effect.term + " 不可估计，不输出伪造平方和或 F/P。";
-            add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
-                           "not_estimable", message.c_str());
+            add_diagnostic(
+                result.diagnostics, DiagnosticMessage::Severity::warning,
+                "not_estimable",
+                effect.term + " 不可估计，不输出伪造平方和或 F/P。");
         } else {
             effect.sequential_sum_of_squares = std::max(0.0, sequential_ss);
             effect.adjusted_sum_of_squares = std::max(0.0, adjusted_ss);
@@ -329,6 +350,76 @@ TwoFactorAnovaResult two_factor_anova(const TwoFactorAnovaInput& input)
         result.interaction_means.push_back({levels.first, levels.second, values.size(),
             std::accumulate(values.cbegin(), values.cend(), 0.0) / values.size()});
     }
+    std::map<std::pair<std::string, std::string>, double> cell_mean_map;
+    for (const auto& mean : result.interaction_means) {
+        cell_mean_map[{mean.factor_a_level, mean.factor_b_level}] = mean.mean;
+    }
+    result.fitted.reserve(observations.size());
+    result.residuals.reserve(observations.size());
+    std::vector<std::vector<double>> cell_groups;
+    for (const auto& [levels, values] : cells) {
+        if (values.size() >= 2) {
+            cell_groups.push_back(values);
+        }
+    }
+    for (const auto& observation : observations) {
+        const double fitted = cell_mean_map[{observation.a, observation.b}];
+        result.fitted.push_back(fitted);
+        result.residuals.push_back(observation.y - fitted);
+    }
+    if (!result.residuals.empty()) {
+        const auto residual_normality = normality_test(result.residuals);
+        result.residual_normality_p = residual_normality.p_value;
+        result.assumptions.push_back({
+            "residual_normality",
+            residual_normality.decision == "reject" ? "evidence_against"
+                : residual_normality.decision == "fail_to_reject"
+                    ? "no_evidence_against" : "not_computed",
+            residual_normality.anderson_darling, residual_normality.p_value,
+            "双因素 ANOVA 残差来自单元均值；拒绝正态假设只是调查证据。"});
+        if (residual_normality.decision == "reject") {
+            result.evidence.assumption_status = "evidence_against";
+        }
+    }
+    if (cell_groups.size() >= 2) {
+        const auto levene = levene_k_groups(cell_groups);
+        const std::string homogeneity = !levene.p_value.has_value()
+            ? "not_computed"
+            : *levene.p_value < 0.05 ? "evidence_against" : "no_evidence_against";
+        result.assumptions.push_back({
+            "homogeneity", homogeneity, levene.f_statistic, levene.p_value,
+            "单元重复数足够时用 Levene 检验作为方差齐性证据。"});
+        if (homogeneity == "evidence_against") {
+            result.evidence.assumption_status = "evidence_against";
+        }
+    } else {
+        result.assumptions.push_back({
+            "homogeneity", "not_computed", std::nullopt, std::nullopt,
+            "单元重复不足，无法计算方差齐性检验。"});
+    }
+    result.rules.push_back({
+        "unbalanced_design",
+        result.design_balanced ? "not_triggered" : "triggered",
+        result.design_balanced
+            ? "因子组合重复数平衡。"
+            : "因子组合不平衡，Sequential SS 与 Adjusted SS 可能不同。",
+        {},
+        "不平衡设计应同时报告 Seq SS 与 Adj SS，不要只看其中一个。"});
+    std::size_t not_estimable = 0;
+    for (const auto& effect : result.effects) {
+        if (!effect.estimable) {
+            ++not_estimable;
+        }
+    }
+    result.rules.push_back({
+        "estimability",
+        not_estimable > 0 || result.error_degrees_of_freedom == 0
+            ? "triggered" : "not_triggered",
+        not_estimable > 0 || result.error_degrees_of_freedom == 0
+            ? "存在不可估计项或无误差自由度，不输出伪造 F/P。"
+            : "当前效应可估计且误差自由度为正。",
+        {},
+        "不可估计项必须显示原因，不能填入默认 F/P。"});
     return result;
 }
 

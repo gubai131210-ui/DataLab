@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <string>
 
 namespace datalab::application {
 
@@ -95,6 +96,30 @@ void append_diagnostics(
             diagnostic.code,
             prefix + diagnostic.message});
     }
+}
+
+void append_rule_table(
+    domain::OutputPage& page,
+    const std::vector<domain::RuleEvidence>& rules)
+{
+    if (rules.empty()) {
+        return;
+    }
+    domain::StatisticTable table;
+    table.title = "规则证据";
+    table.headers = {"规则", "状态", "证据", "关联行", "建议"};
+    for (const auto& rule : rules) {
+        std::string rows;
+        for (std::size_t index = 0; index < rule.related_rows.size(); ++index) {
+            if (index != 0) {
+                rows += ",";
+            }
+            rows += std::to_string(rule.related_rows[index] + 1);
+        }
+        table.rows.push_back({
+            rule.id, rule.status, rule.message, rows, rule.suggested_action});
+    }
+    page.tables.push_back(std::move(table));
 }
 
 domain::statistics::TestAlternative parse_alternative(const std::string& value)

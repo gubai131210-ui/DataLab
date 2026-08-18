@@ -34,10 +34,12 @@ struct PcaResult {
     std::vector<std::vector<double>> covariance_matrix;
     std::vector<std::vector<double>> correlation_matrix;
 
-    // Eigenvectors are stored by column: loadings[variable][component].
+    // Eigenvectors/coefficients are stored by column: coefficients[variable][component].
+    // loadings are correlation-style v * sqrt(λ), not Minitab "coefficients".
     std::vector<double> eigenvalues;
     std::vector<double> explained_variance_ratio;
     std::vector<double> cumulative_explained_variance_ratio;
+    std::vector<std::vector<double>> coefficients;
     std::vector<std::vector<double>> loadings;
     std::vector<std::vector<double>> scores;
 

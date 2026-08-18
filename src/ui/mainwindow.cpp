@@ -7,6 +7,7 @@
 #include "infrastructure/project_repository.h"
 #include "ui/analysis_commands.h"
 #include "ui/analysis_setup_dialog.h"
+#include "ui/analysis_chart_widget.h"
 #include "ui/command_registry.h"
 #include "ui/output_workspace.h"
 #include "ui/project_navigator.h"
@@ -15,7 +16,7 @@
 #include "ui/report_preview_dialog.h"
 
 #include <QAction>
-#include <QAbstractItemView>
+#include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
@@ -31,7 +32,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QKeyEvent>
-#include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -39,6 +39,7 @@
 #include <QStatusBar>
 #include <QTableView>
 #include <QToolBar>
+#include <QWidget>
 #include <QFutureWatcher>
 #include <QtConcurrent/QtConcurrentRun>
 #include <QUndoCommand>
@@ -51,6 +52,27 @@
 
 namespace {
 
+AnalysisChartWidget* chart_widget_from_focus()
+{
+    QWidget* widget = QApplication::focusWidget();
+    while (widget != nullptr) {
+        if (auto* chart = qobject_cast<AnalysisChartWidget*>(widget)) {
+            return chart;
+        }
+        widget = widget->parentWidget();
+    }
+    return nullptr;
+}
+
+AnalysisChartWidget* chart_widget_on_page(QWidget* page)
+{
+    if (page == nullptr) {
+        return nullptr;
+    }
+    const auto charts = page->findChildren<AnalysisChartWidget*>();
+    return charts.isEmpty() ? nullptr : charts.front();
+}
+
 QString primary_analysis_menu(const analysis_commands::AnalysisCommand& command)
 {
     if (command.id == QStringLiteral("pareto")) {
@@ -58,6 +80,7 @@ QString primary_analysis_menu(const analysis_commands::AnalysisCommand& command)
     }
     if (command.id == QStringLiteral("doe_factorial")
         || command.id == QStringLiteral("doe_response")
+        || command.id == QStringLiteral("response_optimization")
         || command.menu_path == QStringLiteral("控制图")) {
         return QStringLiteral("统计");
     }
@@ -71,7 +94,8 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
         return QStringLiteral("控制图");
     }
     if (id == QStringLiteral("doe_factorial")
-        || id == QStringLiteral("doe_response")) {
+        || id == QStringLiteral("doe_response")
+        || id == QStringLiteral("response_optimization")) {
         return QStringLiteral("DOE");
     }
     if (id == QStringLiteral("descriptive")
@@ -114,6 +138,7 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
         return QStringLiteral("假设检验");
     }
     if (id == QStringLiteral("capability")
+        || id == QStringLiteral("nonnormal_capability")
         || id == QStringLiteral("capability_sixpack")
         || id == QStringLiteral("box_cox")
         || id == QStringLiteral("gage_rr")
@@ -230,6 +255,9 @@ MainWindow::MainWindow(QWidget *parent)
         "QLineEdit { background: #ffffff; border: 1px solid #c8d8dd; border-radius: 6px;"
         " padding: 7px 10px; color: #243b44; min-height: 30px; }"
         "QLineEdit:focus { border: 1px solid #35a6aa; }"
+        "QTableView QLineEdit { min-height: 0; padding: 0 4px; margin: 0;"
+        " border: 1px solid #35a6aa; border-radius: 0; }"
+        "QTableView QLineEdit:focus { border: 1px solid #35a6aa; }"
         "QTableView { background: #ffffff; alternate-background-color: #f7fafb;"
         " border: 1px solid #d5e1e5; gridline-color: #e5edef; }"
         "QHeaderView::section { background: #e8f0f2; color: #38525c;"
@@ -288,6 +316,8 @@ void MainWindow::create_commands()
     copy_action->setShortcut(QKeySequence::Copy);
     copy_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(copy_action, &QAction::triggered, this, &MainWindow::copy_selection);
+    QAction* copy_chart_action = commands_->add(QStringLiteral("copy_chart"), QStringLiteral("复制图形"));
+    connect(copy_chart_action, &QAction::triggered, this, &MainWindow::copy_chart);
     QAction* cut_action = commands_->add(QStringLiteral("cut"), QStringLiteral("剪切"));
     cut_action->setShortcut(QKeySequence::Cut);
     cut_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -319,9 +349,6 @@ void MainWindow::create_commands()
         set_icon(command.id, command.icon_file);
     }
 
-    commands_->add(QStringLiteral("msa"), QStringLiteral("测量系统分析（后续版本）"), false);
-    commands_->add(QStringLiteral("doe"), QStringLiteral("试验设计（后续版本）"), false);
-
     auto* file_menu = menuBar()->addMenu(QStringLiteral("文件"));
     commands_->add_to_menu(file_menu, QStringLiteral("new"));
     commands_->add_to_menu(file_menu, QStringLiteral("open"));
@@ -336,6 +363,7 @@ void MainWindow::create_commands()
     commands_->add_to_menu(edit_menu, QStringLiteral("redo"));
     edit_menu->addSeparator();
     commands_->add_to_menu(edit_menu, QStringLiteral("copy"));
+    commands_->add_to_menu(edit_menu, QStringLiteral("copy_chart"));
     commands_->add_to_menu(edit_menu, QStringLiteral("cut"));
     commands_->add_to_menu(edit_menu, QStringLiteral("paste"));
     commands_->add_to_menu(edit_menu, QStringLiteral("clear_cells"));
@@ -417,7 +445,6 @@ void MainWindow::create_layout()
     navigator_dock_ = new QDockWidget(QStringLiteral("项目导航器"), this);
     navigator_dock_->setAllowedAreas(Qt::LeftDockWidgetArea);
     navigator_dock_->setMinimumWidth(220);
-    navigator_dock_->setMaximumWidth(300);
     navigator_ = new ProjectNavigator(navigator_dock_);
     navigator_dock_->setWidget(navigator_);
     addDockWidget(Qt::LeftDockWidgetArea, navigator_dock_);
@@ -433,33 +460,29 @@ void MainWindow::create_layout()
     context_dock_ = new QDockWidget(QStringLiteral("上下文信息"), this);
     context_dock_->setAllowedAreas(Qt::RightDockWidgetArea);
     context_dock_->setMinimumWidth(220);
-    context_dock_->setMaximumWidth(300);
     auto* context = new QWidget(context_dock_);
     auto* context_layout = new QVBoxLayout(context);
     context_layout->setContentsMargins(16, 16, 16, 16);
     context_layout->setSpacing(12);
     auto* context_heading = new QLabel(QStringLiteral("数据集状态"), context);
     context_heading->setObjectName(QStringLiteral("pane_title"));
-    auto* context_status = new QLabel(QStringLiteral("尚未导入数据"), context);
-    context_status->setWordWrap(true);
-    context_status->setStyleSheet(QStringLiteral(
-        "background: #e8f6f2; color: #18794e; padding: 12px;"
-        " border: 1px solid #c7e9dc; border-radius: 7px;"));
-    auto* context_detail = new QLabel(
+    context_status_ = new QLabel(QStringLiteral("尚未导入数据"), context);
+    context_status_->setWordWrap(true);
+    context_detail_ = new QLabel(
         QStringLiteral("导入 CSV 或 Excel 后，这里显示当前工作表的行数、列数和排除状态。"),
         context);
-    context_detail->setWordWrap(true);
-    context_detail->setObjectName(QStringLiteral("pane_subtitle"));
-    auto* context_next = new QLabel(
-        QStringLiteral("下一步\n导入数据后，从“分析”菜单选择统计方法。"), context);
-    context_next->setWordWrap(true);
-    context_next->setStyleSheet(QStringLiteral(
+    context_detail_->setWordWrap(true);
+    context_detail_->setObjectName(QStringLiteral("pane_subtitle"));
+    context_next_ = new QLabel(
+        QStringLiteral("下一步\n导入数据后，从“统计 / 图形 / 质量工具”菜单选择方法。"), context);
+    context_next_->setWordWrap(true);
+    context_next_->setStyleSheet(QStringLiteral(
         "background:#ffffff; color:#49636d; padding:11px;"
         " border:1px solid #d7e3e6; border-radius:7px;"));
     context_layout->addWidget(context_heading);
-    context_layout->addWidget(context_status);
-    context_layout->addWidget(context_detail);
-    context_layout->addWidget(context_next);
+    context_layout->addWidget(context_status_);
+    context_layout->addWidget(context_detail_);
+    context_layout->addWidget(context_next_);
     context_layout->addStretch(1);
     context_dock_->setWidget(context);
     addDockWidget(Qt::RightDockWidgetArea, context_dock_);
@@ -473,11 +496,9 @@ void MainWindow::create_layout()
     layout->setSpacing(8);
     worksheet_model_ = new WorksheetModel(this);
     connect(worksheet_model_, &WorksheetModel::table_changed, this,
-            [this, context_status](const datalab::domain::DataTable& table) {
+            [this](const datalab::domain::DataTable& table) {
                 table_ = table;
-                context_status->setText(QStringLiteral("已准备分析\n%1 行 · %2 列")
-                    .arg(static_cast<qulonglong>(table.rows.size()))
-                    .arg(static_cast<qulonglong>(table.columns.size())));
+                refresh_context_dock();
             });
     connect(worksheet_model_, &QAbstractItemModel::dataChanged, this,
             [this](const QModelIndex&, const QModelIndex&, const QList<int>&) {
@@ -491,15 +512,6 @@ void MainWindow::create_layout()
                 const datalab::domain::DataTable after = worksheet_model_->table();
                 push_table_change(before, after, QStringLiteral("编辑列名"), true);
             });
-    auto* formula_layout = new QHBoxLayout();
-    auto* cell_name = new QLabel(QStringLiteral("单元格"), central);
-    cell_name->setMinimumWidth(52);
-    formula_bar_ = new QLineEdit(central);
-    formula_bar_->setPlaceholderText(QStringLiteral("选择单元格后在此编辑"));
-    formula_layout->addWidget(cell_name);
-    formula_layout->addWidget(formula_bar_, 1);
-    layout->addLayout(formula_layout);
-
     data_table_ = new WorksheetView(central);
     data_table_->setModel(worksheet_model_);
     data_table_->setEditTriggers(
@@ -514,18 +526,14 @@ void MainWindow::create_layout()
     data_table_->addAction(commands_->get(QStringLiteral("clear_cells")));
     connect(static_cast<WorksheetView*>(data_table_), &WorksheetView::active_cell_changed,
             this, [this](const QModelIndex& index) {
-                if (formula_bar_ != nullptr && index.isValid()) {
-                    formula_bar_->setText(index.data(Qt::DisplayRole).toString().replace(
-                        QStringLiteral("*"), QString()));
+                if (index.isValid() && cell_address_ != nullptr) {
+                    cell_address_->setText(QStringLiteral("C%1 · %2")
+                        .arg(index.column() + 1)
+                        .arg(index.row() + 1));
                 }
             });
-    connect(formula_bar_, &QLineEdit::editingFinished, this, [this] {
-        const QModelIndex index = data_table_->currentIndex();
-        if (index.isValid()) {
-            worksheet_model_->setData(index, formula_bar_->text());
-        }
-    });
     output_workspace_ = new OutputWorkspace(central);
+    output_workspace_->installEventFilter(this);
     connect(output_workspace_, &OutputWorkspace::rows_selected, this,
             [this](const std::vector<std::size_t>& rows) {
                 if (data_table_ == nullptr || data_table_->selectionModel() == nullptr) {
@@ -556,42 +564,61 @@ void MainWindow::create_layout()
             [this](const QString& id, const QString& title) {
                 navigator_->rename_analysis(id, title);
             });
+    connect(output_workspace_, &OutputWorkspace::page_closed,
+            navigator_, &ProjectNavigator::remove_analysis);
+    connect(output_workspace_, &OutputWorkspace::pages_changed,
+            this, &MainWindow::refresh_context_dock);
 
-    auto make_pane = [central](const QString& title, const QString& subtitle,
-                               QWidget* content) {
-        auto* pane = new QFrame(central);
-        pane->setObjectName(QStringLiteral("pane_card"));
-        auto* pane_layout = new QVBoxLayout(pane);
-        pane_layout->setContentsMargins(14, 10, 14, 14);
-        pane_layout->setSpacing(6);
-        auto* heading = new QHBoxLayout();
-        auto* title_label = new QLabel(title, pane);
-        title_label->setObjectName(QStringLiteral("pane_title"));
-        auto* subtitle_label = new QLabel(subtitle, pane);
-        subtitle_label->setObjectName(QStringLiteral("pane_subtitle"));
-        heading->addWidget(title_label);
-        heading->addSpacing(10);
-        heading->addWidget(subtitle_label);
-        heading->addStretch(1);
-        pane_layout->addLayout(heading);
-        pane_layout->addWidget(content, 1);
-        return pane;
-    };
-    auto* output_pane = make_pane(
-        QStringLiteral("分析输出"),
-        QStringLiteral("统计表、图形和诊断结果"),
-        output_workspace_);
-    auto* worksheet_pane = make_pane(
-        QStringLiteral("活动工作表"),
-        QStringLiteral("编辑数据，分析当前工作表"),
-        data_table_);
+    auto* output_pane = new QFrame(central);
+    output_pane->setObjectName(QStringLiteral("pane_card"));
+    auto* output_layout = new QVBoxLayout(output_pane);
+    output_layout->setContentsMargins(14, 10, 14, 14);
+    output_layout->setSpacing(6);
+    auto* output_heading = new QHBoxLayout();
+    auto* output_title = new QLabel(QStringLiteral("分析输出"), output_pane);
+    output_title->setObjectName(QStringLiteral("pane_title"));
+    auto* output_subtitle = new QLabel(
+        QStringLiteral("统计表、图形和诊断结果"), output_pane);
+    output_subtitle->setObjectName(QStringLiteral("pane_subtitle"));
+    output_heading->addWidget(output_title);
+    output_heading->addSpacing(10);
+    output_heading->addWidget(output_subtitle);
+    output_heading->addStretch(1);
+    output_layout->addLayout(output_heading);
+    output_layout->addWidget(output_workspace_, 1);
+
+    auto* worksheet_pane = new QFrame(central);
+    worksheet_pane->setObjectName(QStringLiteral("pane_card"));
+    auto* worksheet_layout = new QVBoxLayout(worksheet_pane);
+    worksheet_layout->setContentsMargins(14, 10, 14, 14);
+    worksheet_layout->setSpacing(6);
+    auto* worksheet_heading = new QHBoxLayout();
+    auto* worksheet_title = new QLabel(QStringLiteral("活动工作表"), worksheet_pane);
+    worksheet_title->setObjectName(QStringLiteral("pane_title"));
+    auto* worksheet_subtitle = new QLabel(
+        QStringLiteral("编辑数据，分析当前工作表"), worksheet_pane);
+    worksheet_subtitle->setObjectName(QStringLiteral("pane_subtitle"));
+    cell_address_ = new QLabel(QStringLiteral("C1 · 1"), worksheet_pane);
+    cell_address_->setMinimumWidth(64);
+    cell_address_->setObjectName(QStringLiteral("pane_subtitle"));
+    worksheet_heading->addWidget(worksheet_title);
+    worksheet_heading->addSpacing(10);
+    worksheet_heading->addWidget(worksheet_subtitle);
+    worksheet_heading->addStretch(1);
+    worksheet_heading->addWidget(cell_address_);
+    worksheet_layout->addLayout(worksheet_heading);
+    worksheet_layout->addWidget(data_table_, 1);
+    output_pane->setMinimumHeight(280);
+    worksheet_pane->setMinimumHeight(280);
+
     auto* workspace = new QSplitter(Qt::Vertical, central);
     workspace->setObjectName(QStringLiteral("main_workspace"));
     workspace->addWidget(output_pane);
     workspace->addWidget(worksheet_pane);
-    workspace->setStretchFactor(0, 2);
+    workspace->setStretchFactor(0, 1);
     workspace->setStretchFactor(1, 1);
-    workspace->setSizes({460, 320});
+    workspace->setChildrenCollapsible(false);
+    workspace->setSizes({400, 380});
     layout->addWidget(workspace);
     if (view_menu != nullptr) {
         QAction* worksheet_action = view_menu->addAction(QStringLiteral("活动工作表"));
@@ -604,10 +631,27 @@ void MainWindow::create_layout()
     setDockNestingEnabled(true);
     setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
     setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+    refresh_context_dock();
 }
 
 bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 {
+    if (watched == output_workspace_ && event->type() == QEvent::KeyPress) {
+        auto* key_event = static_cast<QKeyEvent*>(event);
+        if (key_event->matches(QKeySequence::Copy)) {
+            if (AnalysisChartWidget* chart = chart_widget_from_focus()) {
+                chart->copy_to_clipboard();
+                statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+                return true;
+            }
+            if (AnalysisChartWidget* chart =
+                    chart_widget_on_page(output_workspace_->currentWidget())) {
+                chart->copy_to_clipboard();
+                statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+                return true;
+            }
+        }
+    }
     if (watched == data_table_ && event->type() == QEvent::KeyPress) {
         if (static_cast<WorksheetView*>(data_table_)->is_editing()) {
             return QMainWindow::eventFilter(watched, event);
@@ -648,6 +692,24 @@ void MainWindow::push_table_change(
 
 void MainWindow::copy_selection()
 {
+    const QWidget* focus = QApplication::focusWidget();
+    const bool worksheet_focused = data_table_ != nullptr
+        && (focus == data_table_ || data_table_->isAncestorOf(focus));
+    if (!worksheet_focused) {
+        if (AnalysisChartWidget* chart = chart_widget_from_focus()) {
+            chart->copy_to_clipboard();
+            statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+            return;
+        }
+        if (output_workspace_ != nullptr) {
+            if (AnalysisChartWidget* chart =
+                    chart_widget_on_page(output_workspace_->currentWidget())) {
+                chart->copy_to_clipboard();
+                statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+                return;
+            }
+        }
+    }
     if (data_table_ == nullptr || data_table_->selectionModel() == nullptr) {
         return;
     }
@@ -680,6 +742,20 @@ void MainWindow::copy_selection()
                                  .arg(max_column - min_column + 1));
 }
 
+void MainWindow::copy_chart()
+{
+    AnalysisChartWidget* chart = chart_widget_from_focus();
+    if (chart == nullptr && output_workspace_ != nullptr) {
+        chart = chart_widget_on_page(output_workspace_->currentWidget());
+    }
+    if (chart == nullptr) {
+        statusBar()->showMessage(QStringLiteral("当前输出页没有可复制的图形。"));
+        return;
+    }
+    chart->copy_to_clipboard();
+    statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+}
+
 void MainWindow::cut_selection()
 {
     if (data_table_ == nullptr || data_table_->selectionModel() == nullptr
@@ -688,15 +764,12 @@ void MainWindow::cut_selection()
     }
     copy_selection();
     const datalab::domain::DataTable before = table_;
-    datalab::domain::DataTable after = before;
-    for (const QModelIndex& index : data_table_->selectionModel()->selectedIndexes()) {
-        if (index.row() < static_cast<int>(after.rows.size())
-            && index.column() < static_cast<int>(after.rows[index.row()].size())) {
-            after.rows[static_cast<std::size_t>(index.row())]
-                      [static_cast<std::size_t>(index.column())].clear();
-        }
+    const QModelIndexList indexes = data_table_->selectionModel()->selectedIndexes();
+    if (!worksheet_model_->clear_cells(indexes)) {
+        return;
     }
-    push_table_change(before, after, QStringLiteral("剪切单元格"));
+    table_ = worksheet_model_->table();
+    push_table_change(before, table_, QStringLiteral("剪切单元格"));
 }
 
 void MainWindow::clear_selection()
@@ -704,23 +777,22 @@ void MainWindow::clear_selection()
     if (data_table_ == nullptr || data_table_->selectionModel() == nullptr) {
         return;
     }
-    if (static_cast<WorksheetView*>(data_table_)->is_editing()) {
-        return;
+    auto* view = static_cast<WorksheetView*>(data_table_);
+    if (view->is_editing()) {
+        view->commit_editing();
     }
     const QModelIndexList indexes = data_table_->selectionModel()->selectedIndexes();
     if (indexes.isEmpty()) {
         return;
     }
     const datalab::domain::DataTable before = table_;
-    datalab::domain::DataTable after = before;
-    for (const QModelIndex& index : indexes) {
-        if (index.row() < static_cast<int>(after.rows.size())
-            && index.column() < static_cast<int>(after.rows[index.row()].size())) {
-            after.rows[static_cast<std::size_t>(index.row())]
-                      [static_cast<std::size_t>(index.column())].clear();
-        }
+    if (!worksheet_model_->clear_cells(indexes)) {
+        statusBar()->showMessage(QStringLiteral("所选单元格已为空或无法清除。"));
+        return;
     }
-    push_table_change(before, after, QStringLiteral("清除单元格"));
+    table_ = worksheet_model_->table();
+    push_table_change(before, table_, QStringLiteral("清除单元格"));
+    statusBar()->showMessage(QStringLiteral("已清除 %1 个单元格。").arg(indexes.size()));
 }
 
 void MainWindow::paste_clipboard()
@@ -777,13 +849,19 @@ void MainWindow::paste_clipboard()
 
 void MainWindow::new_project()
 {
+    if (!confirm_discard_output()) {
+        return;
+    }
     table_ = {};
     cleaning_operations_.clear();
+    undo_stack_->clear();
     worksheet_model_->set_table(table_);
     worksheet_model_->set_excluded_rows({});
     output_workspace_->clear_pages();
+    output_workspace_->set_selected_source_rows({});
     navigator_->clear_contents();
     navigator_->set_project_name(QStringLiteral("DataLab 项目"));
+    refresh_context_dock();
     statusBar()->showMessage(QStringLiteral("已新建项目。"));
 }
 
@@ -803,7 +881,9 @@ void MainWindow::open_project()
         return;
     }
     display_table();
+    undo_stack_->clear();
     output_workspace_->clear_pages();
+    output_workspace_->set_selected_source_rows({});
     navigator_->clear_contents();
     navigator_->set_project_name(QString::fromStdString(table_.name.empty() ? "DataLab 项目" : table_.name));
     if (!table_.name.empty()) {
@@ -813,6 +893,7 @@ void MainWindow::open_project()
         output_workspace_->add_page(page);
         navigator_->add_analysis(QString::fromStdString(page.id), QString::fromStdString(page.title));
     }
+    refresh_context_dock();
     statusBar()->showMessage(QStringLiteral("项目已打开。"));
 }
 
@@ -824,6 +905,9 @@ void MainWindow::import_data()
         QString(),
         QStringLiteral("数据文件 (*.csv *.txt *.xlsx *.xls);;所有文件 (*.*)"));
     if (file_path.isEmpty()) {
+        return;
+    }
+    if (!confirm_discard_output()) {
         return;
     }
 
@@ -845,7 +929,9 @@ void MainWindow::import_data()
             return;
         }
         cleaning_operations_.clear();
+        undo_stack_->clear();
         output_workspace_->clear_pages();
+        output_workspace_->set_selected_source_rows({});
         navigator_->clear_contents();
         table_ = *result.first;
         display_table();
@@ -872,6 +958,7 @@ void MainWindow::display_table()
     worksheet_model_->set_table(table_);
     worksheet_model_->set_excluded_rows(excluded_rows());
     data_table_->resizeColumnsToContents();
+    refresh_context_dock();
 }
 
 void MainWindow::save_project()
@@ -1067,6 +1154,61 @@ void MainWindow::restore_cleaning_operations(
 {
     cleaning_operations_ = operations;
     worksheet_model_->set_excluded_rows(excluded_rows());
+    refresh_context_dock();
+}
+
+void MainWindow::refresh_context_dock()
+{
+    if (context_status_ == nullptr || context_detail_ == nullptr || context_next_ == nullptr) {
+        return;
+    }
+    const bool has_data = !table_.columns.empty();
+    const std::size_t excluded = excluded_rows().size();
+    if (!has_data) {
+        context_status_->setText(QStringLiteral("尚未导入数据"));
+        context_status_->setStyleSheet(QStringLiteral(
+            "background: #fff8e6; color: #8a5a00; padding: 12px;"
+            " border: 1px solid #ead7a0; border-radius: 7px;"));
+        context_detail_->setText(QStringLiteral(
+            "导入 CSV 或 Excel 后，这里显示当前工作表的行数、列数和排除状态。"));
+        context_next_->setText(QStringLiteral(
+            "下一步\n导入数据后，从“统计 / 图形 / 质量工具”菜单选择方法。"));
+        return;
+    }
+    context_status_->setText(QStringLiteral("已准备分析\n%1 行 · %2 列")
+        .arg(static_cast<qulonglong>(table_.rows.size()))
+        .arg(static_cast<qulonglong>(table_.columns.size())));
+    context_status_->setStyleSheet(QStringLiteral(
+        "background: #e8f6f2; color: #18794e; padding: 12px;"
+        " border: 1px solid #c7e9dc; border-radius: 7px;"));
+    const QString sheet_name = table_.name.empty()
+        ? QStringLiteral("未命名工作表")
+        : QString::fromStdString(table_.name);
+    context_detail_->setText(
+        QStringLiteral("当前工作表「%1」。已排除 %2 行。")
+            .arg(sheet_name)
+            .arg(static_cast<qulonglong>(excluded)));
+    if (output_workspace_ != nullptr && output_workspace_->has_pages()) {
+        context_next_->setText(QStringLiteral(
+            "下一步\n查看分析输出，或从“文件”导出 PDF 报告。"));
+    } else {
+        context_next_->setText(QStringLiteral(
+            "下一步\n从“统计 / 图形 / 质量工具”选择分析方法。"));
+    }
+}
+
+bool MainWindow::confirm_discard_output()
+{
+    if (output_workspace_ == nullptr || !output_workspace_->has_pages()) {
+        return true;
+    }
+    const auto answer = QMessageBox::question(
+        this,
+        QStringLiteral("丢弃分析结果"),
+        QStringLiteral("当前项目已有分析输出。继续将丢弃这些结果。是否继续？"),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    return answer == QMessageBox::Yes;
 }
 
 void MainWindow::export_pdf()

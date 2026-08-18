@@ -3,6 +3,7 @@
 #include "domain/quality_types.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@ struct GageAnovaRow {
     double sum_of_squares = 0.0;
     double mean_square = 0.0;
     double f_statistic = 0.0;
+    std::optional<double> p_value;
 };
 
 struct GageVarianceComponent {
@@ -38,8 +40,15 @@ struct GageRrResult {
     double study_var_multiplier = 6.0;
     std::string method = "anova";
     bool ndc_available = false;
+    bool design_balanced = true;
+    bool interaction_retained = true;
+    std::optional<double> interaction_p_value;
+    bool interaction_reduction_recommended = false;
+    bool negative_variance_truncated = false;
+    QualityEvidence evidence;
     std::vector<GageAnovaRow> anova_rows;
     std::vector<GageVarianceComponent> variance_components;
+    std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

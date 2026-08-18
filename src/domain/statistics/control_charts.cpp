@@ -261,7 +261,7 @@ void mark_special_cause_tests(
                 const double sigma = sigma_at(result, index);
                 inside = inside && sigma > 0.0
                     && std::abs(result.plotted_values[index]
-                        - result.center_line[index]) <= sigma;
+                        - result.center_line[index]) < sigma;
             }
             if (inside) {
                 record_window(result, 7, start, 15);
@@ -849,6 +849,8 @@ ControlChartResult ControlCharts::ewma_chart(
             ? std::sqrt(sum_squared / static_cast<double>(observations.size() - 1)) : 0.0;
     }
     if (!(sigma > 0.0) || !std::isfinite(sigma)) {
+        resolve_special_cause_tests(
+            options.special_causes, ControlChartKind::ewma, &result.diagnostics);
         add_error(result.diagnostics, "invalid_ewma_sigma",
                   "EWMA 的过程标准差必须大于 0。");
         return result;

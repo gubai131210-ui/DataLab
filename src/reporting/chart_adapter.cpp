@@ -203,6 +203,7 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
         model.kind = ChartKind::Control;
         break;
     }
+    model.schema_version = plot.schema_version;
     model.title = QString::fromStdString(plot.title);
     model.x_axis_title = QString::fromStdString(plot.x_axis_title);
     model.y_axis_title = QString::fromStdString(plot.y_axis_title);
@@ -212,6 +213,9 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
     model.show_legend = plot.show_legend;
     model.line_width = plot.line_width;
     model.legend_font_size = plot.legend_font_size;
+    model.title_font_size = plot.title_font_size > 0 ? plot.title_font_size : 11;
+    model.axis_font_size = plot.axis_font_size > 0 ? plot.axis_font_size : 9;
+    model.theme_preset = QString::fromStdString(plot.theme_preset);
     model.grid_color = QString::fromStdString(plot.grid_color);
     model.value_style = chart_series_style(plot.value_style);
     model.center_style = chart_reference_style(plot.center_style);
@@ -303,6 +307,11 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
     model.contour_levels = plot.contour_levels;
     model.color_min = plot.color_min;
     model.color_max = plot.color_max;
+    model.y_min = plot.y_min;
+    model.y_max = plot.y_max;
+    model.x_min = plot.x_min;
+    model.x_max = plot.x_max;
+    model.data_region_fill = QString::fromStdString(plot.data_region_fill);
     return model;
 }
 
@@ -330,6 +339,7 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
     case ChartKind::Control:
     default: plot.kind = datalab::domain::PlotKind::control; break;
     }
+    plot.schema_version = model.schema_version;
     plot.title = model.title.toStdString();
     plot.x_axis_title = model.x_axis_title.toStdString();
     plot.y_axis_title = model.y_axis_title.toStdString();
@@ -339,6 +349,9 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
     plot.show_legend = model.show_legend;
     plot.line_width = model.line_width;
     plot.legend_font_size = model.legend_font_size;
+    plot.title_font_size = model.title_font_size;
+    plot.axis_font_size = model.axis_font_size;
+    plot.theme_preset = model.theme_preset.toStdString();
     plot.grid_color = model.grid_color.toStdString();
     plot.value_style = plot_series_style(model.value_style);
     plot.center_style = plot_reference_style(model.center_style);
@@ -413,5 +426,10 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
     plot.contour_levels = model.contour_levels;
     plot.color_min = model.color_min;
     plot.color_max = model.color_max;
+    plot.y_min = model.y_min;
+    plot.y_max = model.y_max;
+    plot.x_min = model.x_min;
+    plot.x_max = model.x_max;
+    plot.data_region_fill = model.data_region_fill.toStdString();
     return plot;
 }

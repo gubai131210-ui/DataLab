@@ -1,6 +1,7 @@
 #include "domain/statistics/normality_test.h"
 
 #include "domain/quality_diagnostics.h"
+#include "domain/statistics/anderson_darling.h"
 #include "domain/statistics/descriptive_statistics.h"
 
 #include <algorithm>
@@ -14,20 +15,6 @@ double normal_cdf(double value, double mean, double standard_deviation)
 {
     return 0.5 * (1.0 + std::erf(
         (value - mean) / (standard_deviation * std::sqrt(2.0))));
-}
-
-double anderson_darling_p_value(double adjusted)
-{
-    if (adjusted > 0.6) {
-        return std::exp(1.2937 - 5.709 * adjusted + 0.0186 * adjusted * adjusted);
-    }
-    if (adjusted > 0.34) {
-        return std::exp(0.9177 - 4.279 * adjusted - 1.38 * adjusted * adjusted);
-    }
-    if (adjusted > 0.2) {
-        return 1.0 - std::exp(-8.318 + 42.796 * adjusted - 59.938 * adjusted * adjusted);
-    }
-    return 1.0 - std::exp(-13.436 + 101.14 * adjusted - 223.73 * adjusted * adjusted);
 }
 
 void note(NormalityTestResult& result, const char* code, const char* message)
@@ -106,26 +93,19 @@ NormalityTestResult normality_test(
 
     std::vector<double> ordered = valid;
     std::sort(ordered.begin(), ordered.end());
-    constexpr double kEpsilon = 1.0e-12;
-    double sum = 0.0;
-    for (std::size_t index = 0; index < ordered.size(); ++index) {
-        const double cdf = std::clamp(
-            normal_cdf(ordered[index], result.mean, result.sample_standard_deviation),
-            kEpsilon, 1.0 - kEpsilon);
-        const double left_weight = static_cast<double>(2 * index + 1);
-        const double right_weight =
-            static_cast<double>(2 * ordered.size() + 1 - 2 * (index + 1));
-        sum += left_weight * std::log(cdf)
-            + right_weight * std::log(1.0 - cdf);
+    std::vector<double> cdf;
+    cdf.reserve(ordered.size());
+    for (const double value : ordered) {
+        cdf.push_back(normal_cdf(value, result.mean, result.sample_standard_deviation));
     }
-    const double statistic = -static_cast<double>(ordered.size())
-        - sum / static_cast<double>(ordered.size());
-    const double adjusted = statistic * (1.0 + 0.75 / ordered.size()
-        + 2.25 / (ordered.size() * ordered.size()));
-    result.anderson_darling = statistic;
-    result.adjusted_anderson_darling = adjusted;
-    result.p_value = std::clamp(anderson_darling_p_value(adjusted), 0.0, 1.0);
-    result.decision = *result.p_value < result.alpha ? "reject" : "fail_to_reject";
+    const auto ad = anderson_darling_from_sorted_cdf(cdf);
+    result.anderson_darling = ad.statistic;
+    result.adjusted_anderson_darling = ad.adjusted;
+    if (ad.adjusted.has_value()) {
+        result.p_value = std::clamp(
+            anderson_darling_p_value_normal(*ad.adjusted), 0.0, 1.0);
+        result.decision = *result.p_value < result.alpha ? "reject" : "fail_to_reject";
+    }
     return result;
 }
 

@@ -10,7 +10,7 @@ class ProjectNavigator;
 class WorksheetView;
 class WorksheetModel;
 class QDockWidget;
-class QLineEdit;
+class QLabel;
 class QUndoStack;
 
 class MainWindow final : public QMainWindow {
@@ -33,6 +33,7 @@ private:
     void display_table();
     void run_from_spec(const QString& id);
     void copy_selection();
+    void copy_chart();
     void cut_selection();
     void clear_selection();
     void paste_clipboard();
@@ -43,6 +44,8 @@ private:
     void restore_cleaning_operations(
         const std::vector<datalab::domain::CleaningOperation>& operations);
     std::vector<std::size_t> excluded_rows() const;
+    void refresh_context_dock();
+    bool confirm_discard_output();
     bool eventFilter(QObject* watched, QEvent* event) override;
     void push_table_change(
         const datalab::domain::DataTable& before,
@@ -57,8 +60,11 @@ private:
     ProjectNavigator* navigator_ = nullptr;
     QDockWidget* navigator_dock_ = nullptr;
     QDockWidget* context_dock_ = nullptr;
+    QLabel* context_status_ = nullptr;
+    QLabel* context_detail_ = nullptr;
+    QLabel* context_next_ = nullptr;
+    QLabel* cell_address_ = nullptr;
     WorksheetModel* worksheet_model_ = nullptr;
-    QLineEdit* formula_bar_ = nullptr;
     CommandRegistry* commands_ = nullptr;
     QUndoStack* undo_stack_ = nullptr;
     bool import_in_progress_ = false;

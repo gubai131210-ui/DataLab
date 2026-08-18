@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QFrame>
 #include <QFont>
+#include <QTreeWidgetItemIterator>
 
 ProjectNavigator::ProjectNavigator(QWidget* parent)
     : QTreeWidget(parent)
@@ -89,6 +90,19 @@ void ProjectNavigator::rename_analysis(const QString& id, const QString& name)
         QTreeWidgetItem* item = *iterator;
         if (item->data(0, Qt::UserRole).toString() == id) {
             item->setText(0, name);
+            return;
+        }
+        ++iterator;
+    }
+}
+
+void ProjectNavigator::remove_analysis(const QString& id)
+{
+    QTreeWidgetItemIterator iterator(this);
+    while (*iterator != nullptr) {
+        QTreeWidgetItem* item = *iterator;
+        if (item->data(0, Qt::UserRole).toString() == id) {
+            delete item;
             return;
         }
         ++iterator;

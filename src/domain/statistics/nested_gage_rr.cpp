@@ -36,6 +36,9 @@ NestedGageRrResult nested_gage_rr(
     NestedGageRrResult result;
     result.tolerance = tolerance;
     result.method = "nested_anova";
+    result.evidence.method_version = "2";
+    result.evidence.assumption_status = "not_verified";
+    result.design_balanced = true;
     if (!std::isfinite(tolerance) || tolerance < 0.0) {
         add_error(result.diagnostics, "invalid_tolerance",
                   "公差必须为有限非负数。");
@@ -91,6 +94,11 @@ NestedGageRrResult nested_gage_rr(
         if (cell.values.size() != replicates) {
             add_error(result.diagnostics, "unbalanced_nested_gage_design",
                       "每个零件必须具有相同的重复次数。");
+            result.design_balanced = false;
+            result.rules.push_back({
+                "design_balance", "triggered",
+                "嵌套设计零件重复次数不一致。", {},
+                "先补齐平衡重复后再解释方差分量。"});
             return result;
         }
     }
@@ -107,6 +115,7 @@ NestedGageRrResult nested_gage_rr(
             != static_cast<std::ptrdiff_t>(first_operator_parts)) {
             add_error(result.diagnostics, "unbalanced_nested_operator",
                       "每个操作员必须分配相同数量的零件。");
+            result.design_balanced = false;
             return result;
         }
     }
@@ -182,6 +191,7 @@ NestedGageRrResult nested_gage_rr(
         if (component.truncated) {
             add_warning(result.diagnostics, "negative_variance_component",
                         "方差分量原始估计为负，已截断为 0。");
+            result.negative_variance_truncated = true;
         }
         component.standard_deviation = std::sqrt(component.variance_component);
         component.percent_contribution = total > 0.0
@@ -212,6 +222,29 @@ NestedGageRrResult nested_gage_rr(
     if (total == 0.0) {
         add_error(result.diagnostics, "zero_nested_total_variation",
                   "所有测量值相同，无法估计 Nested Gage R&R 方差分量。");
+    }
+    result.evidence.valid_count = measurements.size();
+    result.rules.push_back({
+        "design_balance",
+        result.design_balanced ? "not_triggered" : "triggered",
+        result.design_balanced
+            ? "嵌套设计在操作员和零件重复上平衡。"
+            : "嵌套设计不平衡。",
+        {},
+        "每个零件只属于一个操作员，且重复次数应一致。"});
+    result.rules.push_back({
+        "negative_variance",
+        result.negative_variance_truncated ? "triggered" : "not_triggered",
+        result.negative_variance_truncated
+            ? "存在负方差分量，已截断为 0。"
+            : "方差分量原始估计均非负。",
+        {},
+        "解释 %Contribution 时同时查看截断前的原始方差分量。"});
+    if (tolerance <= 0.0) {
+        result.rules.push_back({
+            "invalid_tolerance", "triggered",
+            "未提供有效公差，%Tolerance 不可用。", {},
+            "只有有限正公差才能计算 %Tolerance。"});
     }
     return result;
 }

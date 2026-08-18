@@ -43,6 +43,7 @@ private slots:
     void defaultAllApplicableUnlessExplicit();
     void filtersInapplicableRules();
     void detectsEachMinitabRule();
+    void testSevenBoundaryExcludesExactSigma();
     void equalValuesBreakTrendAndAlternation();
     void testEightDoesNotRequireBothSides();
     void phaseLabelsBreakWindows();
@@ -149,6 +150,20 @@ void SpecialCauseRuleTest::detectsEachMinitabRule()
     auto t8 = synthetic({1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8});
     apply_special_cause_tests(t8, ControlChartKind::individuals, only);
     QCOMPARE(t8.special_cause_points[7].size(), std::size_t{8});
+}
+
+void SpecialCauseRuleTest::testSevenBoundaryExcludesExactSigma()
+{
+    SpecialCauseSelection only{{7}, "explicit"};
+    auto inside = synthetic({
+        0.1, -0.2, 0.3, -0.4, 0.0, 0.2, -0.1, 0.4, -0.3, 0.1, -0.2, 0.3, -0.4, 0.2, 0.0});
+    apply_special_cause_tests(inside, ControlChartKind::individuals, only);
+    QCOMPARE(inside.special_cause_points[6].size(), std::size_t{15});
+
+    auto on_boundary = synthetic({
+        1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+    apply_special_cause_tests(on_boundary, ControlChartKind::individuals, only);
+    QVERIFY(on_boundary.special_cause_points[6].empty());
 }
 
 void SpecialCauseRuleTest::equalValuesBreakTrendAndAlternation()

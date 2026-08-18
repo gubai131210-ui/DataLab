@@ -1,7 +1,8 @@
 # DataLab 重构会话交接文档
 
-> 本文件记录截至当前会话的完整工作状态，供**新对话**无缝续接。新对话第一条消息建议：
-> 「读取 `docs/session-handoff.md` 与 `docs/refactor-plan.md`，继续 DataLab 重构，从**阶段 5 剩余**（PlotSpec/ChartModel 合一 或 InterpretationService 类型化）或**阶段 6 工程化**开始。」
+> **算法扩展不要从本文件第 5 节续做。** 算法现状与下一轮范围以 [`docs/quality-algorithms-acceptance.md`](quality-algorithms-acceptance.md) 和 [`docs/algorithm-session-brief.md`](algorithm-session-brief.md) 为准。本文件第 4、6 节仍可用于分层与踩坑。
+>
+> 本文件记录截至重构会话的工作状态。若继续**重构**（而非算法），新对话可读取本文件与 `docs/refactor-plan.md`，从阶段 5 剩余或阶段 6 工程化开始。
 
 ---
 

@@ -60,6 +60,13 @@ struct TwoFactorAnovaResult {
     std::vector<AnovaFactorMean> factor_a_means;
     std::vector<AnovaFactorMean> factor_b_means;
     std::vector<AnovaInteractionMean> interaction_means;
+    std::vector<double> residuals;
+    std::vector<double> fitted;
+    std::vector<std::size_t> observation_source_rows;
+    std::vector<AssumptionCheck> assumptions;
+    std::vector<RuleEvidence> rules;
+    std::optional<double> residual_normality_p;
+    bool design_balanced = true;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

@@ -3,6 +3,7 @@
 #include "domain/quality_types.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,37 @@ struct AttributeStandardAgreement {
     AgreementEstimate estimate;
 };
 
+struct KendallConcordanceEstimate {
+    double coefficient = 0.0;
+    double chi_square = 0.0;
+    double degrees_of_freedom = 0.0;
+    double p_value = 1.0;
+    std::size_t subject_count = 0;
+    std::size_t rater_count = 0;
+    bool identifiable = false;
+    std::string not_computed_reason;
+};
+
+struct KendallCorrelationEstimate {
+    double tau = 0.0;
+    double standard_error = 0.0;
+    double z = 0.0;
+    double p_value = 1.0;
+    std::size_t pair_count = 0;
+    bool identifiable = false;
+    std::string not_computed_reason;
+};
+
+struct AttributeEvaluatorKendallConcordance {
+    std::string evaluator;
+    KendallConcordanceEstimate estimate;
+};
+
+struct AttributeStandardKendall {
+    std::string evaluator;
+    KendallCorrelationEstimate estimate;
+};
+
 struct AttributeAgreementResult {
     std::size_t item_count = 0;
     std::size_t evaluator_count = 0;
@@ -49,16 +81,25 @@ struct AttributeAgreementResult {
     std::vector<AttributeEvaluatorAgreement> within_evaluator;
     std::vector<AttributePairAgreement> between_evaluator;
     std::vector<AttributeStandardAgreement> against_standard;
+    AgreementEstimate overall;
+    bool overall_available = false;
+    bool ratings_are_ordinal = false;
+    std::optional<KendallConcordanceEstimate> between_kendall;
+    std::vector<AttributeEvaluatorKendallConcordance> within_kendall;
+    std::vector<AttributeStandardKendall> against_standard_kendall;
+    std::optional<KendallCorrelationEstimate> overall_kendall;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
 // Ratings are aligned row-wise with items and evaluators. Empty strings are
 // treated as missing ratings. Standards may be empty, or one label per item.
+// Kendall W/τ is computed only when ratings_are_ordinal is true.
 AttributeAgreementResult attribute_agreement(
     const std::vector<std::string>& ratings,
     const std::vector<std::string>& items,
     const std::vector<std::string>& evaluators,
     const std::vector<std::string>& standards = {},
-    double confidence_level = 0.95);
+    double confidence_level = 0.95,
+    bool ratings_are_ordinal = false);
 
 }  // namespace datalab::domain::statistics

@@ -1,5 +1,6 @@
 #include "domain/statistics/regression.h"
 
+#include "domain/quality_diagnostics.h"
 #include "domain/statistics/hypothesis_tests.h"
 #include "domain/statistics/normal_distribution.h"
 
@@ -9,6 +10,9 @@
 #include <numeric>
 
 namespace datalab::domain::statistics {
+
+using datalab::domain::has_diagnostic_code;
+
 namespace {
 
 using Matrix = std::vector<std::vector<double>>;
@@ -83,6 +87,148 @@ double two_sided_p(double statistic, double degrees_of_freedom)
         std::abs(statistic), degrees_of_freedom)), 0.0, 1.0);
 }
 
+std::optional<double> regression_rss(
+    const std::vector<double>& response,
+    const std::vector<std::vector<double>>& predictors,
+    const std::vector<std::size_t>& predictor_indices)
+{
+    if (response.empty() || predictors.size() != response.size()) {
+        return std::nullopt;
+    }
+    const std::size_t observation_count = response.size();
+    const std::size_t parameter_count = predictor_indices.size() + 1;
+    if (observation_count < parameter_count) {
+        return std::nullopt;
+    }
+    Matrix design(observation_count, std::vector<double>(parameter_count, 1.0));
+    for (std::size_t row = 0; row < observation_count; ++row) {
+        for (std::size_t index = 0; index < predictor_indices.size(); ++index) {
+            const std::size_t column = predictor_indices[index];
+            if (column >= predictors[row].size() || !std::isfinite(predictors[row][column])
+                || !std::isfinite(response[row])) {
+                return std::nullopt;
+            }
+            design[row][index + 1] = predictors[row][column];
+        }
+    }
+    Matrix q(observation_count, std::vector<double>(parameter_count, 0.0));
+    Matrix r(parameter_count, std::vector<double>(parameter_count, 0.0));
+    for (std::size_t column = 0; column < parameter_count; ++column) {
+        std::vector<double> vector(observation_count, 0.0);
+        for (std::size_t row = 0; row < observation_count; ++row) {
+            vector[row] = design[row][column];
+        }
+        for (std::size_t previous = 0; previous < column; ++previous) {
+            double projection = 0.0;
+            for (std::size_t row = 0; row < observation_count; ++row) {
+                projection += q[row][previous] * vector[row];
+            }
+            r[previous][column] = projection;
+            for (std::size_t row = 0; row < observation_count; ++row) {
+                vector[row] -= projection * q[row][previous];
+            }
+        }
+        double norm = 0.0;
+        for (const double value : vector) {
+            norm += value * value;
+        }
+        norm = std::sqrt(norm);
+        if (norm < 1.0e-10) {
+            return std::nullopt;
+        }
+        r[column][column] = norm;
+        for (std::size_t row = 0; row < observation_count; ++row) {
+            q[row][column] = vector[row] / norm;
+        }
+    }
+    std::vector<double> q_transposed_y(parameter_count, 0.0);
+    for (std::size_t column = 0; column < parameter_count; ++column) {
+        for (std::size_t row = 0; row < observation_count; ++row) {
+            q_transposed_y[column] += q[row][column] * response[row];
+        }
+    }
+    std::vector<double> coefficients(parameter_count, 0.0);
+    for (std::size_t index = parameter_count; index-- > 0;) {
+        double value = q_transposed_y[index];
+        for (std::size_t next = index + 1; next < parameter_count; ++next) {
+            value -= r[index][next] * coefficients[next];
+        }
+        coefficients[index] = value / r[index][index];
+    }
+    double rss = 0.0;
+    for (std::size_t row = 0; row < observation_count; ++row) {
+        double fitted = 0.0;
+        for (std::size_t column = 0; column < parameter_count; ++column) {
+            fitted += design[row][column] * coefficients[column];
+        }
+        const double residual = response[row] - fitted;
+        rss += residual * residual;
+    }
+    return rss;
+}
+
+void populate_regression_anova_effects(
+    RegressionResult& result,
+    const std::vector<double>& response,
+    const std::vector<std::vector<double>>& predictors,
+    const std::vector<std::string>& predictor_labels)
+{
+    if (result.predictor_count == 0 || has_diagnostic_code(
+            result.diagnostics, "rank_deficient_design")) {
+        return;
+    }
+    const double error_df = static_cast<double>(
+        result.observation_count - result.predictor_count - 1);
+    const bool inference_available = error_df > 0.0 && result.error_mean_square > 0.0;
+    std::vector<std::size_t> sequential_indices;
+    std::optional<double> previous_rss = result.total_sum_of_squares;
+    for (std::size_t predictor = 0; predictor < result.predictor_count; ++predictor) {
+        sequential_indices.push_back(predictor);
+        RegressionAnovaEffect effect;
+        effect.term = predictor_labels.empty()
+            ? "X" + std::to_string(predictor + 1)
+            : predictor_labels[predictor];
+        effect.degrees_of_freedom = 1;
+        const std::optional<double> current_rss =
+            regression_rss(response, predictors, sequential_indices);
+        if (!current_rss.has_value() || !previous_rss.has_value()) {
+            effect.estimable = false;
+            result.anova_effects.push_back(effect);
+            add_warning(result.diagnostics, "regression_anova_not_estimable",
+                        effect.term + " 的顺序平方和不可估计。");
+            continue;
+        }
+        effect.sequential_sum_of_squares =
+            std::max(0.0, *previous_rss - *current_rss);
+        previous_rss = current_rss;
+
+        std::vector<std::size_t> reduced_indices;
+        for (std::size_t index = 0; index < result.predictor_count; ++index) {
+            if (index != predictor) {
+                reduced_indices.push_back(index);
+            }
+        }
+        const std::optional<double> reduced_rss =
+            regression_rss(response, predictors, reduced_indices);
+        if (!reduced_rss.has_value()) {
+            effect.estimable = false;
+        } else {
+            effect.adjusted_sum_of_squares =
+                std::max(0.0, *reduced_rss - result.error_sum_of_squares);
+            effect.mean_square = *effect.adjusted_sum_of_squares;
+            if (inference_available) {
+                effect.f_statistic = *effect.mean_square / result.error_mean_square;
+                effect.p_value = f_right_tail(*effect.f_statistic, 1.0, error_df);
+            }
+        }
+        result.anova_effects.push_back(effect);
+    }
+    if (result.predictor_count > 1 && inference_available) {
+        add_warning(result.diagnostics, "regression_seq_adj_may_differ",
+                    "多预测变量回归应同时查看 Seq SS 与 Adj SS；两者不一致常见于不平衡或共线设计。");
+    }
+}
+
 }  // namespace
 
 RegressionResult fit_linear_regression(
@@ -97,10 +243,10 @@ RegressionResult fit_linear_regression(
     result.evidence.assumption_status = "not_verified";
     result.evidence.confidence_level = confidence_level;
     result.evidence.source_rows = source_rows;
-    if (response.size() < 3 || predictors.empty()
+    if (response.size() < 2 || predictors.empty()
         || predictors.size() != response.size()) {
         add_error(result.diagnostics, "invalid_regression_shape",
-                  "回归至少需要三个观测、一个响应列和一个预测列。");
+                  "回归至少需要两个观测、一个响应列和一个预测列。");
         return result;
     }
     if (!std::isfinite(confidence_level)
@@ -182,6 +328,10 @@ RegressionResult fit_linear_regression(
         if (norm < 1.0e-10) {
             add_error(result.diagnostics, "rank_deficient_design",
                       "设计矩阵存在完全共线或常量预测变量。");
+            result.diagnostics_summary.rules.push_back({
+                "rank_deficiency", "triggered",
+                "设计矩阵秩亏，已拒绝拟合。", {},
+                "秩亏时不要解释系数；先检查常量列或完全共线预测变量。"});
             return result;
         }
         r[column][column] = norm;
@@ -306,7 +456,6 @@ RegressionResult fit_linear_regression(
         observation.internally_standardized_residual = residual_scale > 0.0
             ? observation.residual / residual_scale : 0.0;
         observation.standardized_residual = observation.internally_standardized_residual;
-        observation.studentized_residual = observation.internally_standardized_residual;
         observation.cooks_distance = result.error_mean_square > 0.0
             ? observation.standardized_residual * observation.standardized_residual
                 * observation.leverage / (static_cast<double>(parameter_count)
@@ -330,6 +479,9 @@ RegressionResult fit_linear_regression(
                     / residual_degrees_of_freedom)
                 : 0.0;
         const double deleted_scale = std::sqrt(deleted_mean_square);
+        observation.studentized_residual = deleted_scale > 0.0
+            ? observation.residual / (deleted_scale * std::sqrt(one_minus_leverage))
+            : 0.0;
         observation.deleted_studentized_residual = deleted_scale > 0.0
             ? deleted_residual / deleted_scale : 0.0;
     }
@@ -397,6 +549,114 @@ RegressionResult fit_linear_regression(
             static_cast<double>(index + 1));
         result.diagnostics_summary.residual_vs_order_y.push_back(observation.residual);
     }
+
+    if (result.diagnostics_summary.residual_normality.has_value()) {
+        const auto& normality = *result.diagnostics_summary.residual_normality;
+        const std::string status = normality.decision == "reject"
+            ? "evidence_against"
+            : normality.decision == "fail_to_reject"
+                ? "no_evidence_against"
+                : "not_computed";
+        result.diagnostics_summary.assumptions.push_back({
+            "residual_normality", status, normality.anderson_darling,
+            normality.p_value,
+            "Anderson-Darling 只能在 alpha 下拒绝或未拒绝残差正态假设。"});
+    } else {
+        result.diagnostics_summary.assumptions.push_back({
+            "residual_normality", "not_computed", std::nullopt, std::nullopt,
+            "残差正态性未计算。"});
+    }
+    const std::string independence_status =
+        result.durbin_watson < 1.5 || result.durbin_watson > 2.5
+            ? "evidence_against" : "no_evidence_against";
+    result.diagnostics_summary.assumptions.push_back({
+        "residual_independence", independence_status, result.durbin_watson,
+        std::nullopt,
+        "Durbin-Watson 按输入顺序计算；远离 2 时提示序列相关调查。"});
+    result.diagnostics_summary.assumptions.push_back({
+        "homoscedasticity", "not_verified", std::nullopt, std::nullopt,
+        "方差齐性主要依据残差对拟合值图，当前不单独给出数值判定。"});
+    result.evidence.assumption_status = "not_verified";
+    for (const auto& check : result.diagnostics_summary.assumptions) {
+        if (check.status == "evidence_against") {
+            result.evidence.assumption_status = "evidence_against";
+            break;
+        }
+    }
+    if (!inference_available) {
+        result.diagnostics_summary.rules.push_back({
+            "error_df", "triggered",
+            "误差自由度 N-p-1 ≤ 0，不输出 t、F 与 P。", {},
+            "增加独立观测或减少模型项后再解释系数显著性。"});
+    } else {
+        result.diagnostics_summary.rules.push_back({
+            "error_df", "not_triggered",
+            "误差自由度为正，系数推断可用。", {},
+            "仍需结合残差图和影响点解释模型。"});
+    }
+    result.diagnostics_summary.rules.push_back({
+        "rank_deficiency",
+        has_diagnostic_code(result.diagnostics, "rank_deficient_design")
+            ? "triggered" : "not_triggered",
+        has_diagnostic_code(result.diagnostics, "rank_deficient_design")
+            ? "设计矩阵秩亏，已拒绝拟合。"
+            : "当前设计矩阵可估计。",
+        {},
+        "秩亏时不要解释系数；先检查常量列或完全共线预测变量。"});
+    if (result.diagnostics_summary.outlier_count > 0) {
+        std::vector<RowId> rows;
+        for (const auto& observation : result.observations) {
+            if (observation.is_outlier) {
+                rows.push_back(static_cast<RowId>(observation.source_row));
+            }
+        }
+        result.diagnostics_summary.rules.push_back({
+            "outlier", "triggered",
+            "存在删除学生化残差绝对值大于 3 的观测。", rows,
+            "回查原始行；解释层不会自动删除这些观测。"});
+    } else if (inference_available) {
+        result.diagnostics_summary.rules.push_back({
+            "outlier", "not_triggered",
+            "没有 |删除学生化残差| > 3 的观测。", {},
+            "仍应检查残差图，不能据此宣称没有异常。"});
+    }
+    if (result.diagnostics_summary.high_leverage_count > 0) {
+        std::vector<RowId> rows;
+        for (const auto& observation : result.observations) {
+            if (observation.is_high_leverage) {
+                rows.push_back(static_cast<RowId>(observation.source_row));
+            }
+        }
+        result.diagnostics_summary.rules.push_back({
+            "leverage", "triggered",
+            "存在杠杆值超过 2p/n 的高杠杆点。", rows,
+            "高杠杆点需要调查，不自动删除。"});
+    }
+    if (result.diagnostics_summary.influential_count > 0) {
+        std::vector<RowId> rows;
+        for (const auto& observation : result.observations) {
+            if (observation.is_influential) {
+                rows.push_back(static_cast<RowId>(observation.source_row));
+            }
+        }
+        result.diagnostics_summary.rules.push_back({
+            "influence", "triggered",
+            "Cook's D 或 DFITS 超过常用调查阈值。", rows,
+            "影响点提示需要调查，解释层不会自动删除这些观测。"});
+    }
+    bool collinear = false;
+    for (const auto& coefficient : result.coefficients) {
+        if (coefficient.vif.has_value() && *coefficient.vif > 5.0) {
+            collinear = true;
+        }
+    }
+    result.diagnostics_summary.rules.push_back({
+        "collinearity", collinear ? "triggered" : "not_triggered",
+        collinear ? "至少一个预测变量 VIF>5。" : "未发现 VIF>5 的预测变量。",
+        {},
+        "VIF>5 只提示共线性调查，不会自动删除变量。"});
+    populate_regression_anova_effects(
+        result, response, predictors, predictor_labels);
     return result;
 }
 

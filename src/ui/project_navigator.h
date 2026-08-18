@@ -13,6 +13,7 @@ public:
     void add_worksheet(const QString& name);
     void add_analysis(const QString& id, const QString& name);
     void rename_analysis(const QString& id, const QString& name);
+    void remove_analysis(const QString& id);
     void add_report(const QString& name);
 
 signals:

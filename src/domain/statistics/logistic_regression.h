@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,8 @@ struct LogisticObservation {
     double probability = 0.0;
     double pearson_residual = 0.0;
     double deviance_residual = 0.0;
+    double leverage = 0.0;
+    bool high_leverage = false;
 };
 
 struct LogisticRegressionResult {
@@ -33,12 +36,18 @@ struct LogisticRegressionResult {
     std::size_t predictor_count = 0;
     std::size_t iteration_count = 0;
     bool converged = false;
+    bool complete_separation = false;
     std::vector<LogisticCoefficient> coefficients;
     std::vector<LogisticObservation> observations;
     double log_likelihood = std::numeric_limits<double>::quiet_NaN();
     double deviance = std::numeric_limits<double>::quiet_NaN();
     double aic = std::numeric_limits<double>::quiet_NaN();
     double bic = std::numeric_limits<double>::quiet_NaN();
+    std::optional<double> hosmer_lemeshow_statistic;
+    std::optional<double> hosmer_lemeshow_p;
+    std::size_t hosmer_lemeshow_groups = 0;
+    std::optional<std::size_t> hosmer_lemeshow_df;
+    std::string hosmer_lemeshow_status = "not_computed";
     std::vector<DiagnosticMessage> diagnostics;
 };
 

@@ -16,6 +16,8 @@ private slots:
     void distinguishesMissingAndInvalidCells();
     void populatesImportContract();
     void preservesMultilineQuotedCsvFields();
+    void validatesImportedTableContract();
+    void rejectsDuplicateRowIds();
 };
 
 void ColumnExtractImportTest::rejectsTrailingCharactersInNumericCells()
@@ -76,6 +78,8 @@ void ColumnExtractImportTest::populatesImportContract()
     QCOMPARE(table->column_types[1], datalab::domain::ColumnType::numeric);
     QCOMPARE(table->column_types[2], datalab::domain::ColumnType::categorical);
     QCOMPARE(table->import_metadata.original_row_count, std::size_t{2});
+    QCOMPARE(table->import_metadata.column_count, std::size_t{3});
+    QVERIFY(!table->import_metadata.dataset_id.empty());
 }
 
 void ColumnExtractImportTest::preservesMultilineQuotedCsvFields()
@@ -150,6 +154,33 @@ void ColumnExtractImportTest::reportsMissingFileThroughService()
 
     QVERIFY(!table.has_value());
     QVERIFY(!error.isEmpty());
+}
+
+void ColumnExtractImportTest::validatesImportedTableContract()
+{
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    const QByteArray content("Value\n1\n2\n");
+    QCOMPARE(file.write(content), content.size());
+    QVERIFY(file.flush());
+
+    QString error;
+    const auto table = datalab::infrastructure::DataImportService::import_file(
+        file.fileName(), &error);
+    QVERIFY2(table.has_value(), qPrintable(error));
+    QVERIFY(!table->import_metadata.dataset_id.empty());
+    QVERIFY(!table->source_path.empty());
+    QVERIFY(datalab::domain::validate_data_table_contract(*table).empty());
+}
+
+void ColumnExtractImportTest::rejectsDuplicateRowIds()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Value"};
+    table.rows = {{"1"}, {"2"}};
+    datalab::domain::populate_data_table_contract(table);
+    table.row_ids = {0, 0};
+    QVERIFY(!datalab::domain::validate_data_table_contract(table).empty());
 }
 
 QTEST_APPLESS_MAIN(ColumnExtractImportTest)

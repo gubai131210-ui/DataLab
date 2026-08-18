@@ -13,6 +13,8 @@
 #include "domain/statistics/two_factor_anova.h"
 #include "domain/statistics/normality_test.h"
 #include "domain/statistics/process_capability.h"
+#include "domain/statistics/johnson_transform.h"
+#include "domain/statistics/normal_distribution.h"
 #include "domain/statistics/spc_constants.h"
 #include "domain/statistics/normal_probability.h"
 #include "domain/statistics/quality_visuals.h"
@@ -22,12 +24,15 @@
 #include "domain/statistics/seasonal_forecasting.h"
 #include "domain/statistics/pca.h"
 #include "domain/statistics/response_optimization.h"
+#include "domain/statistics/distribution_identification.h"
 #include "application/analysis_service.h"
 
 #include <QtTest/QtTest>
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <string>
 
 using datalab::domain::SpecificationLimits;
 using datalab::domain::statistics::ControlCharts;
@@ -65,17 +70,25 @@ private slots:
     void buildsParetoOutput();
     void buildsPairedTServiceOutput();
     void buildsRegressionServiceOutput();
+    void buildsResponseOptimizationOutput();
     void buildsLogisticServiceOutput();
+    void computesLogisticHosmerLemeshowWhenSampleLarge();
+    void identifiesIndividualDistributions();
+    void buildsDistributionIdentificationServiceOutput();
+    void calculatesBetweenWithinCapability();
+    void buildsBetweenWithinCapabilityServiceOutput();
     void calculatesCorrelation();
     void calculatesTTests();
     void calculatesOneWayAnova();
     void buildsInferenceOutput();
     void calculatesInferenceExtensions();
     void calculatesRegressionAndBoxCox();
+    void regressionAnovaSeqAdjSs();
     void calculatesGageRrAndNonparametric();
     void calculatesTimeSeries();
     void calculatesTwoFactorAnovaAndArima();
     void calculatesNextBatchAlgorithms();
+    void johnsonAndNonnormalCapability();
 };
 
 void QualityStatisticsTest::calculatesCapabilityIndices()
@@ -542,6 +555,28 @@ void QualityStatisticsTest::calculatesRegressionAndBoxCox()
     QVERIFY(box_cox.transformed_standard_deviation > 0.0);
 }
 
+void QualityStatisticsTest::regressionAnovaSeqAdjSs()
+{
+    const auto regression = datalab::domain::statistics::fit_linear_regression(
+        {3.0, 5.0, 7.0, 9.0, 11.0, 13.0},
+        {{1.0, 0.0}, {2.0, 1.0}, {3.0, 0.0}, {4.0, 1.0}, {5.0, 0.0}, {6.0, 1.0}},
+        {"X1", "X2"});
+    QCOMPARE(regression.anova_effects.size(), std::size_t{2});
+    for (const auto& effect : regression.anova_effects) {
+        QVERIFY(effect.estimable);
+        QVERIFY(effect.sequential_sum_of_squares.has_value());
+        QVERIFY(*effect.sequential_sum_of_squares >= 0.0);
+        QVERIFY(effect.adjusted_sum_of_squares.has_value());
+        QVERIFY(*effect.adjusted_sum_of_squares >= 0.0);
+    }
+    double adjusted_total = 0.0;
+    for (const auto& effect : regression.anova_effects) {
+        adjusted_total += *effect.adjusted_sum_of_squares;
+    }
+    QVERIFY(qAbs(adjusted_total + regression.error_sum_of_squares
+                 - regression.total_sum_of_squares) < 1.0e-6);
+}
+
 void QualityStatisticsTest::calculatesGageRrAndNonparametric()
 {
     const auto gage = datalab::domain::statistics::crossed_gage_rr(
@@ -555,23 +590,45 @@ void QualityStatisticsTest::calculatesGageRrAndNonparametric()
     QCOMPARE(gage.part_count, std::size_t{3});
     QCOMPARE(gage.operator_count, std::size_t{2});
     QCOMPARE(gage.replicate_count, std::size_t{3});
-    QVERIFY(gage.variance_components.size() == 5);
+    QVERIFY(gage.variance_components.size() == 7);
     QVERIFY(gage.ndc >= 0.0);
 
     const auto mann_whitney = datalab::domain::statistics::mann_whitney(
         {1.0, 2.0, 3.0}, {5.0, 6.0, 7.0});
     QVERIFY(mann_whitney.p_value.has_value());
     QVERIFY(mann_whitney.rank_sum < 10.0);
+    QVERIFY(mann_whitney.effect_size.has_value());
+    QVERIFY(mann_whitney.continuity_correction);
+    QVERIFY(mann_whitney.small_sample_warning);
+
+    // # source: formula_reference
+    const auto tied_mw = datalab::domain::statistics::mann_whitney(
+        {1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0},
+        {2.0, 3.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
+    QVERIFY(tied_mw.tie_correction);
+    QVERIFY(tied_mw.p_value.has_value());
+    QVERIFY(tied_mw.p_value_without_tie_correction.has_value());
+    QVERIFY(*tied_mw.p_value <= *tied_mw.p_value_without_tie_correction + 1.0e-12);
 
     const auto signed_rank = datalab::domain::statistics::wilcoxon_signed_rank(
         {2.0, 4.0, 6.0, 8.0}, {1.0, 3.0, 5.0, 7.0});
     QVERIFY(signed_rank.p_value.has_value());
+    QVERIFY(signed_rank.small_sample_warning);
+
+    const auto tied_signed = datalab::domain::statistics::wilcoxon_signed_rank(
+        {2.0, 4.0, 6.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0, 21.0},
+        {1.0, 3.0, 5.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0});
+    QVERIFY(tied_signed.tie_correction);
+    QVERIFY(tied_signed.p_value.has_value());
 
     const auto kruskal = datalab::domain::statistics::kruskal_wallis(
         {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}},
         {"A", "B", "C"});
     QVERIFY(kruskal.p_value.has_value());
     QCOMPARE(kruskal.groups.size(), std::size_t{3});
+    QVERIFY(kruskal.groups[0].z_value.has_value());
+    QVERIFY(kruskal.p_value_unadjusted.has_value());
+    QVERIFY(kruskal.small_sample_warning);
 }
 
 void QualityStatisticsTest::calculatesTimeSeries()
@@ -601,7 +658,7 @@ void QualityStatisticsTest::calculatesTwoFactorAnovaAndArima()
 
     const auto arima = datalab::domain::statistics::fit_arima_candidates(
         {10.0, 10.4, 10.1, 10.8, 10.6, 11.0, 10.9, 11.3}, 3);
-    QCOMPARE(arima.size(), std::size_t{3});
+    QVERIFY(arima.size() > 3);
     QVERIFY(arima[0].forecasts.size() == 3);
     QVERIFY(std::isfinite(arima[0].aicc));
 }
@@ -645,6 +702,44 @@ void QualityStatisticsTest::calculatesNextBatchAlgorithms()
     QCOMPARE(sarima.forecasts.size(), std::size_t{2});
     QCOMPARE(sarima.lower.size(), std::size_t{2});
 
+    std::vector<double> seasonal_series;
+    seasonal_series.reserve(40);
+    for (int index = 0; index < 40; ++index) {
+        seasonal_series.push_back(
+            10.0 + 2.0 * std::sin(2.0 * 3.141592653589793 * index / 4.0)
+            + 0.15 * static_cast<double>(index));
+    }
+    const auto sarima_candidates =
+        datalab::domain::statistics::fit_best_sarima_candidates(seasonal_series, 4);
+    QVERIFY(!sarima_candidates.empty());
+    bool has_mixed = false;
+    bool has_css_diagnostic = false;
+    for (const auto& candidate : sarima_candidates) {
+        if (candidate.order.p > 0 && candidate.order.q > 0) {
+            has_mixed = true;
+        }
+        for (const auto& message : candidate.diagnostics) {
+            if (message.code == "sarima_css_approximation") {
+                has_css_diagnostic = true;
+            }
+        }
+    }
+    QVERIFY(has_mixed);
+    QVERIFY(has_css_diagnostic);
+    double seasonal_ar_sse = std::numeric_limits<double>::infinity();
+    double ar1_only_sse = std::numeric_limits<double>::infinity();
+    for (const auto& candidate : sarima_candidates) {
+        if (candidate.order.seasonal_p > 0) {
+            seasonal_ar_sse = std::min(seasonal_ar_sse, candidate.sse);
+        }
+        if (candidate.order.p == 1 && candidate.order.q == 0
+            && candidate.order.seasonal_p == 0 && candidate.order.seasonal_q == 0
+            && candidate.order.seasonal_d == 1) {
+            ar1_only_sse = std::min(ar1_only_sse, candidate.sse);
+        }
+    }
+    QVERIFY(seasonal_ar_sse < ar1_only_sse);
+
     datalab::domain::statistics::PcaOptions pca_options;
     pca_options.mode = datalab::domain::statistics::PcaMode::standardized;
     const auto pca = datalab::domain::statistics::pca(
@@ -652,6 +747,23 @@ void QualityStatisticsTest::calculatesNextBatchAlgorithms()
     QCOMPARE(pca.variable_count, std::size_t{2});
     QVERIFY(pca.eigenvalues.size() == 2);
     QVERIFY(pca.converged);
+    QVERIFY(pca.coefficients.size() == 2);
+    double coefficient_norm = 0.0;
+    for (std::size_t variable = 0; variable < pca.coefficients.size(); ++variable) {
+        coefficient_norm += pca.coefficients[variable][0] * pca.coefficients[variable][0];
+    }
+    QVERIFY(qAbs(coefficient_norm - 1.0) < 1.0e-8);
+    QVERIFY(qAbs(pca.explained_variance_ratio[0] + pca.explained_variance_ratio[1] - 1.0)
+            < 1.0e-8);
+
+    datalab::domain::statistics::PcaOptions truncated;
+    truncated.component_count = 1;
+    const auto pca_one = datalab::domain::statistics::pca(
+        {{1.0, 0.0, 0.2}, {2.0, 1.0, 0.1}, {3.0, 0.5, 1.4}, {4.0, 2.0, 0.8},
+         {5.0, 1.5, 2.0}}, truncated);
+    QCOMPARE(pca_one.retained_component_count, std::size_t{1});
+    QCOMPARE(pca_one.eigenvalues.size(), std::size_t{3});
+    QVERIFY(pca_one.cumulative_explained_variance_ratio[0] < 1.0 - 1.0e-8);
 
     datalab::domain::DataTable table;
     table.columns = {"X", "Y"};
@@ -661,7 +773,54 @@ void QualityStatisticsTest::calculatesNextBatchAlgorithms()
     configuration.pca.variable_columns = {0, 1};
     const auto page = datalab::application::AnalysisService::pca(table, configuration);
     QCOMPARE(page.method_name, std::string("Principal Component Analysis"));
-    QVERIFY(!page.tables.empty());
+    QVERIFY(page.tables.size() >= std::size_t{5});
+    QCOMPARE(page.tables[0].headers[2], std::string{"Proportion"});
+    QCOMPARE(page.tables[1].title, std::string{"主成分系数"});
+    QCOMPARE(page.tables[2].title, std::string{"相关载荷"});
+    QCOMPARE(page.tables[3].title, std::string{"主成分得分"});
+    bool has_t2_limits = false;
+    bool has_t2_rows = false;
+    for (const auto& output_table : page.tables) {
+        if (output_table.title == "T² 与 Q 阈值") {
+            has_t2_limits = true;
+            QCOMPARE(output_table.headers.front(), std::string{"分位数"});
+        }
+        if (output_table.title == "T² 与 Q 残差") {
+            has_t2_rows = true;
+        }
+    }
+    QVERIFY(has_t2_limits);
+    QVERIFY(has_t2_rows);
+    QVERIFY(page.facts.pca.has_value());
+    QVERIFY(page.facts.pca->t2_limit.has_value());
+    QVERIFY(page.facts.pca->converged);
+
+    // # source: formula_reference  Minitab Levene = |y - median| ANOVA
+    const auto levene = datalab::domain::statistics::levene_two_variances(
+        {1.0, 2.0, 3.0, 4.0, 5.0}, {10.0, 12.0, 11.0, 13.0, 14.0});
+    const auto levene_mean = datalab::domain::statistics::levene_mean_two_variances(
+        {1.0, 2.0, 3.0, 4.0, 5.0}, {10.0, 12.0, 11.0, 13.0, 14.0});
+    QVERIFY(levene.p_value.has_value());
+    QCOMPARE(static_cast<int>(levene.method),
+             static_cast<int>(datalab::domain::statistics::VarianceRobustMethod::brown_forsythe_median));
+    QCOMPARE(static_cast<int>(levene_mean.method),
+             static_cast<int>(datalab::domain::statistics::VarianceRobustMethod::levene_mean));
+
+    datalab::domain::DataTable variance_table;
+    variance_table.columns = {"Y", "Group"};
+    variance_table.rows = {
+        {"1", "A"}, {"2", "A"}, {"3", "A"}, {"4", "A"},
+        {"10", "B"}, {"11", "B"}, {"12", "B"}, {"13", "B"},
+        {"20", "C"}, {"21", "C"}, {"22", "C"}, {"23", "C"}};
+    datalab::domain::AnalysisConfiguration variance_configuration;
+    variance_configuration.inference.variance_first_column = 0;
+    variance_configuration.inference.variance_group_column = 1;
+    variance_configuration.inference.variance_test_method = "levene";
+    const auto variance_page = datalab::application::AnalysisService::variance_test(
+        variance_table, variance_configuration);
+    QCOMPARE(variance_page.tables.front().rows.front().front(), std::string{"Levene"});
+    QVERIFY(variance_page.facts.variance.has_value());
+    QCOMPARE(variance_page.facts.variance->group_count, std::size_t{3});
 
     datalab::domain::statistics::ResponseModel response_model;
     response_model.response_name = "Yield";
@@ -763,7 +922,8 @@ void QualityStatisticsTest::buildsRegressionServiceOutput()
     QCOMPARE(page.tables[0].title, std::string{"模型摘要"});
     QCOMPARE(page.tables[1].title, std::string{"系数"});
     QCOMPARE(page.tables[1].rows.size(), std::size_t{2});
-    QCOMPARE(page.plots.size(), std::size_t{3});
+    QCOMPARE(page.plots.size(), std::size_t{4});
+    QCOMPARE(page.plots.back().title, std::string{"残差正态概率图"});
     // 完全线性拟合：R-sq = 1。
     QCOMPARE(page.tables[0].rows.front()[1], std::string{"1"});
 }
@@ -781,14 +941,233 @@ void QualityStatisticsTest::buildsLogisticServiceOutput()
     const auto page =
         datalab::application::AnalysisService::logistic_regression(table, configuration);
     QCOMPARE(page.method_name, std::string{"Binary Logistic Regression"});
-    QCOMPARE(page.tables.size(), std::size_t{3});
+    QCOMPARE(page.tables.size(), std::size_t{4});
     QCOMPARE(page.tables[0].title, std::string{"模型摘要"});
-    QCOMPARE(page.tables[1].title, std::string{"系数与 Odds Ratio"});
-    QCOMPARE(page.tables[2].title, std::string{"拟合与残差"});
-    QCOMPARE(page.tables[2].rows.size(), std::size_t{8});
+    QCOMPARE(page.tables[1].title, std::string{"拟合优度"});
+    QCOMPARE(page.tables[2].title, std::string{"系数与 Odds Ratio"});
+    QCOMPARE(page.tables[3].title, std::string{"拟合与残差"});
+    QCOMPARE(page.tables[3].rows.size(), std::size_t{8});
+    QCOMPARE(page.tables[3].headers.back(), std::string{"影响点"});
+    QCOMPARE(page.tables[1].rows.front()[0], std::string{"Hosmer-Lemeshow"});
+    QCOMPARE(page.tables[1].rows.front().back(), std::string{"not_computed"});
     QCOMPARE(page.plots.size(), std::size_t{1});
     QVERIFY(page.tables[0].rows.front()[2] == std::string{"是"}
             || page.tables[0].rows.front()[2] == std::string{"否"});
+}
+
+void QualityStatisticsTest::computesLogisticHosmerLemeshowWhenSampleLarge()
+{
+    std::vector<int> response;
+    std::vector<std::vector<double>> predictors;
+    for (int index = 0; index < 30; ++index) {
+        response.push_back(index % 3 == 0 ? 0 : 1);
+        predictors.push_back({static_cast<double>(index) * 0.1 + 1.0});
+    }
+    const auto small = datalab::domain::statistics::fit_logistic_regression(
+        std::vector<int>(response.begin(), response.begin() + 8),
+        std::vector<std::vector<double>>(predictors.begin(), predictors.begin() + 8));
+    QCOMPARE(small.hosmer_lemeshow_status, std::string{"not_computed"});
+    QVERIFY(!small.hosmer_lemeshow_statistic.has_value());
+
+    const auto large = datalab::domain::statistics::fit_logistic_regression(
+        response, predictors);
+    QVERIFY(large.converged);
+    QCOMPARE(large.hosmer_lemeshow_status, std::string{"computed"});
+    QVERIFY(large.hosmer_lemeshow_statistic.has_value());
+    QVERIFY(large.hosmer_lemeshow_p.has_value());
+    QVERIFY(large.hosmer_lemeshow_df.has_value());
+    QCOMPARE(*large.hosmer_lemeshow_df, large.hosmer_lemeshow_groups - 2);
+    QVERIFY(large.hosmer_lemeshow_groups >= 6);
+}
+
+void QualityStatisticsTest::identifiesIndividualDistributions()
+{
+    std::vector<double> normal_sample;
+    for (int index = 0; index < 40; ++index) {
+        normal_sample.push_back(10.0 + static_cast<double>(index % 7) * 0.05);
+    }
+    const auto normal_result =
+        datalab::domain::statistics::identify_individual_distributions(normal_sample);
+    QCOMPARE(normal_result.candidates.size(), std::size_t{4});
+    QCOMPARE(normal_result.candidates.front().distribution, std::string{"Normal"});
+
+    std::vector<double> mixed = {-1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+    const auto mixed_result =
+        datalab::domain::statistics::identify_individual_distributions(mixed);
+    for (const auto& candidate : mixed_result.candidates) {
+        if (candidate.distribution == "Weibull"
+            || candidate.distribution == "Lognormal"
+            || candidate.distribution == "Exponential") {
+            QCOMPARE(candidate.status, std::string{"not_computed"});
+        }
+    }
+}
+
+void QualityStatisticsTest::buildsDistributionIdentificationServiceOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Value"};
+    table.rows = {{"9.8"}, {"10.0"}, {"10.1"}, {"9.9"}, {"10.2"}, {"10.0"}, {"9.7"}, {"10.3"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.capability_method = "normal";
+    const auto page = datalab::application::AnalysisService::distribution_identification(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Individual Distribution Identification"});
+    QCOMPARE(page.tables.size(), std::size_t{2});
+    QCOMPARE(page.tables.front().title, std::string{"拟合优度"});
+    QCOMPARE(page.tables.front().rows.size(), std::size_t{4});
+    QVERIFY(page.plots.size() >= 1);
+    QCOMPARE(page.configuration.capability_method, std::string{"normal"});
+    QVERIFY(page.facts.distribution_identification.has_value());
+    QCOMPARE(page.facts.distribution_identification->did_not_change_capability_defaults, true);
+}
+
+void QualityStatisticsTest::calculatesBetweenWithinCapability()
+{
+    const std::vector<std::vector<double>> subgroups = {
+        {9.8, 10.0, 10.1},
+        {9.9, 10.2, 10.0},
+        {10.1, 9.7, 10.3},
+        {10.0, 10.2, 9.9}};
+    std::vector<double> pooled;
+    for (const auto& subgroup : subgroups) {
+        pooled.insert(pooled.end(), subgroup.begin(), subgroup.end());
+    }
+    SpecificationLimits specs;
+    specs.lower = 9.5;
+    specs.upper = 10.5;
+    const auto result = ProcessCapability::calculate_between_within(pooled, subgroups, specs);
+    QCOMPARE(result.capability_method, std::string{"between_within"});
+    QVERIFY(result.subgroup_within_standard_deviation.has_value());
+    QVERIFY(result.between_standard_deviation.has_value());
+    QVERIFY(result.between_within_standard_deviation.has_value());
+    QVERIFY(result.cp.has_value());
+    QVERIFY(result.ppk.has_value());
+}
+
+void QualityStatisticsTest::buildsBetweenWithinCapabilityServiceOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Value", "Subgroup"};
+    table.rows = {
+        {"9.8", "A"}, {"10.0", "A"}, {"10.1", "A"},
+        {"9.9", "B"}, {"10.2", "B"}, {"10.0", "B"},
+        {"10.1", "C"}, {"9.7", "C"}, {"10.3", "C"},
+        {"10.0", "D"}, {"10.2", "D"}, {"9.9", "D"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.selection.measurement_column = 0;
+    configuration.selection.subgroup_column = 1;
+    configuration.specifications.lower = 9.5;
+    configuration.specifications.upper = 10.5;
+    configuration.capability_method = "between_within";
+    const auto page =
+        datalab::application::AnalysisService::between_within_capability(table, configuration);
+    QCOMPARE(page.method_name, std::string{"Between/Within Capability Analysis"});
+    QVERIFY(!page.tables.empty());
+    QCOMPARE(page.tables.front().title, std::string{"Process Data"});
+    bool has_between = false;
+    for (const auto& row : page.tables.front().rows) {
+        if (row.front() == "StDev (Between)") {
+            has_between = true;
+            QVERIFY(row[1] != "*");
+        }
+    }
+    QVERIFY(has_between);
+    QCOMPARE(page.tables[2].title, std::string{"Between/Within Capability"});
+
+    configuration.selection.subgroup_column.reset();
+    const auto missing_subgroup =
+        datalab::application::AnalysisService::between_within_capability(table, configuration);
+    QVERIFY(missing_subgroup.diagnostics.size() > 0
+            || !missing_subgroup.tables.empty());
+}
+
+void QualityStatisticsTest::buildsResponseOptimizationOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"A", "B", "Y"};
+    table.rows = {
+        {"-1", "-1", "-3.5"}, {"1", "-1", "-0.5"},
+        {"-1", "1", "1.5"}, {"1", "1", "6.5"},
+        {"-1", "-1", "-3.5"}, {"1", "-1", "-0.5"},
+        {"-1", "1", "1.5"}, {"1", "1", "6.5"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.doe.factor_columns = {0, 1};
+    configuration.doe.response_column = 2;
+    configuration.doe.optimization_goal = "maximize";
+    const auto page = datalab::application::AnalysisService::response_optimization(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Response Optimization"});
+    QVERIFY(page.tables.size() >= std::size_t{3});
+    QCOMPARE(page.tables[0].title, std::string{"最佳组合"});
+    QCOMPARE(page.tables[1].title, std::string{"候选组合"});
+    QCOMPARE(page.tables[1].rows.size(), std::size_t{4});
+}
+
+void QualityStatisticsTest::johnsonAndNonnormalCapability()
+{
+    std::vector<double> lognormal_sample;
+    lognormal_sample.reserve(80);
+    for (int index = 0; index < 80; ++index) {
+        const double probability = (static_cast<double>(index) + 0.5) / 80.0;
+        lognormal_sample.push_back(std::exp(
+            0.4 * datalab::domain::statistics::standard_normal_quantile(probability)));
+    }
+    const auto transform =
+        datalab::domain::statistics::fit_johnson_transform(lognormal_sample);
+    QVERIFY(transform.found || transform.p_value >= 0.0);
+    if (transform.found) {
+        QVERIFY(transform.parameters.family == datalab::domain::statistics::JohnsonFamily::sl
+                || transform.parameters.family == datalab::domain::statistics::JohnsonFamily::su
+                || transform.parameters.family == datalab::domain::statistics::JohnsonFamily::sb);
+        QVERIFY(transform.p_value > 0.10);
+        QVERIFY(!transform.transformed.empty());
+    }
+
+    const SpecificationLimits specs{0.5, 3.0, std::nullopt};
+    const auto johnson = ProcessCapability::calculate_johnson(lognormal_sample, specs);
+    QCOMPARE(johnson.capability_method, std::string("johnson"));
+    QVERIFY(!johnson.cp.has_value());
+    QVERIFY(!johnson.cpk.has_value());
+
+    const auto normal = ProcessCapability::calculate({4.0, 5.0, 6.0}, 1.0, specs);
+    QVERIFY(normal.cp.has_value());
+    QCOMPARE(normal.capability_method, std::string("normal"));
+
+    std::vector<double> weibull_sample;
+    weibull_sample.reserve(80);
+    for (int index = 0; index < 80; ++index) {
+        const double probability = (static_cast<double>(index) + 0.5) / 80.0;
+        weibull_sample.push_back(10.0 * std::sqrt(-std::log(1.0 - probability)));
+    }
+    const SpecificationLimits weibull_specs{5.0, 20.0, std::nullopt};
+    const auto nonnormal = ProcessCapability::calculate_nonnormal(
+        weibull_sample, weibull_specs, "weibull");
+    QVERIFY(nonnormal.pp.has_value());
+    QVERIFY(nonnormal.ppk.has_value());
+    QVERIFY(!nonnormal.cp.has_value());
+    const double f_lsl = 1.0 - std::exp(-std::pow(5.0 / 10.0, 2.0));
+    const double f_usl = 1.0 - std::exp(-std::pow(20.0 / 10.0, 2.0));
+    const double expected_pp =
+        (datalab::domain::statistics::standard_normal_quantile(f_usl)
+         - datalab::domain::statistics::standard_normal_quantile(f_lsl)) / 6.0;
+    QVERIFY(qAbs(*nonnormal.pp - (*nonnormal.z_usl - *nonnormal.z_lsl) / 6.0) < 1.0e-12);
+    QVERIFY(qAbs(*nonnormal.pp - expected_pp) / std::abs(expected_pp) < 0.05);
+
+    datalab::domain::DataTable table;
+    table.columns = {"Value"};
+    for (const double value : weibull_sample) {
+        table.rows.push_back({std::to_string(value)});
+    }
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.specifications = weibull_specs;
+    configuration.capability_method = "non_normal";
+    configuration.nonnormal_distribution = "weibull";
+    const auto page = datalab::application::AnalysisService::capability(table, configuration);
+    QCOMPARE(page.method_name, std::string("Nonnormal Capability Analysis"));
 }
 
 QTEST_APPLESS_MAIN(QualityStatisticsTest)

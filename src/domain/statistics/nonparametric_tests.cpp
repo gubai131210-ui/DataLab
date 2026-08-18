@@ -4,7 +4,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
+#include <optional>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -13,6 +15,7 @@ struct RankedValue {
     double value;
     std::size_t group;
     double rank = 0.0;
+    std::size_t origin = 0;
 };
 
 void error(
@@ -35,8 +38,8 @@ std::vector<RankedValue> rank_values(const std::vector<std::vector<double>>& gro
 {
     std::vector<RankedValue> values;
     for (std::size_t group = 0; group < groups.size(); ++group) {
-        for (const double value : groups[group]) {
-            values.push_back({value, group, 0.0});
+        for (std::size_t origin = 0; origin < groups[group].size(); ++origin) {
+            values.push_back({groups[group][origin], group, 0.0, origin});
         }
     }
     std::sort(values.begin(), values.end(),
@@ -149,8 +152,22 @@ RankSumResult mann_whitney(
                 std::abs(result.z_statistic))), 0.0, 1.0);
     const double uncorrected_z = (difference - continuity)
         / std::sqrt(uncorrected_variance);
-    result.p_value_without_tie_correction = std::clamp(
-        2.0 * (1.0 - standard_normal_cdf(std::abs(uncorrected_z))), 0.0, 1.0);
+    const double uncorrected_cdf = standard_normal_cdf(uncorrected_z);
+    result.p_value_without_tie_correction = alternative == TestAlternative::less
+        ? uncorrected_cdf : alternative == TestAlternative::greater
+            ? 1.0 - uncorrected_cdf
+            : std::clamp(2.0 * (1.0 - standard_normal_cdf(
+                std::abs(uncorrected_z))), 0.0, 1.0);
+    result.tie_correction = tie_sum > 0.0;
+    result.small_sample_warning = first.size() < 10 || second.size() < 10;
+    if (result.small_sample_warning) {
+        warning(result.diagnostics, "small_sample_normal_approximation",
+                "存在样本量小于 10 的组，Mann–Whitney 正态近似只作提示。");
+    }
+    const double u_statistic = result.rank_sum - n1 * (n1 + 1.0) / 2.0;
+    if (n1 * n2 > 0.0) {
+        result.effect_size = 1.0 - 2.0 * u_statistic / (n1 * n2);
+    }
     std::vector<double> differences;
     for (const double first_value : first) {
         for (const double second_value : second) {
@@ -189,16 +206,38 @@ SignedRankResult wilcoxon_signed_rank(
         return result;
     }
     const auto ranks = rank_values(absolute_differences);
-    for (std::size_t index = 0; index < ranks.size(); ++index) {
-        if (signs[index] > 0) {
-            result.positive_rank_sum += ranks[index].rank;
+    double tie_sum = 0.0;
+    for (std::size_t index = 0; index < ranks.size();) {
+        std::size_t end = index + 1;
+        while (end < ranks.size() && ranks[end].value == ranks[index].value) {
+            ++end;
+        }
+        const double size = static_cast<double>(end - index);
+        tie_sum += size * size * size - size;
+        index = end;
+    }
+    for (const auto& ranked : ranks) {
+        if (signs[ranked.origin] > 0) {
+            result.positive_rank_sum += ranked.rank;
         } else {
-            result.negative_rank_sum += ranks[index].rank;
+            result.negative_rank_sum += ranked.rank;
         }
     }
     const double count = static_cast<double>(result.count);
     const double expected = count * (count + 1.0) / 4.0;
-    const double variance = count * (count + 1.0) * (2.0 * count + 1.0) / 24.0;
+    const double variance = count * (count + 1.0) * (2.0 * count + 1.0) / 24.0
+        - tie_sum / 48.0;
+    result.tie_correction = tie_sum > 0.0;
+    result.small_sample_warning = result.count < 10;
+    if (result.small_sample_warning) {
+        warning(result.diagnostics, "small_sample_normal_approximation",
+                "非零差值少于 10，Wilcoxon 正态近似只作提示。");
+    }
+    if (variance <= 0.0) {
+        error(result.diagnostics, "zero_rank_variance",
+              "符号秩方差为 0，无法计算 Wilcoxon P 值。");
+        return result;
+    }
     const double statistic = result.positive_rank_sum - expected;
     result.z_statistic = (statistic - (statistic > 0.0 ? 0.5 : statistic < 0.0 ? -0.5 : 0.0))
         / std::sqrt(variance);
@@ -249,7 +288,8 @@ KruskalWallisResult kruskal_wallis(
             labels.empty() ? std::to_string(group + 1) : labels[group],
             groups[group].size(),
             sorted[sorted.size() / 2],
-            rank_sums[group] / static_cast<double>(groups[group].size())});
+            rank_sums[group] / static_cast<double>(groups[group].size()),
+            std::nullopt});
         result.h_statistic += rank_sums[group] * rank_sums[group]
             / static_cast<double>(groups[group].size());
         if (groups[group].size() < 5) {
@@ -263,8 +303,29 @@ KruskalWallisResult kruskal_wallis(
     result.adjusted_h_statistic = correction > 0.0
         ? result.h_statistic / correction : result.h_statistic;
     result.degrees_of_freedom = static_cast<double>(groups.size() - 1);
+    result.p_value_unadjusted = chi_square_right_tail(
+        result.h_statistic, result.degrees_of_freedom);
     result.p_value = chi_square_right_tail(
         result.adjusted_h_statistic, result.degrees_of_freedom);
+    result.tie_correction = tie_sum > 0.0;
+    const double grand_mean_rank = (total + 1.0) / 2.0;
+    for (std::size_t group = 0; group < result.groups.size(); ++group) {
+        const double n_j = static_cast<double>(groups[group].size());
+        double variance = (total + 1.0) * (total - n_j) / (12.0 * n_j);
+        if (correction > 0.0) {
+            variance *= correction;
+        }
+        if (variance > 0.0) {
+            result.groups[group].z_value =
+                (result.groups[group].mean_rank - grand_mean_rank) / std::sqrt(variance);
+        }
+    }
+    result.small_sample_warning = std::any_of(
+        groups.cbegin(), groups.cend(),
+        [](const std::vector<double>& group) { return group.size() < 5; });
+    if (total > 1.0) {
+        result.effect_size = result.adjusted_h_statistic / (total - 1.0);
+    }
     return result;
 }
 

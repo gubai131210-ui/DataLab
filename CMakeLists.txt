@@ -23,11 +23,17 @@ add_library(datalab_domain STATIC
     src/domain/statistics/descriptive_statistics.h
     src/domain/statistics/process_capability.cpp
     src/domain/statistics/process_capability.h
+    src/domain/statistics/johnson_transform.cpp
+    src/domain/statistics/johnson_transform.h
     src/domain/statistics/control_charts.cpp
     src/domain/statistics/control_charts.h
     src/domain/statistics/quality_visuals.cpp
     src/domain/statistics/normal_probability.cpp
     src/domain/statistics/normality_test.cpp
+    src/domain/statistics/anderson_darling.cpp
+    src/domain/statistics/anderson_darling.h
+    src/domain/statistics/distribution_identification.cpp
+    src/domain/statistics/distribution_identification.h
     src/domain/statistics/quality_visuals.h
     src/domain/statistics/normality_test.h
     src/domain/statistics/spc_constants.cpp
@@ -40,6 +46,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/hypothesis_tests.h
     src/domain/statistics/inference_extensions.cpp
     src/domain/statistics/inference_extensions.h
+    src/domain/statistics/analysis_rules.cpp
+    src/domain/statistics/analysis_rules.h
     src/domain/statistics/regression.cpp
     src/domain/statistics/regression.h
     src/domain/statistics/two_factor_anova.cpp
@@ -118,6 +126,8 @@ target_link_libraries(datalab_application
 # ---------------------------------------------------------------------------
 add_library(datalab_reporting STATIC
     src/reporting/chart_model.h
+    src/reporting/chart_interaction.cpp
+    src/reporting/chart_interaction.h
     src/reporting/chart_geometry.h
     src/reporting/chart_renderer.cpp
     src/reporting/chart_renderer.h
@@ -196,6 +206,8 @@ add_library(datalab_ui STATIC
     src/ui/worksheet_view.h
     src/ui/report_preview_dialog.cpp
     src/ui/report_preview_dialog.h
+    src/ui/graph_properties_panel.cpp
+    src/ui/graph_properties_panel.h
     src/ui/graph_properties_dialog.cpp
     src/ui/graph_properties_dialog.h
 )
@@ -358,6 +370,14 @@ add_test(NAME minitab_fixture_test COMMAND minitab_fixture_test)
 
 add_datalab_test(chart_geometry_test tests/chart_geometry_test.cpp datalab_reporting)
 
+add_datalab_test(chart_renderer_test tests/chart_renderer_test.cpp datalab_reporting)
+add_datalab_test(chart_interaction_test tests/chart_interaction_test.cpp datalab_reporting)
+set_tests_properties(
+    chart_renderer_test
+    chart_interaction_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
 add_datalab_test(
     chart_model_roundtrip_test
     tests/chart_model_roundtrip_test.cpp
@@ -383,11 +403,38 @@ target_compile_definitions(minitab_formula_golden_test
 
 add_test(NAME minitab_formula_golden_test COMMAND minitab_formula_golden_test)
 
+qt_add_executable(minitab_numerical_golden_test
+    tests/minitab_numerical_golden_test.cpp
+    tests/fixtures/minitab/golden_loader.cpp
+)
+
+target_include_directories(minitab_numerical_golden_test
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_link_libraries(minitab_numerical_golden_test
+    PRIVATE
+        datalab_application
+        datalab_infrastructure
+        Qt6::Test
+)
+target_compile_definitions(minitab_numerical_golden_test
+    PRIVATE
+        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_test(NAME minitab_numerical_golden_test COMMAND minitab_numerical_golden_test)
+
+add_datalab_test(import_state_reset_test tests/import_state_reset_test.cpp datalab_domain datalab_infrastructure)
+
 add_datalab_test(worksheet_model_test tests/worksheet_model_test.cpp datalab_ui)
 
 add_datalab_test(output_serialization_test tests/output_serialization_test.cpp datalab_infrastructure)
 
 add_datalab_test(quality_diagnostics_test tests/quality_diagnostics_test.cpp datalab_domain datalab_infrastructure)
+
+add_datalab_test(analysis_rule_evidence_test tests/analysis_rule_evidence_test.cpp datalab_domain)
 
 add_datalab_test(
     interpretation_service_test
@@ -418,6 +465,36 @@ add_datalab_test(
 )
 set_tests_properties(
     special_cause_rule_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    graph_properties_dialog_test
+    tests/graph_properties_dialog_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    graph_properties_dialog_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    graph_properties_panel_test
+    tests/graph_properties_panel_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    graph_properties_panel_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    analysis_chart_widget_test
+    tests/analysis_chart_widget_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    analysis_chart_widget_test
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 

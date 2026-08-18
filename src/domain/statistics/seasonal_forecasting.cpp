@@ -1,7 +1,10 @@
 #include "domain/statistics/seasonal_forecasting.h"
 
+#include "domain/statistics/arima.h"
+
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
 #include <utility>
 
@@ -275,6 +278,180 @@ bool valid_sarima_parameters(const FixedSarimaParameters& parameters,
                    "SARIMA 固定参数必须全部为有限数值，创新方差不得为负。");
         return false;
     }
+    return true;
+}
+
+std::vector<double> multiply_polynomials(
+    const std::vector<double>& left,
+    const std::vector<double>& right)
+{
+    if (left.empty()) {
+        return right;
+    }
+    if (right.empty()) {
+        return left;
+    }
+    std::vector<double> product(left.size() + right.size() - 1, 0.0);
+    for (std::size_t i = 0; i < left.size(); ++i) {
+        for (std::size_t j = 0; j < right.size(); ++j) {
+            product[i + j] += left[i] * right[j];
+        }
+    }
+    return product;
+}
+
+std::vector<double> ar_operator(const std::vector<double>& coefficients)
+{
+    std::vector<double> polynomial(coefficients.size() + 1, 0.0);
+    polynomial[0] = 1.0;
+    for (std::size_t index = 0; index < coefficients.size(); ++index) {
+        polynomial[index + 1] = -coefficients[index];
+    }
+    return polynomial;
+}
+
+std::vector<double> ma_operator(const std::vector<double>& coefficients)
+{
+    std::vector<double> polynomial(coefficients.size() + 1, 0.0);
+    polynomial[0] = 1.0;
+    for (std::size_t index = 0; index < coefficients.size(); ++index) {
+        polynomial[index + 1] = coefficients[index];
+    }
+    return polynomial;
+}
+
+std::vector<double> seasonal_operator(
+    const std::vector<double>& coefficients,
+    std::size_t period,
+    bool moving_average)
+{
+    if (coefficients.empty() || period == 0) {
+        return {1.0};
+    }
+    std::vector<double> polynomial(coefficients.size() * period + 1, 0.0);
+    polynomial[0] = 1.0;
+    for (std::size_t index = 0; index < coefficients.size(); ++index) {
+        const double value = moving_average ? coefficients[index] : -coefficients[index];
+        polynomial[(index + 1) * period] = value;
+    }
+    return polynomial;
+}
+
+bool admissible_coefficients(const std::vector<double>& values)
+{
+    return std::all_of(values.cbegin(), values.cend(), [](double value) {
+        return std::isfinite(value) && std::abs(value) < 0.95;
+    });
+}
+
+double multiplicative_css_sse(
+    const std::vector<double>& series,
+    double intercept,
+    const std::vector<double>& ar,
+    const std::vector<double>& ma)
+{
+    const std::size_t max_lag = std::max(ar.size(), ma.size());
+    if (max_lag == 0 || series.size() <= max_lag + 2) {
+        return std::numeric_limits<double>::infinity();
+    }
+    std::vector<double> residuals(series.size(), 0.0);
+    double sse = 0.0;
+    std::size_t count = 0;
+    for (std::size_t time = max_lag - 1; time < series.size(); ++time) {
+        double ar_term = 0.0;
+        for (std::size_t lag = 0; lag < ar.size(); ++lag) {
+            ar_term += ar[lag] * (series[time - lag] - intercept);
+        }
+        double ma_term = 0.0;
+        for (std::size_t lag = 1; lag < ma.size() && lag <= time; ++lag) {
+            ma_term += ma[lag] * residuals[time - lag];
+        }
+        residuals[time] = ar_term - ma_term;
+        if (!std::isfinite(residuals[time])) {
+            return std::numeric_limits<double>::infinity();
+        }
+        sse += residuals[time] * residuals[time];
+        ++count;
+    }
+    if (count < 3) {
+        return std::numeric_limits<double>::infinity();
+    }
+    return sse;
+}
+
+bool fit_multiplicative_sarima_css(
+    const std::vector<double>& series,
+    const SarimaOrder& order,
+    double& sse,
+    double& aic,
+    double& aicc,
+    double& bic)
+{
+    const double n = static_cast<double>(series.size());
+    const double intercept = std::accumulate(series.cbegin(), series.cend(), 0.0) / n;
+    std::vector<double> ar_nonseasonal(order.p, 0.0);
+    std::vector<double> ma_nonseasonal(order.q, 0.0);
+    std::vector<double> ar_seasonal(order.seasonal_p, 0.0);
+    std::vector<double> ma_seasonal(order.seasonal_q, 0.0);
+
+    const auto evaluate = [&]() {
+        if (!admissible_coefficients(ar_nonseasonal)
+            || !admissible_coefficients(ma_nonseasonal)
+            || !admissible_coefficients(ar_seasonal)
+            || !admissible_coefficients(ma_seasonal)) {
+            return std::numeric_limits<double>::infinity();
+        }
+        const std::vector<double> ar = multiply_polynomials(
+            ar_operator(ar_nonseasonal),
+            seasonal_operator(ar_seasonal, order.seasonal_period, false));
+        const std::vector<double> ma = multiply_polynomials(
+            ma_operator(ma_nonseasonal),
+            seasonal_operator(ma_seasonal, order.seasonal_period, true));
+        return multiplicative_css_sse(series, intercept, ar, ma);
+    };
+
+    sse = evaluate();
+    std::vector<double>* groups[] = {
+        &ar_nonseasonal, &ma_nonseasonal, &ar_seasonal, &ma_seasonal};
+    for (int iteration = 0; iteration < 12; ++iteration) {
+        bool improved = false;
+        for (std::vector<double>* group : groups) {
+            for (double& coefficient : *group) {
+                const double original = coefficient;
+                double best_local = sse;
+                double best_value = original;
+                for (int step = -8; step <= 8; ++step) {
+                    coefficient = static_cast<double>(step) * 0.1;
+                    const double current = evaluate();
+                    if (current + 1.0e-12 < best_local) {
+                        best_local = current;
+                        best_value = coefficient;
+                        improved = true;
+                    }
+                }
+                coefficient = best_value;
+                sse = best_local;
+            }
+        }
+        if (!improved) {
+            break;
+        }
+    }
+
+    if (!std::isfinite(sse) || sse <= 0.0) {
+        return false;
+    }
+    const double parameters = 1.0 + static_cast<double>(
+        order.p + order.q + order.seasonal_p + order.seasonal_q);
+    const double variance = std::max(sse / n, kEpsilon);
+    const double log_likelihood =
+        -0.5 * n * (std::log(2.0 * std::acos(-1.0)) + 1.0 + std::log(variance));
+    aic = -2.0 * log_likelihood + 2.0 * parameters;
+    bic = -2.0 * log_likelihood + parameters * std::log(n);
+    const double denominator = n - parameters - 1.0;
+    aicc = denominator > 0.0
+        ? aic + 2.0 * parameters * (parameters + 1.0) / denominator
+        : aic;
     return true;
 }
 
@@ -676,6 +853,99 @@ SarimaForecastingResult forecast_fixed_sarima(
                "sarima_fixed_recursion",
                "已使用固定参数 SARIMA 递推；未来创新项按零处理，区间为创新方差的正态近似。");
     return result;
+}
+
+std::vector<SarimaCandidateResult> fit_best_sarima_candidates_impl(
+    const std::vector<double>& observations,
+    const std::size_t seasonal_period,
+    const int max_p,
+    const int max_q,
+    const int max_d,
+    const int max_seasonal_p,
+    const int max_seasonal_q,
+    const int max_seasonal_d)
+{
+    std::vector<SarimaCandidateResult> candidates;
+    if (!finite_values(observations) || observations.size() < seasonal_period + 4
+        || seasonal_period < 2) {
+        return candidates;
+    }
+    const int bounded_p = std::clamp(max_p, 0, 2);
+    const int bounded_q = std::clamp(max_q, 0, 2);
+    const int bounded_d = std::clamp(max_d, 0, 1);
+    const int bounded_sp = std::clamp(max_seasonal_p, 0, 1);
+    const int bounded_sq = std::clamp(max_seasonal_q, 0, 1);
+    const int bounded_sd = std::clamp(max_seasonal_d, 0, 1);
+    for (int seasonal_d = 0; seasonal_d <= bounded_sd; ++seasonal_d) {
+        for (int d = 0; d <= bounded_d; ++d) {
+            for (int p = 0; p <= bounded_p; ++p) {
+                for (int q = 0; q <= bounded_q; ++q) {
+                    for (int seasonal_p = 0; seasonal_p <= bounded_sp; ++seasonal_p) {
+                        for (int seasonal_q = 0; seasonal_q <= bounded_sq; ++seasonal_q) {
+                            if (p == 0 && q == 0 && d == 0 && seasonal_p == 0
+                                && seasonal_q == 0 && seasonal_d == 0) {
+                                continue;
+                            }
+                            SarimaOrder order{
+                                static_cast<std::size_t>(p),
+                                static_cast<std::size_t>(d),
+                                static_cast<std::size_t>(q),
+                                static_cast<std::size_t>(seasonal_p),
+                                static_cast<std::size_t>(seasonal_d),
+                                static_cast<std::size_t>(seasonal_q),
+                                seasonal_period};
+                            const std::vector<double> differenced =
+                                difference_series(observations, order);
+                            if (differenced.size() < 8) {
+                                continue;
+                            }
+                            SarimaCandidateResult candidate;
+                            candidate.order = order;
+                            if (!fit_multiplicative_sarima_css(
+                                    differenced, order, candidate.sse, candidate.aic,
+                                    candidate.aicc, candidate.bic)) {
+                                continue;
+                            }
+                            candidate.diagnostics.push_back({
+                                DiagnosticMessage::Severity::info,
+                                "sarima_css_approximation",
+                                "SARIMA 候选使用乘法多项式条件最小二乘；"
+                                "与 Minitab 迭代最小二乘（Meeker TSERIES，含 back forecast）"
+                                "的阶或数值可能不同。"});
+                            candidates.push_back(std::move(candidate));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return candidates;
+}
+
+std::string sarima_order_label(const SarimaOrder& sarima_order)
+{
+    return arima_order_label({static_cast<int>(sarima_order.p),
+                              static_cast<int>(sarima_order.d),
+                              static_cast<int>(sarima_order.q)})
+        + "(" + std::to_string(sarima_order.seasonal_p) + ','
+        + std::to_string(sarima_order.seasonal_d) + ','
+        + std::to_string(sarima_order.seasonal_q) + ")_"
+        + std::to_string(sarima_order.seasonal_period);
+}
+
+std::vector<SarimaCandidateResult> fit_best_sarima_candidates(
+    const std::vector<double>& observations,
+    const std::size_t seasonal_period,
+    const int max_p,
+    const int max_q,
+    const int max_d,
+    const int max_seasonal_p,
+    const int max_seasonal_q,
+    const int max_seasonal_d)
+{
+    return fit_best_sarima_candidates_impl(
+        observations, seasonal_period, max_p, max_q, max_d,
+        max_seasonal_p, max_seasonal_q, max_seasonal_d);
 }
 
 }  // namespace datalab::domain::statistics

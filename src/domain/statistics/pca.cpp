@@ -272,20 +272,18 @@ PcaResult principal_component_analysis(
                        "对称特征分解在规定迭代次数内未收敛。");
         return result;
     }
-    result.retained_component_count = result.eigenvalues.size();
+    const std::size_t all_components = result.eigenvalues.size();
+    result.retained_component_count = all_components;
     if (options.component_count > 0) {
         result.retained_component_count =
             std::min(options.component_count, result.retained_component_count);
     }
-    result.eigenvalues.resize(result.retained_component_count);
     const double total_variance = std::accumulate(
         result.eigenvalues.cbegin(), result.eigenvalues.cend(), 0.0);
-    result.explained_variance_ratio.assign(result.retained_component_count, 0.0);
-    result.cumulative_explained_variance_ratio.assign(
-        result.retained_component_count, 0.0);
+    result.explained_variance_ratio.assign(all_components, 0.0);
+    result.cumulative_explained_variance_ratio.assign(all_components, 0.0);
     double cumulative = 0.0;
-    for (std::size_t component = 0; component < result.retained_component_count;
-         ++component) {
+    for (std::size_t component = 0; component < all_components; ++component) {
         if (total_variance > 0.0) {
             result.explained_variance_ratio[component] =
                 result.eigenvalues[component] / total_variance;
@@ -294,11 +292,14 @@ PcaResult principal_component_analysis(
         result.cumulative_explained_variance_ratio[component] = cumulative;
     }
 
+    result.coefficients.assign(
+        result.variable_count, std::vector<double>(result.retained_component_count, 0.0));
     result.loadings.assign(
         result.variable_count, std::vector<double>(result.retained_component_count, 0.0));
     for (std::size_t variable = 0; variable < result.variable_count; ++variable) {
         for (std::size_t component = 0; component < result.retained_component_count;
              ++component) {
+            result.coefficients[variable][component] = eigenvectors[variable][component];
             result.loadings[variable][component] =
                 eigenvectors[variable][component] * std::sqrt(result.eigenvalues[component]);
         }
@@ -349,6 +350,10 @@ PcaResult principal_component_analysis(
         result.anomaly[observation] = result.hotelling_t2_anomaly[observation]
             || result.q_residual_anomaly[observation];
     }
+    add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                   "empirical_anomaly_quantile",
+                   "T²/Q 限使用样本经验分位，不是 Minitab T² 控制图 UCL，也不使用 "
+                   "Jackson–Mudholkar 解析限。");
     return result;
 }
 

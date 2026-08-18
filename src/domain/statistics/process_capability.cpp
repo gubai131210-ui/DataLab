@@ -2,11 +2,16 @@
 
 #include "domain/quality_diagnostics.h"
 #include "domain/statistics/descriptive_statistics.h"
+#include "domain/statistics/johnson_transform.h"
 #include "domain/statistics/normal_distribution.h"
+#include "domain/statistics/reliability.h"
+#include "domain/statistics/spc_constants.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numeric>
+#include <string>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -222,6 +227,381 @@ ProcessCapabilityResult ProcessCapability::calculate(
     result.observed_ppm_below = 1.0e6 * static_cast<double>(below) / n;
     result.observed_ppm_above = 1.0e6 * static_cast<double>(above) / n;
     result.observed_ppm_total = *result.observed_ppm_below + *result.observed_ppm_above;
+    return result;
+}
+
+namespace {
+
+void fill_observed_ppm(
+    ProcessCapabilityResult& result,
+    const std::vector<double>& valid,
+    const SpecificationLimits& specifications)
+{
+    if (valid.empty()) {
+        return;
+    }
+    std::size_t below = 0;
+    std::size_t above = 0;
+    for (const double value : valid) {
+        if (specifications.lower.has_value() && std::isfinite(*specifications.lower)
+            && value < *specifications.lower) {
+            ++below;
+        }
+        if (specifications.upper.has_value() && std::isfinite(*specifications.upper)
+            && value > *specifications.upper) {
+            ++above;
+        }
+    }
+    const double n = static_cast<double>(valid.size());
+    result.observed_ppm_below = 1.0e6 * static_cast<double>(below) / n;
+    result.observed_ppm_above = 1.0e6 * static_cast<double>(above) / n;
+    result.observed_ppm_total = *result.observed_ppm_below + *result.observed_ppm_above;
+}
+
+void clear_within_indices(ProcessCapabilityResult& result)
+{
+    result.cp.reset();
+    result.cpl.reset();
+    result.cpu.reset();
+    result.cpk.reset();
+    result.cpm.reset();
+    result.expected_ppm_within_below.reset();
+    result.expected_ppm_within_above.reset();
+    result.expected_ppm_within_total.reset();
+    result.within_standard_deviation = 0.0;
+    result.within_sigma_method = "not_applicable";
+}
+
+}  // namespace
+
+ProcessCapabilityResult ProcessCapability::calculate_johnson(
+    const std::vector<double>& observations,
+    const SpecificationLimits& specifications,
+    double p_criterion)
+{
+    std::vector<double> valid;
+    for (const double value : observations) {
+        if (std::isfinite(value)) {
+            valid.push_back(value);
+        }
+    }
+    JohnsonTransformResult transform = fit_johnson_transform(valid, p_criterion);
+    ProcessCapabilityResult result;
+    result.capability_method = "johnson";
+    result.johnson_family = johnson_family_name(transform.parameters.family);
+    result.diagnostics = transform.diagnostics;
+    result.evidence.method_version = "2";
+    result.evidence.assumption_status = "not_verified";
+    result.evidence.valid_count = valid.size();
+    result.sample_size = valid.size();
+    if (!transform.found) {
+        result.evidence.not_computed_reason = "johnson_transform_not_found";
+        fill_observed_ppm(result, valid, specifications);
+        return result;
+    }
+
+    SpecificationLimits transformed_specs;
+    bool spec_outside = false;
+    if (specifications.lower.has_value()) {
+        const auto z = johnson_transform_value(transform.parameters, *specifications.lower);
+        if (z.has_value()) {
+            transformed_specs.lower = z;
+        } else {
+            spec_outside = true;
+        }
+    }
+    if (specifications.upper.has_value()) {
+        const auto z = johnson_transform_value(transform.parameters, *specifications.upper);
+        if (z.has_value()) {
+            transformed_specs.upper = z;
+        } else {
+            spec_outside = true;
+        }
+    }
+    if (specifications.target.has_value()) {
+        transformed_specs.target =
+            johnson_transform_value(transform.parameters, *specifications.target);
+    }
+    if (!transformed_specs.lower.has_value() && !transformed_specs.upper.has_value()) {
+        add_error(result.diagnostics, "johnson_spec_outside_support",
+                  "规格限落在 Johnson 变换定义域外，无法计算 Pp/Ppk。");
+        result.evidence.not_computed_reason = "johnson_spec_outside_support";
+        fill_observed_ppm(result, valid, specifications);
+        return result;
+    }
+    if (spec_outside) {
+        add_warning(result.diagnostics, "johnson_spec_outside_support",
+                    "至少一个规格限落在变换定义域外；越界侧的百分位回推未实现，"
+                    "仅输出仍可变换规格的 overall 指数。");
+    }
+
+    const auto descriptive = DescriptiveStatistics::calculate(transform.transformed);
+    if (!descriptive.has_value()
+        || !descriptive->sample_standard_deviation.has_value()) {
+        add_error(result.diagnostics, "johnson_transform_not_found",
+                  "变换后样本标准差不可用。");
+        result.evidence.not_computed_reason = "empty_data";
+        return result;
+    }
+    result = calculate(
+        descriptive->mean,
+        *descriptive->sample_standard_deviation,
+        *descriptive->sample_standard_deviation,
+        transformed_specs);
+    result.capability_method = "johnson";
+    result.johnson_family = johnson_family_name(transform.parameters.family);
+    result.diagnostics.insert(result.diagnostics.end(),
+                              transform.diagnostics.cbegin(),
+                              transform.diagnostics.cend());
+    result.sample_size = valid.size();
+    result.evidence.valid_count = valid.size();
+    clear_within_indices(result);
+    add_warning(result.diagnostics, "within_not_applicable_after_johnson",
+                "Johnson 变换路径只报告 overall Pp/Ppk，不报告 within Cp/Cpk。");
+    fill_observed_ppm(result, valid, specifications);
+    result.overall_sigma_method = "johnson_transformed_sample_sd";
+    return result;
+}
+
+ProcessCapabilityResult ProcessCapability::calculate_nonnormal(
+    const std::vector<double>& observations,
+    const SpecificationLimits& specifications,
+    const std::string& distribution)
+{
+    ProcessCapabilityResult result;
+    result.capability_method = "non_normal";
+    result.evidence.method_version = "2";
+    result.evidence.assumption_status = "not_verified";
+    result.within_sigma_method = "not_applicable";
+    result.overall_sigma_method = distribution + "_z_score";
+    std::vector<double> valid;
+    for (const double value : observations) {
+        if (std::isfinite(value)) {
+            valid.push_back(value);
+        }
+    }
+    result.sample_size = valid.size();
+    result.evidence.valid_count = valid.size();
+    if (valid.size() < 2) {
+        add_error(result.diagnostics, "empty_data",
+                  "非正态能力至少需要两个有限观测。");
+        result.evidence.not_computed_reason = "empty_data";
+        return result;
+    }
+    if (!specifications.lower.has_value() && !specifications.upper.has_value()) {
+        add_error(result.diagnostics, "missing_specifications", "LSL or USL is required.");
+        result.evidence.not_computed_reason = "missing_specifications";
+        return result;
+    }
+    const bool has_both = specifications.lower.has_value()
+        && specifications.upper.has_value();
+    result.specification_mode = has_both
+        ? "bilateral"
+        : (specifications.lower.has_value() ? "lower_only" : "upper_only");
+
+    std::vector<double> positive;
+    for (const double value : valid) {
+        if (value > 0.0) {
+            positive.push_back(value);
+        }
+    }
+    if (positive.size() < 2) {
+        add_error(result.diagnostics, "non_positive_observation",
+                  "Weibull/Lognormal 非正态能力要求观测值为正数。");
+        result.evidence.not_computed_reason = "non_positive_observation";
+        return result;
+    }
+    const std::vector<bool> events(positive.size(), true);
+    const bool use_lognormal = distribution == "lognormal";
+    double weibull_shape = 0.0;
+    double weibull_scale = 0.0;
+    double lognormal_location = 0.0;
+    double lognormal_scale = 0.0;
+    if (use_lognormal) {
+        const LognormalResult fitted = fit_lognormal(positive, events);
+        result.diagnostics.insert(result.diagnostics.end(),
+                                  fitted.diagnostics.cbegin(),
+                                  fitted.diagnostics.cend());
+        if (!fitted.identifiable || !fitted.converged) {
+            result.evidence.not_computed_reason = "distribution_not_identifiable";
+            fill_observed_ppm(result, valid, specifications);
+            return result;
+        }
+        lognormal_location = fitted.location;
+        lognormal_scale = fitted.scale;
+        result.mean = std::exp(fitted.location + 0.5 * fitted.scale * fitted.scale);
+        result.overall_standard_deviation =
+            result.mean * std::sqrt(std::exp(fitted.scale * fitted.scale) - 1.0);
+    } else {
+        const WeibullResult fitted = fit_weibull(positive, events);
+        result.diagnostics.insert(result.diagnostics.end(),
+                                  fitted.diagnostics.cbegin(),
+                                  fitted.diagnostics.cend());
+        if (!fitted.identifiable || !fitted.converged) {
+            result.evidence.not_computed_reason = "distribution_not_identifiable";
+            fill_observed_ppm(result, valid, specifications);
+            return result;
+        }
+        weibull_shape = fitted.shape;
+        weibull_scale = fitted.scale;
+        result.mean = fitted.scale * std::tgamma(1.0 + 1.0 / fitted.shape);
+        result.overall_standard_deviation = 0.0;
+    }
+
+    const auto cdf = [&](double x) -> double {
+        if (!(x > 0.0)) {
+            return 0.0;
+        }
+        if (use_lognormal) {
+            return standard_normal_cdf((std::log(x) - lognormal_location) / lognormal_scale);
+        }
+        return 1.0 - std::exp(-std::pow(x / weibull_scale, weibull_shape));
+    };
+    const auto clamped_quantile = [](double probability) {
+        const double clamped = std::clamp(probability, 1.0e-12, 1.0 - 1.0e-12);
+        return standard_normal_quantile(clamped);
+    };
+
+    if (specifications.lower.has_value() && std::isfinite(*specifications.lower)) {
+        const double probability = cdf(*specifications.lower);
+        result.z_lsl = clamped_quantile(probability);
+        result.ppl = -(*result.z_lsl) / 3.0;
+        result.expected_ppm_overall_below = 1.0e6 * probability;
+    }
+    if (specifications.upper.has_value() && std::isfinite(*specifications.upper)) {
+        const double probability = cdf(*specifications.upper);
+        result.z_usl = clamped_quantile(probability);
+        result.ppu = *result.z_usl / 3.0;
+        result.expected_ppm_overall_above = 1.0e6 * (1.0 - probability);
+    }
+    if (result.ppl.has_value() && result.ppu.has_value()) {
+        result.ppk = std::min(*result.ppl, *result.ppu);
+        result.pp = (*result.z_usl - *result.z_lsl) / 6.0;
+    } else {
+        result.ppk = result.ppl.has_value() ? result.ppl : result.ppu;
+    }
+    if (result.z_lsl.has_value() && result.z_usl.has_value()) {
+        result.z_bench = std::min(*result.z_lsl, *result.z_usl);
+    } else {
+        result.z_bench = result.z_lsl.has_value() ? result.z_lsl : result.z_usl;
+    }
+    result.expected_ppm_overall_total =
+        result.expected_ppm_overall_below.value_or(0.0)
+        + result.expected_ppm_overall_above.value_or(0.0);
+    fill_observed_ppm(result, valid, specifications);
+    add_warning(result.diagnostics, "nonnormal_z_score_formula_reference",
+                "非正态能力使用拟合分布 CDF 的 Z-score 法计算 Pp/Ppk；"
+                "不报告 Cp/Cpk。数值是公式参考，不是 Minitab 导出。");
+    add_warning(result.diagnostics, "assumption_not_verified",
+                "能力指标未验证过程稳定性；数值仅供调查，不能单独作为过程合格结论。");
+    return result;
+}
+
+ProcessCapabilityResult ProcessCapability::calculate_between_within(
+    const std::vector<double>& observations,
+    const std::vector<std::vector<double>>& subgroups,
+    const SpecificationLimits& specifications)
+{
+    ProcessCapabilityResult failure;
+    failure.evidence.method_version = "2";
+    if (subgroups.size() < 2) {
+        add_error(failure.diagnostics, "insufficient_subgroups",
+                  "组间/组内能力至少需要两个子组。");
+        failure.evidence.not_computed_reason = "insufficient_subgroups";
+        return failure;
+    }
+    const std::size_t subgroup_size = subgroups.front().size();
+    if (subgroup_size < 2) {
+        add_error(failure.diagnostics, "invalid_subgroup_size",
+                  "各子组必须至少包含两个观测。");
+        failure.evidence.not_computed_reason = "invalid_subgroup_size";
+        return failure;
+    }
+    for (const auto& subgroup : subgroups) {
+        if (subgroup.size() != subgroup_size) {
+            add_error(failure.diagnostics, "unequal_subgroups",
+                      "各子组必须具有相同观测数。");
+            failure.evidence.not_computed_reason = "unequal_subgroups";
+            return failure;
+        }
+    }
+
+    const std::optional<double> d2_subgroup = SpcConstants::d2(subgroup_size);
+    const std::optional<double> d2_pair = SpcConstants::d2(2);
+    if (!d2_subgroup.has_value() || !d2_pair.has_value()) {
+        add_error(failure.diagnostics, "unsupported_subgroup_size",
+                  "子组大小超出无偏常数表范围。");
+        failure.evidence.not_computed_reason = "unsupported_subgroup_size";
+        return failure;
+    }
+
+    double range_sum = 0.0;
+    std::vector<double> subgroup_means;
+    subgroup_means.reserve(subgroups.size());
+    for (const auto& subgroup : subgroups) {
+        const auto minmax = std::minmax_element(subgroup.begin(), subgroup.end());
+        range_sum += *minmax.second - *minmax.first;
+        subgroup_means.push_back(
+            std::accumulate(subgroup.begin(), subgroup.end(), 0.0)
+            / static_cast<double>(subgroup.size()));
+    }
+    const double within_sigma = (range_sum / static_cast<double>(subgroups.size()))
+        / *d2_subgroup;
+
+    double moving_range_sum = 0.0;
+    for (std::size_t index = 1; index < subgroup_means.size(); ++index) {
+        moving_range_sum += std::abs(subgroup_means[index] - subgroup_means[index - 1]);
+    }
+    const double sigma_xbar = (moving_range_sum
+        / static_cast<double>(subgroup_means.size() - 1)) / *d2_pair;
+    const double within_variance = within_sigma * within_sigma;
+    const double raw_between_variance =
+        sigma_xbar * sigma_xbar - within_variance / static_cast<double>(subgroup_size);
+    const bool truncated = raw_between_variance < 0.0;
+    const double between_variance = truncated ? 0.0 : raw_between_variance;
+    const double between_sigma = std::sqrt(between_variance);
+    const double between_within_sigma = std::sqrt(between_variance + within_variance);
+
+    std::vector<double> valid;
+    valid.reserve(observations.size());
+    std::size_t missing = 0;
+    for (const double value : observations) {
+        if (std::isfinite(value)) {
+            valid.push_back(value);
+        } else {
+            ++missing;
+        }
+    }
+    const auto descriptive = DescriptiveStatistics::calculate(valid, missing, observations.size());
+    if (!descriptive.has_value() || !descriptive->sample_standard_deviation.has_value()) {
+        add_error(failure.diagnostics, "empty_data", "组间/组内能力需要有效数值观测。");
+        failure.evidence.not_computed_reason = "empty_data";
+        return failure;
+    }
+
+    ProcessCapabilityResult result = calculate(
+        descriptive->mean,
+        between_within_sigma,
+        *descriptive->sample_standard_deviation,
+        specifications);
+    result.sample_size = descriptive->count;
+    result.evidence.valid_count = descriptive->count;
+    result.evidence.missing_count = missing;
+    result.capability_method = "between_within";
+    result.subgroup_within_standard_deviation = within_sigma;
+    result.between_standard_deviation = between_sigma;
+    result.between_within_standard_deviation = between_within_sigma;
+    result.within_sigma_method = "R̄ / d2(n)";
+    result.between_sigma_method = "MR̄(子组均值) / d2(2)";
+    result.between_within_sigma_method = "sqrt(σ²_B + σ²_within)";
+    result.overall_sigma_method = "sample_standard_deviation";
+    if (truncated) {
+        add_warning(result.diagnostics, "between_variance_truncated",
+                    "估计的组间方差为负，已截断为 0；σ_B 可能低估。");
+    }
+    add_warning(result.diagnostics, "assumption_not_verified",
+                "能力指标未验证过程稳定性和正态性；数值仅供调查，不能单独作为过程合格结论。");
+    fill_observed_ppm(result, valid, specifications);
     return result;
 }
 

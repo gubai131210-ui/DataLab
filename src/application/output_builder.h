@@ -29,6 +29,9 @@ void append_diagnostics(
     std::vector<domain::DiagnosticMessage>& target,
     const std::vector<domain::DiagnosticMessage>& source,
     const std::string& prefix);
+void append_rule_table(
+    domain::OutputPage& page,
+    const std::vector<domain::RuleEvidence>& rules);
 
 // ---- 配置字符串 → 领域枚举 / 文案 ----
 

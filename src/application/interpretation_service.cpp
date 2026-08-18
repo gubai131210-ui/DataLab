@@ -149,6 +149,44 @@ void add_msa_rules(const domain::OutputPage& page,
                    domain::InterpretationSection& advice,
                    domain::InterpretationSection& limitations)
 {
+    if (page.facts.msa.has_value()
+        && (page.method_name.find("Gage R&R") != std::string::npos
+            || page.method_name.find("Nested Gage") != std::string::npos)) {
+        const auto& facts = *page.facts.msa;
+        if (facts.ndc_available && facts.ndc.has_value()) {
+            conclusion.bullets.push_back(
+                "ndc = " + std::to_string(*facts.ndc)
+                + (*facts.ndc < 5.0
+                       ? "，小于 5，提示测量系统分辨力需要调查。"
+                       : "；ndc 只描述当前研究中零件间变异相对 Gage 变异的分辨力。"));
+            if (*facts.ndc < 5.0) {
+                raise_severity(limitations.severity, Severity::warning);
+                limitations.bullets.push_back(
+                    "ndc<5 不是量具不合格的绝对结论，需要结合 %Study Var 和公差风险。");
+            }
+        } else {
+            limitations.bullets.push_back("ndc 不可估计，不能据此评价测量系统分辨力。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
+        if (facts.gage_percent_study_variation.has_value()) {
+            conclusion.bullets.push_back(
+                "Total Gage R&R %Study Var = "
+                + std::to_string(*facts.gage_percent_study_variation)
+                + "；%Contribution 与 %Study Var 口径不同，不能混用。");
+        }
+        if (facts.negative_variance_truncated) {
+            limitations.bullets.push_back(
+                "存在负方差分量并已截断为 0；解释时应同时查看原始估计。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
+        if (facts.interaction_reduction_recommended) {
+            advice.bullets.push_back(
+                "Part×Operator 交互 p>0.25，传统流程可考虑缩减模型；当前结果仍保留完整交互。");
+        }
+        advice.bullets.push_back(
+            "将 %Study Var、%Tolerance 和现场公差一起看，不要把单个百分比写成量具合格。");
+        return;
+    }
     if (page.method_name == "Stability / Gage Run Chart") {
         const auto out = number_after(page.tables.front(), "Out of Control");
         if (!out.has_value()) {
@@ -219,6 +257,90 @@ void add_reliability_rules(const domain::OutputPage& page,
                            domain::InterpretationSection& advice,
                            domain::InterpretationSection& limitations)
 {
+    if (page.facts.reliability.has_value()) {
+        const auto& facts = *page.facts.reliability;
+        if (!facts.identifiable) {
+            limitations.bullets.push_back(
+                facts.not_computed_reason.empty()
+                    ? "可靠性结果当前不可识别，不能估计寿命分位数。"
+                    : "可靠性结果不可识别（" + facts.not_computed_reason
+                          + "），不能估计寿命分位数。");
+            raise_severity(limitations.severity, Severity::warning);
+            return;
+        }
+        if (page.method_name == "Kaplan-Meier") {
+            conclusion.bullets.push_back(
+                "Kaplan-Meier 有效观测 "
+                + std::to_string(facts.valid_count.value_or(0))
+                + "，失效 "
+                + std::to_string(facts.failure_count.value_or(0))
+                + "，删失 "
+                + std::to_string(facts.censored_count.value_or(0)) + "。");
+            if (facts.censored_count.has_value() && *facts.censored_count > 0) {
+                limitations.bullets.push_back(
+                    "存在右删失；尾部生存率由较少的风险集支持，不能把删失时间当作失效时间。");
+                raise_severity(limitations.severity, Severity::warning);
+            }
+            if (!facts.median_life.has_value()) {
+                limitations.bullets.push_back(
+                    "生存曲线未下降到 0.5，中位寿命不可估计。");
+            }
+            advice.bullets.push_back(
+                "按目标任务时间读取生存概率和置信区间；比较方案时使用分层或 Log-rank。");
+            return;
+        }
+        if (facts.shape.has_value()
+            && (page.method_name == "Weibull Lifetime"
+                || page.method_name == "3-Parameter Weibull Lifetime")) {
+            conclusion.bullets.push_back(
+                "Weibull 形状参数 β = " + std::to_string(*facts.shape)
+                + (*facts.shape > 1.0 ? "，提示失效率随时间上升。"
+                   : *facts.shape < 1.0 ? "，提示早期失效型失效率随时间下降。"
+                                        : "，接近恒定失效率。"));
+            if (page.method_name == "3-Parameter Weibull Lifetime"
+                && facts.threshold.has_value()) {
+                conclusion.bullets.push_back(
+                    "阈值 λ = " + std::to_string(*facts.threshold)
+                    + "；百分位寿命按 t_p = λ + α[-ln(1-p)]^(1/β) 计算。");
+                limitations.bullets.push_back(
+                    "三参数拟合未拒绝假设不等于已证明寿命服从三参数 Weibull。");
+            }
+            if (!facts.converged) {
+                limitations.bullets.push_back("Weibull 参数未收敛，分位寿命不能作为决策依据。");
+                raise_severity(limitations.severity, Severity::warning);
+            }
+        } else if (page.method_name == "Exponential Lifetime"
+                   || page.method_name == "2-Parameter Exponential Lifetime") {
+            conclusion.bullets.push_back(
+                page.method_name == "2-Parameter Exponential Lifetime"
+                    && facts.threshold.has_value()
+                    ? "两参数指数估计了阈值 λ = " + std::to_string(*facts.threshold)
+                          + " 后的恒定失效率。"
+                    : "指数模型估计的是恒定失效率假设下的寿命分布。");
+            limitations.bullets.push_back(
+                "指数拟合未拒绝假设不等于已证明寿命服从指数分布。");
+            raise_severity(limitations.severity, Severity::warning);
+        } else if (page.method_name == "Lognormal Lifetime"
+                   || page.method_name == "3-Parameter Lognormal Lifetime") {
+            conclusion.bullets.push_back(
+                page.method_name == "3-Parameter Lognormal Lifetime"
+                    && facts.threshold.has_value()
+                    ? "三参数对数正态估计了阈值 λ = " + std::to_string(*facts.threshold)
+                          + "；分位寿命按 λ + exp(μ + σ Φ⁻¹(p)) 计算。"
+                    : "对数正态模型估计了右删失下的位置/尺度参数；分位寿命由 "
+                          "exp(μ + σ Φ⁻¹(p)) 给出。");
+            if (!facts.converged) {
+                limitations.bullets.push_back(
+                    "对数正态参数未收敛，分位寿命不能作为决策依据。");
+                raise_severity(limitations.severity, Severity::warning);
+            }
+            limitations.bullets.push_back(
+                "对数正态拟合未拒绝假设并不等于已证明寿命服从对数正态。");
+        }
+        advice.bullets.push_back(
+            "报告模型参数和删失处理，并用现场失效机理验证模型假设；不要把分位寿命当成单件保证寿命。");
+        return;
+    }
     if (page.method_name == "Kaplan-Meier") {
         if (!page.facts.reliability.has_value()
             && (page.tables.empty() || page.tables.front().rows.empty())) {
@@ -354,6 +476,93 @@ void add_forecast_rules(const domain::OutputPage& page,
     }
 }
 
+void add_regression_rules(const domain::OutputPage& page,
+                          domain::InterpretationSection& conclusion,
+                          domain::InterpretationSection& advice,
+                          domain::InterpretationSection& limitations)
+{
+    if (!page.facts.regression.has_value()) {
+        return;
+    }
+    const auto& regression = *page.facts.regression;
+    if (regression.rank_deficient) {
+        limitations.bullets.push_back("设计矩阵秩亏，回归系数不可解释。");
+        raise_severity(limitations.severity, Severity::error);
+        return;
+    }
+    if (regression.r_squared.has_value()) {
+        conclusion.bullets.push_back(
+            "R² = " + std::to_string(*regression.r_squared)
+            + " 只描述当前样本拟合程度，不能单独判定模型合格。");
+    }
+    if (regression.error_degrees_of_freedom.has_value()
+        && *regression.error_degrees_of_freedom <= 0.0) {
+        limitations.bullets.push_back("误差自由度不足，不输出 t、F 与 P。");
+        raise_severity(limitations.severity, Severity::warning);
+    }
+    if (regression.influential_count > 0) {
+        limitations.bullets.push_back(
+            "存在 " + std::to_string(regression.influential_count)
+            + " 个影响点提示，解释层不会自动删除这些观测。");
+        raise_severity(limitations.severity, Severity::warning);
+    }
+    if (regression.max_vif.has_value() && *regression.max_vif > 5.0) {
+        advice.bullets.push_back(
+            "最大 VIF = " + std::to_string(*regression.max_vif)
+            + "，提示共线性调查，不会自动删除预测变量。");
+    }
+    if (regression.assumption_status == "evidence_against") {
+        limitations.bullets.push_back(
+            "残差假设检查提供了需要调查的证据；不能把系数显著性直接写成因果关系。");
+        raise_severity(limitations.severity, Severity::warning);
+    }
+    advice.bullets.push_back(
+        "结合残差对拟合值图、残差顺序图、杠杆值和 Cook's D 后再解释模型。");
+}
+
+void add_anova_rules(const domain::OutputPage& page,
+                     domain::InterpretationSection& conclusion,
+                     domain::InterpretationSection& advice,
+                     domain::InterpretationSection& limitations)
+{
+    if (!page.facts.anova.has_value()) {
+        return;
+    }
+    const auto& anova = *page.facts.anova;
+    if (!anova.estimable || anova.not_estimable_term_count > 0) {
+        limitations.bullets.push_back(
+            "存在不可估计项或误差自由度不足，这些项不输出伪造 F/P。");
+        raise_severity(limitations.severity, Severity::warning);
+    }
+    if (anova.significant_terms.empty()) {
+        conclusion.bullets.push_back(
+            "在当前显著性水平下，没有可报告为显著的 ANOVA 项；这不等于各组完全相同。");
+    } else {
+        std::ostringstream text;
+        for (std::size_t i = 0; i < anova.significant_terms.size(); ++i) {
+            if (i != 0) {
+                text << "、";
+            }
+            text << anova.significant_terms[i];
+        }
+        conclusion.bullets.push_back("当前有统计证据的项：" + text.str() + "。");
+    }
+    if (anova.family_confidence_level.has_value()) {
+        conclusion.bullets.push_back(
+            "Tukey 同时置信水平 = " + std::to_string(*anova.family_confidence_level)
+            + "，显著比较对数 = " + std::to_string(anova.tukey_significant_pairs)
+            + "；区间含 0 不显著。");
+        advice.bullets.push_back("不要把逐比较 alpha 当成家族错误率。");
+    } else {
+        advice.bullets.push_back("总体 F 显著只说明至少一组不同，需要多重比较确定具体组对。");
+    }
+    if (anova.assumption_status == "evidence_against") {
+        limitations.bullets.push_back(
+            "残差正态或方差齐性检查提供了需要调查的证据，不能把 p 值直接写成工程差异。");
+        raise_severity(limitations.severity, Severity::warning);
+    }
+}
+
 }  // namespace
 
 void InterpretationService::enrich(domain::OutputPage& page)
@@ -367,8 +576,32 @@ void InterpretationService::enrich(domain::OutputPage& page)
         || page.method_name.find("Factorial") != std::string::npos) {
         add_doe_rules(page, conclusion, advice, limitations);
     } else if (page.method_name.find("MSA") != std::string::npos
-               || page.method_name.find("Stability") != std::string::npos) {
+               || page.method_name.find("Stability") != std::string::npos
+               || page.method_name.find("Gage R&R") != std::string::npos) {
         add_msa_rules(page, conclusion, advice, limitations);
+    } else if (page.method_name == "Attribute Agreement Analysis") {
+        if (page.facts.msa.has_value()) {
+            const auto& facts = *page.facts.msa;
+            conclusion.bullets.push_back(
+                "属性一致性报告观察一致率与 Kappa；≥3 名评估者使用 Fleiss，两两比较仍用 Cohen。");
+            limitations.bullets.push_back(
+                "拒绝 Kappa=0 不等于已证明评估者一致；Kappa 只描述超出偶然的绝对一致率。");
+            raise_severity(limitations.severity, Severity::info);
+            if (facts.ratings_are_ordinal && facts.kendall_available) {
+                conclusion.bullets.push_back(
+                    "有序评级已计算 Kendall 系数；拒绝 W=0 或 τ=0 不等于已证明有序一致。");
+            } else if (facts.ratings_are_ordinal) {
+                limitations.bullets.push_back(
+                    "已请求有序评级，但 Kendall 不可识别或等级不足；未伪造 W=1。");
+            } else {
+                advice.bullets.push_back(
+                    "名义评级看 Kappa；有序评级请设置 ordinal=true 以计算 Kendall W/τ。");
+            }
+        } else {
+            limitations.bullets.push_back(
+                "属性一致性缺少 Facts，不能从表头反解析 Kappa 或 Kendall。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
     } else if (page.method_name.find("Lifetime") != std::string::npos
                || page.method_name == "Kaplan-Meier") {
         add_reliability_rules(page, conclusion, advice, limitations);
@@ -379,6 +612,109 @@ void InterpretationService::enrich(domain::OutputPage& page)
                || page.method_name == "ARIMA"
                || page.method_name.find("Forecasting") != std::string::npos) {
         add_forecast_rules(page, conclusion, advice, limitations);
+    }
+    add_regression_rules(page, conclusion, advice, limitations);
+    add_anova_rules(page, conclusion, advice, limitations);
+    if (page.facts.descriptive.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.descriptive;
+        conclusion.bullets.push_back(
+            "有效观测 N = " + std::to_string(facts.n)
+            + "，缺失 N* = " + std::to_string(facts.missing_count)
+            + (facts.mean.has_value()
+                   ? "，均值为 " + std::to_string(*facts.mean) : "")
+            + "。描述统计不检验分布假设。");
+    }
+    if (page.facts.chi_square.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.chi_square;
+        conclusion.bullets.push_back(
+            "Pearson χ²"
+            + (facts.statistic.has_value() ? " = " + std::to_string(*facts.statistic) : "")
+            + (facts.p_value.has_value()
+                   ? "，P = " + std::to_string(*facts.p_value) : "")
+            + "。P 值只描述当前列联表与独立性假设的一致程度，不能证明因果关系。");
+        if (facts.expected_count_warning) {
+            raise_severity(conclusion.severity, Severity::warning);
+            limitations.bullets.push_back("存在期望频数过小的单元格，卡方近似可能不可靠。");
+        }
+    }
+    if (page.facts.nonparametric.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.nonparametric;
+        conclusion.bullets.push_back(
+            facts.method + " 使用 " + facts.approximation + " 近似"
+            + (facts.p_value.has_value()
+                   ? "，P = " + std::to_string(*facts.p_value) : "")
+            + (facts.tie_correction ? "，已做 ties 修正" : "")
+            + "。未拒绝原假设不能证明两组或各组分布相同。");
+        if (facts.small_sample_warning) {
+            raise_severity(limitations.severity, Severity::warning);
+            limitations.bullets.push_back("存在小样本组，近似 P 值只作提示。");
+        }
+    }
+    if (page.facts.logistic.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.logistic;
+        if (!facts.converged || facts.complete_separation) {
+            raise_severity(conclusion.severity, Severity::warning);
+            conclusion.bullets.push_back(
+                facts.complete_separation
+                    ? "模型出现完全分离，极大似然估计可能不存在，不对系数给出稳定解释。"
+                    : "IRLS 未收敛，不对发散系数给出稳定解释。");
+        } else {
+            std::string hl_text = "，Hosmer–Lemeshow 未计算";
+            if (facts.hosmer_lemeshow_status == "computed"
+                && facts.hosmer_lemeshow_p.has_value()) {
+                const bool reject = *facts.hosmer_lemeshow_p < 0.05;
+                hl_text = reject
+                    ? "，在 α = 0.05 下拒绝拟合不足（Hosmer–Lemeshow P = "
+                        + std::to_string(*facts.hosmer_lemeshow_p) + "）"
+                    : "，在 α = 0.05 下未拒绝拟合不足（Hosmer–Lemeshow P = "
+                        + std::to_string(*facts.hosmer_lemeshow_p) + "）";
+            }
+            conclusion.bullets.push_back(
+                "二元 Logistic 已收敛" + hl_text
+                + "。未拒绝拟合不足不能说明模型已充分"
+                + (facts.high_leverage_count > 0
+                       ? "；检测到 " + std::to_string(facts.high_leverage_count)
+                             + " 个高杠杆观测"
+                       : "")
+                + "。系数解释依赖事件编码和 complete-case 样本。");
+        }
+    }
+    if (page.facts.pca.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.pca;
+        conclusion.bullets.push_back(
+            "PCA 模式为 " + facts.mode + "，保留 "
+            + std::to_string(facts.retained_component_count) + " 个主成分"
+            + (facts.observation_count > 0
+                   ? "，有效观测 " + std::to_string(facts.observation_count) : "")
+            + "，检测到 " + std::to_string(facts.anomaly_count)
+            + " 个 T²/Q 异常观测。异常阈值只作诊断，T²/Q 超限不是过程合格或失控判定。");
+        if (!facts.converged) {
+            raise_severity(conclusion.severity, Severity::warning);
+            limitations.bullets.push_back("特征分解未收敛时不对主成分或异常点给出稳定解释。");
+        }
+    }
+    if (page.facts.distribution_identification.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.distribution_identification;
+        conclusion.bullets.push_back(
+            "个体分布识别按 Anderson-Darling 升序比较四族二参数分布；当前表内最优为 "
+            + facts.best_distribution
+            + (facts.best_anderson_darling.has_value()
+                   ? "（AD = " + std::to_string(*facts.best_anderson_darling) + "）"
+                   : "")
+            + "。排序结果不证明数据服从该分布，也不自动改写过程能力默认方法。");
+    }
+    if (page.facts.variance.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.variance;
+        conclusion.bullets.push_back(
+            "等方差检验方法为 " + facts.method
+            + (facts.p_value.has_value()
+                   ? "，P = " + std::to_string(*facts.p_value) : "")
+            + "。未拒绝原假设不能证明方差相等；F 检验依赖正态假设。");
+    }
+    if (page.method_name == "Response Optimization" && conclusion.bullets.empty()) {
+        conclusion.bullets.push_back(
+            "响应优化在编码 ±1 空间枚举候选组合；缺协方差时置信/预测区间不可用，"
+            "最佳组合不能外推到设计空间之外。");
     }
 
     std::size_t out_of_control = 0;
@@ -442,6 +778,25 @@ void InterpretationService::enrich(domain::OutputPage& page)
                                         ? "，整体过程表现低于 1.33 提示基准。"
                                         : "，整体过程表现达到 1.33 提示基准。"));
     }
+    if (page.facts.capability.has_value()
+        && (page.facts.capability->method == "johnson"
+            || page.facts.capability->method == "non_normal"
+            || page.facts.capability->method == "between_within")) {
+        if (page.facts.capability->method == "between_within") {
+            limitations.bullets.push_back(
+                "组间/组内能力使用 σ_BW 计算 Cp/Cpk、样本标准差计算 Pp/Ppk；"
+                "未验证稳定性不等于过程合格。");
+            raise_severity(limitations.severity, Severity::warning);
+        } else {
+        limitations.bullets.push_back(
+            page.facts.capability->method == "johnson"
+                ? "Johnson 变换后的 Pp/Ppk 是变换尺度上的 overall 指数；"
+                  "未拒绝变换后正态假设不等于原始数据服从正态分布，也不能写成过程合格。"
+                : "非正态 Z-score Pp/Ppk 依赖所选分布的 CDF；拟合未拒绝假设不等于已证明"
+                  "过程服从该分布，也不能写成过程合格。");
+        raise_severity(limitations.severity, Severity::warning);
+        }
+    }
     if (out_of_control > 0) {
         raise_severity(conclusion.severity, Severity::warning);
         conclusion.bullets.push_back(
@@ -454,21 +809,17 @@ void InterpretationService::enrich(domain::OutputPage& page)
     } else if (page.method_name == "One-Sample T"
                || page.method_name == "Two-Sample T") {
         conclusion.bullets.push_back("请结合 P-Value 与均值差置信区间判断差异；统计显著不等于工程差异具有实际重要性。");
-    } else if (page.method_name == "One-Way ANOVA") {
+    } else if (page.method_name == "One-Way ANOVA"
+               && !page.facts.anova.has_value()) {
         conclusion.bullets.push_back("ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；"
                                  "需要后续多重比较确定具体组对。");
     }
-    if (page.facts.regression.has_value()) {
+    if (page.facts.regression.has_value() && conclusion.bullets.empty()) {
         const auto& regression = *page.facts.regression;
         if (regression.r_squared.has_value()) {
             conclusion.bullets.push_back(
                 "R² = " + std::to_string(*regression.r_squared)
                 + " 只描述当前样本拟合程度，不能单独判定模型合格。");
-        }
-        if (regression.influential_count > 0) {
-            limitations.bullets.push_back(
-                "存在 " + std::to_string(regression.influential_count)
-                + " 个影响点提示，解释层不会自动删除这些观测。");
         }
     }
     std::optional<double> sigma_z;

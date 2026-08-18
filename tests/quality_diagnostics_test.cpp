@@ -37,6 +37,7 @@ private slots:
     void regressionSourceRowsAndErrorDf();
     void tukeyIntervalContainsZeroIsNotSignificant();
     void gageToleranceAndNdc();
+    void gageReportsInteractionAndRawVariance();
     void type1ZeroRepeatability();
     void kappaUnidentifiableAndAlpha();
     void reliabilityEventEncodingAndKm();
@@ -153,8 +154,10 @@ void QualityDiagnosticsTest::regressionSourceRowsAndErrorDf()
         {"X"}, 0.95, {10, 11, 12, 13, 14});
     QCOMPARE(ok.observations.size(), std::size_t{5});
     QCOMPARE(ok.observations.front().source_row, std::size_t{10});
-    QVERIFY(ok.observations.front().internally_standardized_residual
-            == ok.observations.front().studentized_residual);
+    QVERIFY(std::abs(ok.observations.front().internally_standardized_residual
+                   - ok.observations.front().studentized_residual) > 1.0e-12);
+    QVERIFY(std::abs(ok.observations.front().studentized_residual
+                   - ok.observations.front().deleted_studentized_residual) > 1.0e-12);
     QVERIFY(!ok.diagnostics_summary.residual_vs_fitted_x.empty());
 
     const auto no_df = datalab::domain::statistics::fit_linear_regression(
@@ -192,6 +195,32 @@ void QualityDiagnosticsTest::gageToleranceAndNdc()
     if (zero_tol.ndc_available) {
         QVERIFY(zero_tol.ndc >= 1.0);
     }
+}
+
+void QualityDiagnosticsTest::gageReportsInteractionAndRawVariance()
+{
+    const auto gage = datalab::domain::statistics::crossed_gage_rr(
+        {10.0, 10.2, 10.1, 11.0, 11.1, 10.9, 12.0, 12.1, 11.9,
+         10.0, 10.1, 10.2, 11.0, 11.2, 11.1, 12.0, 12.2, 12.1},
+        {"P1", "P1", "P1", "P2", "P2", "P2", "P3", "P3", "P3",
+         "P1", "P1", "P1", "P2", "P2", "P2", "P3", "P3", "P3"},
+        {"A", "A", "A", "A", "A", "A", "A", "A", "A",
+         "B", "B", "B", "B", "B", "B", "B", "B", "B"},
+        6.0);
+    QCOMPARE(gage.interaction_retained, true);
+    QVERIFY(gage.interaction_p_value.has_value());
+    bool found_raw = false;
+    for (const auto& component : gage.variance_components) {
+        if (component.truncated) {
+            QVERIFY(component.raw_variance_component < 0.0);
+            QCOMPARE(component.variance_component, 0.0);
+        }
+        if (component.source == "Total Gage R&R") {
+            found_raw = true;
+        }
+    }
+    QVERIFY(found_raw);
+    QVERIFY(!gage.rules.empty());
 }
 
 void QualityDiagnosticsTest::type1ZeroRepeatability()

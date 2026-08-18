@@ -173,7 +173,6 @@ public:
         connect(clear_all, &QPushButton::clicked, this, [this]() { set_all_applicable(false); });
         connect(restore, &QPushButton::clicked, this, [this]() { restore_defaults(); });
         refresh_summary();
-        setMinimumHeight(260);
     }
 
     QString selected_text() const
@@ -383,22 +382,25 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     settings_scroll->setFrameShape(QFrame::NoFrame);
     settings_scroll->setWidget(settings_content);
     right->addWidget(settings_scroll, 1);
-    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    auto* reset = new QPushButton(QStringLiteral("重置默认值"), this);
-    buttons->addButton(reset, QDialogButtonBox::ResetRole);
-    right->addWidget(buttons);
 
     content->addWidget(left_panel, 1);
     content->addWidget(right_panel, 2);
     root->addLayout(content, 1);
 
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    auto* reset = new QPushButton(QStringLiteral("重置默认值"), this);
+    buttons->addButton(reset, QDialogButtonBox::ResetRole);
+    root->addWidget(buttons);
+
     const auto ok_button = buttons->button(QDialogButtonBox::Ok);
     const auto cancel_button = buttons->button(QDialogButtonBox::Cancel);
     if (ok_button != nullptr) {
         ok_button->setObjectName(QStringLiteral("run_button"));
+        ok_button->setText(QStringLiteral("运行分析"));
         ok_button->setIcon(QIcon(QStringLiteral(":/icons/success.svg")));
     }
     if (cancel_button != nullptr) {
+        cancel_button->setText(QStringLiteral("取消"));
         cancel_button->setIcon(QIcon(QStringLiteral(":/icons/error.svg")));
     }
 
@@ -454,7 +456,7 @@ void AnalysisSetupDialog::add_role(const analysis_commands::RoleSpec& spec)
 {
     auto* list = new RoleListWidget(this);
     list->setMinimumHeight(spec.multi ? 96 : 48);
-    list->setMaximumHeight(spec.multi ? 120 : 56);
+    list->setMaximumHeight(spec.multi ? 180 : 56);
     list->setObjectName(spec.id);
     list->setProperty("optional", spec.optional);
     list->setProperty("multi", spec.multi);

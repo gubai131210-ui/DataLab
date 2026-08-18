@@ -10,6 +10,7 @@ private slots:
     void preservesAnalysisConfiguration();
     void preservesMultiSeriesPlot();
     void preservesLegacySpecialCausePolicy();
+    void preservesStructuredAnalysisFacts();
 };
 
 void OutputSerializationTest::preservesAnalysisConfiguration()
@@ -216,6 +217,104 @@ void OutputSerializationTest::preservesLegacySpecialCausePolicy()
     QVERIFY(restored.configuration.control.enabled_special_cause_tests.empty());
     QCOMPARE(restored.configuration.control.special_cause_rule_policy,
              std::string("default_all_applicable"));
+}
+
+void OutputSerializationTest::preservesStructuredAnalysisFacts()
+{
+    datalab::domain::OutputPage page;
+    page.id = "facts-1";
+    page.title = "Facts";
+    page.method_name = "Linear Regression";
+    datalab::domain::RegressionFacts regression;
+    regression.r_squared = 0.77;
+    regression.influential_count = 2;
+    regression.outlier_count = 1;
+    regression.max_vif = 6.2;
+    regression.assumption_status = "not_verified";
+    regression.rules.push_back({"influence", "triggered", "存在影响点", {4}, "回查原始行"});
+    page.facts.regression = regression;
+    datalab::domain::AnovaFacts anova;
+    anova.p_value = 0.01;
+    anova.error_degrees_of_freedom = 8;
+    anova.significant_terms = {"Factor A"};
+    anova.family_confidence_level = 0.95;
+    page.facts.anova = anova;
+    datalab::domain::MsaFacts msa;
+    msa.ndc = 4.0;
+    msa.ndc_available = true;
+    msa.design_balanced = true;
+    msa.negative_variance_truncated = true;
+    page.facts.msa = msa;
+    datalab::domain::ReliabilityFacts reliability;
+    reliability.failure_count = 5;
+    reliability.censored_count = 2;
+    reliability.identifiable = true;
+    reliability.event_encoding = "failure_suspension";
+    page.facts.reliability = reliability;
+
+    const auto restored = datalab::infrastructure::output_page_from_json(
+        datalab::infrastructure::output_page_to_json(page));
+    QVERIFY(restored.facts.regression.has_value());
+    QCOMPARE(*restored.facts.regression->r_squared, 0.77);
+    QCOMPARE(restored.facts.regression->influential_count, std::size_t{2});
+    QCOMPARE(restored.facts.regression->rules.front().id, std::string("influence"));
+    QCOMPARE(restored.facts.regression->rules.front().related_rows.front(),
+             datalab::domain::RowId{4});
+    QVERIFY(restored.facts.anova.has_value());
+    QCOMPARE(restored.facts.anova->significant_terms.front(), std::string("Factor A"));
+    QVERIFY(restored.facts.msa.has_value());
+    QCOMPARE(*restored.facts.msa->ndc, 4.0);
+    QCOMPARE(restored.facts.msa->negative_variance_truncated, true);
+    QVERIFY(restored.facts.reliability.has_value());
+    QCOMPARE(*restored.facts.reliability->failure_count, std::size_t{5});
+    QCOMPARE(restored.facts.reliability->event_encoding, std::string("failure_suspension"));
+    page.facts.descriptive = datalab::domain::DescriptiveFacts{9, 1, 4.5, 0.8};
+    page.facts.logistic = datalab::domain::LogisticFacts{};
+    page.facts.logistic->converged = true;
+    page.facts.logistic->complete_separation = false;
+    page.facts.logistic->hosmer_lemeshow_statistic = 3.5;
+    page.facts.logistic->hosmer_lemeshow_p = 0.42;
+    page.facts.logistic->hosmer_lemeshow_df = 7;
+    page.facts.logistic->hosmer_lemeshow_groups = 9;
+    page.facts.logistic->hosmer_lemeshow_status = "computed";
+    page.facts.logistic->high_leverage_count = 2;
+    page.facts.pca = datalab::domain::PcaFacts{"standardized", 2, 1};
+    page.facts.forecast = datalab::domain::ForecastFacts{3.2, 0.8};
+    const auto restored_more = datalab::infrastructure::output_page_from_json(
+        datalab::infrastructure::output_page_to_json(page));
+    QVERIFY(restored_more.facts.descriptive.has_value());
+    QCOMPARE(restored_more.facts.descriptive->n, std::size_t{9});
+    QVERIFY(restored_more.facts.logistic.has_value());
+    QCOMPARE(restored_more.facts.logistic->hosmer_lemeshow_status, std::string("computed"));
+    QCOMPARE(*restored_more.facts.logistic->hosmer_lemeshow_statistic, 3.5);
+    QCOMPARE(*restored_more.facts.logistic->hosmer_lemeshow_df, std::size_t{7});
+    QCOMPARE(restored_more.facts.logistic->high_leverage_count, std::size_t{2});
+    QVERIFY(restored_more.facts.pca.has_value());
+    QCOMPARE(restored_more.facts.pca->anomaly_count, std::size_t{1});
+    QCOMPARE(restored_more.facts.pca->observation_count, std::size_t{0});
+    QVERIFY(!restored_more.facts.pca->t2_limit.has_value());
+    QVERIFY(restored_more.facts.forecast.has_value());
+    QCOMPARE(*restored_more.facts.forecast->mape, 3.2);
+
+    page.facts.pca->observation_count = 12;
+    page.facts.pca->t2_limit = 4.2;
+    page.facts.pca->q_limit = 1.1;
+    page.facts.pca->converged = true;
+    page.facts.nonparametric = datalab::domain::NonparametricFacts{};
+    page.facts.nonparametric->method = "kruskal_wallis";
+    page.facts.nonparametric->p_value = 0.04;
+    page.facts.nonparametric->p_value_unadjusted = 0.05;
+    page.facts.variance = datalab::domain::VarianceFacts{"Levene", 2.2, 0.176, 2};
+    page.configuration.inference.variance_group_column = 3;
+    const auto restored_new = datalab::infrastructure::output_page_from_json(
+        datalab::infrastructure::output_page_to_json(page));
+    QCOMPARE(restored_new.facts.pca->observation_count, std::size_t{12});
+    QCOMPARE(*restored_new.facts.pca->t2_limit, 4.2);
+    QVERIFY(restored_new.facts.nonparametric.has_value());
+    QCOMPARE(*restored_new.facts.nonparametric->p_value_unadjusted, 0.05);
+    QVERIFY(restored_new.facts.variance.has_value());
+    QCOMPARE(restored_new.facts.variance->group_count, std::size_t{2});
+    QCOMPARE(*restored_new.configuration.inference.variance_group_column, std::size_t{3});
 }
 
 QTEST_APPLESS_MAIN(OutputSerializationTest)

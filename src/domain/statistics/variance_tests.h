@@ -88,10 +88,22 @@ LeveneTestResult levene_two_variances(
     double confidence_level = 0.95,
     TestAlternative alternative = TestAlternative::two_sided);
 
+LeveneTestResult levene_mean_two_variances(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    double confidence_level = 0.95,
+    TestAlternative alternative = TestAlternative::two_sided);
+
 LeveneTestResult brown_forsythe_two_variances(
     const std::vector<double>& first,
     const std::vector<double>& second,
     double confidence_level = 0.95,
     TestAlternative alternative = TestAlternative::two_sided);
 
+LeveneTestResult levene_k_groups(
+    const std::vector<std::vector<double>>& groups,
+    double confidence_level = 0.95,
+    VarianceRobustMethod method = VarianceRobustMethod::brown_forsythe_median);
+
 }  // namespace datalab::domain::statistics
+

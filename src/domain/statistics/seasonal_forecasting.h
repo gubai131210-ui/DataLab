@@ -108,13 +108,33 @@ struct SarimaForecastingResult {
     std::vector<DiagnosticMessage> diagnostics;
 };
 
-// The interface is intentionally ready for fixed-parameter SARIMA, but this
-// module does not claim a SARIMA implementation until state-space validation
-// and parameter admissibility checks are available.
+// The interface is intentionally ready for fixed-parameter SARIMA.
+// Candidate search uses multiplicative CSS, not Minitab TSERIES back-forecast LS.
 SarimaForecastingResult forecast_fixed_sarima(
     const std::vector<double>& observations,
     const FixedSarimaParameters& parameters,
     std::size_t forecast_periods,
     double confidence_level = 0.95);
+
+struct SarimaCandidateResult {
+    SarimaOrder order;
+    double sse = 0.0;
+    double aic = 0.0;
+    double aicc = 0.0;
+    double bic = 0.0;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+std::string sarima_order_label(const SarimaOrder& order);
+
+std::vector<SarimaCandidateResult> fit_best_sarima_candidates(
+    const std::vector<double>& observations,
+    std::size_t seasonal_period,
+    int max_p = 2,
+    int max_q = 2,
+    int max_d = 1,
+    int max_seasonal_p = 2,
+    int max_seasonal_q = 2,
+    int max_seasonal_d = 1);
 
 }  // namespace datalab::domain::statistics

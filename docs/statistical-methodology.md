@@ -315,6 +315,25 @@ Laney 输出包含：`p̄/ū`、`Sigma Z`、`MR̄(Z)`、逐子组 `p_i/u_i`、`Z
 - 诊断码包括 `invalid_specification`、`invalid_target`、`invalid_within_sigma`、
   `invalid_overall_sigma`、`assumption_not_verified`。
 
+## Johnson 变换过程能力
+
+Johnson 族与定义域见 [`docs/research/johnson-sarima-lognormal-formulas.md`](research/johnson-sarima-lognormal-formulas.md)。DataLab 用 Chou et al. (1998) 分位匹配，并在变换后用 Anderson–Darling p 值选择 **p 最大且 p > 0.10** 的 SB/SL/SU 变换。找不到合格变换时输出 `johnson_transform_not_found`，不填写伪造 Pp。规格限可变换时，对变换后数据按正态 overall 公式计算 Pp/Ppk；不报告 within Cp/Cpk（`within_not_applicable_after_johnson`）。规格限越出定义域时输出 `johnson_spec_outside_support`。数值是公式参考，不是 Minitab 导出。解释层不得写成「已正态」或「过程合格」。
+
+## 非正态过程能力（Z-score）
+
+对 Weibull 或 Lognormal 的 CDF `F`：
+
+```text
+Z.LSL = Φ⁻¹(F(LSL))
+Z.USL = Φ⁻¹(F(USL))
+Pp    = (Z.USL − Z.LSL) / 6
+PPL   = −Z.LSL / 3
+PPU   = Z.USL / 3
+Ppk   = min(PPL, PPU)
+```
+
+不报告 Cp/Cpk。期望 PPM 由 `F(LSL)` 与 `1−F(USL)` 得到。不做 Gamma 或三参数分布。拟合未拒绝假设不等于已证明过程服从该分布。
+
 ## 过程能力 Sixpack
 
 Sixpack 对个体数据同时展示 I 图、MR 图、能力直方图、正态概率图、最近 25 个观测趋势图和能力指标表。
@@ -385,8 +404,9 @@ R²(adj) = 1 - [SSE/(n-p-1)]/[SST/(n-1)]
 
 实现使用 QR 分解求解系数并拒绝秩亏设计矩阵。`error_df = N-p-1`；当
 `error_df ≤ 0` 时仍可给出系数点估计，但不输出 t/F/P。内部标准化残差为
-`e_i / (s√(1-h_ii))`；删除学生化残差使用 leave-one-out 方差。Durbin-Watson
-只按用户输入顺序计算，不静默按时间重排。VIF>5 只作为共线性调查提示，不自动删列。
+`e_i / (s√(1-h_ii))`；学生化残差为 `e_i / (s_(i)√(1-h_ii))`，其中 `s_(i)` 为
+删除第 i 个观测后的残差标准差；删除学生化残差为 `(e_i/(1-h_ii)) / s_(i)`。
+Durbin-Watson 只按用户输入顺序计算，不静默按时间重排。VIF>5 只作为共线性调查提示，不自动删列。
 解释层不得只看 R² 或残差 AD p 值判定模型合格。
 
 ## Box-Cox 变换
@@ -408,7 +428,7 @@ DataLab 在 `[-5, 5]` 网格搜索使变换后样本标准差最小的 λ，并�
 
 - Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。
 - Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。
-- Test 7：连续 15 点均位于中心线 1σ 内。
+- Test 7：连续 15 点均位于中心线 1σ **内**，使用 `|y-CL| < σ`，等于 1σ 不计入。
 - Test 8：连续 8 点均在中心线任一侧的 1σ 外（不要求上下交替）。
 
 每个测试独立保留失败点集；同一点触发多个测试时，图面仍显示最小测试编号，
@@ -441,12 +461,17 @@ Mann–Whitney 检验将两组观测合并排序，并列值使用平均秩。�
 ```text
 E(W) = n1(n1+n2+1)/2
 Var(W) = n1*n2(n1+n2+1)/12
+Var_ties = n1 n2 / 12 · [N+1 − Σ(t³−t)/(N(N−1))]
+Z = (W − E(W) − c) / √Var     c = ±0.5 连续性修正
 ```
 
-存在 ties 时使用 ties 修正方差，并采用 0.5 连续性修正的标准正态近似。
-Wilcoxon signed-rank 对非零配对差值的绝对值排序并分别累计正负秩。
-Kruskal–Wallis 对所有组联合排序，输出 `H` 和 ties 修正后的 `H(adj)`，
-其 P 值使用 `χ²(k-1)` 近似；小组样本量小于 5 时报告近似风险。
+存在 ties 时同时输出调整 P 与未调整 P。Wilcoxon signed-rank 对非零配对差值的绝对值排序并分别累计正负秩；结用 midrank，方差减去 `Σ(t³−t)/48`。统计量保持 W+/W-，不改写成 Walsh 显示。Kruskal–Wallis 对所有组联合排序，输出 `H` 和 ties 修正后的 `H(adj)`，组 Z 为
+
+```text
+Z_j = (R̄_j − (N+1)/2) / sqrt( (N+1)(N−n_j)/(12 n_j) )
+```
+
+有 ties 时分母乘以 H(adj) 的结修正平方根。P 值使用 `χ²(k-1)` 近似；小组样本量小于 5（Mann–Whitney / Wilcoxon 小于 10）时报告近似风险。未拒绝原假设不得写成已证明分布相同。McKean–Ryan 置信区间不实现。
 
 ## EWMA 与 CUSUM
 
@@ -520,8 +545,11 @@ F_term = MS_term / MS_Error
 ```
 
 顺序平方和（Seq SS）按模型项加入顺序计算；调整平方和（Adj SS）在控制其余
-模型项后计算。交互项由两个因子的编码列逐列相乘得到。设计矩阵秩亏、因子
+模型项后计算。线性回归多预测变量时，每项输出 Seq SS 与 Adj SS；
+秩亏或共线项不输出伪造 F/P。交互项由两个因子的编码列逐列相乘得到。设计矩阵秩亏、因子
 水平不足或组合缺失时不强行产生 F 检验，并在输出中标记诊断。
+
+Minitab 参考：[Regression ANOVA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-regression-model/methods-and-formulas/analysis-of-variance/)
 
 ## 回归残差诊断
 
@@ -553,6 +581,15 @@ BIC = -2 log(L) + k log(n)
 候选模型按 AIC、AICc 或 BIC 选择；预测值使用最终参数递推计算，预测表同时
 输出周期、Forecast、Lower 和 Upper。时间列乱序、重复时间点和缺失时间点不
 自动修复，改为返回输入诊断。
+
+Best ARIMA 网格为 p/q≤3、d≤max(`arima_differencing`,2) 的 AR/MA 候选（不含混合
+ARMA 阶）。当前使用条件最小二乘与差分尺度高斯似然近似 AICc。Minitab ARIMA
+使用迭代最小二乘与 back forecast（Meeker TSERIES），**不是** Kalman 状态空间
+MLE；DataLab CSS 的最优阶/数值可能不同。对照测试见
+`tests/fixtures/minitab/expected/arima_trend_golden.tsv`，最终 golden 须从
+Minitab 导出。回归 ANOVA 的 Seq SS / Adj SS 与 Minitab Type I/III 对照见
+`tests/fixtures/minitab/expected/regression_golden.tsv`（容差：系数/SS 相对 ≤1e-4，
+AICc 绝对 ≤0.01，Forecast 绝对 ≤0.05）。
 
 ## 二元 Logistic 回归
 
@@ -589,8 +626,11 @@ DF2 = n2-1
 ```
 
 Levene/Brown–Forsythe 方法将每个观测转换为相对于组中位数的绝对偏差：
-`Z_ij = |Y_ij - median(group_j)|`，再对 Z 做单因素方差分析。F-test 只在
-近似正态时作为主要结论；Levene 用于更稳健的非正态比较。
+`Z_ij = |Y_ij - median(group_j)|`，再对 Z 做单因素方差分析。菜单方法 `levene`
+使用该中位数口径；`levene_mean` 保留 1960 均值版。缺 JSON 字段仍默认 `f`。
+F-test 只在近似正态时作为主要结论；Levene 用于更稳健的非正态比较。
+k 组等方差使用测量列加分组列。Bonett / 多重比较区间 / Bartlett 不实现。
+未拒绝原假设不得写成已证明方差相等。零组内偏差只诊断，不伪造 F=1。
 
 ## 时间序列分解
 
@@ -652,10 +692,15 @@ SE(Kappa) 由渐近方差估计
 CI = Kappa ± z_(1-alpha/2) * SE(Kappa)
 ```
 
-报告评估者内一致性、评估者间两两一致性以及与标准的一致性。空评级不进入
-分母，但缺失数量必须在诊断中显示。`P_expected = 1` 时 Kappa 不可识别，不计算
-无限标准误。重复次数不一致返回 `unbalanced_replicates`，不静默截断。当前实现
-是未加权 Cohen Kappa；UI 不得宣称支持 weighted Kappa。临界值使用标准正态分位数。
+报告评估者内一致性、评估者间两两 Cohen Kappa、与标准的一致性，以及在评估者不少于 3 人时的
+Fleiss overall Kappa。空评级不进入分母，但缺失数量必须在诊断中显示。`P_expected = 1` 时
+Kappa 不可识别，不计算无限标准误。重复次数不一致返回 `unbalanced_replicates`，不静默截断。
+`kappa_weight_scheme` 默认 `none`；非 `none` 时输出 `weighted_kappa_not_implemented`，
+不计算 linear/quadratic 加权 Kappa。`ratings_are_ordinal` 默认 false；为 true 且互异数值
+等级不少于 3 时，另输出 Kendall W（无标准）和 Kendall τ_b（有标准）。非数值评级返回
+`ordinal_ratings_unranked`，两水平返回 `kendall_requires_three_ordinal_levels`。拒绝 Kappa=0
+或 Kendall 系数=0 不得写成「已证明评估者一致」。临界值使用标准正态分位数。公式参考
+见 [`docs/research/kendall-exp2-lognormal3-formulas.md`](research/kendall-exp2-lognormal3-formulas.md)。
 
 ## Holt-Winters 季节性预测
 
@@ -669,8 +714,10 @@ s_t = γ(Y_t-l_t) + (1-γ)s_(t-m)
 
 乘法模型把减法项改为除法项。预测区间基于残差尺度和置信水平；滚动起点验证
 只使用预测起点之前的数据，避免未来信息泄漏。准确度指标包括 MAD、MSD、MAPE、
-RMSE 和相对朴素基线的 MASE。固定参数 SARIMA 接口在参数不可容纳或尚未支持
-时必须返回诊断，禁止输出伪造预测。
+RMSE 和相对朴素基线的 MASE。季节预测的 SARIMA 候选使用乘法多项式
+`φ(B) Φ(B^s) ∇^d ∇_s^D Y_t = θ(B) Θ(B^s) ε_t` 的条件最小二乘（CSS），允许混合
+p/q 与 P/Q（网格 p/q≤2、P/Q≤1）。这不是 Minitab 的迭代最小二乘 + back forecast。
+固定参数 SARIMA 接口在参数不可容纳时必须返回诊断，禁止输出伪造预测。
 
 ## PCA 主成分分析
 
@@ -678,14 +725,13 @@ RMSE 和相对朴素基线的 MASE。固定参数 SARIMA 接口在参数不可�
 
 ```text
 S v_j = λ_j v_j
-ExplainedRatio_j = λ_j / Σλ
-Score = X_centered * v_j
+Coefficient_j = v_j
 Loading_j = v_j * sqrt(λ_j)
+Score = X_centered * v_j
+Proportion_k = λ_k / Σ_{i=1}^p λ_i
 ```
 
-特征值按降序排列，得分图使用前两个保留主成分。Hotelling T² 和 Q 残差用于
-辅助识别多变量异常，但不替代工艺专家确认。常量列、完整行不足和特征分解不
-收敛必须作为明确诊断输出。
+Minitab 系数是特征向量 V；相关载荷 `v√λ` 另表输出，不得冒充官方系数。解释率分母为全部 p 个特征值，不得在截断后再求和。特征值按降序排列，得分图使用前两个保留主成分。Hotelling T² 和 Q 残差用于辅助识别多变量异常，阈值为本样本经验分位（诊断 `empirical_anomaly_quantile`），不是 Minitab T² 控制图 UCL，也不替代工艺专家确认。T²/Q 超限不得写成过程合格或失控。常量列、完整行不足和特征分解不收敛必须作为明确诊断输出。
 
 ## DOE 响应分析
 
@@ -750,6 +796,47 @@ V = Σ[d_i n_1i n_2i (n_i-d_i) / (n_i^2(n_i-1))]
 右删失 Weibull 的对数似然为
 `ℓ(β,η)=Σδ_i[lnβ-βlnη+(β-1)ln t_i]-Σ(t_i/η)^β`；
 参数通过数值求解似然方程得到，AIC=`2k-2ℓ`，BIC=`k ln(n)-2ℓ`。
+
+三参数 Weibull 增加阈值 λ，`R(t)=exp(-((t-λ)/α)^β)`（t>λ），
+`t_p=λ+α[-ln(1-p)]^(1/β)`，AIC 的 k=3。实现用剖面似然（固定 λ 后复用二参数 MLE），
+只接受形状 β>1 的内点。似然无界时输出 `weibull3_likelihood_unbounded`，不伪造参数。
+这不是 Minitab 的 Lockhart–Stephens bias-correction。菜单 `model=weibull3`；
+默认 `weibull` 仍为二参数。分布比较表不把三参数混进 AIC。
+数值是公式参考，不是 Minitab 导出。解释层不得写成「寿命服从三参数 Weibull」。
+
+两参数对数正态 `ln(T)~N(μ,σ)` 的右删失对数似然为
+
+```text
+ℓ = Σ_δ=1 [−ln σ − ½ ln(2π) − (ln t − μ)²/(2σ²)]
+  + Σ_δ=0 ln(1 − Φ((ln t − μ)/σ))
+t_p = exp(μ + σ Φ⁻¹(p))
+```
+
+全删失或失效少于 2 时不识别参数。三参数对数正态用剖面似然估计阈值 λ，
+`t_p = λ + exp(μ + σ Φ⁻¹(p))`，AIC 的 k=3，菜单 `model=lognormal3`；似然无界时
+`lognormal3_likelihood_unbounded`。默认 `lognormal` 仍为二参数。两参数指数
+`R(t)=exp(-(t-λ)/θ)`，`t_p=λ-θ ln(1-p)`，菜单 `model=exponential2`；无界时
+`exponential2_likelihood_unbounded`。默认 `exponential` 仍为一参数。分布比较表输出
+Weibull、指数与对数正态的 AIC/BIC，不把阈值模型混进 AIC。数值是公式参考，不是 Minitab 导出。
+解释层不得写成「寿命服从该分布」。
+
+## 二元 Logistic 拟合优度
+
+Hosmer–Lemeshow：按拟合概率排序分约 10 组等计数，χ² = Σ(O−E)²/[n_k π̄_k(1−π̄_k)]，DF = g−2。
+n&lt;20、未收敛、完全分离、有效组&lt;6 或组方差过小 → `not_computed`。
+影响点：杠杆 h_ii &gt; 2(p+1)/n。解释只能写「在 α 下拒绝/未拒绝拟合不足」，未拒绝 ≠ 模型已充分。
+
+## 个体分布识别
+
+Anderson-Darling 公共核 A² = −n − (1/n)Σ[(2i−1)ln Z_(i)+(2n+1−2i)ln(1−Z_(i))]。
+本轮四族二参数：Normal（Stephens p）、Lognormal（ln(x) 复用正态 p）、Weibull/Exponential（A² 排序，p 可为 not_computed）。
+数据含非正值时后三族 not_computed。排序最优 ≠ 已证明服从该分布；不自动改写 `capability_method`。
+
+## 组间/组内过程能力
+
+σ_within = R̄/d2(n)；σ_X̄ = MR̄(子组均值)/d2(2)；σ²_B = max(0, σ²_X̄ − σ²_within/n)；σ_BW = sqrt(σ²_B + σ²_within)。
+Cp/Cpk 用 σ_BW；Pp/Ppk 用样本标准差。需要子组标识列；σ²_B 截断为 0 时诊断 `between_variance_truncated`。
+formula_reference，非 Minitab golden。
 
 ## t 检验功效与样本量
 

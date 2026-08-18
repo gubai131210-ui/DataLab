@@ -4,6 +4,9 @@
 
 #include <QColor>
 #include <QFont>
+#include <QModelIndexList>
+
+#include <algorithm>
 
 WorksheetModel::WorksheetModel(QObject* parent)
     : QAbstractTableModel(parent)
@@ -145,6 +148,64 @@ bool WorksheetModel::setData(const QModelIndex& index, const QVariant& value, in
         table_.name = "工作表1";
     }
     emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+    emit table_changed(table_);
+    return true;
+}
+
+bool WorksheetModel::clear_cells(const QModelIndexList& indexes)
+{
+    if (indexes.isEmpty()) {
+        return false;
+    }
+    int min_row = indexes.front().row();
+    int max_row = min_row;
+    int min_column = indexes.front().column();
+    int max_column = min_column;
+    for (const QModelIndex& index : indexes) {
+        if (!index.isValid()) {
+            continue;
+        }
+        min_row = std::min(min_row, index.row());
+        max_row = std::max(max_row, index.row());
+        min_column = std::min(min_column, index.column());
+        max_column = std::max(max_column, index.column());
+    }
+    if (max_row < 0 || max_column < 0) {
+        return false;
+    }
+    const std::size_t original_rows = table_.rows.size();
+    const std::size_t original_columns = table_.columns.size();
+    if (static_cast<std::size_t>(max_row) >= table_.rows.size()) {
+        table_.rows.resize(static_cast<std::size_t>(max_row) + 1);
+    }
+    if (static_cast<std::size_t>(max_column) >= table_.columns.size()) {
+        table_.columns.resize(static_cast<std::size_t>(max_column) + 1);
+    }
+    bool changed = table_.rows.size() != original_rows
+        || table_.columns.size() != original_columns;
+    for (const QModelIndex& index : indexes) {
+        if (!index.isValid()) {
+            continue;
+        }
+        const std::size_t row = static_cast<std::size_t>(index.row());
+        const std::size_t column = static_cast<std::size_t>(index.column());
+        if (column >= table_.rows[row].size()) {
+            table_.rows[row].resize(column + 1);
+        }
+        if (!table_.rows[row][column].empty()) {
+            table_.rows[row][column].clear();
+            changed = true;
+        }
+    }
+    if (!changed) {
+        return false;
+    }
+    if (table_.name.empty()) {
+        table_.name = "工作表1";
+    }
+    const QModelIndex top_left = index(min_row, min_column);
+    const QModelIndex bottom_right = index(max_row, max_column);
+    emit dataChanged(top_left, bottom_right, {Qt::DisplayRole, Qt::EditRole});
     emit table_changed(table_);
     return true;
 }

@@ -1,0 +1,19 @@
+# source: OLS formulas per docs/statistical-methodology.md (verify against Minitab export)
+# config: response_col=Response
+# config: predictor_cols=Temperature,Pressure
+# config: confidence=0.95
+# section: summary
+Metric	Value
+S	0.18591259253609557
+R-sq	0.996388140161725
+R-sq(adj)	0.9939802336028751
+Durbin-Watson	1.2613580449400024
+# section: anova
+Term	Seq_SS	Adj_SS	DF
+Temperature	28.544142857142866	0.3619206349206331	1
+Pressure	0.06049999999999972	0.06049999999999972	1
+# section: coefficients
+Term	Coef
+Constant	-3.805952380958965
+Temperature	1.07857142857238
+Pressure	-2.7500000000059326
