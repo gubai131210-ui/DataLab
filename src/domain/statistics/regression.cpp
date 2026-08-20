@@ -271,6 +271,7 @@ RegressionResult fit_linear_regression(
     }
     result.observation_count = response.size();
     result.predictor_count = predictor_count;
+    result.confidence_level = confidence_level;
     result.evidence.valid_count = response.size();
     const std::size_t parameter_count = predictor_count + 1;
     if (result.observation_count < parameter_count) {
@@ -299,6 +300,9 @@ RegressionResult fit_linear_regression(
                 return result;
             }
             design[row][column + 1] = predictors[row][column];
+        }
+        if (predictor_count == 1) {
+            result.simple_predictor_values.push_back(predictors[row][0]);
         }
     }
 
@@ -419,6 +423,7 @@ RegressionResult fit_linear_regression(
                   "无法计算回归系数协方差矩阵。");
         return result;
     }
+    result.xtx_inverse = cross_inverse;
     const double critical = inference_available
         ? student_t_quantile(0.5 + confidence_level / 2.0, error_df)
         : std::numeric_limits<double>::quiet_NaN();
@@ -518,6 +523,8 @@ RegressionResult fit_linear_regression(
     const double parameter_count_value = static_cast<double>(parameter_count);
     const double leverage_threshold = 2.0 * parameter_count_value
         / observation_count;
+    const double minitab_leverage_threshold = std::min(
+        3.0 * parameter_count_value / observation_count, 0.99);
     const double cooks_threshold = 4.0 / observation_count;
     const double dfits_threshold = 2.0 * std::sqrt(
         parameter_count_value / observation_count);
@@ -528,6 +535,9 @@ RegressionResult fit_linear_regression(
         observation.is_high_leverage = observation.leverage > leverage_threshold;
         observation.is_influential = observation.cooks_distance > cooks_threshold
             || std::abs(observation.dfits) > dfits_threshold;
+        observation.unusual_r =
+            std::abs(observation.internally_standardized_residual) > 2.0;
+        observation.unusual_x = observation.leverage > minitab_leverage_threshold;
         if (observation.is_outlier) {
             observation.diagnostic_flags.push_back("outlier");
             ++result.diagnostics_summary.outlier_count;
@@ -658,6 +668,63 @@ RegressionResult fit_linear_regression(
     populate_regression_anova_effects(
         result, response, predictors, predictor_labels);
     return result;
+}
+
+std::vector<RegressionBandPoint> fitted_line_bands(
+    const RegressionResult& result,
+    std::size_t grid_count)
+{
+    std::vector<RegressionBandPoint> bands;
+    if (result.predictor_count != 1
+        || result.simple_predictor_values.empty()
+        || result.coefficients.size() < 2
+        || result.xtx_inverse.size() < 2
+        || result.xtx_inverse.front().size() < 2
+        || result.residual_standard_deviation <= 0.0
+        || !result.evidence.degrees_of_freedom.has_value()
+        || *result.evidence.degrees_of_freedom <= 0.0
+        || grid_count < 2) {
+        return bands;
+    }
+    const auto [x_min_it, x_max_it] = std::minmax_element(
+        result.simple_predictor_values.cbegin(),
+        result.simple_predictor_values.cend());
+    double x_min = *x_min_it;
+    double x_max = *x_max_it;
+    if (!(x_max > x_min)) {
+        x_min -= 1.0;
+        x_max += 1.0;
+    }
+    const double error_df = *result.evidence.degrees_of_freedom;
+    const double critical = student_t_quantile(
+        0.5 + result.confidence_level / 2.0, error_df);
+    if (!std::isfinite(critical)) {
+        return bands;
+    }
+    const double intercept = result.coefficients[0].coefficient;
+    const double slope = result.coefficients[1].coefficient;
+    const double s = result.residual_standard_deviation;
+    bands.reserve(grid_count);
+    for (std::size_t index = 0; index < grid_count; ++index) {
+        const double fraction = static_cast<double>(index)
+            / static_cast<double>(grid_count - 1);
+        const double x = x_min + fraction * (x_max - x_min);
+        const double h00 = result.xtx_inverse[0][0];
+        const double h01 = result.xtx_inverse[0][1];
+        const double h11 = result.xtx_inverse[1][1];
+        const double leverage = h00 + 2.0 * h01 * x + h11 * x * x;
+        RegressionBandPoint point;
+        point.x = x;
+        point.fitted = intercept + slope * x;
+        point.se_fit = s * std::sqrt(std::max(0.0, leverage));
+        point.se_pred = s * std::sqrt(std::max(0.0, 1.0 + leverage));
+        point.ci_lower = point.fitted - critical * point.se_fit;
+        point.ci_upper = point.fitted + critical * point.se_fit;
+        point.pi_lower = point.fitted - critical * point.se_pred;
+        point.pi_upper = point.fitted + critical * point.se_pred;
+        bands.push_back(point);
+    }
+    return bands;
 }
 
 }  // namespace datalab::domain::statistics

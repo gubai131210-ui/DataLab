@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(DataLab LANGUAGES CXX)
+project(DataLab LANGUAGES CXX C)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test Concurrent)
 
@@ -23,6 +23,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/descriptive_statistics.h
     src/domain/statistics/process_capability.cpp
     src/domain/statistics/process_capability.h
+    src/domain/statistics/attribute_capability.cpp
+    src/domain/statistics/attribute_capability.h
     src/domain/statistics/johnson_transform.cpp
     src/domain/statistics/johnson_transform.h
     src/domain/statistics/control_charts.cpp
@@ -88,6 +90,18 @@ add_library(datalab_domain STATIC
     src/domain/statistics/pca.h
     src/domain/statistics/graph_visuals.cpp
     src/domain/statistics/graph_visuals.h
+    src/domain/statistics/multi_vari.cpp
+    src/domain/statistics/multi_vari.h
+    src/domain/statistics/tolerance_intervals.cpp
+    src/domain/statistics/tolerance_intervals.h
+    src/domain/statistics/proportion_test.cpp
+    src/domain/statistics/proportion_test.h
+    src/domain/statistics/poisson_rate.cpp
+    src/domain/statistics/poisson_rate.h
+    src/domain/statistics/equivalence_test.cpp
+    src/domain/statistics/equivalence_test.h
+    src/domain/statistics/grubbs_test.cpp
+    src/domain/statistics/grubbs_test.h
 )
 
 target_include_directories(datalab_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -146,13 +160,15 @@ target_link_libraries(datalab_reporting
 )
 
 # ---------------------------------------------------------------------------
-# infrastructure：CSV/SQLite/PDF/Python 桥等外部依赖适配
+# infrastructure：CSV/SQLite/PDF/Excel 等外部依赖适配
 # ---------------------------------------------------------------------------
 add_library(datalab_infrastructure STATIC
     src/infrastructure/csv_importer.cpp
     src/infrastructure/csv_importer.h
     src/infrastructure/data_import_service.cpp
     src/infrastructure/data_import_service.h
+    src/infrastructure/excel_table_importer.cpp
+    src/infrastructure/excel_table_importer.h
     src/infrastructure/project_repository.cpp
     src/infrastructure/project_repository.h
     src/infrastructure/output_serialization.cpp
@@ -163,11 +179,18 @@ add_library(datalab_infrastructure STATIC
     src/infrastructure/report_layout_cursor.h
     src/infrastructure/report_painter.cpp
     src/infrastructure/report_painter.h
-    src/infrastructure/python_table_importer.cpp
-    src/infrastructure/python_table_importer.h
 )
 
 target_include_directories(datalab_infrastructure PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(datalab_infrastructure PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/miniz)
+
+add_library(datalab_miniz STATIC
+    third_party/miniz/miniz.c
+    third_party/miniz/miniz_tdef.c
+    third_party/miniz/miniz_tinfl.c
+    third_party/miniz/miniz_zip.c
+)
+target_include_directories(datalab_miniz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/miniz)
 
 target_link_libraries(datalab_infrastructure
     PUBLIC
@@ -177,6 +200,7 @@ target_link_libraries(datalab_infrastructure
     PRIVATE
         datalab_reporting
         Qt6::Sql
+        datalab_miniz
 )
 
 # ---------------------------------------------------------------------------
@@ -210,6 +234,19 @@ add_library(datalab_ui STATIC
     src/ui/graph_properties_panel.h
     src/ui/graph_properties_dialog.cpp
     src/ui/graph_properties_dialog.h
+    src/ui/algorithm_help_catalog.cpp
+    src/ui/algorithm_help_catalog.h
+    src/ui/algorithm_help_dialog.cpp
+    src/ui/algorithm_help_dialog.h
+    src/ui/formula_renderer.cpp
+    src/ui/formula_renderer.h
+    src/ui/algorithm_help_types.h
+)
+
+qt_add_resources(datalab_ui algorithm_help_resources
+    PREFIX "/help"
+    BASE resources/help
+    FILES resources/help/algorithm_help.json
 )
 
 target_include_directories(datalab_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -243,6 +280,7 @@ set(DATALAB_ICON_FILES
     resources/icons/success.svg
     resources/icons/descriptive.svg
     resources/icons/normality_test.svg
+    resources/icons/outlier_test.svg
     resources/icons/correlation.svg
     resources/icons/one_sample_t.svg
     resources/icons/two_sample_t.svg
@@ -251,6 +289,10 @@ set(DATALAB_ICON_FILES
     resources/icons/two_factor_anova.svg
     resources/icons/chi_square.svg
     resources/icons/two_proportions.svg
+    resources/icons/one_proportion.svg
+    resources/icons/one_poisson_rate.svg
+    resources/icons/two_poisson_rate.svg
+    resources/icons/equivalence_t.svg
     resources/icons/mann_whitney.svg
     resources/icons/wilcoxon_signed_rank.svg
     resources/icons/kruskal_wallis.svg
@@ -261,6 +303,7 @@ set(DATALAB_ICON_FILES
     resources/icons/imr.svg
     resources/icons/xbar_r.svg
     resources/icons/xbar_s.svg
+    resources/icons/imr_rs.svg
     resources/icons/p_chart.svg
     resources/icons/np_chart.svg
     resources/icons/c_chart.svg
@@ -315,13 +358,6 @@ qt_add_resources(DataLab app_resources
     FILES ${DATALAB_ICON_FILES}
 )
 
-qt_add_resources(DataLab import_script_resource
-    PREFIX "/"
-    BASE .
-    FILES
-        tools/import_table.py
-)
-
 target_link_libraries(DataLab
     PRIVATE
         datalab_ui
@@ -345,12 +381,29 @@ add_datalab_test(column_extract_import_test tests/column_extract_import_test.cpp
 
 add_datalab_test(quality_statistics_test tests/quality_statistics_test.cpp datalab_domain datalab_application)
 
+add_datalab_test(regression_output_test tests/regression_output_test.cpp datalab_domain datalab_application)
+
 add_datalab_test(reliability_msa_power_test tests/reliability_msa_power_test.cpp datalab_domain datalab_application)
 
 add_datalab_test(doe_response_test tests/doe_response_test.cpp datalab_domain)
+add_datalab_test(doe_factorial_output_test tests/doe_factorial_output_test.cpp datalab_domain datalab_application)
 
 add_datalab_test(graph_visuals_test tests/graph_visuals_test.cpp datalab_domain)
 add_datalab_test(graph_service_test tests/graph_service_test.cpp datalab_application)
+add_datalab_test(multi_vari_test tests/multi_vari_test.cpp datalab_domain datalab_application)
+add_datalab_test(tolerance_interval_test tests/tolerance_interval_test.cpp datalab_domain datalab_application)
+add_datalab_test(attribute_capability_test tests/attribute_capability_test.cpp datalab_domain datalab_application)
+add_datalab_test(proportion_test tests/proportion_test.cpp datalab_domain datalab_application)
+add_datalab_test(poisson_rate_test tests/poisson_rate_test.cpp datalab_domain datalab_application)
+add_datalab_test(two_factor_anova_output_test tests/two_factor_anova_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(seasonal_forecasting_output_test tests/seasonal_forecasting_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(gage_rr_output_test tests/gage_rr_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(equivalence_test tests/equivalence_test.cpp datalab_domain datalab_application)
+add_datalab_test(grubbs_test tests/grubbs_test.cpp datalab_domain datalab_application)
+add_datalab_test(imr_rs_test tests/imr_rs_test.cpp datalab_domain datalab_application)
+add_datalab_test(xbar_output_test tests/xbar_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(ewma_cusum_output_test tests/ewma_cusum_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(capability_ci_gof_rare_event_power_test tests/capability_ci_gof_rare_event_power_test.cpp datalab_domain datalab_application)
 
 qt_add_executable(minitab_fixture_test
     tests/minitab_fixture_test.cpp
@@ -499,10 +552,46 @@ set_tests_properties(
 )
 
 add_datalab_test(
-    python_table_importer_test
-    tests/python_table_importer_test.cpp
-    datalab_infrastructure
+    mainwindow_edit_commands_test
+    tests/mainwindow_edit_commands_test.cpp
+    datalab_ui
 )
+set_tests_properties(
+    mainwindow_edit_commands_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    algorithm_help_catalog_test
+    tests/algorithm_help_catalog_test.cpp
+    datalab_ui
+)
+
+add_datalab_test(
+    algorithm_help_dialog_test
+    tests/algorithm_help_dialog_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    algorithm_help_dialog_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+qt_add_executable(excel_table_importer_test
+    tests/excel_table_importer_test.cpp
+)
+
+target_link_libraries(excel_table_importer_test
+    PRIVATE
+        datalab_infrastructure
+        Qt6::Test
+)
+target_compile_definitions(excel_table_importer_test
+    PRIVATE
+        DATALAB_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_test(NAME excel_table_importer_test COMMAND excel_table_importer_test)
 
 add_datalab_test(
     project_repository_test

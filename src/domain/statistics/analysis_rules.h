@@ -46,7 +46,9 @@ std::vector<AnalysisRuleSpec> reliability_rule_catalog();
 RegressionFacts regression_facts_from(const RegressionResult& result);
 AnovaFacts one_way_anova_facts_from(
     const AnovaResult& result,
-    const TukeyResult& tukey = {});
+    const TukeyResult& tukey = {},
+    bool tukey_grouping_available = false,
+    std::size_t grouping_letter_count = 0);
 AnovaFacts two_factor_anova_facts_from(const TwoFactorAnovaResult& result);
 MsaFacts gage_rr_facts_from(const GageRrResult& result);
 MsaFacts nested_gage_facts_from(const NestedGageRrResult& result);

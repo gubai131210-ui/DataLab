@@ -1,10 +1,12 @@
 #include "domain/statistics/control_charts.h"
 
+#include "domain/statistics/reliability.h"
 #include "domain/statistics/spc_constants.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <unordered_map>
@@ -396,6 +398,7 @@ ControlChartResult laney_chart(
         result.upper_control_limit[index] = proportion_chart
             ? std::min(1.0, center + deviation) : center + deviation;
     }
+    result.phase_labels = options.phase_labels;
     mark_special_cause_tests(result, resolve_special_cause_tests(
         special_cause_selection_from_configuration(
             options.enabled_special_cause_tests, options.special_cause_rule_policy),
@@ -473,7 +476,22 @@ DualControlChartResult ControlCharts::individuals_moving_range_dual(
         }
         plotted_ranges[index] = range;
         bool range_omitted = false;
-        for (int offset = 0; offset < length; ++offset) {
+        bool crosses_phase = false;
+        if (!options.phase_labels.empty()
+            && options.phase_labels.size() == observations.size()) {
+            const std::size_t start = index - static_cast<std::size_t>(length - 1);
+            for (std::size_t inner = start; inner <= index; ++inner) {
+                if (options.phase_labels[inner] != options.phase_labels[start]) {
+                    crosses_phase = true;
+                    break;
+                }
+            }
+        }
+        if (crosses_phase) {
+            plotted_ranges[index] = std::numeric_limits<double>::quiet_NaN();
+            range_omitted = true;
+        }
+        for (int offset = 0; offset < length && !range_omitted; ++offset) {
             if (omitted(options.omit_from_estimate, index - static_cast<std::size_t>(offset))) {
                 range_omitted = true;
                 break;
@@ -508,6 +526,11 @@ DualControlChartResult ControlCharts::individuals_moving_range_dual(
     result.primary.lower_control_limit.assign(observations.size(), lower);
     result.primary.upper_control_limit.assign(observations.size(), upper);
     result.primary.point_sigma.assign(observations.size(), result.sigma);
+    if (!options.phase_labels.empty()
+        && options.phase_labels.size() == observations.size()) {
+        result.primary.phase_labels = options.phase_labels;
+        result.secondary.phase_labels = options.phase_labels;
+    }
     apply_special_cause_tests(result.primary, ControlChartKind::individuals, options.special_causes);
     const std::optional<double> d3_limit = SpcConstants::d3_limit(static_cast<std::size_t>(length));
     const std::optional<double> d4 = SpcConstants::d4(static_cast<std::size_t>(length));
@@ -669,6 +692,87 @@ DualControlChartResult ControlCharts::xbar_s_dual(
     apply_special_cause_tests(result.secondary, ControlChartKind::stdev, special_causes);
     result.primary.diagnostics.insert(
         result.primary.diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
+    return result;
+}
+
+ImrRsChartResult ControlCharts::imr_rs_triple(
+    const std::vector<std::vector<double>>& subgroups,
+    const SpecialCauseSelection& special_causes)
+{
+    ImrRsChartResult result;
+    if (subgroups.size() < 2) {
+        add_error(result.diagnostics, "insufficient_subgroups",
+                  "I-MR-R/S 至少需要两个子组。");
+        return result;
+    }
+    const std::size_t subgroup_size = subgroups.front().size();
+    if (subgroup_size < 2) {
+        add_error(result.diagnostics, "invalid_subgroup_size",
+                  "各子组必须至少包含两个观测。");
+        return result;
+    }
+    for (const auto& subgroup : subgroups) {
+        if (subgroup.size() != subgroup_size) {
+            add_error(result.diagnostics, "unequal_subgroups",
+                      "各子组必须具有相同观测数。");
+            return result;
+        }
+        if (!std::all_of(subgroup.begin(), subgroup.end(),
+                         [](double value) { return std::isfinite(value); })) {
+            add_error(result.diagnostics, "non_finite_input",
+                      "I-MR-R/S 子组不允许 NaN 或无穷观测。");
+            return result;
+        }
+    }
+
+    std::vector<double> subgroup_means;
+    subgroup_means.reserve(subgroups.size());
+    for (const auto& subgroup : subgroups) {
+        subgroup_means.push_back(mean(subgroup));
+    }
+
+    IndividualsMovingRangeOptions options;
+    options.special_causes = special_causes;
+    const DualControlChartResult imr =
+        individuals_moving_range_dual(subgroup_means, options);
+    result.diagnostics.insert(
+        result.diagnostics.end(), imr.diagnostics.cbegin(), imr.diagnostics.cend());
+    result.individuals = imr.primary;
+    result.moving_range = imr.secondary;
+    result.sigma_xbar = imr.sigma;
+
+    const WithinSubgroupSigmaEstimate within_sigma =
+        estimate_within_subgroup_sigma(subgroups);
+    if (!within_sigma.ok) {
+        add_error(result.diagnostics, within_sigma.error_code.c_str(),
+                  within_sigma.error_message.c_str());
+        return result;
+    }
+    const bool use_range = within_sigma.chart == "range";
+    const DualControlChartResult within = use_range
+        ? xbar_range_dual(subgroups, special_causes)
+        : xbar_s_dual(subgroups, special_causes);
+    result.diagnostics.insert(
+        result.diagnostics.end(), within.diagnostics.cbegin(), within.diagnostics.cend());
+    result.within = within.secondary;
+    result.within_chart = within_sigma.chart;
+    result.sigma_within = within_sigma.sigma;
+
+    const double n = static_cast<double>(subgroup_size);
+    const double raw_between_variance =
+        result.sigma_xbar * result.sigma_xbar
+        - result.sigma_within * result.sigma_within / n;
+    result.between_variance_truncated = raw_between_variance < 0.0;
+    const double between_variance =
+        result.between_variance_truncated ? 0.0 : raw_between_variance;
+    result.sigma_between = std::sqrt(between_variance);
+    result.sigma_between_within = std::sqrt(
+        between_variance + result.sigma_within * result.sigma_within);
+    result.method = within_sigma.method;
+    if (result.between_variance_truncated) {
+        add_warning(result.diagnostics, "between_variance_truncated",
+                    "估计的组间方差为负，已截断为 0；σ_B 可能低估。");
+    }
     return result;
 }
 
@@ -982,6 +1086,8 @@ std::vector<int> applicable_special_cause_tests(ControlChartKind kind)
     case ControlChartKind::stdev:
         return {1, 2, 3, 4};
     case ControlChartKind::ewma:
+    case ControlChartKind::g:
+    case ControlChartKind::t:
         return {1};
     case ControlChartKind::cusum:
         return {};
@@ -1025,6 +1131,12 @@ ControlChartKind control_chart_kind_from_name(const std::string& name)
     if (name == "cusum") {
         return ControlChartKind::cusum;
     }
+    if (name == "g" || name == "g_chart") {
+        return ControlChartKind::g;
+    }
+    if (name == "t" || name == "t_chart") {
+        return ControlChartKind::t;
+    }
     return ControlChartKind::individuals;
 }
 
@@ -1047,6 +1159,10 @@ std::string control_chart_kind_name(ControlChartKind kind)
         return "ewma";
     case ControlChartKind::cusum:
         return "cusum";
+    case ControlChartKind::g:
+        return "g";
+    case ControlChartKind::t:
+        return "t";
     case ControlChartKind::individuals:
         break;
     }
@@ -1167,6 +1283,245 @@ void apply_special_cause_tests(
     const std::vector<int> enabled = resolve_special_cause_tests(
         selection, kind, &result.diagnostics);
     mark_special_cause_tests(result, enabled);
+}
+
+WithinSubgroupSigmaEstimate estimate_within_subgroup_sigma(
+    const std::vector<std::vector<double>>& subgroups)
+{
+    WithinSubgroupSigmaEstimate estimate;
+    if (subgroups.size() < 2) {
+        estimate.error_code = "insufficient_subgroups";
+        estimate.error_message = "组内 σ 至少需要两个子组。";
+        return estimate;
+    }
+    const std::size_t subgroup_size = subgroups.front().size();
+    if (subgroup_size < 2) {
+        estimate.error_code = "invalid_subgroup_size";
+        estimate.error_message = "各子组必须至少包含两个观测。";
+        return estimate;
+    }
+    for (const auto& subgroup : subgroups) {
+        if (subgroup.size() != subgroup_size) {
+            estimate.error_code = "unequal_subgroups";
+            estimate.error_message = "各子组必须具有相同观测数。";
+            return estimate;
+        }
+        if (!std::all_of(subgroup.begin(), subgroup.end(),
+                         [](double value) { return std::isfinite(value); })) {
+            estimate.error_code = "non_finite_input";
+            estimate.error_message = "子组不允许 NaN 或无穷观测。";
+            return estimate;
+        }
+    }
+    const bool use_range = subgroup_size <= 8;
+    if (use_range) {
+        const std::optional<double> d2 = SpcConstants::d2(subgroup_size);
+        if (!d2.has_value()) {
+            estimate.error_code = "unsupported_subgroup_size";
+            estimate.error_message = "子组大小超出无偏常数表范围。";
+            return estimate;
+        }
+        double range_sum = 0.0;
+        for (const auto& subgroup : subgroups) {
+            const auto minmax = std::minmax_element(subgroup.begin(), subgroup.end());
+            range_sum += *minmax.second - *minmax.first;
+        }
+        estimate.sigma = (range_sum / static_cast<double>(subgroups.size())) / *d2;
+        estimate.method = "R̄ / d2(n)";
+        estimate.chart = "range";
+        estimate.ok = true;
+        return estimate;
+    }
+    const double c4_value = c4(subgroup_size);
+    if (!(c4_value > 0.0) || !std::isfinite(c4_value)) {
+        estimate.error_code = "invalid_c4";
+        estimate.error_message = "无法计算该子组大小的 c4。";
+        return estimate;
+    }
+    double s_sum = 0.0;
+    for (const auto& subgroup : subgroups) {
+        const double subgroup_mean = mean(subgroup);
+        long double sum = 0.0L;
+        for (const double value : subgroup) {
+            const long double difference = static_cast<long double>(value) - subgroup_mean;
+            sum += difference * difference;
+        }
+        s_sum += std::sqrt(static_cast<double>(
+            sum / static_cast<long double>(subgroup_size - 1)));
+    }
+    estimate.sigma = (s_sum / static_cast<double>(subgroups.size())) / c4_value;
+    estimate.method = "S̄ / c4";
+    estimate.chart = "stdev";
+    estimate.ok = true;
+    return estimate;
+}
+
+namespace {
+
+double geometric_trials_cdf(double k, double probability)
+{
+    if (k < 1.0) {
+        return 0.0;
+    }
+    return 1.0 - std::pow(1.0 - probability, k);
+}
+
+double interpolated_geometric_invcdf(double quantile, double probability)
+{
+    int upper = 1;
+    while (geometric_trials_cdf(static_cast<double>(upper), probability) < quantile
+           && upper < 1000000) {
+        ++upper;
+    }
+    const double g_b = static_cast<double>(upper);
+    const double g_a = g_b - 1.0;
+    const double p_a = geometric_trials_cdf(g_a, probability);
+    const double p_b = geometric_trials_cdf(g_b, probability);
+    if (!(p_b > p_a)) {
+        return g_a;
+    }
+    return g_a + (quantile - p_a) / (p_b - p_a);
+}
+
+void fill_constant_limits(
+    ControlChartResult& result, double center, double lower, double upper)
+{
+    result.center_line.assign(result.plotted_values.size(), center);
+    result.lower_control_limit.assign(
+        result.plotted_values.size(), std::isfinite(lower) ? lower : std::numeric_limits<double>::quiet_NaN());
+    result.upper_control_limit.assign(
+        result.plotted_values.size(), std::isfinite(upper) ? upper : std::numeric_limits<double>::quiet_NaN());
+}
+
+}  // namespace
+
+ControlChartResult ControlCharts::g_chart(
+    const std::vector<double>& intervals,
+    const std::vector<RowId>& source_rows,
+    const SpecialCauseSelection& special_causes)
+{
+    ControlChartResult result;
+    result.source_rows = source_rows;
+    if (intervals.size() < 2) {
+        add_error(result.diagnostics, "insufficient_g_points",
+                  "G 图至少需要两个有限间隔。");
+        return result;
+    }
+    double sum = 0.0;
+    for (const double value : intervals) {
+        if (!(value >= 0.0) || !std::isfinite(value)) {
+            add_error(result.diagnostics, "invalid_g_interval",
+                      "G 图间隔必须为非负有限数。");
+            return result;
+        }
+        sum += value;
+    }
+    const double mean = sum / static_cast<double>(intervals.size());
+    const double probability = 1.0 / (mean + 1.0);
+    if (!(probability > 0.0 && probability < 1.0)) {
+        add_error(result.diagnostics, "invalid_g_probability",
+                  "无法从间隔均值估计几何分布参数 p。");
+        return result;
+    }
+    const double center = interpolated_geometric_invcdf(0.5, probability) - 1.0;
+    double lower = interpolated_geometric_invcdf(0.00135, probability) - 1.0;
+    const double upper = interpolated_geometric_invcdf(0.99865, probability) - 1.0;
+    if (lower < 0.0) {
+        lower = 0.0;
+    }
+    result.plotted_values = intervals;
+    fill_constant_limits(result, center, lower, upper);
+    apply_special_cause_tests(result, ControlChartKind::g, special_causes);
+    return result;
+}
+
+ControlChartResult ControlCharts::t_chart(
+    const std::vector<double>& intervals,
+    const std::vector<RowId>& source_rows,
+    const SpecialCauseSelection& special_causes)
+{
+    ControlChartResult result;
+    result.source_rows = source_rows;
+    std::vector<double> positive;
+    bool had_zero = false;
+    for (const double value : intervals) {
+        if (!std::isfinite(value) || value < 0.0) {
+            add_error(result.diagnostics, "invalid_t_interval",
+                      "T 图间隔必须为非负有限数。");
+            return result;
+        }
+        if (value == 0.0) {
+            had_zero = true;
+            continue;
+        }
+        positive.push_back(value);
+    }
+    if (positive.size() < 2) {
+        add_error(result.diagnostics, "insufficient_t_points",
+                  "T 图至少需要两个正间隔。");
+        return result;
+    }
+    double shape = 0.0;
+    double scale = 0.0;
+    if (!had_zero) {
+        const std::vector<bool> events(positive.size(), true);
+        const WeibullResult fitted = fit_weibull(positive, events);
+        result.diagnostics.insert(result.diagnostics.end(),
+                                  fitted.diagnostics.cbegin(), fitted.diagnostics.cend());
+        if (!fitted.identifiable || !fitted.converged || !(fitted.shape > 0.0)
+            || !(fitted.scale > 0.0)) {
+            add_error(result.diagnostics, "t_chart_weibull_failed",
+                      "Weibull 参数无法识别，T 图控制限未计算。");
+            return result;
+        }
+        shape = fitted.shape;
+        scale = fitted.scale;
+    } else {
+        add_warning(result.diagnostics, "zero_interval_regression_used",
+                    "存在 0 间隔，已排除后用 log-log 回归估计 Weibull 参数。");
+        std::vector<double> ordered = positive;
+        std::sort(ordered.begin(), ordered.end());
+        const double n = static_cast<double>(ordered.size());
+        double sum_x = 0.0;
+        double sum_y = 0.0;
+        double sum_xx = 0.0;
+        double sum_xy = 0.0;
+        for (std::size_t index = 0; index < ordered.size(); ++index) {
+            const double probability = (static_cast<double>(index + 1) - 0.3) / (n + 0.4);
+            const double x = std::log(-std::log(1.0 - probability));
+            const double y = std::log(ordered[index]);
+            sum_x += x;
+            sum_y += y;
+            sum_xx += x * x;
+            sum_xy += x * y;
+        }
+        const double denominator = n * sum_xx - sum_x * sum_x;
+        if (!(std::abs(denominator) > 0.0)) {
+            add_error(result.diagnostics, "t_chart_regression_failed",
+                      "0 间隔回归无法估计 Weibull 参数。");
+            return result;
+        }
+        const double slope = (n * sum_xy - sum_x * sum_y) / denominator;
+        const double intercept = (sum_y - slope * sum_x) / n;
+        if (!(slope > 0.0) || !std::isfinite(intercept)) {
+            add_error(result.diagnostics, "t_chart_regression_failed",
+                      "0 间隔回归得到非正形状参数。");
+            return result;
+        }
+        scale = std::exp(intercept);
+        shape = 1.0 / slope;
+    }
+    const auto weibull_quantile = [shape, scale](double probability) {
+        return scale * std::pow(-std::log(1.0 - probability), 1.0 / shape);
+    };
+    result.plotted_values = intervals;
+    fill_constant_limits(
+        result,
+        weibull_quantile(0.5),
+        weibull_quantile(0.00135),
+        weibull_quantile(0.99865));
+    apply_special_cause_tests(result, ControlChartKind::t, special_causes);
+    return result;
 }
 
 }  // namespace datalab::domain::statistics

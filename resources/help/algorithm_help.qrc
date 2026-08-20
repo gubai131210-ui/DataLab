@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/help">
+        <file>algorithm_help.json</file>
+    </qresource>
+</RCC>

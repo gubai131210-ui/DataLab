@@ -1,5 +1,6 @@
 #include "ui/analysis_setup_dialog.h"
 
+#include <QAbstractItemModel>
 #include <QAbstractItemView>
 #include <QDialogButtonBox>
 #include <QComboBox>
@@ -10,9 +11,13 @@
 #include <QFocusEvent>
 #include <QFormLayout>
 #include <QFrame>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QIntValidator>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QList>
 #include <QLineEdit>
@@ -24,6 +29,8 @@
 #include <QStringList>
 #include <QSpinBox>
 #include <QStyle>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -232,6 +239,133 @@ private:
     datalab::domain::statistics::ControlChartKind kind_;
     QLabel* summary_ = nullptr;
     std::vector<QCheckBox*> checks_;
+};
+
+class ResponseObjectivesEditor final : public QWidget {
+public:
+    explicit ResponseObjectivesEditor(QWidget* parent)
+        : QWidget(parent)
+    {
+        auto* layout = new QVBoxLayout(this);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(6);
+        auto* hint = new QLabel(
+            QStringLiteral("选择多个响应后，可为每个响应指定独立目标与权重。"), this);
+        hint->setWordWrap(true);
+        layout->addWidget(hint);
+        table_ = new QTableWidget(this);
+        table_->setColumnCount(6);
+        table_->setHorizontalHeaderLabels({
+            QStringLiteral("响应"), QStringLiteral("目标"), QStringLiteral("下限"),
+            QStringLiteral("上限"), QStringLiteral("目标值"), QStringLiteral("权重")});
+        table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+        table_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+        table_->verticalHeader()->setVisible(false);
+        table_->setMinimumHeight(120);
+        layout->addWidget(table_);
+    }
+
+    void set_response_list(QListWidget* list)
+    {
+        response_list_ = list;
+        if (list != nullptr && list->model() != nullptr) {
+            connect(list->model(), &QAbstractItemModel::rowsInserted,
+                    this, [this]() { refresh(); });
+            connect(list->model(), &QAbstractItemModel::rowsRemoved,
+                    this, [this]() { refresh(); });
+            connect(list->model(), &QAbstractItemModel::modelReset,
+                    this, [this]() { refresh(); });
+        }
+        refresh();
+    }
+
+    QString selected_text() const
+    {
+        if (table_->rowCount() < 2) {
+            return QString();
+        }
+        QJsonArray array;
+        for (int row = 0; row < table_->rowCount(); ++row) {
+            QJsonObject object;
+            auto* combo = qobject_cast<QComboBox*>(table_->cellWidget(row, 1));
+            object.insert(QStringLiteral("goal"),
+                          combo != nullptr ? combo->currentData().toString()
+                                           : QStringLiteral("maximize"));
+            const QString lower = cell_text(row, 2);
+            const QString upper = cell_text(row, 3);
+            const QString target = cell_text(row, 4);
+            if (!lower.isEmpty()) {
+                object.insert(QStringLiteral("lower"), lower);
+            }
+            if (!upper.isEmpty()) {
+                object.insert(QStringLiteral("upper"), upper);
+            }
+            if (!target.isEmpty()) {
+                object.insert(QStringLiteral("target"), target);
+            }
+            auto* weight = qobject_cast<QDoubleSpinBox*>(table_->cellWidget(row, 5));
+            object.insert(QStringLiteral("weight"),
+                          weight != nullptr ? weight->value() : 1.0);
+            array.append(object);
+        }
+        return QString::fromUtf8(QJsonDocument(array).toJson(QJsonDocument::Compact));
+    }
+
+private:
+    QString cell_text(const int row, const int column) const
+    {
+        auto* edit = qobject_cast<QLineEdit*>(table_->cellWidget(row, column));
+        return edit != nullptr ? edit->text().trimmed() : QString();
+    }
+
+    void refresh()
+    {
+        QStringList names;
+        if (response_list_ != nullptr) {
+            for (int row = 0; row < response_list_->count(); ++row) {
+                names.push_back(response_list_->item(row)->text());
+            }
+        }
+        const QJsonArray previous =
+            QJsonDocument::fromJson(selected_text().toUtf8()).array();
+        table_->setRowCount(names.size());
+        for (int row = 0; row < names.size(); ++row) {
+            auto* name = new QTableWidgetItem(names[row]);
+            name->setFlags(name->flags() & ~Qt::ItemIsEditable);
+            table_->setItem(row, 0, name);
+            auto* combo = new QComboBox(table_);
+            combo->addItem(QStringLiteral("最大化"), QStringLiteral("maximize"));
+            combo->addItem(QStringLiteral("最小化"), QStringLiteral("minimize"));
+            combo->addItem(QStringLiteral("目标值"), QStringLiteral("target"));
+            auto* lower = new QLineEdit(table_);
+            auto* upper = new QLineEdit(table_);
+            auto* target = new QLineEdit(table_);
+            auto* weight = new QDoubleSpinBox(table_);
+            weight->setRange(0.1, 10.0);
+            weight->setSingleStep(0.1);
+            weight->setValue(1.0);
+            if (row < previous.size()) {
+                const QJsonObject object = previous.at(row).toObject();
+                const int goal_index = combo->findData(
+                    object.value(QStringLiteral("goal")).toString());
+                combo->setCurrentIndex(goal_index >= 0 ? goal_index : 0);
+                lower->setText(object.value(QStringLiteral("lower")).toString());
+                upper->setText(object.value(QStringLiteral("upper")).toString());
+                target->setText(object.value(QStringLiteral("target")).toString());
+                if (object.contains(QStringLiteral("weight"))) {
+                    weight->setValue(object.value(QStringLiteral("weight")).toDouble(1.0));
+                }
+            }
+            table_->setCellWidget(row, 1, combo);
+            table_->setCellWidget(row, 2, lower);
+            table_->setCellWidget(row, 3, upper);
+            table_->setCellWidget(row, 4, target);
+            table_->setCellWidget(row, 5, weight);
+        }
+    }
+
+    QListWidget* response_list_ = nullptr;
+    QTableWidget* table_ = nullptr;
 };
 
 }  // namespace
@@ -556,6 +690,12 @@ QWidget* AnalysisSetupDialog::add_input(const analysis_commands::InputSpec& spec
         editor = check;
     } else if (spec.kind == analysis_commands::InputKind::special_cause_tests) {
         editor = new SpecialCauseTestsEditor(spec.placeholder, this);
+    } else if (spec.kind == analysis_commands::InputKind::response_objectives) {
+        auto* objectives = new ResponseObjectivesEditor(this);
+        if (auto* list = findChild<QListWidget*>(QStringLiteral("response"))) {
+            objectives->set_response_list(list);
+        }
+        editor = objectives;
     } else {
         auto* line = new QLineEdit(this);
         line->setPlaceholderText(spec.placeholder);
@@ -723,6 +863,10 @@ QString AnalysisSetupDialog::line_text(const QString& id) const
     if (const auto* tests =
             dynamic_cast<const SpecialCauseTestsEditor*>(findChild<QWidget*>(id))) {
         return tests->selected_text();
+    }
+    if (const auto* objectives =
+            dynamic_cast<const ResponseObjectivesEditor*>(findChild<QWidget*>(id))) {
+        return objectives->selected_text();
     }
     return {};
 }

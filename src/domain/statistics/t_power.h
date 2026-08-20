@@ -67,4 +67,36 @@ PowerResult two_proportion_sample_size(
     double alpha = 0.05, PowerAlternative alternative = PowerAlternative::two_sided,
     ProportionVarianceMethod variance_method = ProportionVarianceMethod::pooled);
 
+PowerResult one_variance_power(
+    std::size_t sample_size, double standard_deviation_ratio, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+PowerResult one_variance_sample_size(
+    double standard_deviation_ratio, double target_power = 0.8, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+
+PowerResult two_variance_power(
+    std::size_t sample_size_per_group, double standard_deviation_ratio, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+PowerResult two_variance_sample_size(
+    double standard_deviation_ratio, double target_power = 0.8, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+
+PowerResult one_poisson_rate_power(
+    std::size_t sample_size, double null_rate, double comparison_rate,
+    double observation_length = 1.0, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+PowerResult one_poisson_rate_sample_size(
+    double null_rate, double comparison_rate, double target_power = 0.8,
+    double observation_length = 1.0, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+
+PowerResult two_poisson_rate_power(
+    std::size_t sample_size_per_group, double first_rate, double second_rate,
+    double observation_length = 1.0, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+PowerResult two_poisson_rate_sample_size(
+    double first_rate, double second_rate, double target_power = 0.8,
+    double observation_length = 1.0, double alpha = 0.05,
+    PowerAlternative alternative = PowerAlternative::two_sided);
+
 }  // namespace datalab::domain::statistics

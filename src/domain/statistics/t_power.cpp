@@ -215,6 +215,12 @@ double central_f_cdf(const double value, const double numerator_df,
         numerator_df, denominator_df, 0.0, value, converged);
 }
 
+double central_chi_square_cdf(const double value, const double degrees_of_freedom)
+{
+    return std::clamp(
+        1.0 - regularized_gamma_q(degrees_of_freedom * 0.5, value * 0.5), 0.0, 1.0);
+}
+
 double central_f_quantile(const double probability, const double numerator_df,
                           const double denominator_df, bool& converged)
 {
@@ -260,6 +266,51 @@ PowerResult invalid_power_result(const char* code, const char* message)
     PowerResult result;
     error(result.diagnostics, code, message);
     return result;
+}
+
+double variance_power_probability(
+    const double lower_critical, const double upper_critical,
+    const double scale, const double degrees_of_freedom,
+    const PowerAlternative alternative)
+{
+    const double lower_tail = lower_critical > 0.0
+        ? central_chi_square_cdf(lower_critical / scale, degrees_of_freedom)
+        : 0.0;
+    const double upper_tail = upper_critical > 0.0
+        ? 1.0 - central_chi_square_cdf(upper_critical / scale, degrees_of_freedom)
+        : 0.0;
+    switch (alternative) {
+    case PowerAlternative::less:
+        return lower_tail;
+    case PowerAlternative::greater:
+        return upper_tail;
+    case PowerAlternative::two_sided:
+    default:
+        return std::clamp(lower_tail + upper_tail, 0.0, 1.0);
+    }
+}
+
+double variance_ratio_power_probability(
+    const double lower_critical, const double upper_critical,
+    const double scale, const double numerator_df, const double denominator_df,
+    const PowerAlternative alternative)
+{
+    bool converged = true;
+    const double lower_tail = lower_critical > 0.0
+        ? central_f_cdf(lower_critical / scale, numerator_df, denominator_df, converged)
+        : 0.0;
+    const double upper_tail = upper_critical > 0.0
+        ? 1.0 - central_f_cdf(upper_critical / scale, numerator_df, denominator_df, converged)
+        : 0.0;
+    switch (alternative) {
+    case PowerAlternative::less:
+        return lower_tail;
+    case PowerAlternative::greater:
+        return upper_tail;
+    case PowerAlternative::two_sided:
+    default:
+        return std::clamp(lower_tail + upper_tail, 0.0, 1.0);
+    }
 }
 
 TPowerResult power(const std::size_t n, const double effect, const double alpha,
@@ -563,4 +614,320 @@ PowerResult two_proportion_sample_size(
     }
     return two_proportion_power(low, first, second, alpha, alternative, method);
 }
+
+PowerResult one_variance_power(
+    const std::size_t sample_size, const double standard_deviation_ratio,
+    const double alpha, const PowerAlternative alternative)
+{
+    PowerResult result;
+    result.sample_size = sample_size;
+    result.total_sample_size = sample_size;
+    result.effect_size = standard_deviation_ratio;
+    if (sample_size < 2 || !std::isfinite(standard_deviation_ratio)
+        || standard_deviation_ratio <= 0.0 || !valid_probability(alpha)) {
+        return invalid_power_result("invalid_one_variance_power_input",
+                                    "样本量、标准差比和 alpha 必须有效。");
+    }
+    const double df = static_cast<double>(sample_size - 1);
+    result.degrees_of_freedom = df;
+    result.noncentrality_parameter = standard_deviation_ratio * standard_deviation_ratio;
+    double lower_critical = 0.0;
+    double upper_critical = 0.0;
+    if (alternative != PowerAlternative::greater) {
+        const double probability = alternative == PowerAlternative::two_sided
+            ? alpha * 0.5 : alpha;
+        double low = 0.0;
+        double high = df;
+        while (central_chi_square_cdf(high, df) < probability && high < 1.0e12) {
+            high *= 2.0;
+        }
+        for (int iteration = 0; iteration < 80; ++iteration) {
+            const double mid = (low + high) * 0.5;
+            if (central_chi_square_cdf(mid, df) < probability) {
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+        lower_critical = (low + high) * 0.5;
+    }
+    if (alternative != PowerAlternative::less) {
+        const double probability = alternative == PowerAlternative::two_sided
+            ? 1.0 - alpha * 0.5 : 1.0 - alpha;
+        double low = 0.0;
+        double high = df;
+        while (central_chi_square_cdf(high, df) < probability && high < 1.0e12) {
+            high *= 2.0;
+        }
+        for (int iteration = 0; iteration < 80; ++iteration) {
+            const double mid = (low + high) * 0.5;
+            if (central_chi_square_cdf(mid, df) < probability) {
+                low = mid;
+            } else {
+                high = mid;
+            }
+        }
+        upper_critical = (low + high) * 0.5;
+    }
+    result.critical_value = alternative == PowerAlternative::less
+        ? lower_critical : upper_critical;
+    const double scale = standard_deviation_ratio * standard_deviation_ratio;
+    result.power = variance_power_probability(
+        lower_critical, upper_critical, scale, df, alternative);
+    return result;
+}
+
+PowerResult one_variance_sample_size(
+    const double standard_deviation_ratio, const double target_power,
+    const double alpha, const PowerAlternative alternative)
+{
+    if (!std::isfinite(standard_deviation_ratio) || standard_deviation_ratio <= 0.0
+        || !valid_probability(target_power) || !valid_probability(alpha)) {
+        return invalid_power_result("invalid_one_variance_sample_size_input",
+                                    "标准差比、目标功效和 alpha 必须有效。");
+    }
+    std::size_t high = 2;
+    while (high < 1000000
+           && one_variance_power(high, standard_deviation_ratio, alpha, alternative).power
+               < target_power) {
+        high *= 2;
+    }
+    if (one_variance_power(high, standard_deviation_ratio, alpha, alternative).power
+        < target_power) {
+        return invalid_power_result("one_variance_sample_size_limit",
+                                    "在允许的最大样本量内无法达到目标功效。");
+    }
+    std::size_t low = 2;
+    while (low < high) {
+        const std::size_t mid = low + (high - low) / 2;
+        if (one_variance_power(mid, standard_deviation_ratio, alpha, alternative).power
+            >= target_power) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    return one_variance_power(low, standard_deviation_ratio, alpha, alternative);
+}
+
+PowerResult two_variance_power(
+    const std::size_t sample_size_per_group, const double standard_deviation_ratio,
+    const double alpha, const PowerAlternative alternative)
+{
+    PowerResult result;
+    result.sample_size = sample_size_per_group;
+    result.sample_size_per_group = sample_size_per_group;
+    result.total_sample_size = sample_size_per_group * 2;
+    result.effect_size = standard_deviation_ratio;
+    if (sample_size_per_group < 2 || !std::isfinite(standard_deviation_ratio)
+        || standard_deviation_ratio <= 0.0 || !valid_probability(alpha)) {
+        return invalid_power_result("invalid_two_variance_power_input",
+                                    "每组样本量、标准差比和 alpha 必须有效。");
+    }
+    const double numerator_df = static_cast<double>(sample_size_per_group - 1);
+    const double denominator_df = static_cast<double>(sample_size_per_group - 1);
+    result.degrees_of_freedom = numerator_df;
+    result.noncentrality_parameter = standard_deviation_ratio * standard_deviation_ratio;
+    bool converged = true;
+    double lower_critical = 0.0;
+    double upper_critical = 0.0;
+    if (alternative != PowerAlternative::greater) {
+        lower_critical = central_f_quantile(
+            alternative == PowerAlternative::two_sided ? alpha * 0.5 : alpha,
+            numerator_df, denominator_df, converged);
+    }
+    if (alternative != PowerAlternative::less) {
+        upper_critical = central_f_quantile(
+            alternative == PowerAlternative::two_sided ? 1.0 - alpha * 0.5 : 1.0 - alpha,
+            numerator_df, denominator_df, converged);
+    }
+    result.critical_value = alternative == PowerAlternative::less
+        ? lower_critical : upper_critical;
+    const double scale = standard_deviation_ratio * standard_deviation_ratio;
+    result.power = variance_ratio_power_probability(
+        lower_critical, upper_critical, scale, numerator_df, denominator_df, alternative);
+    return result;
+}
+
+PowerResult two_variance_sample_size(
+    const double standard_deviation_ratio, const double target_power,
+    const double alpha, const PowerAlternative alternative)
+{
+    if (!std::isfinite(standard_deviation_ratio) || standard_deviation_ratio <= 0.0
+        || !valid_probability(target_power) || !valid_probability(alpha)) {
+        return invalid_power_result("invalid_two_variance_sample_size_input",
+                                    "标准差比、目标功效和 alpha 必须有效。");
+    }
+    std::size_t high = 2;
+    while (high < 1000000
+           && two_variance_power(high, standard_deviation_ratio, alpha, alternative).power
+               < target_power) {
+        high *= 2;
+    }
+    if (two_variance_power(high, standard_deviation_ratio, alpha, alternative).power
+        < target_power) {
+        return invalid_power_result("two_variance_sample_size_limit",
+                                    "在允许的最大样本量内无法达到目标功效。");
+    }
+    std::size_t low = 2;
+    while (low < high) {
+        const std::size_t mid = low + (high - low) / 2;
+        if (two_variance_power(mid, standard_deviation_ratio, alpha, alternative).power
+            >= target_power) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    return two_variance_power(low, standard_deviation_ratio, alpha, alternative);
+}
+
+PowerResult one_poisson_rate_power_impl(
+    const std::size_t n, const double null_rate, const double comparison_rate,
+    const double observation_length, const double alpha,
+    const PowerAlternative alternative)
+{
+    PowerResult result;
+    result.sample_size = n;
+    result.effect_size = comparison_rate - null_rate;
+    if (n < 1 || !std::isfinite(null_rate) || !std::isfinite(comparison_rate)
+        || !std::isfinite(observation_length) || null_rate <= 0.0 || comparison_rate <= 0.0
+        || observation_length <= 0.0 || !valid_probability(alpha)
+        || comparison_rate == null_rate) {
+        return invalid_power_result("invalid_one_poisson_power_input",
+                                    "泊松率、观测长度、样本量和 alpha 必须有效，且比较率必须不同。");
+    }
+    result.total_sample_size = n;
+    result.degrees_of_freedom = std::numeric_limits<double>::infinity();
+    const double exposure = static_cast<double>(n) * observation_length;
+    const double null_se = std::sqrt(null_rate / exposure);
+    const double alternative_se = std::sqrt(comparison_rate / exposure);
+    result.noncentrality_parameter = std::abs(result.effect_size) / null_se;
+    result.critical_value = normal_quantile(
+        alternative == PowerAlternative::two_sided ? 1.0 - alpha * 0.5 : 1.0 - alpha);
+    result.power = proportion_power(result.effect_size, null_se, alternative_se, alpha,
+                                    alternative);
+    result.power = std::clamp(result.power, 0.0, 1.0);
+    return result;
+}
+
+PowerResult one_poisson_rate_power(
+    const std::size_t sample_size, const double null_rate, const double comparison_rate,
+    const double observation_length, const double alpha,
+    const PowerAlternative alternative)
+{
+    return one_poisson_rate_power_impl(
+        sample_size, null_rate, comparison_rate, observation_length, alpha, alternative);
+}
+
+PowerResult one_poisson_rate_sample_size(
+    const double null_rate, const double comparison_rate, const double target_power,
+    const double observation_length, const double alpha,
+    const PowerAlternative alternative)
+{
+    if (!valid_probability(target_power)) {
+        return invalid_power_result("invalid_one_poisson_sample_size_input",
+                                    "目标功效必须位于 0 和 1 之间。");
+    }
+    std::size_t high = 1;
+    while (high < 1000000
+           && one_poisson_rate_power_impl(
+                  high, null_rate, comparison_rate, observation_length, alpha, alternative)
+                      .power
+               < target_power) {
+        high *= 2;
+    }
+    if (one_poisson_rate_power_impl(
+            high, null_rate, comparison_rate, observation_length, alpha, alternative)
+            .power
+        < target_power) {
+        return invalid_power_result("one_poisson_sample_size_limit",
+                                    "在允许的最大样本量内无法达到目标功效。");
+    }
+    std::size_t low = 1;
+    while (low < high) {
+        const std::size_t mid = low + (high - low) / 2;
+        if (one_poisson_rate_power_impl(
+                mid, null_rate, comparison_rate, observation_length, alpha, alternative)
+                .power
+            >= target_power) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    return one_poisson_rate_power_impl(
+        low, null_rate, comparison_rate, observation_length, alpha, alternative);
+}
+
+PowerResult two_poisson_rate_power(
+    const std::size_t sample_size_per_group, const double first_rate,
+    const double second_rate, const double observation_length, const double alpha,
+    const PowerAlternative alternative)
+{
+    PowerResult result;
+    result.sample_size = sample_size_per_group;
+    result.sample_size_per_group = sample_size_per_group;
+    result.effect_size = first_rate - second_rate;
+    if (sample_size_per_group < 1 || !std::isfinite(first_rate) || !std::isfinite(second_rate)
+        || !std::isfinite(observation_length) || first_rate <= 0.0 || second_rate <= 0.0
+        || observation_length <= 0.0 || !valid_probability(alpha) || first_rate == second_rate
+        || sample_size_per_group > std::numeric_limits<std::size_t>::max() / 2) {
+        return invalid_power_result("invalid_two_poisson_power_input",
+                                    "两组泊松率、观测长度、样本量和 alpha 必须有效，且两组率必须不同。");
+    }
+    result.total_sample_size = 2 * sample_size_per_group;
+    result.degrees_of_freedom = std::numeric_limits<double>::infinity();
+    const double exposure = static_cast<double>(sample_size_per_group) * observation_length;
+    const double null_se = std::sqrt((first_rate + second_rate) / exposure);
+    const double alternative_se = std::sqrt(first_rate / exposure + second_rate / exposure);
+    result.noncentrality_parameter = std::abs(result.effect_size) / null_se;
+    result.critical_value = normal_quantile(
+        alternative == PowerAlternative::two_sided ? 1.0 - alpha * 0.5 : 1.0 - alpha);
+    result.power = proportion_power(result.effect_size, null_se, alternative_se, alpha,
+                                    alternative);
+    result.power = std::clamp(result.power, 0.0, 1.0);
+    return result;
+}
+
+PowerResult two_poisson_rate_sample_size(
+    const double first_rate, const double second_rate, const double target_power,
+    const double observation_length, const double alpha,
+    const PowerAlternative alternative)
+{
+    if (!valid_probability(target_power)) {
+        return invalid_power_result("invalid_two_poisson_sample_size_input",
+                                    "目标功效必须位于 0 和 1 之间。");
+    }
+    std::size_t high = 1;
+    while (high < 1000000
+           && two_poisson_rate_power(
+                  high, first_rate, second_rate, observation_length, alpha, alternative)
+                      .power
+               < target_power) {
+        high *= 2;
+    }
+    if (two_poisson_rate_power(
+            high, first_rate, second_rate, observation_length, alpha, alternative)
+            .power
+        < target_power) {
+        return invalid_power_result("two_poisson_sample_size_limit",
+                                    "在允许的最大样本量内无法达到目标功效。");
+    }
+    std::size_t low = 1;
+    while (low < high) {
+        const std::size_t mid = low + (high - low) / 2;
+        if (two_poisson_rate_power(
+                mid, first_rate, second_rate, observation_length, alpha, alternative)
+                .power
+            >= target_power) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    return two_poisson_rate_power(
+        low, first_rate, second_rate, observation_length, alpha, alternative);
+}
+
 }  // namespace datalab::domain::statistics

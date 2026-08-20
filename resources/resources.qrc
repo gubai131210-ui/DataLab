@@ -17,6 +17,7 @@
         <file>icons/success.svg</file>
         <file>icons/descriptive.svg</file>
         <file>icons/normality_test.svg</file>
+        <file>icons/outlier_test.svg</file>
         <file>icons/correlation.svg</file>
         <file>icons/one_sample_t.svg</file>
         <file>icons/two_sample_t.svg</file>
@@ -24,6 +25,10 @@
         <file>icons/paired_t.svg</file>
         <file>icons/regression.svg</file>
         <file>icons/two_proportions.svg</file>
+        <file>icons/one_proportion.svg</file>
+        <file>icons/one_poisson_rate.svg</file>
+        <file>icons/two_poisson_rate.svg</file>
+        <file>icons/equivalence_t.svg</file>
         <file>icons/chi_square.svg</file>
         <file>icons/mann_whitney.svg</file>
         <file>icons/wilcoxon_signed_rank.svg</file>
@@ -33,6 +38,7 @@
         <file>icons/imr.svg</file>
         <file>icons/xbar_r.svg</file>
         <file>icons/xbar_s.svg</file>
+        <file>icons/imr_rs.svg</file>
         <file>icons/p_chart.svg</file>
         <file>icons/np_chart.svg</file>
         <file>icons/c_chart.svg</file>

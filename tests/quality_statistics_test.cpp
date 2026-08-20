@@ -25,7 +25,9 @@
 #include "domain/statistics/pca.h"
 #include "domain/statistics/response_optimization.h"
 #include "domain/statistics/distribution_identification.h"
+#include "domain/statistics/variance_tests.h"
 #include "application/analysis_service.h"
+#include "application/interpretation_service.h"
 
 #include <QtTest/QtTest>
 
@@ -55,6 +57,7 @@ private slots:
     void validatesAttributeChartBoundaries();
     void rejectsInvalidAttributeCounts();
     void buildsAttributeChartOutput();
+    void attributePhaseLabelsBreakTestTwo();
     void calculatesExpandedDescriptiveStatistics();
     void calculatesAndersonDarlingNormality();
     void enforcesStrictSubgroups();
@@ -62,6 +65,7 @@ private slots:
     void calculatesLaneyCharts();
     void detectsLaneySpecialCauseTests();
     void detectsTestEightWithoutAlternation();
+    void laneyPhaseLabelsBreakTestTwo();
     void buildsLaneyOutput();
     void buildsCapabilitySixpack();
     void buildsDoeFactorialServiceOutput();
@@ -69,26 +73,42 @@ private slots:
     void combinesParetoOther();
     void buildsParetoOutput();
     void buildsPairedTServiceOutput();
+    void buildsOneAndTwoSampleTIntervalPlots();
     void buildsRegressionServiceOutput();
     void buildsResponseOptimizationOutput();
+    void buildsMultiResponseOptimizationOutput();
     void buildsLogisticServiceOutput();
     void computesLogisticHosmerLemeshowWhenSampleLarge();
     void identifiesIndividualDistributions();
     void buildsDistributionIdentificationServiceOutput();
     void calculatesBetweenWithinCapability();
     void buildsBetweenWithinCapabilityServiceOutput();
+    void buildsCapabilityHistogramContract();
     void calculatesCorrelation();
     void calculatesTTests();
     void calculatesOneWayAnova();
     void buildsInferenceOutput();
+    void buildsDescriptiveBoxAndIndividualPlots();
+    void buildsNormalityOutputContract();
+    void buildsOneWayAnovaIntervalAndResidualPlots();
     void calculatesInferenceExtensions();
+    void buildsChiSquareServiceOutputContract();
+    void buildsNonparametricServiceOutputContract();
+    void calculatesMckeanRyanConfidenceInterval();
     void calculatesRegressionAndBoxCox();
+    void buildsBoxCoxServiceOutputContract();
     void regressionAnovaSeqAdjSs();
     void calculatesGageRrAndNonparametric();
     void calculatesTimeSeries();
     void calculatesTwoFactorAnovaAndArima();
+    void buildsArimaServiceOutputContract();
+    void buildsSeasonalForecastingServiceOutput();
+    void buildsTimeSeriesDecompositionServiceOutputContract();
+    void buildsTimeSeriesSmoothingServiceOutputContract();
+    void buildsSingleExponentialSmoothingServiceOutputContract();
     void calculatesNextBatchAlgorithms();
     void johnsonAndNonnormalCapability();
+    void buildsNormalCapabilityTableContract();
 };
 
 void QualityStatisticsTest::calculatesCapabilityIndices()
@@ -242,9 +262,26 @@ void QualityStatisticsTest::buildsAttributeChartOutput()
     const auto p_page = datalab::application::AnalysisService::p_chart(
         table, p_configuration);
     QCOMPARE(p_page.tables.size(), std::size_t{2});
-    QCOMPARE(p_page.tables.back().headers.size(), std::size_t{10});
+    QCOMPARE(p_page.tables.back().headers.size(), std::size_t{11});
     QCOMPARE(p_page.tables.back().rows.size(), std::size_t{3});
     QCOMPARE(p_page.plots.size(), std::size_t{1});
+    QVERIFY(p_page.facts.spc.has_value());
+    QVERIFY(p_page.facts.spc->out_of_control_count.has_value());
+
+    datalab::domain::DataTable staged;
+    staged.columns = {"Defectives", "Inspected", "Stage"};
+    staged.rows = {
+        {"1", "10", "Before"}, {"2", "10", "Before"}, {"1", "10", "After"}};
+    datalab::domain::AnalysisConfiguration staged_configuration;
+    staged_configuration.chart_type = "p_chart";
+    staged_configuration.selection.defect_count_column = 0;
+    staged_configuration.selection.inspected_count_column = 1;
+    staged_configuration.control.stage_column = 2;
+    const auto staged_page = datalab::application::AnalysisService::p_chart(
+        staged, staged_configuration);
+    QCOMPARE(staged_page.tables.back().rows.front()[2], std::string{"Before"});
+    QCOMPARE(staged_page.tables.back().rows.back()[2], std::string{"After"});
+    QCOMPARE(staged_page.tables.back().rows.front()[0], std::string{"1"});
 
     datalab::domain::AnalysisConfiguration u_configuration;
     u_configuration.chart_type = "u_chart";
@@ -255,6 +292,25 @@ void QualityStatisticsTest::buildsAttributeChartOutput()
     QCOMPARE(u_page.tables.size(), std::size_t{2});
     QCOMPARE(u_page.tables.back().rows.front()[3], std::string{"10"});
     QCOMPARE(u_page.plots.front().y_axis_title, std::string{"单位缺陷数"});
+}
+
+void QualityStatisticsTest::attributePhaseLabelsBreakTestTwo()
+{
+    // # source: formula_reference — attribute chart phase labels break Test 2 windows.
+    datalab::domain::statistics::ControlChartResult result;
+    result.plotted_values = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    result.center_line.assign(9, 0.0);
+    result.lower_control_limit.assign(9, -3.0);
+    result.upper_control_limit.assign(9, 3.0);
+    datalab::domain::statistics::SpecialCauseSelection selection{{2}, "explicit"};
+    datalab::domain::statistics::apply_special_cause_tests(
+        result, datalab::domain::statistics::ControlChartKind::attribute, selection);
+    QVERIFY(!result.special_cause_points[1].empty());
+
+    result.phase_labels = {"A", "A", "A", "A", "B", "B", "B", "B", "B"};
+    datalab::domain::statistics::apply_special_cause_tests(
+        result, datalab::domain::statistics::ControlChartKind::attribute, selection);
+    QVERIFY(result.special_cause_points[1].empty());
 }
 
 void QualityStatisticsTest::calculatesExpandedDescriptiveStatistics()
@@ -361,6 +417,27 @@ void QualityStatisticsTest::detectsTestEightWithoutAlternation()
     QVERIFY(!result.special_cause_points[7].empty());
 }
 
+void QualityStatisticsTest::laneyPhaseLabelsBreakTestTwo()
+{
+    // # source: formula_reference — stage labels break Test 2 windows on Laney P'.
+    const std::vector<std::size_t> defectives(9, 15);
+    const std::vector<std::size_t> inspected(9, 100);
+    datalab::domain::statistics::LaneyChartOptions options;
+    options.enabled_special_cause_tests = {2};
+    options.special_cause_rule_policy = "explicit";
+    options.historical_center = 0.10;
+    options.historical_sigma_z = 1.0;
+
+    const auto without_phases = ControlCharts::laney_p_chart(
+        defectives, inspected, options);
+    QVERIFY(!without_phases.special_cause_points[1].empty());
+
+    options.phase_labels = {"A", "A", "A", "A", "B", "B", "B", "B", "B"};
+    const auto with_phases = ControlCharts::laney_p_chart(
+        defectives, inspected, options);
+    QVERIFY(with_phases.special_cause_points[1].empty());
+}
+
 void QualityStatisticsTest::buildsLaneyOutput()
 {
     datalab::domain::DataTable table;
@@ -377,9 +454,12 @@ void QualityStatisticsTest::buildsLaneyOutput()
         table, configuration);
     QCOMPARE(page.method_name, std::string{"Laney P' Chart"});
     QCOMPARE(page.tables.size(), std::size_t{2});
-    QCOMPARE(page.tables.back().headers.size(), std::size_t{17});
+    QCOMPARE(page.tables.back().headers.size(), std::size_t{21});
     QCOMPARE(page.tables.back().rows.front()[2], std::string{"Before"});
     QCOMPARE(page.plots.size(), std::size_t{1});
+    QVERIFY(page.facts.spc.has_value());
+    QVERIFY(page.facts.spc->sigma_z.has_value());
+    QVERIFY(page.facts.spc->out_of_control_count.has_value());
 }
 
 void QualityStatisticsTest::buildsCapabilitySixpack()
@@ -501,12 +581,274 @@ void QualityStatisticsTest::buildsInferenceOutput()
     const auto page = datalab::application::AnalysisService::correlation(table, configuration);
     QCOMPARE(page.tables.size(), std::size_t{2});
     QCOMPARE(page.method_name, std::string{"Correlation"});
+    QVERIFY(page.facts.correlation.has_value());
+    QCOMPARE(page.facts.correlation->n, std::size_t{6});
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::scatter
+                                && plot.source_rows.size() == 6;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::matrix
+                                && plot.source_rows.size() == 6;
+                        }));
+
+    table.rows = {
+        {"*", "2", "A"}, {"2", "*", "A"}, {"3", "5", "B"},
+        {"4", "7", "B"}, {"5", "9", "C"}, {"6", "11", "C"}};
+    const auto aligned = datalab::application::AnalysisService::correlation(
+        table, configuration);
+    QCOMPARE(aligned.facts.correlation->n, std::size_t{4});
+    QCOMPARE(aligned.facts.correlation->missing_skipped, std::size_t{2});
+    const datalab::domain::PlotSpec* scatter = nullptr;
+    for (const auto& plot : aligned.plots) {
+        if (plot.kind == datalab::domain::PlotKind::scatter) {
+            scatter = &plot;
+        }
+    }
+    QVERIFY(scatter != nullptr);
+    QCOMPARE(scatter->source_rows.size(), std::size_t{4});
+    QVERIFY(std::find(scatter->source_rows.cbegin(), scatter->source_rows.cend(),
+                      std::size_t{0}) == scatter->source_rows.cend());
+    QVERIFY(std::find(scatter->source_rows.cbegin(), scatter->source_rows.cend(),
+                      std::size_t{1}) == scatter->source_rows.cend());
+    QCOMPARE(scatter->source_rows.front(), std::size_t{2});
+
+    datalab::domain::DataTable three_table;
+    three_table.columns = {"X", "Y", "Z"};
+    three_table.rows = {{"1", "2", "3"}, {"2", "3", "4"}, {"3", "4", "5"}, {"4", "5", "6"}};
+    datalab::domain::AnalysisConfiguration three_config;
+    three_config.variable_columns = {0, 1, 2};
+    const auto three = datalab::application::AnalysisService::correlation(
+        three_table, three_config);
+    QVERIFY(std::any_of(three.plots.cbegin(), three.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::matrix
+                                && plot.matrix_labels.size() == 3
+                                && plot.source_rows.size() == 4;
+                        }));
 
     configuration.variable_columns = {0};
     configuration.by_column = 2;
+    table.columns = {"X", "Y", "Group"};
+    table.rows = {
+        {"1", "2", "A"}, {"2", "3", "A"}, {"3", "5", "B"},
+        {"4", "7", "B"}, {"5", "9", "C"}, {"6", "11", "C"}};
     const auto anova = datalab::application::AnalysisService::one_way_anova(
         table, configuration);
     QCOMPARE(anova.tables.size(), std::size_t{3});
+}
+
+void QualityStatisticsTest::buildsDescriptiveBoxAndIndividualPlots()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"X", "Group"};
+    table.rows = {{"1", "A"}, {"*", "A"}, {"3", "B"}, {"4", "B"}, {"5", "B"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    const auto page = datalab::application::AnalysisService::descriptive(table, configuration);
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::boxplot
+                                && plot.box_labels.size() == 1;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::scatter
+                                && plot.values.size() == 4
+                                && plot.source_rows.size() == 4
+                                && std::find(plot.source_rows.cbegin(), plot.source_rows.cend(),
+                                             std::size_t{1}) == plot.source_rows.cend();
+                        }));
+    QVERIFY(std::any_of(page.diagnostics.cbegin(), page.diagnostics.cend(),
+                        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+                            return diagnostic.code == "missing_values";
+                        }));
+    auto interpreted = page;
+    datalab::application::InterpretationService::enrich(interpreted);
+    const std::string joined = [&]() {
+        std::string text;
+        for (const auto& section : interpreted.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                text += bullet;
+            }
+        }
+        return text;
+    }();
+    QVERIFY(joined.find("不能写成过程合格") != std::string::npos);
+
+    configuration.by_column = 1;
+    const auto grouped = datalab::application::AnalysisService::descriptive(
+        table, configuration);
+    QVERIFY(std::any_of(grouped.plots.cbegin(), grouped.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::boxplot
+                                && plot.box_labels.size() == 2;
+                        }));
+}
+
+void QualityStatisticsTest::buildsNormalityOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"X"};
+    table.rows = {
+        {"9"}, {"1"}, {"2"}, {"3"}, {"4"}, {"5"}, {"6"}, {"7"}, {"8"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    const auto page = datalab::application::AnalysisService::normality_test(
+        table, configuration);
+    QVERIFY(page.facts.normality.has_value());
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::probability
+                                && plot.source_rows.size() == 9
+                                && plot.source_rows.front() == 1
+                                && plot.values.front() == 1.0;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::histogram
+                                && plot.source_rows.size() == 9
+                                && plot.values.size() == 9;
+                        }));
+    auto interpreted = page;
+    datalab::application::InterpretationService::enrich(interpreted);
+    const std::string joined = [&]() {
+        std::string text;
+        for (const auto& section : interpreted.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                text += bullet;
+            }
+        }
+        return text;
+    }();
+    QVERIFY(joined.find("已正态") == std::string::npos
+        || joined.find("不能写成数据已正态") != std::string::npos);
+    QVERIFY(joined.find("数据已正态") == std::string::npos);
+
+    table.rows.push_back({"*"});
+    const auto missing = datalab::application::AnalysisService::normality_test(
+        table, configuration);
+    QCOMPARE(missing.facts.normality->missing_count, std::size_t{1});
+}
+
+void QualityStatisticsTest::buildsOneWayAnovaIntervalAndResidualPlots()
+{
+    // # source: formula_reference — pooled CI uses sqrt(MSE/n), not group s.
+    datalab::domain::DataTable table;
+    table.columns = {"Y", "Group"};
+    table.rows = {
+        {"1", "A"}, {"2", "A"}, {"3", "B"}, {"4", "B"}, {"5", "C"}, {"6", "C"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.by_column = 1;
+    configuration.inference.confidence_level = 0.95;
+    const auto page = datalab::application::AnalysisService::one_way_anova(
+        table, configuration);
+    QCOMPARE(page.tables.size(), std::size_t{4});
+    QCOMPARE(page.tables[2].title, std::string{"Tukey 同时比较"});
+    QCOMPARE(page.tables[3].title, std::string{"Grouping Information"});
+    QVERIFY(std::find(page.tables[2].headers.cbegin(), page.tables[2].headers.cend(),
+                      std::string{"下限"})
+            != page.tables[2].headers.cend());
+    QVERIFY(std::find(page.tables[2].headers.cbegin(), page.tables[2].headers.cend(),
+                      std::string{"上限"})
+            != page.tables[2].headers.cend());
+    QVERIFY(std::find(page.tables[2].headers.cbegin(), page.tables[2].headers.cend(),
+                      std::string{"同时置信区间"})
+            == page.tables[2].headers.cend());
+    QVERIFY(page.facts.anova.has_value());
+    QCOMPARE(page.facts.anova->tukey_interval_columns, std::string{"lower_upper"});
+    QVERIFY(page.facts.anova->tukey_grouping_available);
+    QVERIFY(page.facts.anova->grouping_letter_count >= 1);
+    QVERIFY(std::any_of(page.tables[3].rows.cbegin(), page.tables[3].rows.cend(),
+                        [](const std::vector<std::string>& row) {
+                            return row.size() >= 4 && !row[3].empty();
+                        }));
+    // # source: formula_reference — equal-mean groups share a letter; separated means do not
+    {
+        const auto equal = datalab::domain::statistics::tukey_grouping_letters(
+            {"A", "B", "C"}, {5.0, 5.0, 5.0}, {4, 4, 4}, {});
+        QCOMPARE(equal.size(), std::size_t{3});
+        QCOMPARE(equal[0].grouping, equal[1].grouping);
+        QCOMPARE(equal[1].grouping, equal[2].grouping);
+        datalab::domain::statistics::TukeyComparison ab;
+        ab.first_label = "A";
+        ab.second_label = "B";
+        ab.significant = true;
+        datalab::domain::statistics::TukeyComparison ac;
+        ac.first_label = "A";
+        ac.second_label = "C";
+        ac.significant = true;
+        datalab::domain::statistics::TukeyComparison bc;
+        bc.first_label = "B";
+        bc.second_label = "C";
+        bc.significant = false;
+        const auto separated = datalab::domain::statistics::tukey_grouping_letters(
+            {"A", "B", "C"}, {10.0, 1.0, 1.1}, {5, 5, 5}, {ab, ac, bc});
+        QCOMPARE(separated.size(), std::size_t{3});
+        QCOMPARE(separated[0].label, std::string{"A"});
+        QVERIFY(separated[0].grouping.find('A') != std::string::npos);
+        QVERIFY(separated[1].grouping.find(separated[0].grouping.front())
+                == std::string::npos);
+        QVERIFY(separated[2].grouping.find(separated[0].grouping.front())
+                == std::string::npos);
+        QVERIFY(separated[1].grouping.find(separated[2].grouping.front())
+                != std::string::npos
+                || separated[2].grouping.find(separated[1].grouping.front())
+                    != std::string::npos);
+    }
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.title == "Tukey 差值同时区间"
+                                && plot.kind == datalab::domain::PlotKind::interval;
+                        }));
+    QVERIFY(std::any_of(page.tables[0].headers.cbegin(), page.tables[0].headers.cend(),
+                        [](const std::string& header) {
+                            return header.find("CI") != std::string::npos;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::interval
+                                && plot.title == "区间图"
+                                && plot.interval_lower.size() == 3;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.title == "残差与拟合值";
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.title == "残差与观测顺序"
+                                && plot.source_rows.size() == 6
+                                && plot.source_rows.front() == 0;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::probability;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.title == "残差直方图"
+                                && plot.kind == datalab::domain::PlotKind::histogram
+                                && !plot.histogram_counts.empty()
+                                && plot.histogram_edges.size() == plot.histogram_counts.size() + 1
+                                && plot.source_rows.size() == 6;
+                        }));
+    const datalab::domain::PlotSpec* interval = nullptr;
+    for (const auto& plot : page.plots) {
+        if (plot.kind == datalab::domain::PlotKind::interval) {
+            interval = &plot;
+        }
+    }
+    QVERIFY(interval != nullptr);
+    const double mse = 0.5;
+    const double critical = datalab::domain::statistics::student_t_quantile(0.975, 3.0);
+    const double half = critical * std::sqrt(mse / 2.0);
+    QVERIFY(std::abs(interval->values.front() - 1.5) < 1.0e-12);
+    QVERIFY(std::abs(interval->interval_lower.front() - (1.5 - half)) < 1.0e-9);
+    QVERIFY(std::abs(interval->interval_upper.front() - (1.5 + half)) < 1.0e-9);
 }
 
 void QualityStatisticsTest::calculatesInferenceExtensions()
@@ -537,6 +879,173 @@ void QualityStatisticsTest::calculatesInferenceExtensions()
     QVERIFY(chi_square.pearson_statistic > 0.0);
 }
 
+void QualityStatisticsTest::buildsChiSquareServiceOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Row", "Col"};
+    table.rows = {
+        {"A", "X"}, {"A", "X"}, {"A", "Y"},
+        {"B", "X"}, {"B", "Y"}, {"B", "Y"},
+        {"*", "X"}, {"A", "*"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.inference.row_category_column = 0;
+    configuration.inference.column_category_column = 1;
+    const auto page =
+        datalab::application::AnalysisService::chi_square(table, configuration);
+    QCOMPARE(page.method_name, std::string{"Chi-Square Association"});
+    QCOMPARE(page.tables.size(), std::size_t{3});
+    QCOMPARE(page.tables[0].title, std::string{"观察频数"});
+    QCOMPARE(page.tables[1].title, std::string{"卡方检验"});
+    QCOMPARE(page.tables[2].title, std::string{"单元格统计"});
+    QVERIFY(page.parameter_summary.find("N* = 2") != std::string::npos);
+    QVERIFY(page.facts.chi_square.has_value());
+    QCOMPARE(page.facts.chi_square->total_count, std::size_t{6});
+    QCOMPARE(page.facts.chi_square->missing_count, std::size_t{2});
+    QCOMPARE(page.facts.chi_square->row_count, std::size_t{2});
+    QCOMPARE(page.facts.chi_square->column_count, std::size_t{2});
+    QVERIFY(page.facts.chi_square->likelihood_ratio_statistic.has_value());
+    QVERIFY(page.tables[0].headers.back() == "合计");
+    QVERIFY(page.tables[0].rows.back().front() == "合计");
+    QCOMPARE(page.plots.size(), std::size_t{1});
+    QCOMPARE(page.plots.front().kind, datalab::domain::PlotKind::heatmap);
+    QCOMPARE(page.plots.front().title, std::string{"观察频数热图"});
+    QCOMPARE(page.plots.front().categories.size(), std::size_t{2});
+    QCOMPARE(page.plots.front().matrix_labels.size(), std::size_t{2});
+    QCOMPARE(page.plots.front().matrix_values.size(), std::size_t{2});
+    QVERIFY(page.facts.chi_square->plot_available);
+
+    datalab::domain::OutputPage interpreted = page;
+    datalab::application::InterpretationService::enrich(interpreted);
+    bool mentioned_independence = false;
+    for (const auto& section : interpreted.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("因果") == std::string::npos
+                    || bullet.find("不能证明因果关系") != std::string::npos);
+            QVERIFY(bullet.find("已证明") == std::string::npos);
+            QVERIFY(bullet.find("显著相关") == std::string::npos);
+            if (bullet.find("不能证明因果关系") != std::string::npos) {
+                mentioned_independence = true;
+            }
+        }
+    }
+    QVERIFY(mentioned_independence);
+}
+
+void QualityStatisticsTest::buildsNonparametricServiceOutputContract()
+{
+    datalab::domain::DataTable mann_table;
+    mann_table.columns = {"A", "B"};
+    mann_table.rows = {{"1", "4"}, {"2", "5"}, {"*", "6"}, {"3", "7"}};
+    datalab::domain::AnalysisConfiguration mann_config;
+    mann_config.variable_columns = {0, 1};
+    const auto mann_page =
+        datalab::application::AnalysisService::mann_whitney(mann_table, mann_config);
+    QCOMPARE(mann_page.plots.size(), std::size_t{2});
+    QVERIFY(std::any_of(mann_page.plots.cbegin(), mann_page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::boxplot
+                                && plot.box_labels.size() == 2;
+                        }));
+    const datalab::domain::PlotSpec* individuals = nullptr;
+    for (const auto& plot : mann_page.plots) {
+        if (plot.kind == datalab::domain::PlotKind::scatter
+            && plot.title == "个体值图") {
+            individuals = &plot;
+            break;
+        }
+    }
+    QVERIFY(individuals != nullptr);
+    QCOMPARE(individuals->values.size(), std::size_t{7});
+    QCOMPARE(individuals->source_rows.size(), std::size_t{7});
+    QVERIFY(std::find(individuals->source_rows.cbegin(), individuals->source_rows.cend(),
+                      std::size_t{2}) == individuals->source_rows.cend());
+    QVERIFY(mann_page.facts.nonparametric.has_value());
+    QCOMPARE(mann_page.facts.nonparametric->group_count, std::size_t{2});
+    QCOMPARE(mann_page.facts.nonparametric->plot_point_count, std::size_t{7});
+    QCOMPARE(mann_page.facts.nonparametric->missing_count, std::size_t{1});
+    QVERIFY(mann_page.facts.nonparametric->location_estimate.has_value());
+    QVERIFY(mann_page.facts.nonparametric->ci_lower.has_value());
+    QVERIFY(mann_page.facts.nonparametric->ci_upper.has_value());
+
+    datalab::domain::DataTable wilcoxon_table;
+    wilcoxon_table.columns = {"Before", "After"};
+    wilcoxon_table.rows = {{"1", "2"}, {"3", "4"}, {"*", "5"}, {"5", "6"}};
+    datalab::domain::AnalysisConfiguration wilcoxon_config;
+    wilcoxon_config.variable_columns = {0, 1};
+    const auto wilcoxon_page = datalab::application::AnalysisService::wilcoxon_signed_rank(
+        wilcoxon_table, wilcoxon_config);
+    QVERIFY(wilcoxon_page.plots.size() >= std::size_t{3});
+    QVERIFY(std::any_of(wilcoxon_page.diagnostics.cbegin(), wilcoxon_page.diagnostics.cend(),
+                        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+                            return diagnostic.code == "missing_values";
+                        }));
+    const datalab::domain::PlotSpec* paired = nullptr;
+    for (const auto& plot : wilcoxon_page.plots) {
+        if (plot.title == "配对测量散点图") {
+            paired = &plot;
+            break;
+        }
+    }
+    QVERIFY(paired != nullptr);
+    QCOMPARE(paired->source_rows.size(), paired->values.size());
+    QVERIFY(wilcoxon_page.facts.nonparametric.has_value());
+    QCOMPARE(wilcoxon_page.facts.nonparametric->plot_point_count, std::size_t{6});
+
+    datalab::domain::DataTable kruskal_table;
+    kruskal_table.columns = {"Y", "Group"};
+    kruskal_table.rows = {{"1", "A"}, {"2", "A"}, {"4", "B"}, {"5", "B"}, {"7", "C"}, {"8", "C"}};
+    datalab::domain::AnalysisConfiguration kruskal_config;
+    kruskal_config.variable_columns = {0};
+    kruskal_config.by_column = 1;
+    const auto kruskal_page = datalab::application::AnalysisService::kruskal_wallis(
+        kruskal_table, kruskal_config);
+    QCOMPARE(kruskal_page.plots.size(), std::size_t{2});
+    QVERIFY(kruskal_page.facts.nonparametric.has_value());
+    QCOMPARE(kruskal_page.facts.nonparametric->group_count, std::size_t{3});
+    QCOMPARE(kruskal_page.facts.nonparametric->plot_point_count, std::size_t{6});
+    QVERIFY(kruskal_page.facts.nonparametric->dunn_available);
+    QCOMPARE(kruskal_page.facts.nonparametric->posthoc_pair_count, std::size_t{3});
+    QVERIFY(std::any_of(
+        kruskal_page.tables.cbegin(), kruskal_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Dunn 成对比较";
+        }));
+    QVERIFY(std::any_of(
+        kruskal_page.tables.cbegin(), kruskal_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Grouping Information (Dunn)";
+        }));
+    for (const auto& plot : kruskal_page.plots) {
+        if (plot.kind == datalab::domain::PlotKind::scatter && plot.title == "个体值图") {
+            QCOMPARE(plot.source_rows.size(), plot.values.size());
+            QVERIFY(!plot.source_rows.empty());
+        }
+    }
+}
+
+void QualityStatisticsTest::calculatesMckeanRyanConfidenceInterval()
+{
+    // # source: formula_reference
+    const auto separated = datalab::domain::statistics::mann_whitney(
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+        {11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0});
+    QVERIFY(separated.location_estimate.has_value());
+    QVERIFY(separated.ci_lower.has_value());
+    QVERIFY(separated.ci_upper.has_value());
+    QVERIFY(*separated.ci_lower <= *separated.location_estimate);
+    QVERIFY(*separated.location_estimate <= *separated.ci_upper);
+    QVERIFY(*separated.ci_upper - *separated.ci_lower > 0.0);
+
+    const auto tied = datalab::domain::statistics::mann_whitney(
+        {1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0},
+        {2.0, 3.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
+    QVERIFY(tied.location_estimate.has_value());
+    QVERIFY(tied.ci_lower.has_value());
+    QVERIFY(tied.ci_upper.has_value());
+    QVERIFY(*tied.ci_lower <= *tied.location_estimate);
+    QVERIFY(*tied.location_estimate <= *tied.ci_upper);
+}
+
 void QualityStatisticsTest::calculatesRegressionAndBoxCox()
 {
     const auto regression = datalab::domain::statistics::fit_linear_regression(
@@ -553,6 +1062,35 @@ void QualityStatisticsTest::calculatesRegressionAndBoxCox()
     QVERIFY(box_cox.transformed_values.size() == 4);
     QVERIFY(box_cox.lambdas.size() > 100);
     QVERIFY(box_cox.transformed_standard_deviation > 0.0);
+}
+
+void QualityStatisticsTest::buildsBoxCoxServiceOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Y"};
+    table.rows = {{"1.0"}, {"*"}, {"2.0"}, {"4.0"}, {"8.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.specifications.lower = 0.5;
+    configuration.specifications.upper = 10.0;
+    const auto page = datalab::application::AnalysisService::box_cox(table, configuration);
+    QVERIFY(page.facts.box_cox.has_value());
+    QCOMPARE(page.facts.box_cox->n, std::size_t{4});
+    QCOMPARE(page.facts.box_cox->missing_count, std::size_t{1});
+    QVERIFY(page.plots.size() >= std::size_t{3});
+    QCOMPARE(page.plots[0].title, std::string("Box-Cox λ 选择诊断"));
+    QCOMPARE(page.plots[1].title, std::string("变换前正态概率图"));
+    QCOMPARE(page.plots[2].title, std::string("变换后正态概率图"));
+    QCOMPARE(page.plots[1].kind, datalab::domain::PlotKind::probability);
+    QCOMPARE(page.plots[1].source_rows, (std::vector<std::size_t>{0, 2, 3, 4}));
+    QCOMPARE(page.plots[2].source_rows, page.plots[1].source_rows);
+    QVERIFY(std::any_of(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "变换后过程能力";
+        }));
+    QCOMPARE(page.method_metadata.estimation_method, std::string("box_cox_grid"));
+    QCOMPARE(page.method_metadata.parameter_source, std::string("estimated"));
 }
 
 void QualityStatisticsTest::regressionAnovaSeqAdjSs()
@@ -629,6 +1167,27 @@ void QualityStatisticsTest::calculatesGageRrAndNonparametric()
     QVERIFY(kruskal.groups[0].z_value.has_value());
     QVERIFY(kruskal.p_value_unadjusted.has_value());
     QVERIFY(kruskal.small_sample_warning);
+    QCOMPARE(kruskal.dunn_comparisons.size(), std::size_t{3});
+    // # source: formula_reference — fully separated ranks: A vs C must be significant
+    bool saw_ac = false;
+    for (const auto& comparison : kruskal.dunn_comparisons) {
+        if ((comparison.first_label == "A" && comparison.second_label == "C")
+            || (comparison.first_label == "C" && comparison.second_label == "A")) {
+            saw_ac = true;
+            QVERIFY(comparison.significant);
+            QVERIFY(comparison.adjusted_p_value.has_value());
+            QVERIFY(*comparison.adjusted_p_value <= 0.05);
+        }
+    }
+    QVERIFY(saw_ac);
+
+    const auto equal_groups = datalab::domain::statistics::kruskal_wallis(
+        {{1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}},
+        {"X", "Y", "Z"});
+    QCOMPARE(equal_groups.dunn_comparisons.size(), std::size_t{3});
+    for (const auto& comparison : equal_groups.dunn_comparisons) {
+        QVERIFY(!comparison.significant);
+    }
 }
 
 void QualityStatisticsTest::calculatesTimeSeries()
@@ -661,6 +1220,188 @@ void QualityStatisticsTest::calculatesTwoFactorAnovaAndArima()
     QVERIFY(arima.size() > 3);
     QVERIFY(arima[0].forecasts.size() == 3);
     QVERIFY(std::isfinite(arima[0].aicc));
+}
+
+void QualityStatisticsTest::buildsArimaServiceOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Time", "Value"};
+    table.rows = {
+        {"1", "100.0"}, {"2", "101.2"}, {"3", "100.8"}, {"4", "102.1"},
+        {"5", "103.0"}, {"6", "102.7"}, {"7", "104.2"}, {"8", "105.1"},
+        {"9", "104.8"}, {"10", "106.0"}, {"11", "bad"}, {"12", "106.8"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.time_series.arima_time_column = 0;
+    configuration.time_series.arima_value_column = 1;
+    configuration.time_series.arima_differencing = 1;
+    configuration.time_series.arima_selection_criterion = "aicc";
+    configuration.time_series.forecast_periods = 3;
+    const auto page = datalab::application::AnalysisService::arima(table, configuration);
+    QCOMPARE(page.method_name, std::string{"ARIMA"});
+    QVERIFY(page.tables.size() >= std::size_t{3});
+    QCOMPARE(page.tables[0].title, std::string{"候选模型比较"});
+    QCOMPARE(page.tables[1].title, std::string{"模型摘要与预测"});
+    QCOMPARE(page.tables[1].headers[4], std::string{"Forecast"});
+    QCOMPARE(page.tables[2].title, std::string{"拟合与预测明细"});
+    QCOMPARE(page.tables[2].headers[1], std::string{"原始行"});
+    QCOMPARE(page.tables[2].rows.front()[1], std::string{"1"});
+    QVERIFY(page.tables[2].rows.size() >= std::size_t{14});
+    QCOMPARE(page.tables[2].rows[10][1], std::string{"12"});
+    QVERIFY(page.tables[2].rows[11][2].empty());
+    QVERIFY(!page.tables[2].rows[11][5].empty());
+    QVERIFY(page.facts.forecast.has_value());
+    QVERIFY(page.facts.forecast->mape.has_value());
+    QCOMPARE(page.method_metadata.estimation_method, std::string{"arima_candidate_css"});
+    QCOMPARE(page.method_metadata.parameter_source, std::string{"estimated"});
+    QCOMPARE(page.method_metadata.valid_count, std::size_t{11});
+    QCOMPARE(page.method_metadata.missing_count, std::size_t{1});
+    QCOMPARE(page.method_metadata.source_rows.size(), std::size_t{11});
+}
+
+void QualityStatisticsTest::buildsSeasonalForecastingServiceOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Demand"};
+    table.rows = {
+        {"100"}, {"110"}, {"120"}, {"105"},
+        {"104"}, {"115"}, {""}, {"109"},
+        {"108"}, {"119"}, {"129"}, {"113"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.selection.measurement_column = 0;
+    configuration.time_series.seasonal_period = 4;
+    configuration.time_series.forecast_periods = 3;
+    configuration.time_series.seasonal_error_model = "additive";
+    configuration.time_series.seasonal_trend_model = "additive";
+    configuration.time_series.validation_horizon = 1;
+    configuration.time_series.validation_step = 1;
+    const auto page = datalab::application::AnalysisService::seasonal_forecasting(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Holt-Winters Seasonal Forecasting"});
+    QVERIFY(page.tables.size() >= std::size_t{4});
+    QCOMPARE(page.tables[0].title, std::string{"预测准确度"});
+    QCOMPARE(page.tables[1].title, std::string{"拟合与预测明细"});
+    QCOMPARE(page.tables[1].headers[5], std::string{"Forecast"});
+    bool has_sarima_table = false;
+    bool has_rolling_detail = false;
+    for (const auto& output_table : page.tables) {
+        if (output_table.title == "SARIMA 候选模型比较") {
+            has_sarima_table = true;
+        }
+        if (output_table.title == "Rolling-origin 明细") {
+            has_rolling_detail = true;
+        }
+    }
+    QVERIFY(has_sarima_table);
+    QVERIFY(has_rolling_detail);
+    QVERIFY(page.facts.forecast.has_value());
+    QVERIFY(page.facts.forecast->mape.has_value());
+    QCOMPARE(page.method_metadata.estimation_method, std::string{"holt_winters_additive"});
+    QCOMPARE(page.method_metadata.parameter_source, std::string{"specified"});
+    QCOMPARE(page.method_metadata.valid_count, std::size_t{11});
+    QCOMPARE(page.method_metadata.missing_count, std::size_t{1});
+    QCOMPARE(page.method_metadata.source_rows.size(), std::size_t{11});
+    QCOMPARE(page.plots.size(), std::size_t{1});
+    QCOMPARE(page.plots.front().series.size(), std::size_t{4});
+    bool has_sarima_diagnostic = false;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "sarima_css_approximation") {
+            has_sarima_diagnostic = true;
+            break;
+        }
+    }
+    QVERIFY(has_sarima_diagnostic);
+}
+
+void QualityStatisticsTest::buildsTimeSeriesDecompositionServiceOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Time", "Demand"};
+    table.rows = {
+        {"1", "100"}, {"2", "112"}, {"3", "125"}, {"4", "118"},
+        {"5", "108"}, {"6", "121"}, {"7", "133"}, {"8", "126"},
+        {"9", "bad"}, {"10", "130"}, {"11", "142"}, {"12", "136"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.time_series.decomposition_time_column = 0;
+    configuration.time_series.decomposition_value_column = 1;
+    configuration.time_series.decomposition_seasonal_period = 4;
+    configuration.time_series.decomposition_model = "additive";
+    configuration.time_series.forecast_periods = 3;
+    const auto page = datalab::application::AnalysisService::time_series_decomposition(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Time Series Decomposition"});
+    QVERIFY(page.tables.size() >= std::size_t{3});
+    QCOMPARE(page.tables[0].title, std::string{"预测准确度"});
+    QCOMPARE(page.tables[1].title, std::string{"拟合与预测明细"});
+    QCOMPARE(page.tables[1].headers[1], std::string{"原始行"});
+    QCOMPARE(page.tables[1].headers[9], std::string{"Forecast"});
+    QCOMPARE(page.tables[2].title, std::string{"季节指数"});
+    QVERIFY(page.facts.forecast.has_value());
+    QVERIFY(page.facts.forecast->mape.has_value());
+    QCOMPARE(page.method_metadata.estimation_method,
+             std::string{"classical_decomposition_cma_trend"});
+    QCOMPARE(page.method_metadata.parameter_source, std::string{"estimated"});
+    QCOMPARE(page.method_metadata.valid_count, std::size_t{11});
+    QCOMPARE(page.method_metadata.missing_count, std::size_t{1});
+    QCOMPARE(page.method_metadata.source_rows.size(), std::size_t{11});
+    QVERIFY(page.plots.size() >= std::size_t{1});
+    QVERIFY(page.plots.front().series.size() >= std::size_t{4});
+    bool has_missing_diagnostic = false;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "missing_values") {
+            has_missing_diagnostic = true;
+            break;
+        }
+    }
+    QVERIFY(has_missing_diagnostic);
+}
+
+void QualityStatisticsTest::buildsTimeSeriesSmoothingServiceOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Demand"};
+    table.rows = {{"100"}, {"108"}, {"116"}, {""}, {"123"}, {"131"}, {"126"}, {"134"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.time_series.smoothing_method = "double";
+    configuration.time_series.smoothing_alpha = 0.3;
+    configuration.time_series.smoothing_gamma = 0.2;
+    configuration.time_series.forecast_periods = 2;
+    const auto page = datalab::application::AnalysisService::time_series_smoothing(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Double Exponential Smoothing"});
+    QCOMPARE(page.tables.size(), std::size_t{2});
+    QCOMPARE(page.tables[0].title, std::string{"拟合与预测明细"});
+    QCOMPARE(page.tables[0].headers[1], std::string{"原始行"});
+    QCOMPARE(page.tables[1].title, std::string{"预测准确度"});
+    QVERIFY(page.facts.forecast.has_value());
+    QVERIFY(page.facts.forecast->mape.has_value());
+    QCOMPARE(page.method_metadata.estimation_method, std::string{"holt_linear_des"});
+    QCOMPARE(page.method_metadata.parameter_source, std::string{"estimated"});
+    QCOMPARE(page.method_metadata.valid_count, std::size_t{7});
+    QCOMPARE(page.method_metadata.missing_count, std::size_t{1});
+    QCOMPARE(page.method_metadata.source_rows.size(), std::size_t{7});
+    QCOMPARE(page.plots.size(), std::size_t{1});
+    QCOMPARE(page.plots.front().series.size(), std::size_t{4});
+}
+
+void QualityStatisticsTest::buildsSingleExponentialSmoothingServiceOutputContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Demand"};
+    table.rows = {{"100"}, {"105"}, {"110"}, {"115"}, {"120"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.time_series.smoothing_method = "single";
+    configuration.time_series.smoothing_alpha = 0.4;
+    configuration.time_series.forecast_periods = 2;
+    const auto page = datalab::application::AnalysisService::time_series_smoothing(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Single Exponential Smoothing"});
+    QCOMPARE(page.method_metadata.estimation_method, std::string{"single_exponential_ses"});
+    QCOMPARE(page.tables[0].title, std::string{"拟合与预测明细"});
+    QCOMPARE(page.tables[1].title, std::string{"预测准确度"});
+    QVERIFY(page.facts.forecast.has_value());
+    QCOMPARE(page.plots.front().series.size(), std::size_t{4});
 }
 
 void QualityStatisticsTest::calculatesNextBatchAlgorithms()
@@ -822,6 +1563,68 @@ void QualityStatisticsTest::calculatesNextBatchAlgorithms()
     QVERIFY(variance_page.facts.variance.has_value());
     QCOMPARE(variance_page.facts.variance->group_count, std::size_t{3});
 
+    // # source: formula_reference — Bonett two-sample; scaled group should lower p
+    const auto bonett_equal = datalab::domain::statistics::bonett_two_variances(
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+        {1.1, 2.1, 2.9, 4.2, 4.8, 6.1, 7.0, 8.2});
+    QVERIFY(bonett_equal.p_value.has_value());
+    QVERIFY(*bonett_equal.p_value > 0.05);
+    QVERIFY(bonett_equal.confidence_lower.has_value());
+    QVERIFY(bonett_equal.confidence_upper.has_value());
+    QVERIFY(*bonett_equal.confidence_lower < 1.0);
+    QVERIFY(*bonett_equal.confidence_upper > 1.0);
+    const auto bonett_unequal = datalab::domain::statistics::bonett_two_variances(
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+        {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0});
+    QVERIFY(bonett_unequal.p_value.has_value());
+    QVERIFY(*bonett_unequal.p_value < *bonett_equal.p_value);
+
+    datalab::domain::AnalysisConfiguration bonett_configuration;
+    bonett_configuration.inference.variance_first_column = 0;
+    bonett_configuration.inference.variance_group_column = 1;
+    bonett_configuration.inference.variance_test_method = "bonett";
+    const auto bonett_k_page = datalab::application::AnalysisService::variance_test(
+        variance_table, bonett_configuration);
+    QVERIFY(std::any_of(
+        bonett_k_page.diagnostics.cbegin(), bonett_k_page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "bonett_requires_two_groups";
+        }));
+
+    // # source: formula_reference — Bartlett k groups; scaled group lowers p
+    const auto bartlett_equal = datalab::domain::statistics::bartlett_k_groups({
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+        {1.1, 2.1, 2.9, 4.2, 4.8, 6.1, 7.0, 8.2},
+        {0.9, 1.9, 3.1, 3.8, 5.2, 5.9, 7.1, 7.8}});
+    QVERIFY(bartlett_equal.p_value.has_value());
+    QVERIFY(*bartlett_equal.p_value > 0.05);
+    QCOMPARE(bartlett_equal.group_count, std::size_t{3});
+    QCOMPARE(bartlett_equal.degrees_of_freedom, 2.0);
+    const auto bartlett_unequal = datalab::domain::statistics::bartlett_k_groups({
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0},
+        {1.1, 2.1, 2.9, 4.2, 4.8, 6.1, 7.0, 8.2},
+        {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0}});
+    QVERIFY(bartlett_unequal.p_value.has_value());
+    QVERIFY(*bartlett_unequal.p_value < *bartlett_equal.p_value);
+    const auto bartlett_zero = datalab::domain::statistics::bartlett_k_groups({
+        {1.0, 1.0, 1.0}, {2.0, 3.0, 4.0}});
+    QVERIFY(std::any_of(
+        bartlett_zero.diagnostics.cbegin(), bartlett_zero.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "zero_group_variance";
+        }));
+
+    datalab::domain::AnalysisConfiguration bartlett_configuration;
+    bartlett_configuration.inference.variance_first_column = 0;
+    bartlett_configuration.inference.variance_group_column = 1;
+    bartlett_configuration.inference.variance_test_method = "bartlett";
+    const auto bartlett_page = datalab::application::AnalysisService::variance_test(
+        variance_table, bartlett_configuration);
+    QCOMPARE(bartlett_page.tables.front().rows.front().front(), std::string{"Bartlett"});
+    QVERIFY(bartlett_page.facts.variance.has_value());
+    QCOMPARE(bartlett_page.facts.variance->method, std::string{"Bartlett"});
+    QCOMPARE(bartlett_page.facts.variance->group_count, std::size_t{3});
+
     datalab::domain::statistics::ResponseModel response_model;
     response_model.response_name = "Yield";
     response_model.factor_names = {"Temperature", "Pressure"};
@@ -861,7 +1664,7 @@ void QualityStatisticsTest::buildsDoeFactorialServiceOutput()
     QCOMPARE(design_page.tables.front().headers[3], std::string{"Temperature"});
     QCOMPARE(design_page.tables.front().rows.size(), std::size_t{4});
 
-    // 响应分析分支：8 运行（4 角点 ×2 次重复，精确线性响应）→ 4 张表 + 3 张图。
+    // 响应分析分支：8 运行（4 角点 ×2 次重复，精确线性响应）→ 5 张表 + 11 张图。
     datalab::domain::DataTable table;
     table.columns = {"A", "B", "Y"};
     table.rows = {
@@ -884,7 +1687,10 @@ void QualityStatisticsTest::buildsDoeFactorialServiceOutput()
     QCOMPARE(page.tables[3].title, std::string{"纯误差与失拟"});
     QCOMPARE(page.tables[4].title, std::string{"残差诊断"});
     QCOMPARE(page.tables[4].rows.size(), std::size_t{8});
-    QCOMPARE(page.plots.size(), std::size_t{3});
+    QCOMPARE(page.plots.size(), std::size_t{11});
+    QCOMPARE(page.plots[0].kind, datalab::domain::PlotKind::pareto);
+    QVERIFY(page.plots[1].title.find("立方") != std::string::npos);
+    QCOMPARE(page.plots[7].title, std::string("残差与拟合值"));
     QVERIFY(page.parameter_summary.find("有效运行数 = 8") != std::string::npos);
     // 系数表项名（doe_pages 组装内容）：Constant + 因子名（column_label 带列号前缀）。
     QCOMPARE(page.tables[0].rows[0][0], std::string{"Constant"});
@@ -906,7 +1712,94 @@ void QualityStatisticsTest::buildsPairedTServiceOutput()
     QCOMPARE(page.tables.front().title, std::string{"配对差值统计"});
     QCOMPARE(page.tables.front().rows.size(), std::size_t{1});
     QCOMPARE(page.tables.front().rows.front()[0], std::string{"4"});
-    QCOMPARE(page.plots.size(), std::size_t{1});
+    QCOMPARE(page.plots.size(), std::size_t{2});
+    QCOMPARE(page.plots.front().kind, datalab::domain::PlotKind::scatter);
+    QCOMPARE(page.plots.front().source_rows.size(), std::size_t{4});
+    QCOMPARE(page.plots.front().source_rows.front(), std::size_t{0});
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::interval
+                                && plot.values.size() == 1;
+                        }));
+    QVERIFY(page.facts.t_test.has_value());
+    QCOMPARE(page.facts.t_test->kind, std::string{"paired"});
+
+    table.rows = {{"1", "2"}, {"*", "3"}, {"3", "4"}, {"4", "5"}};
+    const auto missing_page = datalab::application::AnalysisService::paired_t(
+        table, configuration);
+    QCOMPARE(missing_page.plots.front().source_rows.size(), std::size_t{3});
+    QVERIFY(std::find(missing_page.plots.front().source_rows.cbegin(),
+                      missing_page.plots.front().source_rows.cend(),
+                      std::size_t{1})
+            == missing_page.plots.front().source_rows.cend());
+}
+
+void QualityStatisticsTest::buildsOneAndTwoSampleTIntervalPlots()
+{
+    // # source: formula_reference — interval center is mean; whiskers use mu0 + difference CI.
+    datalab::domain::DataTable table;
+    table.columns = {"X", "Y"};
+    table.rows = {{"1", "10"}, {"2", "12"}, {"3", "11"}, {"4", "13"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.inference.hypothesis_mean = 0.0;
+    configuration.inference.confidence_level = 0.95;
+    configuration.inference.alternative = "two-sided";
+    const auto one = datalab::application::AnalysisService::one_sample_t(table, configuration);
+    QVERIFY(one.facts.t_test.has_value());
+    QCOMPARE(one.facts.t_test->kind, std::string{"one_sample"});
+    QVERIFY(std::any_of(one.plots.cbegin(), one.plots.cend(),
+                        [&](const datalab::domain::PlotSpec& plot) {
+                            return plot.kind == datalab::domain::PlotKind::interval
+                                && plot.values.size() == 1
+                                && !plot.source_rows.empty()
+                                && plot.interval_lower.size() == 1
+                                && one.facts.t_test->ci_lower.has_value()
+                                && qAbs(plot.interval_lower.front()
+                                        - (*one.facts.t_test->ci_lower
+                                           + *configuration.inference.hypothesis_mean))
+                                    < 1.0e-9;
+                        }));
+
+    configuration.inference.alternative = "greater";
+    const auto one_sided = datalab::application::AnalysisService::one_sample_t(
+        table, configuration);
+    QVERIFY(std::none_of(one_sided.plots.cbegin(), one_sided.plots.cend(),
+                         [](const datalab::domain::PlotSpec& plot) {
+                             return plot.kind == datalab::domain::PlotKind::interval;
+                         }));
+
+    configuration.inference.alternative = "two-sided";
+    configuration.variable_columns = {0, 1};
+    configuration.inference.variance_method = "welch";
+    const auto welch = datalab::application::AnalysisService::two_sample_t(
+        table, configuration);
+    QVERIFY(welch.facts.t_test.has_value());
+    QCOMPARE(welch.facts.t_test->variance_method, std::string{"welch"});
+    const datalab::domain::PlotSpec* welch_interval = nullptr;
+    for (const auto& plot : welch.plots) {
+        if (plot.kind == datalab::domain::PlotKind::interval) {
+            welch_interval = &plot;
+        }
+    }
+    QVERIFY(welch_interval != nullptr);
+    QCOMPARE(welch_interval->values.size(), std::size_t{2});
+    QCOMPARE(welch_interval->source_rows.size(), std::size_t{2});
+
+    configuration.inference.variance_method = "pooled";
+    const auto pooled = datalab::application::AnalysisService::two_sample_t(
+        table, configuration);
+    const datalab::domain::PlotSpec* pooled_interval = nullptr;
+    for (const auto& plot : pooled.plots) {
+        if (plot.kind == datalab::domain::PlotKind::interval) {
+            pooled_interval = &plot;
+        }
+    }
+    QVERIFY(pooled_interval != nullptr);
+    QVERIFY(qAbs(pooled_interval->interval_lower[0] - welch_interval->interval_lower[0])
+            > 1.0e-12
+        || qAbs(pooled_interval->interval_upper[0] - welch_interval->interval_upper[0])
+            > 1.0e-12);
 }
 
 void QualityStatisticsTest::buildsRegressionServiceOutput()
@@ -918,12 +1811,20 @@ void QualityStatisticsTest::buildsRegressionServiceOutput()
     configuration.variable_columns = {1, 0};
     const auto page = datalab::application::AnalysisService::regression(table, configuration);
     QCOMPARE(page.method_name, std::string{"Linear Regression"});
-    QCOMPARE(page.tables.size(), std::size_t{4});
+    QCOMPARE(page.tables.size(), std::size_t{6});
     QCOMPARE(page.tables[0].title, std::string{"模型摘要"});
     QCOMPARE(page.tables[1].title, std::string{"系数"});
+    QCOMPARE(page.tables[2].title, std::string{"回归方差分析"});
+    QCOMPARE(page.tables[3].title, std::string{"假设检查"});
+    QCOMPARE(page.tables[4].title, std::string{"拟合与诊断"});
     QCOMPARE(page.tables[1].rows.size(), std::size_t{2});
-    QCOMPARE(page.plots.size(), std::size_t{4});
+    QCOMPARE(page.plots.size(), std::size_t{5});
+    QCOMPARE(page.plots.front().title, std::string{"拟合线图"});
     QCOMPARE(page.plots.back().title, std::string{"残差正态概率图"});
+    QCOMPARE(page.tables[3].rows.size(), std::size_t{3});
+    QCOMPARE(page.tables[4].headers[2], std::string{"响应"});
+    QCOMPARE(page.tables[4].headers[7], std::string{"学生化残差"});
+    QVERIFY(page.facts.regression.has_value());
     // 完全线性拟合：R-sq = 1。
     QCOMPARE(page.tables[0].rows.front()[1], std::string{"1"});
 }
@@ -946,10 +1847,13 @@ void QualityStatisticsTest::buildsLogisticServiceOutput()
     QCOMPARE(page.tables[1].title, std::string{"拟合优度"});
     QCOMPARE(page.tables[2].title, std::string{"系数与 Odds Ratio"});
     QCOMPARE(page.tables[3].title, std::string{"拟合与残差"});
+    QCOMPARE(page.tables[2].headers.back(), std::string{"VIF"});
     QCOMPARE(page.tables[3].rows.size(), std::size_t{8});
     QCOMPARE(page.tables[3].headers.back(), std::string{"影响点"});
     QCOMPARE(page.tables[1].rows.front()[0], std::string{"Hosmer-Lemeshow"});
     QCOMPARE(page.tables[1].rows.front().back(), std::string{"not_computed"});
+    QVERIFY(page.facts.logistic.has_value());
+    QVERIFY(page.facts.logistic->leverage_threshold.has_value());
     QCOMPARE(page.plots.size(), std::size_t{1});
     QVERIFY(page.tables[0].rows.front()[2] == std::string{"是"}
             || page.tables[0].rows.front()[2] == std::string{"否"});
@@ -976,6 +1880,8 @@ void QualityStatisticsTest::computesLogisticHosmerLemeshowWhenSampleLarge()
     QVERIFY(large.hosmer_lemeshow_statistic.has_value());
     QVERIFY(large.hosmer_lemeshow_p.has_value());
     QVERIFY(large.hosmer_lemeshow_df.has_value());
+    QVERIFY(large.maximum_vif.has_value());
+    QVERIFY(large.leverage_threshold > 0.0);
     QCOMPARE(*large.hosmer_lemeshow_df, large.hosmer_lemeshow_groups - 2);
     QVERIFY(large.hosmer_lemeshow_groups >= 6);
 }
@@ -1084,6 +1990,101 @@ void QualityStatisticsTest::buildsBetweenWithinCapabilityServiceOutput()
             || !missing_subgroup.tables.empty());
 }
 
+void QualityStatisticsTest::buildsCapabilityHistogramContract()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Y"};
+    table.rows = {
+        {"4.8"}, {"*"}, {"5.0"}, {"5.2"}, {"4.9"}, {"5.1"}, {"5.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.specifications.lower = 4.0;
+    configuration.specifications.upper = 6.0;
+    configuration.specifications.target = 5.0;
+    const auto page =
+        datalab::application::AnalysisService::capability(table, configuration);
+    QVERIFY(!page.plots.empty());
+    const auto hist = std::find_if(
+        page.plots.cbegin(), page.plots.cend(),
+        [](const datalab::domain::PlotSpec& plot) {
+            return plot.kind == datalab::domain::PlotKind::histogram;
+        });
+    QVERIFY(hist != page.plots.cend());
+    QCOMPARE(hist->title, std::string{"过程能力直方图"});
+    QVERIFY(hist->lsl.has_value());
+    QVERIFY(hist->usl.has_value());
+    QVERIFY(hist->target.has_value());
+    QCOMPARE(*hist->target, 5.0);
+    QVERIFY(hist->process_mean.has_value());
+    QVERIFY(hist->within_sigma.has_value());
+    QVERIFY(hist->overall_sigma.has_value());
+    QCOMPARE(hist->source_rows, (std::vector<std::size_t>{0, 2, 3, 4, 5, 6}));
+    QCOMPARE(hist->series.size(), std::size_t{2});
+    QCOMPARE(hist->series[0].label, std::string{"Within"});
+    QCOMPARE(hist->series[1].label, std::string{"Overall"});
+
+    datalab::domain::OutputPage interpreted = page;
+    datalab::application::InterpretationService::enrich(interpreted);
+    for (const auto& section : interpreted.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("合格") == std::string::npos);
+            QVERIFY(bullet.find("不合格") == std::string::npos);
+        }
+    }
+
+    const auto sixpack =
+        datalab::application::AnalysisService::capability_sixpack(table, configuration);
+    QCOMPARE(sixpack.method_name, std::string{"Capability Sixpack"});
+    const auto six_hist = std::find_if(
+        sixpack.plots.cbegin(), sixpack.plots.cend(),
+        [](const datalab::domain::PlotSpec& plot) {
+            return plot.kind == datalab::domain::PlotKind::histogram;
+        });
+    QVERIFY(six_hist != sixpack.plots.cend());
+    QCOMPARE(six_hist->series.size(), hist->series.size());
+    QCOMPARE(six_hist->series[0].label, hist->series[0].label);
+    QCOMPARE(six_hist->lsl, hist->lsl);
+    QCOMPARE(sixpack.plots.size(), std::size_t{6});
+    QCOMPARE(sixpack.plots[0].title, std::string{"I 图"});
+    QCOMPARE(sixpack.plots[1].title, std::string{"过程能力直方图"});
+    QCOMPARE(sixpack.plots[2].title, std::string{"MR 图"});
+    QCOMPARE(sixpack.plots[3].title, std::string{"正态概率图"});
+    QCOMPARE(sixpack.plots[4].title, std::string{"最近 25 个观测"});
+    QCOMPARE(sixpack.plots[5].title, std::string{"能力图"});
+
+    datalab::domain::DataTable bw_table;
+    bw_table.columns = {"Value", "Subgroup"};
+    bw_table.rows = {
+        {"9.8", "A"}, {"10.0", "A"}, {"10.1", "A"},
+        {"9.9", "B"}, {"10.2", "B"}, {"10.0", "B"},
+        {"10.1", "C"}, {"9.7", "C"}, {"10.3", "C"},
+        {"10.0", "D"}, {"10.2", "D"}, {"9.9", "D"}};
+    datalab::domain::AnalysisConfiguration bw_config;
+    bw_config.variable_columns = {0};
+    bw_config.selection.measurement_column = 0;
+    bw_config.selection.subgroup_column = 1;
+    bw_config.specifications.lower = 9.5;
+    bw_config.specifications.upper = 10.5;
+    const auto bw_page =
+        datalab::application::AnalysisService::between_within_capability(bw_table, bw_config);
+    const auto bw_hist = std::find_if(
+        bw_page.plots.cbegin(), bw_page.plots.cend(),
+        [](const datalab::domain::PlotSpec& plot) {
+            return plot.kind == datalab::domain::PlotKind::histogram;
+        });
+    QVERIFY(bw_hist != bw_page.plots.cend());
+    QCOMPARE(bw_hist->series[0].label, std::string{"Between/Within"});
+    QVERIFY(bw_page.facts.capability.has_value());
+    const auto bw_result = ProcessCapability::calculate_between_within(
+        {9.8, 10.0, 10.1, 9.9, 10.2, 10.0, 10.1, 9.7, 10.3, 10.0, 10.2, 9.9},
+        {{9.8, 10.0, 10.1}, {9.9, 10.2, 10.0}, {10.1, 9.7, 10.3}, {10.0, 10.2, 9.9}},
+        {9.5, 10.5, std::nullopt});
+    QVERIFY(bw_result.between_within_standard_deviation.has_value());
+    QVERIFY(bw_hist->within_sigma.has_value());
+    QVERIFY(std::abs(*bw_hist->within_sigma - *bw_result.between_within_standard_deviation)
+            < 1.0e-12);
+}
+
 void QualityStatisticsTest::buildsResponseOptimizationOutput()
 {
     datalab::domain::DataTable table;
@@ -1103,7 +2104,122 @@ void QualityStatisticsTest::buildsResponseOptimizationOutput()
     QVERIFY(page.tables.size() >= std::size_t{3});
     QCOMPARE(page.tables[0].title, std::string{"最佳组合"});
     QCOMPARE(page.tables[1].title, std::string{"候选组合"});
+    QCOMPARE(page.tables[2].title, std::string{"响应预测"});
+    QCOMPARE(page.tables[0].headers.size(), std::size_t{6});
+    QCOMPARE(page.tables[1].headers.size(), std::size_t{6});
+    QCOMPARE(page.tables[2].headers.size(), std::size_t{7});
     QCOMPARE(page.tables[1].rows.size(), std::size_t{4});
+    QCOMPARE(page.tables[1].rows.front()[0], std::string{"1"});
+    QCOMPARE(page.tables[1].rows.front()[1], std::string{"A=1, B=1"});
+    QCOMPARE(page.tables[1].rows.front()[2], std::string{"A=1, B=1"});
+    QCOMPARE(page.tables[1].rows.front()[3], std::string{"6.5000"});
+    QCOMPARE(page.tables[1].rows.front()[4], std::string{"1.0000"});
+    QCOMPARE(page.tables[1].rows.front()[5], std::string{"1.0000"});
+    QCOMPARE(page.tables[0].rows.front()[0], std::string{"A"});
+    QCOMPARE(page.tables[0].rows.front()[1], std::string{"1"});
+    QCOMPARE(page.tables[0].rows.front()[2], std::string{"1"});
+    QCOMPARE(page.tables[0].rows.front()[3], std::string{"6.5000"});
+    QCOMPARE(page.tables[0].rows.front()[4], std::string{"1.0000"});
+    QCOMPARE(page.tables[0].rows.front()[5], std::string{"1.0000"});
+    QCOMPARE(page.tables[2].rows.front()[0], std::string{"1 1"});
+    QCOMPARE(page.tables[2].rows.front()[1], std::string{"A=1, B=1"});
+    QCOMPARE(page.tables[2].rows.front()[2], std::string{"6.5000"});
+    QCOMPARE(page.tables[2].rows.front()[3], std::string{"*"});
+    QCOMPARE(page.tables[2].rows.front()[4], std::string{"*"});
+    QCOMPARE(page.tables[2].rows.front()[5], std::string{"*"});
+    QCOMPARE(page.tables[2].rows.front()[6], std::string{"*"});
+    QCOMPARE(page.plots.size(), std::size_t{1});
+    QCOMPARE(page.plots.front().kind, datalab::domain::PlotKind::scatter);
+    QCOMPARE(page.plots.front().title, std::string{"候选组合总体 Desirability"});
+    QCOMPARE(page.plots.front().x_values.size(), std::size_t{4});
+    QCOMPARE(page.plots.front().values.size(), std::size_t{4});
+    QCOMPARE(page.plots.front().point_labels.front(), std::string{"A=1, B=1"});
+    QCOMPARE(page.plots.front().values.front(), 1.0);
+    QVERIFY(page.facts.doe.has_value());
+    QVERIFY(page.facts.doe->has_p_value);
+    QCOMPARE(page.method_metadata.valid_count, std::size_t{8});
+    QCOMPARE(page.method_metadata.missing_count, std::size_t{0});
+    QCOMPARE(page.method_metadata.parameter_source, std::string{"imported_doe_design"});
+    QCOMPARE(page.method_metadata.estimation_method,
+             std::string{"coded_2_level_desirability"});
+    bool has_interval_warning = false;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "approximate_prediction_standard_error") {
+            has_interval_warning = true;
+            break;
+        }
+    }
+    QVERIFY(has_interval_warning);
+
+    datalab::domain::DataTable noisy_table;
+    noisy_table.columns = {"A", "B", "Y"};
+    noisy_table.rows = {
+        {"-1", "-1", "-3.5"},
+        {"1", "-1", "-0.5"},
+        {"bad", "1", "1.5"},
+        {"1", "1", ""},
+        {"-1", "1", "1.5"},
+        {"1", "1", "6.5"},
+        {"-1", "-1", "-3.5"},
+        {"1", "-1", "-0.5"},
+        {"-1", "1", "1.5"},
+        {"1", "1", "6.5"}};
+    const auto noisy_page = datalab::application::AnalysisService::response_optimization(
+        noisy_table, configuration);
+    QCOMPARE(noisy_page.method_metadata.valid_count, std::size_t{8});
+    QCOMPARE(noisy_page.method_metadata.missing_count, std::size_t{1});
+    bool has_invalid_level_warning = false;
+    bool has_missing_response_warning = false;
+    for (const auto& diagnostic : noisy_page.diagnostics) {
+        if (diagnostic.code == "invalid_doe_factor_levels") {
+            has_invalid_level_warning = true;
+        }
+        if (diagnostic.code == "missing_doe_response") {
+            has_missing_response_warning = true;
+        }
+    }
+    QVERIFY(has_invalid_level_warning);
+    QVERIFY(has_missing_response_warning);
+}
+
+void QualityStatisticsTest::buildsMultiResponseOptimizationOutput()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"A", "B", "Y", "Y2"};
+    table.rows = {
+        {"-1", "-1", "-3.5", "10.0"}, {"1", "-1", "-0.5", "7.0"},
+        {"-1", "1", "1.5", "5.0"}, {"1", "1", "6.5", "2.0"},
+        {"-1", "-1", "-3.5", "10.0"}, {"1", "-1", "-0.5", "7.0"},
+        {"-1", "1", "1.5", "5.0"}, {"1", "1", "6.5", "2.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.doe.factor_columns = {0, 1};
+    configuration.doe.response_columns = {2, 3};
+    configuration.doe.optimization_objectives = {
+        {.goal = "maximize"},
+        {.goal = "minimize"}};
+    const auto page = datalab::application::AnalysisService::response_optimization(
+        table, configuration);
+    QCOMPARE(page.method_name, std::string{"Response Optimization"});
+    QVERIFY(page.tables.size() >= std::size_t{4});
+    QCOMPARE(page.tables[0].title, std::string{"响应目标"});
+    QCOMPARE(page.tables[1].title, std::string{"最佳组合"});
+    QCOMPARE(page.tables[2].title, std::string{"候选组合"});
+    QCOMPARE(page.tables[3].title, std::string{"响应预测"});
+    QCOMPARE(page.tables[0].rows.size(), std::size_t{2});
+    QCOMPARE(page.tables[0].rows[0][0], std::string{"Y"});
+    QCOMPARE(page.tables[0].rows[0][1], std::string{"maximize"});
+    QCOMPARE(page.tables[0].rows[1][0], std::string{"Y2"});
+    QCOMPARE(page.tables[0].rows[1][1], std::string{"minimize"});
+    QCOMPARE(page.tables[2].headers.size(), std::size_t{8});
+    QCOMPARE(page.tables[3].headers.size(), std::size_t{8});
+    QVERIFY(page.facts.doe.has_value());
+    QVERIFY(page.facts.doe->multi_response);
+    QCOMPARE(page.facts.doe->response_count, std::size_t{2});
+    QCOMPARE(page.facts.doe->response_names.size(), std::size_t{2});
+    QVERIFY(page.facts.doe->best_overall_desirability.has_value());
+    QCOMPARE(page.method_metadata.estimation_method,
+             std::string{"coded_2_level_multi_response_desirability"});
+    QCOMPARE(page.plots.size(), std::size_t{1});
 }
 
 void QualityStatisticsTest::johnsonAndNonnormalCapability()
@@ -1168,6 +2284,105 @@ void QualityStatisticsTest::johnsonAndNonnormalCapability()
     configuration.nonnormal_distribution = "weibull";
     const auto page = datalab::application::AnalysisService::capability(table, configuration);
     QCOMPARE(page.method_name, std::string("Nonnormal Capability Analysis"));
+    QVERIFY(!page.tables.empty());
+    const auto distribution = std::find_if(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "分布参数";
+        });
+    QVERIFY(distribution != page.tables.cend());
+    const auto ppm = std::find_if(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Performance (PPM)";
+        });
+    QVERIFY(ppm != page.tables.cend());
+    QCOMPARE(ppm->headers.size(), std::size_t{3});
+    bool has_within_capability = false;
+    for (const auto& table_out : page.tables) {
+        if (table_out.title == "Potential (Within) Capability") {
+            has_within_capability = true;
+        }
+    }
+    QVERIFY(!has_within_capability);
+    QVERIFY(page.facts.capability.has_value());
+    QCOMPARE(page.facts.capability->method, std::string("non_normal"));
+    QVERIFY(page.facts.capability->fitted_shape.has_value());
+
+    datalab::domain::DataTable johnson_table;
+    johnson_table.columns = {"Value"};
+    for (const double value : lognormal_sample) {
+        johnson_table.rows.push_back({std::to_string(value)});
+    }
+    datalab::domain::AnalysisConfiguration johnson_config;
+    johnson_config.variable_columns = {0};
+    johnson_config.specifications = specs;
+    johnson_config.capability_method = "johnson";
+    const auto johnson_page =
+        datalab::application::AnalysisService::capability(johnson_table, johnson_config);
+    QCOMPARE(johnson_page.method_name, std::string("Johnson Capability Analysis"));
+    if (johnson_page.facts.capability.has_value()
+        && johnson_page.facts.capability->transform_p_value.has_value()) {
+        const auto transform = std::find_if(
+            johnson_page.tables.cbegin(), johnson_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "Johnson 变换";
+            });
+        QVERIFY(transform != johnson_page.tables.cend());
+        QVERIFY(!johnson_page.facts.capability->cpk.has_value());
+        QVERIFY(johnson_page.facts.capability->ppk.has_value()
+                || johnson_page.diagnostics.size() > 0);
+        QVERIFY(std::any_of(
+            johnson_page.plots.cbegin(), johnson_page.plots.cend(),
+            [](const datalab::domain::PlotSpec& plot) {
+                return plot.title == "变换后正态概率图";
+            }));
+    }
+}
+
+void QualityStatisticsTest::buildsNormalCapabilityTableContract()
+{
+    // # source: formula_reference — Process Data AD rows and PPM table shape.
+    datalab::domain::DataTable table;
+    table.columns = {"Y"};
+    table.rows = {
+        {"4.8"}, {"5.0"}, {"5.0"}, {"5.2"}, {"4.9"}, {"5.1"}, {"5.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.specifications.lower = 4.0;
+    configuration.specifications.upper = std::nullopt;
+    const auto page =
+        datalab::application::AnalysisService::capability(table, configuration);
+    const auto process = std::find_if(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Process Data";
+        });
+    QVERIFY(process != page.tables.cend());
+    bool has_ad = false;
+    bool has_assumption = false;
+    for (const auto& row : process->rows) {
+        if (row.front() == "Anderson-Darling A²*") {
+            has_ad = true;
+            QVERIFY(row[1] != "*");
+        }
+        if (row.front() == "假设状态") {
+            has_assumption = true;
+        }
+    }
+    QVERIFY(has_ad);
+    QVERIFY(has_assumption);
+    const auto ppm = std::find_if(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Performance (PPM)";
+        });
+    QVERIFY(ppm != page.tables.cend());
+    QCOMPARE(ppm->headers,
+             (std::vector<std::string>{"", "观测", "期望 Within", "期望 Overall"}));
+    QCOMPARE(ppm->rows.front()[2], std::string{"*"});
+    QVERIFY(page.facts.capability.has_value());
+    QVERIFY(page.facts.capability->normality_p_value.has_value());
 }
 
 QTEST_APPLESS_MAIN(QualityStatisticsTest)

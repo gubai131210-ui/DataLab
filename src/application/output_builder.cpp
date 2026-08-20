@@ -31,6 +31,88 @@ std::string triggered_tests_text(
     return stream.str();
 }
 
+std::string merged_dual_triggered_tests(
+    const datalab::domain::statistics::ControlChartResult& primary,
+    const datalab::domain::statistics::ControlChartResult& secondary,
+    std::size_t index,
+    const std::string& secondary_short)
+{
+    const std::string xbar_tests = triggered_tests_text(primary, index);
+    const std::string secondary_tests = triggered_tests_text(secondary, index);
+    std::ostringstream stream;
+    if (!xbar_tests.empty()) {
+        stream << "Xbar: " << xbar_tests;
+    }
+    if (!secondary_tests.empty()) {
+        if (!xbar_tests.empty()) {
+            stream << "; ";
+        }
+        stream << secondary_short << ": " << secondary_tests;
+    }
+    return stream.str();
+}
+
+std::string merged_dual_minimum_test(
+    const datalab::domain::statistics::ControlChartResult& primary,
+    const datalab::domain::statistics::ControlChartResult& secondary,
+    std::size_t index,
+    const std::string& secondary_short)
+{
+    const int xbar_test = index < primary.primary_test_by_point.size()
+        ? primary.primary_test_by_point[index] : 0;
+    const int secondary_test = index < secondary.primary_test_by_point.size()
+        ? secondary.primary_test_by_point[index] : 0;
+    if (xbar_test > 0 && secondary_test > 0) {
+        const int minimum = std::min(xbar_test, secondary_test);
+        return "Test " + std::to_string(minimum);
+    }
+    if (xbar_test > 0) {
+        return "Test " + std::to_string(xbar_test);
+    }
+    if (secondary_test > 0) {
+        return secondary_short + ": Test " + std::to_string(secondary_test);
+    }
+    const bool xbar_failed = std::find(
+        primary.test1_points.cbegin(), primary.test1_points.cend(), index)
+        != primary.test1_points.cend();
+    const bool secondary_failed = std::find(
+        secondary.test1_points.cbegin(), secondary.test1_points.cend(), index)
+        != secondary.test1_points.cend();
+    if (xbar_failed && secondary_failed) {
+        return "Test 1";
+    }
+    if (xbar_failed) {
+        return "Test 1";
+    }
+    if (secondary_failed) {
+        return secondary_short + ": Test 1";
+    }
+    return {};
+}
+
+std::string cusum_signal_label(
+    std::size_t index,
+    const std::vector<std::size_t>& upper_signal_points,
+    const std::vector<std::size_t>& lower_signal_points)
+{
+    const bool upper = std::find(
+        upper_signal_points.cbegin(), upper_signal_points.cend(), index)
+        != upper_signal_points.cend();
+    const bool lower = std::find(
+        lower_signal_points.cbegin(), lower_signal_points.cend(), index)
+        != lower_signal_points.cend();
+    if (upper && lower) {
+        return "上/下";
+    }
+    if (upper) {
+        return "上侧";
+    }
+    if (lower) {
+        return "下侧";
+    }
+    return "无";
+}
+
 }  // namespace
 
 std::string format_number(double value, int digits)
@@ -237,13 +319,14 @@ StatisticTable attribute_chart_table(
     const domain::statistics::ControlChartResult& chart,
     const std::string& count_header,
     const std::string& denominator_header,
-    const std::string& rate_header)
+    const std::string& rate_header,
+    const std::vector<std::string>& stages)
 {
     StatisticTable table;
     table.title = title;
     table.headers = {
-        "原始行", "子组", count_header, denominator_header, rate_header, "中心线", "LCL", "UCL",
-        "触发测试", "最小测试"};
+        "原始行", "子组", "阶段", count_header, denominator_header, rate_header, "中心线", "LCL",
+        "UCL", "触发测试", "最小测试"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         const std::size_t count = index < counts.size() ? counts[index] : 0;
         const std::size_t denominator = index < denominators.size() ? denominators[index] : 0;
@@ -259,6 +342,7 @@ StatisticTable attribute_chart_table(
             index < chart.source_rows.size()
                 ? std::to_string(chart.source_rows[index] + 1) : "*",
             std::to_string(index + 1),
+            index < stages.size() ? stages[index] : "",
             std::to_string(count),
             std::to_string(denominator),
             format_number(chart.plotted_values[index]),
@@ -283,7 +367,8 @@ StatisticTable laney_chart_table(
     table.title = "Laney 图逐子组统计";
     table.headers = {"原始行", "子组", "阶段", count_header, denominator_header, "绘制值",
                     "Z", "MR", "中心线", "LCL", "UCL", "Test 1", "Test 2",
-                    "Test 3", "Test 4", "触发测试", "最小测试"};
+                    "Test 3", "Test 4", "Test 5", "Test 6", "Test 7", "Test 8",
+                    "触发测试", "最小测试"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         const auto test_failed = [&](std::size_t test) {
             return test < chart.special_cause_points.size()
@@ -311,10 +396,208 @@ StatisticTable laney_chart_table(
             test_failed(1) ? "是" : "",
             test_failed(2) ? "是" : "",
             test_failed(3) ? "是" : "",
+            test_failed(4) ? "是" : "",
+            test_failed(5) ? "是" : "",
+            test_failed(6) ? "是" : "",
+            test_failed(7) ? "是" : "",
             triggered_tests_text(chart, index),
             index < chart.primary_test_by_point.size()
                 && chart.primary_test_by_point[index] > 0
                 ? "Test " + std::to_string(chart.primary_test_by_point[index]) : ""});
+    }
+    return table;
+}
+
+StatisticTable individuals_point_table(
+    const domain::statistics::ControlChartResult& individuals,
+    const domain::statistics::ControlChartResult& moving_range,
+    const std::vector<std::size_t>& source_rows,
+    const std::vector<std::string>& stages)
+{
+    StatisticTable table;
+    table.title = "I-MR 逐点统计";
+    table.headers = {"原始行", "阶段", "观测值", "I CL", "I LCL", "I UCL", "MR",
+                     "触发测试", "最小测试"};
+    for (std::size_t index = 0; index < individuals.plotted_values.size(); ++index) {
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            index < stages.size() ? stages[index] : "",
+            format_number(individuals.plotted_values[index]),
+            index < individuals.center_line.size()
+                ? format_number(individuals.center_line[index]) : "*",
+            index < individuals.lower_control_limit.size()
+                ? format_number(individuals.lower_control_limit[index]) : "*",
+            index < individuals.upper_control_limit.size()
+                ? format_number(individuals.upper_control_limit[index]) : "*",
+            index < moving_range.plotted_values.size()
+                ? format_number(moving_range.plotted_values[index]) : "*",
+            triggered_tests_text(individuals, index),
+            index < individuals.primary_test_by_point.size()
+                && individuals.primary_test_by_point[index] > 0
+                ? "Test " + std::to_string(individuals.primary_test_by_point[index])
+                : ""});
+    }
+    return table;
+}
+
+StatisticTable subgroup_dual_point_table(
+    const domain::statistics::ControlChartResult& primary,
+    const domain::statistics::ControlChartResult& secondary,
+    const std::vector<std::vector<double>>& subgroups,
+    const std::vector<std::size_t>& subgroup_source_rows,
+    const std::vector<std::string>& labels,
+    const std::vector<std::string>& stages,
+    const std::string& title,
+    const std::string& secondary_short)
+{
+    StatisticTable table;
+    table.title = title;
+    table.headers = {"原始行", "子组", "阶段", "N", "Xbar", secondary_short,
+                     "Xbar CL", "Xbar LCL", "Xbar UCL",
+                     secondary_short + " CL",
+                     secondary_short + " LCL",
+                     secondary_short + " UCL", "触发测试", "最小测试"};
+    for (std::size_t index = 0; index < subgroups.size(); ++index) {
+        table.rows.push_back({
+            index < subgroup_source_rows.size()
+                ? std::to_string(subgroup_source_rows[index] + 1) : "*",
+            index < labels.size() ? labels[index] : std::to_string(index + 1),
+            index < stages.size() ? stages[index] : "",
+            std::to_string(subgroups[index].size()),
+            index < primary.plotted_values.size()
+                ? format_number(primary.plotted_values[index]) : "*",
+            index < secondary.plotted_values.size()
+                ? format_number(secondary.plotted_values[index]) : "*",
+            index < primary.center_line.size()
+                ? format_number(primary.center_line[index]) : "*",
+            index < primary.lower_control_limit.size()
+                ? format_number(primary.lower_control_limit[index]) : "*",
+            index < primary.upper_control_limit.size()
+                ? format_number(primary.upper_control_limit[index]) : "*",
+            index < secondary.center_line.size()
+                ? format_number(secondary.center_line[index]) : "*",
+            index < secondary.lower_control_limit.size()
+                ? format_number(secondary.lower_control_limit[index]) : "*",
+            index < secondary.upper_control_limit.size()
+                ? format_number(secondary.upper_control_limit[index]) : "*",
+            merged_dual_triggered_tests(primary, secondary, index, secondary_short),
+            merged_dual_minimum_test(primary, secondary, index, secondary_short)});
+    }
+    return table;
+}
+
+StatisticTable ewma_point_table(
+    const domain::statistics::ControlChartResult& chart,
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows)
+{
+    StatisticTable table;
+    table.title = "EWMA 逐点统计";
+    table.headers = {"原始行", "观测值", "EWMA", "σ", "CL", "LCL", "UCL",
+                     "触发测试", "最小测试"};
+    for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            index < observations.size()
+                ? format_number(observations[index]) : "*",
+            format_number(chart.plotted_values[index]),
+            index < chart.point_sigma.size()
+                ? format_number(chart.point_sigma[index]) : "*",
+            index < chart.center_line.size()
+                ? format_number(chart.center_line[index]) : "*",
+            index < chart.lower_control_limit.size()
+                ? format_number(chart.lower_control_limit[index]) : "*",
+            index < chart.upper_control_limit.size()
+                ? format_number(chart.upper_control_limit[index]) : "*",
+            triggered_tests_text(chart, index),
+            index < chart.primary_test_by_point.size()
+                && chart.primary_test_by_point[index] > 0
+                ? "Test " + std::to_string(chart.primary_test_by_point[index])
+                : ""});
+    }
+    return table;
+}
+
+StatisticTable rare_event_point_table(
+    const std::string& title,
+    const domain::statistics::ControlChartResult& chart,
+    const std::vector<std::size_t>& source_rows)
+{
+    StatisticTable table;
+    table.title = title;
+    table.headers = {"原始行", "间隔", "CL", "LCL", "UCL", "触发测试", "最小测试"};
+    for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            format_number(chart.plotted_values[index]),
+            index < chart.center_line.size()
+                ? format_number(chart.center_line[index]) : "*",
+            index < chart.lower_control_limit.size()
+                && std::isfinite(chart.lower_control_limit[index])
+                ? format_number(chart.lower_control_limit[index]) : "*",
+            index < chart.upper_control_limit.size()
+                && std::isfinite(chart.upper_control_limit[index])
+                ? format_number(chart.upper_control_limit[index]) : "*",
+            triggered_tests_text(chart, index),
+            index < chart.primary_test_by_point.size()
+                && chart.primary_test_by_point[index] > 0
+                ? "Test " + std::to_string(chart.primary_test_by_point[index])
+                : ""});
+    }
+    return table;
+}
+
+StatisticTable cusum_point_table(
+    const domain::statistics::TimeWeightedControlChartResult& chart,
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows)
+{
+    StatisticTable table;
+    table.title = "CUSUM 逐点统计";
+    table.headers = {"原始行", "观测值", "C+", "C−", "信号"};
+    const std::size_t count = chart.primary.plotted_values.size();
+    for (std::size_t index = 0; index < count; ++index) {
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            index < observations.size()
+                ? format_number(observations[index]) : "*",
+            format_number(chart.primary.plotted_values[index]),
+            index < chart.secondary.plotted_values.size()
+                ? format_number(chart.secondary.plotted_values[index]) : "*",
+            cusum_signal_label(
+                index, chart.upper_signal_points, chart.lower_signal_points)});
+    }
+    return table;
+}
+
+StatisticTable cusum_signal_table(
+    const domain::statistics::TimeWeightedControlChartResult& chart,
+    const std::vector<std::size_t>& source_rows)
+{
+    StatisticTable table;
+    table.title = "CUSUM 信号";
+    table.headers = {"方向", "原始行", "观测序号", "累计值"};
+    auto append_signal = [&](const char* direction,
+                             const std::vector<std::size_t>& signal_points,
+                             const domain::statistics::ControlChartResult& side) {
+        for (const std::size_t index : signal_points) {
+            table.rows.push_back({
+                direction,
+                index < source_rows.size()
+                    ? std::to_string(source_rows[index] + 1) : "*",
+                std::to_string(index + 1),
+                index < side.plotted_values.size()
+                    ? format_number(side.plotted_values[index]) : "*"});
+        }
+    };
+    append_signal("上侧", chart.upper_signal_points, chart.primary);
+    append_signal("下侧", chart.lower_signal_points, chart.secondary);
+    if (table.rows.empty()) {
+        table.rows.push_back({"无", "*", "*", "*"});
     }
     return table;
 }
@@ -355,6 +638,10 @@ domain::PlotSpec control_plot(
     plot.primary_test_by_point = chart.primary_test_by_point;
     plot.signal_direction = chart.signal_direction;
     plot.sigma_z = chart.sigma_z;
+    if (!chart.phase_labels.empty()) {
+        plot.point_groups = chart.phase_labels;
+        plot.point_labels = chart.phase_labels;
+    }
     return plot;
 }
 

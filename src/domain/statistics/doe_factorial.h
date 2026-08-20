@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -50,11 +51,17 @@ struct DoeResponseAnalysisResult {
     std::vector<std::string> term_names;
     std::vector<double> coefficients;
     std::vector<double> effects;
+    std::vector<double> standard_errors;
+    std::vector<double> t_statistics;
+    double lenth_pse = 0.0;
+    double pareto_reference = 0.0;
+    std::string pareto_method;
     std::vector<DoeAnovaRow> anova_rows;
     std::vector<DoeResidualObservation> residuals;
     double residual_sum_of_squares = 0.0;
     std::size_t residual_degrees_of_freedom = 0;
     double residual_mean_square = 0.0;
+    std::vector<std::vector<double>> xtx_inverse;
     double r_squared = 0.0;
     std::vector<DoeAnovaRow> model_anova_rows;
     std::vector<DoeAnovaRow> block_anova_rows;
@@ -136,5 +143,39 @@ DoeResponseAnalysisResult fit_response_analysis(
     const DoeFactorialDesign& design,
     const std::vector<double>& responses,
     const std::string& response_name = {});
+
+struct DoeCodedGrid {
+    std::size_t x_factor_index = 0;
+    std::size_t y_factor_index = 1;
+    std::vector<double> x;
+    std::vector<double> y;
+    std::vector<std::vector<double>> z;
+    std::vector<std::string> held_factor_names;
+    std::vector<std::string> held_actual_values;
+    std::vector<double> held_coded_values;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Evaluates the fitted coded bilinear model on a regular [-1, 1] grid.
+// Non-axis factors use hold_coded when provided (size == factors); otherwise 0.
+// Does not change response-optimizer ±1 prediction.
+DoeCodedGrid evaluate_coded_grid(
+    const DoeResponseAnalysisResult& fit,
+    const DoeFactorialDesign& design,
+    std::size_t x_factor_index = 0,
+    std::size_t y_factor_index = 1,
+    std::size_t resolution = 25,
+    const std::vector<double>* hold_coded = nullptr);
+
+// Converts actual-unit hold map to coded values for non-axis factors.
+// Axis factors listed in holds are ignored with a diagnostic.
+// Returns coded vector sized like design.factors (axis slots left 0).
+std::vector<double> resolve_contour_hold_coded(
+    const DoeFactorialDesign& design,
+    std::size_t x_factor_index,
+    std::size_t y_factor_index,
+    const std::map<std::string, std::string>& hold_actual,
+    std::vector<std::string>& held_actual_values,
+    std::vector<DiagnosticMessage>& diagnostics);
 
 }  // namespace datalab::domain::statistics

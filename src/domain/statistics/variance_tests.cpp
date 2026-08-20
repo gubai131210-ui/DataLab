@@ -1,5 +1,6 @@
 #include "domain/statistics/variance_tests.h"
 
+#include "domain/statistics/normal_distribution.h"
 #include "domain/statistics/normality_test.h"
 
 #include <algorithm>
@@ -543,6 +544,344 @@ LeveneTestResult levene_k_groups(
         result.f_statistic, result.numerator_degrees_of_freedom,
         result.denominator_degrees_of_freedom);
     result.p_value_two_sided = result.p_value;
+    return result;
+}
+
+double trimmed_mean(const std::vector<double>& values)
+{
+    if (values.empty()) {
+        return 0.0;
+    }
+    if (values.size() < 5) {
+        return std::accumulate(values.cbegin(), values.cend(), 0.0)
+            / static_cast<double>(values.size());
+    }
+    const double trim_proportion =
+        1.0 / (2.0 * std::sqrt(static_cast<double>(values.size()) - 4.0));
+    auto sorted = values;
+    std::sort(sorted.begin(), sorted.end());
+    const auto drop = static_cast<std::size_t>(
+        std::floor(trim_proportion * static_cast<double>(sorted.size())));
+    const std::size_t begin = std::min(drop, sorted.size() / 2);
+    const std::size_t end = sorted.size() - begin;
+    if (end <= begin) {
+        return sorted[sorted.size() / 2];
+    }
+    double sum = 0.0;
+    for (std::size_t index = begin; index < end; ++index) {
+        sum += sorted[index];
+    }
+    return sum / static_cast<double>(end - begin);
+}
+
+double fourth_moment_about(const std::vector<double>& values, const double center)
+{
+    double sum = 0.0;
+    for (const double value : values) {
+        const double d = value - center;
+        sum += d * d * d * d;
+    }
+    return sum;
+}
+
+double pooled_kurtosis_at_rho(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    const double s1,
+    const double s2,
+    const double rho,
+    const double m1,
+    const double m2)
+{
+    const double n1 = static_cast<double>(first.size());
+    const double n2 = static_cast<double>(second.size());
+    const double rho2 = rho * rho;
+    const double rho4 = rho2 * rho2;
+    const double numerator = (n1 + n2)
+        * (fourth_moment_about(first, m1) + rho4 * fourth_moment_about(second, m2));
+    const double denom_inner = (n1 - 1.0) * s1 * s1 + rho2 * (n2 - 1.0) * s2 * s2;
+    if (!(denom_inner > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return numerator / (denom_inner * denom_inner);
+}
+
+double bonett_se_ln_sd_ratio(
+    const double gamma_hat,
+    const std::size_t n1,
+    const std::size_t n2)
+{
+    // SE of ln(S1/S2) = 0.5 * SE of ln(S1²/S2²)
+    const double var_ln_var_ratio =
+        (gamma_hat - 1.0) / static_cast<double>(n1 - 1)
+        + (gamma_hat - 1.0) / static_cast<double>(n2 - 1);
+    if (!(var_ln_var_ratio > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return 0.5 * std::sqrt(var_ln_var_ratio);
+}
+
+double equalizer_constant(const std::size_t n1, const std::size_t n2, const double z)
+{
+    const double a = static_cast<double>(n1) / (static_cast<double>(n1) - z * z);
+    const double b = static_cast<double>(n2) / (static_cast<double>(n2) - z * z);
+    if (!(a > 0.0) || !(b > 0.0)) {
+        return 1.0;
+    }
+    return std::sqrt(a / b);
+}
+
+double bonett_z_at_rho(
+    const double ln_ratio,
+    const double rho,
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    const double s1,
+    const double s2,
+    const double m1,
+    const double m2,
+    const double equalizer)
+{
+    if (!(rho > 0.0)) {
+        return std::numeric_limits<double>::infinity();
+    }
+    const double gamma = pooled_kurtosis_at_rho(first, second, s1, s2, rho, m1, m2);
+    if (!std::isfinite(gamma) || gamma <= 1.0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    const double se = bonett_se_ln_sd_ratio(gamma, first.size(), second.size());
+    if (!std::isfinite(se) || !(se > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return (ln_ratio - std::log(rho)) / (equalizer * se);
+}
+
+BonettVarianceResult bonett_two_variances(
+    const std::vector<double>& first_input,
+    const std::vector<double>& second_input,
+    const double confidence_level,
+    const TestAlternative alternative)
+{
+    BonettVarianceResult result;
+    result.confidence_level = confidence_level;
+    if (!valid_confidence(confidence_level)) {
+        add_error(result.diagnostics, "invalid_confidence_level",
+                  "置信水平必须大于 0 且小于 1。");
+        return result;
+    }
+    std::vector<double> first;
+    std::vector<double> second;
+    if (!finite_observations(first_input, first, result.diagnostics)
+        || !finite_observations(second_input, second, result.diagnostics)) {
+        return result;
+    }
+    if (first.size() < 2 || second.size() < 2) {
+        add_error(result.diagnostics, "insufficient_observations",
+                  "Bonett 等方差要求每组至少 2 个观测。");
+        return result;
+    }
+    if (first.size() < 5 || second.size() < 5) {
+        add_warning(result.diagnostics, "bonett_small_sample_trim",
+                    "组样本量小于 5，修整均值退回算术均值；Bonett 小样本表现可能不稳定。");
+    }
+    result.first_count = first.size();
+    result.second_count = second.size();
+    const double v1 = sample_variance(first);
+    const double v2 = sample_variance(second);
+    if (!(v1 > 0.0) || !(v2 > 0.0)) {
+        add_error(result.diagnostics, "zero_sample_variance",
+                  "样本方差为 0，无法计算 Bonett 比率区间。");
+        return result;
+    }
+    result.first_standard_deviation = std::sqrt(v1);
+    result.second_standard_deviation = std::sqrt(v2);
+    result.standard_deviation_ratio =
+        result.first_standard_deviation / result.second_standard_deviation;
+    const double m1 = trimmed_mean(first);
+    const double m2 = trimmed_mean(second);
+    const double alpha = 1.0 - confidence_level;
+    const double z_crit = alternative == TestAlternative::two_sided
+        ? standard_normal_quantile(1.0 - alpha * 0.5)
+        : standard_normal_quantile(1.0 - alpha);
+    if (!(std::isfinite(z_crit)) || z_crit * z_crit >= static_cast<double>(first.size())
+        || z_crit * z_crit >= static_cast<double>(second.size())) {
+        add_error(result.diagnostics, "bonett_equalizer_undefined",
+                  "样本量相对置信水平过小，无法计算 Bonett equalizer。");
+        return result;
+    }
+    const double equalizer = equalizer_constant(first.size(), second.size(), z_crit);
+    const double ln_ratio = std::log(result.standard_deviation_ratio);
+    const double z0 = bonett_z_at_rho(
+        ln_ratio, 1.0, first, second, result.first_standard_deviation,
+        result.second_standard_deviation, m1, m2, equalizer);
+    if (!std::isfinite(z0)) {
+        add_error(result.diagnostics, "bonett_statistic_undefined",
+                  "无法计算 Bonett 统计量（峰度估计无效）。");
+        return result;
+    }
+    result.z_statistic = z0;
+    const double cdf = standard_normal_cdf(z0);
+    if (alternative == TestAlternative::less) {
+        result.p_value = cdf;
+    } else if (alternative == TestAlternative::greater) {
+        result.p_value = 1.0 - cdf;
+    } else {
+        result.p_value = std::clamp(
+            2.0 * (1.0 - standard_normal_cdf(std::abs(z0))), 0.0, 1.0);
+    }
+
+    // Invert |z(ρ)| = z_crit for two-sided CI of σ1/σ2.
+    auto root_side = [&](const bool lower_side) -> std::optional<double> {
+        double lo = lower_side ? 1.0e-8 : result.standard_deviation_ratio;
+        double hi = lower_side ? result.standard_deviation_ratio : 1.0e8;
+        if (!(lo < hi)) {
+            return std::nullopt;
+        }
+        double z_lo = bonett_z_at_rho(
+            ln_ratio, lo, first, second, result.first_standard_deviation,
+            result.second_standard_deviation, m1, m2, equalizer);
+        double z_hi = bonett_z_at_rho(
+            ln_ratio, hi, first, second, result.first_standard_deviation,
+            result.second_standard_deviation, m1, m2, equalizer);
+        if (!std::isfinite(z_lo) || !std::isfinite(z_hi)) {
+            return std::nullopt;
+        }
+        // z(ρ) decreases in ρ; lower root where z = +z_crit, upper where z = -z_crit
+        const double target = lower_side ? z_crit : -z_crit;
+        if ((z_lo - target) * (z_hi - target) > 0.0) {
+            // Expand bracket
+            for (int expand = 0; expand < 40; ++expand) {
+                if (lower_side) {
+                    lo *= 0.5;
+                    z_lo = bonett_z_at_rho(
+                        ln_ratio, lo, first, second, result.first_standard_deviation,
+                        result.second_standard_deviation, m1, m2, equalizer);
+                } else {
+                    hi *= 2.0;
+                    z_hi = bonett_z_at_rho(
+                        ln_ratio, hi, first, second, result.first_standard_deviation,
+                        result.second_standard_deviation, m1, m2, equalizer);
+                }
+                if (!std::isfinite(z_lo) || !std::isfinite(z_hi)) {
+                    return std::nullopt;
+                }
+                if ((z_lo - target) * (z_hi - target) <= 0.0) {
+                    break;
+                }
+            }
+        }
+        if ((z_lo - target) * (z_hi - target) > 0.0) {
+            return std::nullopt;
+        }
+        for (int iter = 0; iter < 80; ++iter) {
+            const double mid = 0.5 * (lo + hi);
+            const double z_mid = bonett_z_at_rho(
+                ln_ratio, mid, first, second, result.first_standard_deviation,
+                result.second_standard_deviation, m1, m2, equalizer);
+            if (!std::isfinite(z_mid)) {
+                return std::nullopt;
+            }
+            if ((z_lo - target) * (z_mid - target) <= 0.0) {
+                hi = mid;
+                z_hi = z_mid;
+            } else {
+                lo = mid;
+                z_lo = z_mid;
+            }
+        }
+        return 0.5 * (lo + hi);
+    };
+
+    if (alternative == TestAlternative::two_sided) {
+        result.confidence_lower = root_side(true);
+        result.confidence_upper = root_side(false);
+        if (!result.confidence_lower.has_value() || !result.confidence_upper.has_value()) {
+            add_warning(result.diagnostics, "bonett_ci_not_found",
+                        "未能数值反解 Bonett 标准差比置信区间。");
+        }
+    } else if (alternative == TestAlternative::less) {
+        result.confidence_upper = root_side(false);
+    } else {
+        result.confidence_lower = root_side(true);
+    }
+    return result;
+}
+
+BartlettVarianceResult bartlett_k_groups(
+    const std::vector<std::vector<double>>& groups,
+    double confidence_level)
+{
+    BartlettVarianceResult result;
+    result.confidence_level = confidence_level;
+    if (!valid_confidence(confidence_level)) {
+        add_error(result.diagnostics, "invalid_confidence_level",
+                  "置信水平必须大于 0 且小于 1。");
+        return result;
+    }
+    if (groups.size() < 2) {
+        add_error(result.diagnostics, "insufficient_groups",
+                  "Bartlett 等方差至少需要 2 组。");
+        return result;
+    }
+
+    std::vector<std::size_t> counts;
+    std::vector<double> variances;
+    counts.reserve(groups.size());
+    variances.reserve(groups.size());
+    for (const auto& group : groups) {
+        std::vector<double> cleaned;
+        if (!finite_observations(group, cleaned, result.diagnostics)) {
+            return result;
+        }
+        if (cleaned.size() < 2) {
+            add_error(result.diagnostics, "insufficient_group_size",
+                      "Bartlett 要求每组至少 2 个有效观测。");
+            return result;
+        }
+        const double variance = sample_variance(cleaned);
+        if (!(variance > 0.0)) {
+            add_error(result.diagnostics, "zero_group_variance",
+                      "Bartlett 要求每组样本方差大于 0。");
+            return result;
+        }
+        counts.push_back(cleaned.size());
+        variances.push_back(variance);
+        result.total_count += cleaned.size();
+    }
+
+    result.group_count = groups.size();
+    const double k = static_cast<double>(result.group_count);
+    double nu = 0.0;
+    double pooled = 0.0;
+    double sum_inv_nu = 0.0;
+    double sum_nu_ln_s2 = 0.0;
+    for (std::size_t index = 0; index < variances.size(); ++index) {
+        const double nu_i = static_cast<double>(counts[index] - 1);
+        nu += nu_i;
+        pooled += nu_i * variances[index];
+        sum_inv_nu += 1.0 / nu_i;
+        sum_nu_ln_s2 += nu_i * std::log(variances[index]);
+    }
+    pooled /= nu;
+    if (!(pooled > 0.0)) {
+        add_error(result.diagnostics, "zero_pooled_variance",
+                  "合并方差为 0，无法计算 Bartlett 统计量。");
+        return result;
+    }
+    const double q = nu * std::log(pooled) - sum_nu_ln_s2;
+    const double c = 1.0 + (1.0 / (3.0 * (k - 1.0))) * (sum_inv_nu - 1.0 / nu);
+    if (!(c > 0.0) || !std::isfinite(c) || !std::isfinite(q)) {
+        add_error(result.diagnostics, "bartlett_statistic_undefined",
+                  "Bartlett 统计量无法计算。");
+        return result;
+    }
+    result.chi_square_statistic = q / c;
+    result.degrees_of_freedom = k - 1.0;
+    add_warning(result.diagnostics, "bartlett_normality_sensitive",
+                "Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。");
+    // Right-tail P(χ²_df ≥ statistic) = regularized_gamma_q(df/2, x/2)
+    result.p_value = regularized_gamma_q(
+        result.degrees_of_freedom / 2.0, result.chi_square_statistic / 2.0);
     return result;
 }
 

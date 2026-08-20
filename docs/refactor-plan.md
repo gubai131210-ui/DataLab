@@ -168,7 +168,7 @@ struct AnalysisSpec {
 
 ### 3.3 补应用层门面
 
-**DataImportService 已实施 ✅**：`src/infrastructure/data_import_service.{h,cpp}`——扩展名分派（.xlsx/.xls → Python 导入器，其余 → CSV 导入器）与错误传递从 mainwindow.cpp:741-746 下沉；mainwindow 不再直接引用 CsvImporter/PythonTableImporter。新增 2 个测试用例（CSV 经服务导入、文件不存在报错）。
+**DataImportService 已实施 ✅**：`src/infrastructure/data_import_service.{h,cpp}`——扩展名分派（`.xlsx` → `ExcelTableImporter`，其余 → CSV 导入器）与错误传递从 mainwindow 下沉。
 > 说明：`ProjectService`/`ReportService` 暂缓——当前仅是 `ProjectRepository`/`PdfReportWriter` 的一行调用直通，按"删除测试"原则不造浅模块；待 4.3 存储端口（`ProjectStore` 接口 + 迁移）落地时一并引入。
 
 ### 3.4 清理
@@ -189,15 +189,14 @@ struct AnalysisSpec {
 
 ---
 
-## 阶段 4：Python 桥与序列化加固（1-2 天）
+## 阶段 4：Excel 导入与序列化加固（1-2 天）
 
-### 4.1 Python 桥
+### 4.1 Excel 导入 ✅ 已完成（ADR 0006）
 
-- `tools/import_table.py` 打进 Qt 资源（`qt_add_resources`）或随 install 安装；运行时 `applicationDirPath()` 解析，**删除 `DATALAB_SOURCE_DIR`**（`python_table_importer.cpp:32-33`、`CMakeLists.txt:123`）；
-- 协议加 `schema_version` 字段，C++ 侧校验；stdout 非 JSON 时给出明确错误；
-- QProcess 移到 `QtConcurrent`/线程，UI 不阻塞（当前 `waitForFinished(120000)` 冻结界面）；
-- 部署：瘦 venv（pandas+openpyxl+xlrd）或 PyInstaller 单文件；`requirements.txt` 拆分 `requirements-runtime.txt`（导入用）与 `requirements-dev.txt`（统计工具预留）。
-- **补 `PythonTableImporter` 自动化测试**（当前缺失）：至少覆盖 CSV 回退路径、进程失败/非零退出、stdout 非 JSON、error 字段透传四类用例（可用假的 python 脚本桩替代真实 pandas）。
+- `ExcelTableImporter` 替代 `PythonTableImporter`；`.xlsx` 原生 C++ 导入，`.xls` 明确拒绝。
+- 删除 Qt 资源中的 `tools/import_table.py` 与 QProcess Python 调用链。
+- CMake 链接 zlib；`tests/excel_table_importer_test.cpp` + `tests/fixtures/import/basic_contract.xlsx`。
+- `requirements.txt` 保留给独立 dev 工具（Minitab fixture 等），应用运行时不再安装 pandas/openpyxl。
 
 ### 4.2 序列化声明式化
 

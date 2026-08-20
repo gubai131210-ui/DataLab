@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -95,6 +96,13 @@ struct InferenceConfiguration {
     std::optional<double> hypothesized_variance;
     std::string variance_test_method = "f";
     std::string variance_alternative = "two_sided";
+    std::optional<double> coverage_proportion;
+    std::string proportion_method = "exact";
+    std::string expected_proportions;
+    std::optional<std::size_t> gof_category_column;
+    std::optional<double> equivalence_lower;
+    std::optional<double> equivalence_upper;
+    std::string rate_comparison = "difference";
 };
 
 struct ControlConfiguration {
@@ -105,6 +113,7 @@ struct ControlConfiguration {
     std::string special_cause_rule_policy = "default_all_applicable";
     std::optional<std::size_t> stage_column;
     std::optional<double> historical_center;
+    std::optional<double> historical_sigma;
     std::optional<double> historical_sigma_z;
     double ewma_lambda = 0.2;
     double ewma_limit_sigma = 3.0;
@@ -139,10 +148,19 @@ struct TimeSeriesConfiguration {
     std::size_t validation_step = 1;
 };
 
+struct DoeResponseObjectiveConfig {
+    std::string goal = "maximize";
+    std::optional<double> lower;
+    std::optional<double> upper;
+    std::optional<double> target;
+    double weight = 1.0;
+};
+
 struct DoeConfiguration {
     std::vector<std::string> factor_names;
     std::vector<std::size_t> factor_columns;
     std::optional<std::size_t> response_column;
+    std::vector<std::size_t> response_columns;
     std::vector<std::string> low_levels;
     std::vector<std::string> high_levels;
     std::size_t center_point_count = 0;
@@ -155,6 +173,11 @@ struct DoeConfiguration {
     std::optional<double> optimization_target;
     double optimization_weight = 1.0;
     double optimization_confidence = 0.95;
+    std::vector<DoeResponseObjectiveConfig> optimization_objectives;
+    std::string contour_x_factor;
+    std::string contour_y_factor;
+    // Actual-unit hold for non-axis factors: name -> actual text (empty map = coded 0).
+    std::map<std::string, std::string> contour_hold_actual;
 };
 
 struct MsaConfiguration {
@@ -175,6 +198,7 @@ struct MsaConfiguration {
     std::optional<std::size_t> reference_column;
     std::optional<std::size_t> time_column;
     std::optional<double> reference_value;
+    std::optional<double> process_variation;
     std::string mode = "type1";
 };
 
@@ -195,7 +219,10 @@ struct PowerConfiguration {
     std::size_t group_count = 3;
     double null_proportion = 0.5;
     double second_proportion = 0.7;
+    double observation_length = 1.0;
     std::string variance_method = "pooled";
+    std::string sample_size_list;
+    std::string effect_size_list;
 };
 
 struct PcaConfiguration {
@@ -289,7 +316,8 @@ enum class PlotKind {
     time_series,
     area,
     contour,
-    pie
+    pie,
+    surface
 };
 
 enum class PlotSeriesRole {
@@ -467,11 +495,31 @@ struct CapabilityFacts {
     std::string specification_mode;
     std::string method;
     std::string johnson_family;
+    std::optional<double> normality_p_value;
+    std::optional<double> transform_p_value;
+    std::optional<double> transform_anderson_darling;
+    std::string nonnormal_distribution;
+    std::optional<double> fitted_shape;
+    std::optional<double> fitted_scale;
+    std::optional<double> average_p;
+    std::optional<double> percent_defective;
+    std::optional<double> ppm_defective;
+    std::optional<double> process_z;
+    std::optional<double> mean_dpu;
+    std::optional<double> cp;
+    std::optional<double> pp;
+    std::optional<double> cpk_lower;
+    std::optional<double> cpk_upper;
+    std::optional<double> ppk_lower;
+    std::optional<double> ppk_upper;
+    std::string capability_ci_method;
 };
 
 struct RegressionFacts {
     std::optional<double> r_squared;
     std::optional<double> residual_normality_p;
+    std::optional<double> residual_anderson_darling;
+    std::size_t residual_plot_count = 0;
     std::size_t influential_count = 0;
     std::string assumption_status = "not_verified";
     std::size_t outlier_count = 0;
@@ -493,6 +541,9 @@ struct AnovaFacts {
     std::optional<double> family_confidence_level;
     std::size_t tukey_significant_pairs = 0;
     std::string tukey_method;
+    std::string tukey_interval_columns;  // "lower_upper" when split columns are used
+    bool tukey_grouping_available = false;
+    std::size_t grouping_letter_count = 0;
     std::string assumption_status = "not_verified";
     std::vector<AssumptionCheck> assumptions;
     std::vector<RuleEvidence> rules;
@@ -501,11 +552,57 @@ struct AnovaFacts {
 struct SpcFacts {
     std::optional<std::size_t> out_of_control_count;
     std::optional<double> sigma_z;
+    std::optional<double> sigma_within;
+    std::optional<double> sigma_between;
+    std::optional<double> sigma_between_within;
+    std::string between_within_method;
 };
 
 struct DoeFacts {
     std::vector<std::string> significant_terms;
     bool has_p_value = false;
+    std::size_t response_count = 0;
+    bool multi_response = false;
+    std::optional<double> best_overall_desirability;
+    std::vector<std::string> response_names;
+    bool prediction_interval_available = false;
+    std::string largest_standardized_effect_term;
+    std::optional<double> pareto_reference;
+    std::string pareto_method;
+    std::size_t residual_count = 0;
+    std::size_t factor_count = 0;
+    bool cube_plot_available = false;
+    bool contour_plot_available = false;
+    std::string contour_x_factor;
+    std::string contour_y_factor;
+    std::vector<std::string> held_factor_names;
+    std::vector<std::string> held_actual_values;
+    std::vector<double> held_coded_values;
+};
+
+struct MultiVariFacts {
+    std::size_t factor_count = 0;
+    std::size_t valid_count = 0;
+    std::size_t missing_count = 0;
+    double combination_coverage = 0.0;
+    std::vector<std::string> factor_names;
+};
+
+struct ToleranceFacts {
+    std::size_t valid_count = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> mean;
+    std::optional<double> standard_deviation;
+    std::optional<double> coverage;
+    std::optional<double> confidence_level;
+    std::optional<double> lower;
+    std::optional<double> upper;
+    std::optional<double> k_factor;
+    std::optional<double> achieved_confidence;
+    std::string method;
+    std::string method_family = "normal";
+    std::string interval_type = "two_sided";
+    std::string assumption_status = "not_verified";
 };
 
 struct MsaFacts {
@@ -524,12 +621,25 @@ struct MsaFacts {
     bool negative_variance_truncated = false;
     std::optional<double> gage_percent_study_variation;
     std::optional<double> gage_percent_contribution;
+    std::optional<double> linearity;
+    std::optional<double> percent_linearity;
+    std::optional<double> slope_p_value;
+    std::optional<double> intercept_p_value;
+    std::optional<double> residual_s;
+    std::optional<double> average_bias;
+    std::optional<double> average_bias_p;
+    std::optional<double> process_variation_used;
     bool ratings_are_ordinal = false;
     bool kendall_available = false;
+    bool weighted_kappa_available = false;
+    bool by_part_plot_available = false;
+    bool interaction_plot_available = false;
+    std::size_t plot_point_count = 0;
     std::optional<double> kendall_w;
     std::optional<double> kendall_w_p;
     std::optional<double> kendall_tau;
     std::optional<double> kendall_tau_p;
+    std::string kappa_weight_scheme = "none";
     std::string assumption_status = "not_verified";
     std::vector<RuleEvidence> rules;
 };
@@ -570,6 +680,29 @@ struct ChiSquareFacts {
     std::optional<double> p_value;
     std::optional<double> degrees_of_freedom;
     bool expected_count_warning = false;
+    std::size_t row_count = 0;
+    std::size_t column_count = 0;
+    std::size_t total_count = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> likelihood_ratio_statistic;
+    std::optional<double> likelihood_ratio_p_value;
+    bool plot_available = false;
+};
+
+struct ChiSquareGofFacts {
+    std::optional<double> statistic;
+    std::optional<double> p_value;
+    std::optional<double> degrees_of_freedom;
+    std::size_t category_count = 0;
+    std::size_t total_count = 0;
+    std::size_t missing_count = 0;
+    bool expected_count_warning = false;
+    std::size_t expected_below_five_count = 0;
+    std::optional<double> minimum_expected_count;
+    std::string validity_status = "ok";
+    std::string recommendation;
+    bool plot_available = false;
+    std::string proportion_source = "equal";
 };
 
 struct NonparametricFacts {
@@ -582,6 +715,15 @@ struct NonparametricFacts {
     bool small_sample_warning = false;
     std::optional<double> effect_size;
     std::optional<double> p_value_unadjusted;
+    std::size_t group_count = 0;
+    std::size_t plot_point_count = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> location_estimate;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    bool dunn_available = false;
+    std::size_t posthoc_pair_count = 0;
+    std::size_t grouping_letter_count = 0;
 };
 
 struct LogisticFacts {
@@ -593,6 +735,9 @@ struct LogisticFacts {
     std::size_t hosmer_lemeshow_groups = 0;
     std::string hosmer_lemeshow_status = "not_computed";
     std::size_t high_leverage_count = 0;
+    std::optional<double> leverage_threshold;
+    std::optional<double> maximum_leverage;
+    std::optional<double> maximum_vif;
 };
 
 struct PcaFacts {
@@ -602,6 +747,8 @@ struct PcaFacts {
     std::size_t observation_count = 0;
     std::optional<double> t2_limit;
     std::optional<double> q_limit;
+    std::optional<double> residual_ad_p;
+    std::size_t diagnostic_plot_count = 0;
     bool converged = false;
 };
 
@@ -609,7 +756,120 @@ struct VarianceFacts {
     std::string method;
     std::optional<double> statistic;
     std::optional<double> p_value;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
     std::size_t group_count = 0;
+};
+
+struct ProportionFacts {
+    std::string kind = "one_sample";
+    std::size_t events = 0;
+    std::size_t trials = 0;
+    std::optional<double> proportion;
+    std::optional<std::size_t> second_events;
+    std::optional<std::size_t> second_trials;
+    std::optional<double> second_proportion;
+    std::optional<double> difference;
+    std::optional<double> hypothesized;
+    std::string method;
+    std::string ci_method;
+    std::optional<double> p_value;
+    std::optional<double> fisher_p_value;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::string assumption_status = "not_verified";
+};
+
+struct BoxCoxFacts {
+    double lambda = 0.0;
+    std::size_t n = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> transformed_standard_deviation;
+    bool rounded_lambda = true;
+    std::string assumption_status = "not_verified";
+};
+
+struct PoissonRateFacts {
+    std::string kind;
+    std::size_t events = 0;
+    double exposure = 0.0;
+    std::optional<double> rate;
+    std::optional<std::size_t> second_events;
+    std::optional<double> second_exposure;
+    std::optional<double> second_rate;
+    std::optional<double> hypothesized;
+    std::string method;
+    std::string comparison = "difference";
+    std::optional<double> ratio;
+    std::optional<double> ratio_ci_lower;
+    std::optional<double> ratio_ci_upper;
+    std::optional<double> z_statistic;
+    std::optional<double> p_value;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::string assumption_status = "not_verified";
+};
+
+struct EquivalenceFacts {
+    std::string kind;
+    std::optional<double> difference;
+    std::optional<double> lower;
+    std::optional<double> upper;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::optional<double> p_lower;
+    std::optional<double> p_upper;
+    std::optional<double> alpha;
+    std::string ci_method = "tost_1_minus_alpha";
+    bool within_limits = false;
+    bool both_pvalues_below_alpha = false;
+    std::string assumption_status = "not_verified";
+};
+
+struct TTestFacts {
+    std::string kind;
+    std::size_t n = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> mean;
+    std::optional<double> difference;
+    std::optional<double> p_value;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::string variance_method;
+    std::string assumption_status = "not_verified";
+};
+
+struct NormalityFacts {
+    std::size_t n = 0;
+    std::size_t missing_count = 0;
+    std::string decision = "not_computed";
+    std::optional<double> p_value;
+    std::optional<double> anderson_darling;
+    double alpha = 0.05;
+    std::string assumption_status = "not_verified";
+};
+
+struct CorrelationFacts {
+    std::string method = "pearson";
+    std::size_t variable_count = 0;
+    std::size_t n = 0;
+    std::size_t missing_skipped = 0;
+    std::string assumption_status = "not_verified";
+};
+
+struct OutlierTestFacts {
+    std::size_t n = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> mean;
+    std::optional<double> standard_deviation;
+    std::optional<double> g_statistic;
+    std::optional<double> p_value;
+    std::optional<double> outlier_value;
+    std::optional<std::size_t> source_row;
+    std::string direction;
+    std::string alternative = "two_sided";
+    double alpha = 0.05;
+    std::string assumption_status = "not_verified";
 };
 
 struct DistributionIdentificationFacts {
@@ -622,6 +882,10 @@ struct DistributionIdentificationFacts {
 struct PowerFacts {
     std::optional<double> power;
     std::optional<double> effect_size;
+    std::string mode;
+    std::optional<std::size_t> sample_size;
+    std::optional<double> target;
+    std::optional<double> actual_power;
 };
 
 struct ParetoFacts {
@@ -673,11 +937,22 @@ struct InterpretationFacts {
     std::optional<AnovaFacts> anova;
     std::optional<DescriptiveFacts> descriptive;
     std::optional<ChiSquareFacts> chi_square;
+    std::optional<ChiSquareGofFacts> chi_square_gof;
     std::optional<NonparametricFacts> nonparametric;
     std::optional<LogisticFacts> logistic;
     std::optional<DistributionIdentificationFacts> distribution_identification;
     std::optional<PcaFacts> pca;
     std::optional<VarianceFacts> variance;
+    std::optional<MultiVariFacts> multi_vari;
+    std::optional<ToleranceFacts> tolerance;
+    std::optional<ProportionFacts> proportion;
+    std::optional<BoxCoxFacts> box_cox;
+    std::optional<PoissonRateFacts> poisson_rate;
+    std::optional<EquivalenceFacts> equivalence;
+    std::optional<TTestFacts> t_test;
+    std::optional<NormalityFacts> normality;
+    std::optional<CorrelationFacts> correlation;
+    std::optional<OutlierTestFacts> outlier_test;
 };
 
 struct OutputPage {

@@ -13,3 +13,5 @@ __pycache__/
 /test-output.txt
 /icon-output.txt
 /test-results.xml
+
+dist/

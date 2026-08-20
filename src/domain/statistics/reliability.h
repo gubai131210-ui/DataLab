@@ -157,6 +157,10 @@ std::optional<double> percentile_life_km(
     const std::vector<KaplanMeierPoint>& points,
     double percentile);
 
+double cdf_weibull3(double time, double shape, double scale, double threshold);
+double cdf_exponential2(double time, double rate, double threshold);
+double cdf_lognormal3(double time, double location, double scale, double threshold);
+
 std::vector<ParametricDistributionCandidate> compare_parametric_distributions(
     const std::vector<double>& times,
     const std::vector<bool>& events);

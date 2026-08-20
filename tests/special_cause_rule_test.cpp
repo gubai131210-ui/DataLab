@@ -1,3 +1,4 @@
+#include "application/analysis_service.h"
 #include "domain/statistics/control_charts.h"
 #include "ui/analysis_commands.h"
 #include "ui/analysis_setup_dialog.h"
@@ -6,6 +7,7 @@
 #include <QLabel>
 #include <QTest>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <vector>
@@ -44,6 +46,17 @@ private slots:
     void filtersInapplicableRules();
     void detectsEachMinitabRule();
     void testSevenBoundaryExcludesExactSigma();
+    void testSevenXbarBoundaryExcludesExactSigma();
+    void imrHistoricalExactSigmaDoesNotTriggerTestSeven();
+    void imrAndXbarServiceTestSevenBoundary();
+    void testTwoBoundaryEightSameSideNoTrigger();
+    void testFourBoundaryThirteenAlternatingFails();
+    void testFiveBoundaryExactTwoSigmaAndSinglePoint();
+    void testSixBoundaryExactOneSigmaAndThreePoints();
+    void testEightBoundaryExactOneSigmaNoTrigger();
+    void testEightSameSideAllAboveOneSigma();
+    void imrAndXbarServiceTestTwoBoundary();
+    void imrAndXbarServiceTestFiveSixEightBoundary();
     void equalValuesBreakTrendAndAlternation();
     void testEightDoesNotRequireBothSides();
     void phaseLabelsBreakWindows();
@@ -154,6 +167,7 @@ void SpecialCauseRuleTest::detectsEachMinitabRule()
 
 void SpecialCauseRuleTest::testSevenBoundaryExcludesExactSigma()
 {
+    // # source: formula_reference — Test 7 uses |y-CL| < σ; equal to 1σ is not inside.
     SpecialCauseSelection only{{7}, "explicit"};
     auto inside = synthetic({
         0.1, -0.2, 0.3, -0.4, 0.0, 0.2, -0.1, 0.4, -0.3, 0.1, -0.2, 0.3, -0.4, 0.2, 0.0});
@@ -164,6 +178,322 @@ void SpecialCauseRuleTest::testSevenBoundaryExcludesExactSigma()
         1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
     apply_special_cause_tests(on_boundary, ControlChartKind::individuals, only);
     QVERIFY(on_boundary.special_cause_points[6].empty());
+}
+
+void SpecialCauseRuleTest::testSevenXbarBoundaryExcludesExactSigma()
+{
+    // # source: formula_reference — same <σ rule on Xbar plotted means.
+    SpecialCauseSelection only{{7}, "explicit"};
+    auto inside = synthetic({
+        0.1, -0.2, 0.3, -0.4, 0.0, 0.2, -0.1, 0.4, -0.3, 0.1, -0.2, 0.3, -0.4, 0.2, 0.0});
+    apply_special_cause_tests(inside, ControlChartKind::xbar, only);
+    QCOMPARE(inside.special_cause_points[6].size(), std::size_t{15});
+
+    auto on_boundary = synthetic({
+        1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+    apply_special_cause_tests(on_boundary, ControlChartKind::xbar, only);
+    QVERIFY(on_boundary.special_cause_points[6].empty());
+}
+
+void SpecialCauseRuleTest::imrHistoricalExactSigmaDoesNotTriggerTestSeven()
+{
+    // # source: formula_reference — I-MR with known σ; a point on the 1σ ring
+    // is not inside the Test 7 window.
+    datalab::domain::statistics::IndividualsMovingRangeOptions options;
+    options.historical_mean = 0.0;
+    options.historical_sigma = 1.0;
+    options.special_causes = {{7}, "explicit"};
+    std::vector<double> inside(15, 0.4);
+    const auto inside_chart =
+        ControlCharts::individuals_moving_range_dual(inside, options);
+    QCOMPARE(inside_chart.primary.special_cause_points[6].size(), std::size_t{15});
+
+    std::vector<double> on_boundary(15, 0.4);
+    on_boundary[0] = 1.0;
+    const auto boundary_chart =
+        ControlCharts::individuals_moving_range_dual(on_boundary, options);
+    QVERIFY(boundary_chart.primary.special_cause_points[6].empty());
+}
+
+namespace {
+
+bool plot_triggered_test(const datalab::domain::PlotSpec& plot, int test)
+{
+    for (const auto& tests : plot.triggered_tests) {
+        if (std::find(tests.cbegin(), tests.cend(), test) != tests.cend()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+}  // namespace
+
+void SpecialCauseRuleTest::imrAndXbarServiceTestSevenBoundary()
+{
+    // # source: formula_reference — service I-MR / Xbar-R with Test 7 only.
+    datalab::domain::DataTable imr_inside;
+    imr_inside.columns = {"Y"};
+    for (int index = 0; index < 15; ++index) {
+        imr_inside.rows.push_back({index % 2 == 0 ? "10.0" : "10.1"});
+    }
+    datalab::domain::AnalysisConfiguration imr_config;
+    imr_config.variable_columns = {0};
+    imr_config.selection.measurement_column = 0;
+    imr_config.control.enabled_special_cause_tests = {7};
+    imr_config.control.special_cause_rule_policy = "explicit";
+    const auto imr_inside_page =
+        datalab::application::AnalysisService::individuals_moving_range(
+            imr_inside, imr_config);
+    QVERIFY(!imr_inside_page.plots.empty());
+    QCOMPARE(imr_inside_page.plots.front().source_rows.size(), std::size_t{15});
+    QCOMPARE(imr_inside_page.plots.front().source_rows.front(), std::size_t{0});
+    QVERIFY(plot_triggered_test(imr_inside_page.plots.front(), 7));
+
+    datalab::domain::DataTable imr_outside = imr_inside;
+    imr_outside.rows[0] = {"50.0"};
+    const auto imr_outside_page =
+        datalab::application::AnalysisService::individuals_moving_range(
+            imr_outside, imr_config);
+    QVERIFY(!plot_triggered_test(imr_outside_page.plots.front(), 7));
+    QCOMPARE(imr_outside_page.plots.front().source_rows.front(), std::size_t{0});
+
+    datalab::domain::DataTable xbar_inside;
+    xbar_inside.columns = {"Y"};
+    for (int subgroup = 0; subgroup < 15; ++subgroup) {
+        xbar_inside.rows.push_back({"10.0"});
+        xbar_inside.rows.push_back({"10.2"});
+    }
+    datalab::domain::AnalysisConfiguration xbar_config;
+    xbar_config.variable_columns = {0};
+    xbar_config.selection.measurement_column = 0;
+    xbar_config.control.subgroup_size = 2;
+    xbar_config.control.enabled_special_cause_tests = {7};
+    xbar_config.control.special_cause_rule_policy = "explicit";
+    const auto xbar_inside_page =
+        datalab::application::AnalysisService::xbar_range(xbar_inside, xbar_config);
+    QVERIFY(!xbar_inside_page.plots.empty());
+    QCOMPARE(xbar_inside_page.plots.front().source_rows.size(), std::size_t{15});
+    QCOMPARE(xbar_inside_page.plots.front().source_rows[1], std::size_t{2});
+    QVERIFY(plot_triggered_test(xbar_inside_page.plots.front(), 7));
+
+    // Shift one subgroup mean so |ȳ − CL| ≥ σ_xbar (A2·R̄/3). Range stays 0.2.
+    datalab::domain::DataTable xbar_boundary = xbar_inside;
+    xbar_boundary.rows[0] = {"10.20"};
+    xbar_boundary.rows[1] = {"10.40"};
+    const auto xbar_boundary_page =
+        datalab::application::AnalysisService::xbar_range(xbar_boundary, xbar_config);
+    QVERIFY(!plot_triggered_test(xbar_boundary_page.plots.front(), 7));
+}
+
+void SpecialCauseRuleTest::testTwoBoundaryEightSameSideNoTrigger()
+{
+    // # source: formula_reference — Test 2 needs 9 consecutive same-side points.
+    SpecialCauseSelection only{{2}, "explicit"};
+    auto eight = synthetic({1, 1, 1, 1, 1, 1, 1, 1});
+    apply_special_cause_tests(eight, ControlChartKind::individuals, only);
+    QVERIFY(eight.special_cause_points[1].empty());
+
+    auto nine = synthetic({1, 1, 1, 1, 1, 1, 1, 1, 1});
+    apply_special_cause_tests(nine, ControlChartKind::individuals, only);
+    QCOMPARE(nine.special_cause_points[1].size(), std::size_t{9});
+
+    auto reset = synthetic({1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1});
+    apply_special_cause_tests(reset, ControlChartKind::individuals, only);
+    QVERIFY(reset.special_cause_points[1].empty());
+}
+
+void SpecialCauseRuleTest::testFourBoundaryThirteenAlternatingFails()
+{
+    // # source: formula_reference — Test 4 needs 14 strictly alternating points.
+    SpecialCauseSelection only{{4}, "explicit"};
+    auto broken = synthetic({1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, 1});
+    apply_special_cause_tests(broken, ControlChartKind::individuals, only);
+    QVERIFY(broken.special_cause_points[3].empty());
+
+    auto strict = synthetic({1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1});
+    apply_special_cause_tests(strict, ControlChartKind::individuals, only);
+    QCOMPARE(strict.special_cause_points[3].size(), std::size_t{14});
+}
+
+void SpecialCauseRuleTest::testFiveBoundaryExactTwoSigmaAndSinglePoint()
+{
+    // # source: formula_reference — Test 5 uses strict >2σ; exactly 2σ does not count.
+    SpecialCauseSelection only{{5}, "explicit"};
+    auto on_boundary = synthetic({2.0, 0.0, 0.0});
+    apply_special_cause_tests(on_boundary, ControlChartKind::individuals, only);
+    QVERIFY(on_boundary.special_cause_points[4].empty());
+
+    auto one_outside = synthetic({2.1, 0.0, 0.0});
+    apply_special_cause_tests(one_outside, ControlChartKind::individuals, only);
+    QVERIFY(one_outside.special_cause_points[4].empty());
+
+    auto triggers = synthetic({2.1, 2.2, 0.0});
+    apply_special_cause_tests(triggers, ControlChartKind::individuals, only);
+    QCOMPARE(triggers.special_cause_points[4].size(), std::size_t{3});
+}
+
+void SpecialCauseRuleTest::testSixBoundaryExactOneSigmaAndThreePoints()
+{
+    // # source: formula_reference — Test 6 uses strict >1σ; need 4 of 5 on same side.
+    SpecialCauseSelection only{{6}, "explicit"};
+    auto on_boundary = synthetic({1.0, 1.0, 1.0, 1.0, 0.0});
+    apply_special_cause_tests(on_boundary, ControlChartKind::individuals, only);
+    QVERIFY(on_boundary.special_cause_points[5].empty());
+
+    auto three_outside = synthetic({1.1, 1.1, 1.1, 0.0, 0.0});
+    apply_special_cause_tests(three_outside, ControlChartKind::individuals, only);
+    QVERIFY(three_outside.special_cause_points[5].empty());
+
+    auto triggers = synthetic({1.1, 1.2, 1.3, 1.4, 0.0});
+    apply_special_cause_tests(triggers, ControlChartKind::individuals, only);
+    QCOMPARE(triggers.special_cause_points[5].size(), std::size_t{5});
+}
+
+void SpecialCauseRuleTest::testEightBoundaryExactOneSigmaNoTrigger()
+{
+    // # source: formula_reference — Test 8 uses strict >1σ; exactly 1σ does not count.
+    SpecialCauseSelection only{{8}, "explicit"};
+    auto on_boundary = synthetic({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0});
+    apply_special_cause_tests(on_boundary, ControlChartKind::individuals, only);
+    QVERIFY(on_boundary.special_cause_points[7].empty());
+}
+
+void SpecialCauseRuleTest::testEightSameSideAllAboveOneSigma()
+{
+    // # source: formula_reference — Test 8 does not require alternating sides.
+    SpecialCauseSelection only{{8}, "explicit"};
+    auto same_side = synthetic({1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8});
+    apply_special_cause_tests(same_side, ControlChartKind::individuals, only);
+    QCOMPARE(same_side.special_cause_points[7].size(), std::size_t{8});
+    apply_special_cause_tests(same_side, ControlChartKind::xbar, only);
+    QCOMPARE(same_side.special_cause_points[7].size(), std::size_t{8});
+}
+
+void SpecialCauseRuleTest::imrAndXbarServiceTestTwoBoundary()
+{
+    // # source: formula_reference — service I-MR / Xbar-R with Test 2 only.
+    auto build_imr = [](const std::vector<std::string>& values) {
+        datalab::domain::DataTable table;
+        table.columns = {"Y"};
+        for (const auto& value : values) {
+            table.rows.push_back({value});
+        }
+        datalab::domain::AnalysisConfiguration config;
+        config.variable_columns = {0};
+        config.selection.measurement_column = 0;
+        config.control.enabled_special_cause_tests = {2};
+        config.control.special_cause_rule_policy = "explicit";
+        return datalab::application::AnalysisService::individuals_moving_range(table, config);
+    };
+
+    std::vector<std::string> baseline;
+    for (int index = 0; index < 10; ++index) {
+        baseline.push_back(index % 2 == 0 ? "10.0" : "10.2");
+    }
+    auto eight_above = baseline;
+    for (int index = 0; index < 8; ++index) {
+        eight_above.push_back("10.5");
+    }
+    const auto eight_page = build_imr(eight_above);
+    QVERIFY(!eight_page.plots.empty());
+    QVERIFY(!plot_triggered_test(eight_page.plots.front(), 2));
+
+    auto nine_above = baseline;
+    for (int index = 0; index < 9; ++index) {
+        nine_above.push_back("10.5");
+    }
+    const auto nine_page = build_imr(nine_above);
+    QVERIFY(plot_triggered_test(nine_page.plots.front(), 2));
+
+    datalab::domain::DataTable xbar_table;
+    xbar_table.columns = {"Y"};
+    for (int subgroup = 0; subgroup < 8; ++subgroup) {
+        xbar_table.rows.push_back({"10.5"});
+        xbar_table.rows.push_back({"10.7"});
+    }
+    datalab::domain::AnalysisConfiguration xbar_config;
+    xbar_config.variable_columns = {0};
+    xbar_config.selection.measurement_column = 0;
+    xbar_config.control.subgroup_size = 2;
+    xbar_config.control.enabled_special_cause_tests = {2};
+    xbar_config.control.special_cause_rule_policy = "explicit";
+    const auto xbar_eight =
+        datalab::application::AnalysisService::xbar_range(xbar_table, xbar_config);
+    QVERIFY(!plot_triggered_test(xbar_eight.plots.front(), 2));
+
+    xbar_table.rows.push_back({"10.5"});
+    xbar_table.rows.push_back({"10.7"});
+    const auto xbar_nine =
+        datalab::application::AnalysisService::xbar_range(xbar_table, xbar_config);
+    QVERIFY(plot_triggered_test(xbar_nine.plots.front(), 2));
+}
+
+void SpecialCauseRuleTest::imrAndXbarServiceTestFiveSixEightBoundary()
+{
+    // # source: formula_reference — service layer for Tests 5, 6, 8 boundaries.
+    auto build_imr = [](const std::vector<std::string>& values, int test) {
+        datalab::domain::DataTable table;
+        table.columns = {"Y"};
+        for (const auto& value : values) {
+            table.rows.push_back({value});
+        }
+        datalab::domain::AnalysisConfiguration config;
+        config.variable_columns = {0};
+        config.selection.measurement_column = 0;
+        config.control.enabled_special_cause_tests = {test};
+        config.control.special_cause_rule_policy = "explicit";
+        return datalab::application::AnalysisService::individuals_moving_range(table, config);
+    };
+
+    std::vector<std::string> baseline;
+    for (int index = 0; index < 12; ++index) {
+        baseline.push_back(index % 2 == 0 ? "10.0" : "10.2");
+    }
+
+    auto test_five_fail = baseline;
+    test_five_fail.push_back("10.0");
+    test_five_fail.push_back("10.0");
+    test_five_fail.push_back("10.0");
+    const auto five_fail_page = build_imr(test_five_fail, 5);
+    QVERIFY(!plot_triggered_test(five_fail_page.plots.front(), 5));
+
+    auto test_five_pass = baseline;
+    test_five_pass.push_back("10.0");
+    test_five_pass.push_back("12.0");
+    test_five_pass.push_back("12.1");
+    const auto five_pass_page = build_imr(test_five_pass, 5);
+    QVERIFY(plot_triggered_test(five_pass_page.plots.front(), 5));
+
+    auto test_six_fail = baseline;
+    for (int index = 0; index < 5; ++index) {
+        test_six_fail.push_back("10.0");
+    }
+    const auto six_fail_page = build_imr(test_six_fail, 6);
+    QVERIFY(!plot_triggered_test(six_fail_page.plots.front(), 6));
+
+    auto test_six_pass = baseline;
+    test_six_pass.push_back("10.6");
+    test_six_pass.push_back("10.7");
+    test_six_pass.push_back("10.8");
+    test_six_pass.push_back("10.9");
+    test_six_pass.push_back("10.0");
+    const auto six_pass_page = build_imr(test_six_pass, 6);
+    QVERIFY(plot_triggered_test(six_pass_page.plots.front(), 6));
+
+    auto test_eight_fail = baseline;
+    for (int index = 0; index < 8; ++index) {
+        test_eight_fail.push_back("10.2");
+    }
+    const auto eight_fail_page = build_imr(test_eight_fail, 8);
+    QVERIFY(!plot_triggered_test(eight_fail_page.plots.front(), 8));
+
+    auto test_eight_pass = baseline;
+    for (int index = 0; index < 8; ++index) {
+        test_eight_pass.push_back("10.6");
+    }
+    const auto eight_pass_page = build_imr(test_eight_pass, 8);
+    QVERIFY(plot_triggered_test(eight_pass_page.plots.front(), 8));
 }
 
 void SpecialCauseRuleTest::equalValuesBreakTrendAndAlternation()

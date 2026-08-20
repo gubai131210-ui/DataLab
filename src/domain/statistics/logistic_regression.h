@@ -19,6 +19,7 @@ struct LogisticCoefficient {
     double odds_ratio = std::numeric_limits<double>::quiet_NaN();
     double confidence_lower = std::numeric_limits<double>::quiet_NaN();
     double confidence_upper = std::numeric_limits<double>::quiet_NaN();
+    std::optional<double> vif;
 };
 
 struct LogisticObservation {
@@ -48,6 +49,9 @@ struct LogisticRegressionResult {
     std::size_t hosmer_lemeshow_groups = 0;
     std::optional<std::size_t> hosmer_lemeshow_df;
     std::string hosmer_lemeshow_status = "not_computed";
+    double leverage_threshold = 0.0;
+    std::optional<double> maximum_leverage;
+    std::optional<double> maximum_vif;
     std::vector<DiagnosticMessage> diagnostics;
 };
 

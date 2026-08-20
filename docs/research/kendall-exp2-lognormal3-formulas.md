@@ -87,4 +87,23 @@ AIC 的 k = 3
 | 三参数对数正态 | `fit_lognormal3` |
 | 数据区 X 刻度 | `ChartModel` / `ChartRenderer` / `graph_properties_dialog` |
 
+## 7. 三参数族概率图 / 生存曲线（2026-08-20 后）
+
+| 主题 | 来源 | 访问日期 |
+|---|---|---|
+| 阈值参数 | [Distributions with threshold parameters](https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/supporting-topics/distribution-models/distributions-with-threshold-parameters/) | 2026-08-20 |
+| 参数估计 | [Parameter estimates (right censoring)](https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/parametric-distribution-analysis-right-censoring/methods-and-formulas/parameter-estimates/) | 2026-08-20 |
+| 右删失概率图 | [Probability plot (parametric, right censoring)](https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/parametric-distribution-analysis-right-censoring/interpret-the-results/all-statistics-and-graphs/) | 2026-08-20 |
+
+可识别且收敛时：
+
+```text
+Weibull3:     F(t) = 1 − exp(−((t−λ)/α)^β)     t > λ
+Exponential2: F(t) = 1 − exp(−(t−λ)/θ)        t > λ
+Lognormal3:   F(t) = Φ((ln(t−λ)−μ)/σ)         t > λ
+S(t) = 1 − F(t)
+```
+
+服务层：参数表 + 百分位表保持；追加「生存曲线」（拟合 S(t) 网格）与「概率图」（失效时间 vs 拟合 CDF，失败点 `source_row`）。无界/失效不足/未收敛：只诊断，不出 parametric 图。比较表仍仅二参数三列。
+
 明确不做：Weighted Kappa、Minitab 无界似然 bias-correction、Kalman/TSERIES、图表注释与区域拖拽布局。公式参考 ≠ Minitab golden。

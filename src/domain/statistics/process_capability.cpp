@@ -1,11 +1,13 @@
 #include "domain/statistics/process_capability.h"
 
 #include "domain/quality_diagnostics.h"
+#include "domain/statistics/control_charts.h"
 #include "domain/statistics/descriptive_statistics.h"
 #include "domain/statistics/johnson_transform.h"
 #include "domain/statistics/normal_distribution.h"
 #include "domain/statistics/reliability.h"
 #include "domain/statistics/spc_constants.h"
+#include "domain/statistics/normal_distribution.h"
 
 #include <algorithm>
 #include <cmath>
@@ -227,6 +229,10 @@ ProcessCapabilityResult ProcessCapability::calculate(
     result.observed_ppm_below = 1.0e6 * static_cast<double>(below) / n;
     result.observed_ppm_above = 1.0e6 * static_cast<double>(above) / n;
     result.observed_ppm_total = *result.observed_ppm_below + *result.observed_ppm_above;
+    result.overall_degrees_of_freedom =
+        result.sample_size > 1 ? static_cast<double>(result.sample_size - 1) : 0.0;
+    result.within_degrees_of_freedom = result.overall_degrees_of_freedom;
+    fill_capability_index_intervals(result);
     return result;
 }
 
@@ -261,15 +267,24 @@ void fill_observed_ppm(
 void clear_within_indices(ProcessCapabilityResult& result)
 {
     result.cp.reset();
+    result.cp_lower.reset();
+    result.cp_upper.reset();
     result.cpl.reset();
+    result.cpl_lower.reset();
+    result.cpl_upper.reset();
     result.cpu.reset();
+    result.cpu_lower.reset();
+    result.cpu_upper.reset();
     result.cpk.reset();
+    result.cpk_lower.reset();
+    result.cpk_upper.reset();
     result.cpm.reset();
     result.expected_ppm_within_below.reset();
     result.expected_ppm_within_above.reset();
     result.expected_ppm_within_total.reset();
     result.within_standard_deviation = 0.0;
     result.within_sigma_method = "not_applicable";
+    result.within_degrees_of_freedom = 0.0;
 }
 
 }  // namespace
@@ -289,6 +304,10 @@ ProcessCapabilityResult ProcessCapability::calculate_johnson(
     ProcessCapabilityResult result;
     result.capability_method = "johnson";
     result.johnson_family = johnson_family_name(transform.parameters.family);
+    result.transform_p_value = transform.found ? std::optional<double>(transform.p_value)
+                                             : std::nullopt;
+    result.transform_anderson_darling = transform.found
+        ? std::optional<double>(transform.anderson_darling) : std::nullopt;
     result.diagnostics = transform.diagnostics;
     result.evidence.method_version = "2";
     result.evidence.assumption_status = "not_verified";
@@ -350,16 +369,22 @@ ProcessCapabilityResult ProcessCapability::calculate_johnson(
         transformed_specs);
     result.capability_method = "johnson";
     result.johnson_family = johnson_family_name(transform.parameters.family);
+    result.transform_p_value = std::optional<double>(transform.p_value);
+    result.transform_anderson_darling = std::optional<double>(transform.anderson_darling);
     result.diagnostics.insert(result.diagnostics.end(),
                               transform.diagnostics.cbegin(),
                               transform.diagnostics.cend());
     result.sample_size = valid.size();
     result.evidence.valid_count = valid.size();
+    result.transformed_values = transform.transformed;
     clear_within_indices(result);
     add_warning(result.diagnostics, "within_not_applicable_after_johnson",
                 "Johnson 变换路径只报告 overall Pp/Ppk，不报告 within Cp/Cpk。");
     fill_observed_ppm(result, valid, specifications);
     result.overall_sigma_method = "johnson_transformed_sample_sd";
+    result.overall_degrees_of_freedom =
+        result.sample_size > 1 ? static_cast<double>(result.sample_size - 1) : 0.0;
+    fill_capability_index_intervals(result);
     return result;
 }
 
@@ -370,6 +395,7 @@ ProcessCapabilityResult ProcessCapability::calculate_nonnormal(
 {
     ProcessCapabilityResult result;
     result.capability_method = "non_normal";
+    result.nonnormal_distribution = distribution;
     result.evidence.method_version = "2";
     result.evidence.assumption_status = "not_verified";
     result.within_sigma_method = "not_applicable";
@@ -429,6 +455,8 @@ ProcessCapabilityResult ProcessCapability::calculate_nonnormal(
         }
         lognormal_location = fitted.location;
         lognormal_scale = fitted.scale;
+        result.fitted_shape = lognormal_scale;
+        result.fitted_scale = lognormal_location;
         result.mean = std::exp(fitted.location + 0.5 * fitted.scale * fitted.scale);
         result.overall_standard_deviation =
             result.mean * std::sqrt(std::exp(fitted.scale * fitted.scale) - 1.0);
@@ -444,6 +472,8 @@ ProcessCapabilityResult ProcessCapability::calculate_nonnormal(
         }
         weibull_shape = fitted.shape;
         weibull_scale = fitted.scale;
+        result.fitted_shape = weibull_shape;
+        result.fitted_scale = weibull_scale;
         result.mean = fitted.scale * std::tgamma(1.0 + 1.0 / fitted.shape);
         result.overall_standard_deviation = 0.0;
     }
@@ -526,27 +556,30 @@ ProcessCapabilityResult ProcessCapability::calculate_between_within(
         }
     }
 
-    const std::optional<double> d2_subgroup = SpcConstants::d2(subgroup_size);
     const std::optional<double> d2_pair = SpcConstants::d2(2);
-    if (!d2_subgroup.has_value() || !d2_pair.has_value()) {
+    const WithinSubgroupSigmaEstimate within =
+        estimate_within_subgroup_sigma(subgroups);
+    if (!within.ok) {
+        add_error(failure.diagnostics, within.error_code.c_str(),
+                  within.error_message.c_str());
+        failure.evidence.not_computed_reason = within.error_code;
+        return failure;
+    }
+    if (!d2_pair.has_value()) {
         add_error(failure.diagnostics, "unsupported_subgroup_size",
                   "子组大小超出无偏常数表范围。");
         failure.evidence.not_computed_reason = "unsupported_subgroup_size";
         return failure;
     }
 
-    double range_sum = 0.0;
     std::vector<double> subgroup_means;
     subgroup_means.reserve(subgroups.size());
     for (const auto& subgroup : subgroups) {
-        const auto minmax = std::minmax_element(subgroup.begin(), subgroup.end());
-        range_sum += *minmax.second - *minmax.first;
         subgroup_means.push_back(
             std::accumulate(subgroup.begin(), subgroup.end(), 0.0)
             / static_cast<double>(subgroup.size()));
     }
-    const double within_sigma = (range_sum / static_cast<double>(subgroups.size()))
-        / *d2_subgroup;
+    const double within_sigma = within.sigma;
 
     double moving_range_sum = 0.0;
     for (std::size_t index = 1; index < subgroup_means.size(); ++index) {
@@ -591,7 +624,7 @@ ProcessCapabilityResult ProcessCapability::calculate_between_within(
     result.subgroup_within_standard_deviation = within_sigma;
     result.between_standard_deviation = between_sigma;
     result.between_within_standard_deviation = between_within_sigma;
-    result.within_sigma_method = "R̄ / d2(n)";
+    result.within_sigma_method = within.method;
     result.between_sigma_method = "MR̄(子组均值) / d2(2)";
     result.between_within_sigma_method = "sqrt(σ²_B + σ²_within)";
     result.overall_sigma_method = "sample_standard_deviation";
@@ -602,7 +635,175 @@ ProcessCapabilityResult ProcessCapability::calculate_between_within(
     add_warning(result.diagnostics, "assumption_not_verified",
                 "能力指标未验证过程稳定性和正态性；数值仅供调查，不能单独作为过程合格结论。");
     fill_observed_ppm(result, valid, specifications);
+    result.overall_degrees_of_freedom =
+        result.sample_size > 1 ? static_cast<double>(result.sample_size - 1) : 0.0;
+    result.within_degrees_of_freedom = result.overall_degrees_of_freedom;
+    if (result.within_sigma_method.find("R") != std::string::npos) {
+        add_warning(result.diagnostics, "ci_df_used_sample_n",
+                    "组间/组内能力区间自由度使用 N−1，不是 Minitab Rbar/Sbar 调整 ν。");
+    }
+    fill_capability_index_intervals(result);
     return result;
+}
+
+namespace {
+
+double chi_square_left_tail_local(double value, double degrees_of_freedom)
+{
+    if (!(degrees_of_freedom > 0.0) || value < 0.0 || !std::isfinite(value)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    const double shape = degrees_of_freedom / 2.0;
+    const double scaled = value / 2.0;
+    if (scaled == 0.0) {
+        return 0.0;
+    }
+    constexpr int kMaxIterations = 200;
+    constexpr double kEpsilon = 1.0e-14;
+    if (scaled < shape + 1.0) {
+        double term = 1.0 / shape;
+        double sum = term;
+        for (int index = 1; index <= kMaxIterations; ++index) {
+            term *= scaled / (shape + static_cast<double>(index));
+            sum += term;
+            if (std::abs(term) < std::abs(sum) * kEpsilon) {
+                break;
+            }
+        }
+        return std::clamp(
+            sum * std::exp(-scaled + shape * std::log(scaled) - std::lgamma(shape)),
+            0.0, 1.0);
+    }
+    double factor = 1.0;
+    double sum = 1.0;
+    for (int index = 1; index <= kMaxIterations; ++index) {
+        factor *= (shape - static_cast<double>(index)) / scaled;
+        sum += factor;
+        if (std::abs(factor) < std::abs(sum) * kEpsilon) {
+            break;
+        }
+    }
+    return std::clamp(
+        1.0 - std::exp(-scaled + shape * std::log(scaled) - std::lgamma(shape)) * sum,
+        0.0, 1.0);
+}
+
+double chi_square_quantile_local(double probability, double degrees_of_freedom)
+{
+    if (!(probability > 0.0 && probability < 1.0) || !(degrees_of_freedom > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    double lower = 0.0;
+    double upper = std::max(1.0, degrees_of_freedom);
+    while (chi_square_left_tail_local(upper, degrees_of_freedom) < probability) {
+        upper *= 2.0;
+        if (!std::isfinite(upper)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+    }
+    for (int index = 0; index < 160; ++index) {
+        const double middle = (lower + upper) / 2.0;
+        if (chi_square_left_tail_local(middle, degrees_of_freedom) < probability) {
+            lower = middle;
+        } else {
+            upper = middle;
+        }
+    }
+    return (lower + upper) / 2.0;
+}
+
+void assign_chi_square_interval(
+    const std::optional<double>& estimate,
+    double nu,
+    double alpha,
+    std::optional<double>& lower,
+    std::optional<double>& upper)
+{
+    lower.reset();
+    upper.reset();
+    if (!estimate.has_value() || !std::isfinite(*estimate) || !(nu > 0.0)
+        || !(alpha > 0.0 && alpha < 1.0)) {
+        return;
+    }
+    const double chi_low = chi_square_quantile_local(alpha / 2.0, nu);
+    const double chi_high = chi_square_quantile_local(1.0 - alpha / 2.0, nu);
+    if (!(chi_low > 0.0) || !(chi_high > 0.0)) {
+        return;
+    }
+    lower = *estimate * std::sqrt(chi_low / nu);
+    upper = *estimate * std::sqrt(chi_high / nu);
+}
+
+void assign_bissell_interval(
+    const std::optional<double>& estimate,
+    double n,
+    double nu,
+    double z,
+    std::optional<double>& lower,
+    std::optional<double>& upper)
+{
+    lower.reset();
+    upper.reset();
+    if (!estimate.has_value() || !std::isfinite(*estimate) || !(n > 0.0) || !(nu > 0.0)
+        || !std::isfinite(z)) {
+        return;
+    }
+    const double variance = 1.0 / (9.0 * n) + (*estimate) * (*estimate) / (2.0 * nu);
+    if (!(variance > 0.0)) {
+        return;
+    }
+    const double half = z * std::sqrt(variance);
+    lower = *estimate - half;
+    upper = *estimate + half;
+}
+
+}  // namespace
+
+void fill_capability_index_intervals(
+    ProcessCapabilityResult& result, double confidence_level)
+{
+    result.capability_ci_method.clear();
+    if (!(confidence_level > 0.0 && confidence_level < 1.0) || result.sample_size < 2) {
+        add_warning(result.diagnostics, "capability_ci_not_computed",
+                    "样本量不足或置信水平非法，未计算能力指数区间。");
+        return;
+    }
+    const double alpha = 1.0 - confidence_level;
+    const double n = static_cast<double>(result.sample_size);
+    if (!(result.overall_degrees_of_freedom > 0.0)) {
+        result.overall_degrees_of_freedom = n - 1.0;
+    }
+    if (!(result.within_degrees_of_freedom > 0.0)
+        && result.capability_method != "johnson"
+        && result.capability_method != "non_normal") {
+        result.within_degrees_of_freedom = n - 1.0;
+    }
+    const double z = standard_normal_quantile(1.0 - alpha / 2.0);
+    assign_chi_square_interval(
+        result.cp, result.within_degrees_of_freedom, alpha,
+        result.cp_lower, result.cp_upper);
+    assign_bissell_interval(
+        result.cpl, n, result.within_degrees_of_freedom, z,
+        result.cpl_lower, result.cpl_upper);
+    assign_bissell_interval(
+        result.cpu, n, result.within_degrees_of_freedom, z,
+        result.cpu_lower, result.cpu_upper);
+    assign_bissell_interval(
+        result.cpk, n, result.within_degrees_of_freedom, z,
+        result.cpk_lower, result.cpk_upper);
+    assign_chi_square_interval(
+        result.pp, result.overall_degrees_of_freedom, alpha,
+        result.pp_lower, result.pp_upper);
+    assign_bissell_interval(
+        result.ppl, n, result.overall_degrees_of_freedom, z,
+        result.ppl_lower, result.ppl_upper);
+    assign_bissell_interval(
+        result.ppu, n, result.overall_degrees_of_freedom, z,
+        result.ppu_lower, result.ppu_upper);
+    assign_bissell_interval(
+        result.ppk, n, result.overall_degrees_of_freedom, z,
+        result.ppk_lower, result.ppk_upper);
+    result.capability_ci_method = "chi_square_cp_pp_bissell_cpk_ppk";
 }
 
 }  // namespace datalab::domain::statistics

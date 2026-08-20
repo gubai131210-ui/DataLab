@@ -23,7 +23,9 @@ enum class ControlChartKind {
     attribute,
     laney,
     ewma,
-    cusum
+    cusum,
+    g,
+    t
 };
 
 struct SpecialCauseTestSpec {
@@ -63,6 +65,7 @@ struct IndividualsMovingRangeOptions {
     std::vector<std::size_t> omit_from_estimate;
     std::optional<double> historical_mean;
     std::optional<double> historical_sigma;
+    std::vector<std::string> phase_labels;
     SpecialCauseSelection special_causes;
 };
 
@@ -74,11 +77,26 @@ struct DualControlChartResult {
     std::vector<DiagnosticMessage> diagnostics;
 };
 
+struct ImrRsChartResult {
+    ControlChartResult individuals;
+    ControlChartResult moving_range;
+    ControlChartResult within;
+    std::string within_chart;
+    double sigma_within = 0.0;
+    double sigma_xbar = 0.0;
+    double sigma_between = 0.0;
+    double sigma_between_within = 0.0;
+    bool between_variance_truncated = false;
+    std::string method;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
 struct LaneyChartOptions {
     std::vector<int> enabled_special_cause_tests;
     std::string special_cause_rule_policy = "default_all_applicable";
     std::optional<double> historical_center;
     std::optional<double> historical_sigma_z;
+    std::vector<std::string> phase_labels;
 };
 
 struct EwmaOptions {
@@ -125,6 +143,10 @@ public:
         const std::vector<std::vector<double>>& subgroups,
         const SpecialCauseSelection& special_causes = {});
 
+    static ImrRsChartResult imr_rs_triple(
+        const std::vector<std::vector<double>>& subgroups,
+        const SpecialCauseSelection& special_causes = {});
+
     static ControlChartResult p_chart(
         const std::vector<std::size_t>& defectives,
         const std::vector<std::size_t>& inspected,
@@ -162,6 +184,16 @@ public:
     static TimeWeightedControlChartResult cusum_chart(
         const std::vector<double>& observations,
         const CusumOptions& options = {});
+
+    static ControlChartResult g_chart(
+        const std::vector<double>& intervals,
+        const std::vector<RowId>& source_rows = {},
+        const SpecialCauseSelection& special_causes = {});
+
+    static ControlChartResult t_chart(
+        const std::vector<double>& intervals,
+        const std::vector<RowId>& source_rows = {},
+        const SpecialCauseSelection& special_causes = {});
 };
 
 std::vector<std::vector<double>> build_subgroups(
@@ -191,5 +223,17 @@ void apply_special_cause_tests(
     ControlChartResult& result,
     ControlChartKind kind,
     const SpecialCauseSelection& selection = {});
+
+struct WithinSubgroupSigmaEstimate {
+    bool ok = false;
+    double sigma = 0.0;
+    std::string method;
+    std::string chart;
+    std::string error_code;
+    std::string error_message;
+};
+
+WithinSubgroupSigmaEstimate estimate_within_subgroup_sigma(
+    const std::vector<std::vector<double>>& subgroups);
 
 }  // namespace datalab::domain::statistics

@@ -188,6 +188,28 @@ void MinitabNumericalGoldenTest::regressionMatchesMinitabGolden()
         }
         break;
     }
+
+    const auto coefficients = golden->sections.find("coefficients");
+    QVERIFY(coefficients != golden->sections.end());
+    for (const auto& table : page.tables) {
+        if (table.title != "系数") {
+            continue;
+        }
+        for (const auto& row : table.rows) {
+            if (row.size() < 2) {
+                continue;
+            }
+            const auto expected_coef = datalab::tests::minitab::table_cell_as_double(
+                coefficients->second, "Term", row[0], "Coef");
+            QVERIFY(expected_coef.has_value());
+            const auto actual_coef = datalab::tests::minitab::parse_double(row[1]);
+            QVERIFY(actual_coef.has_value());
+            QVERIFY2(datalab::tests::minitab::compare_double(*actual_coef, *expected_coef, tolerance),
+                     qPrintable(QStringLiteral("系数不匹配: %1").arg(
+                         QString::fromStdString(row[0]))));
+        }
+        break;
+    }
 }
 
 void MinitabNumericalGoldenTest::regressionDomainMatchesGoldenAnova()

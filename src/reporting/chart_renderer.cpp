@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
 
 namespace {
@@ -878,7 +879,11 @@ void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& m
     };
     draw_spec(model.lsl, QColor("#d32f2f"), QStringLiteral("LSL"));
     draw_spec(model.usl, QColor("#d32f2f"), QStringLiteral("USL"));
-    draw_spec(model.target, QColor("#6a1b9a"), QStringLiteral("Target"));
+    const QString target_label =
+        model.center_label.isEmpty() || model.center_label == QStringLiteral("CL")
+            ? QStringLiteral("Target")
+            : model.center_label;
+    draw_spec(model.target, QColor("#6a1b9a"), target_label);
 
     if (model.process_mean.has_value() && model.within_sigma.has_value() && *model.within_sigma > 0.0) {
         painter.setPen(QPen(QColor("#455a64"), 1.2, Qt::DashLine));
@@ -915,6 +920,35 @@ void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& m
             }
         }
         painter.drawPath(overall);
+    }
+    if (model.show_legend) {
+        painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), model.legend_font_size));
+        double legend_y = plot.top() + 4.0;
+        const auto draw_curve_legend = [&](const QString& label, const QColor& color) {
+            if (label.isEmpty()) {
+                return;
+            }
+            painter.setPen(color);
+            painter.drawText(QRectF(plot.right() - 118.0, legend_y, 110.0, 16.0),
+                             Qt::AlignRight | Qt::AlignVCenter,
+                             QStringLiteral("— ") + label);
+            legend_y += 15.0;
+        };
+        if (!model.series.empty()) {
+            for (const ChartSeries& series : model.series) {
+                if (!series.style.visible || series.label.isEmpty()) {
+                    continue;
+                }
+                draw_curve_legend(series.label, QColor(series.style.color));
+            }
+        } else {
+            if (model.within_sigma.has_value() && *model.within_sigma > 0.0) {
+                draw_curve_legend(QStringLiteral("Within"), QColor("#455a64"));
+            }
+            if (model.overall_sigma.has_value() && *model.overall_sigma > 0.0) {
+                draw_curve_legend(QStringLiteral("Overall"), QColor("#c62828"));
+            }
+        }
     }
     draw_title_and_axes(painter, area, plot, model);
 }
@@ -1012,13 +1046,19 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
         painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
         return;
     }
+    const bool show_cumulative = !model.cumulative_percent.empty();
     const double maximum_count =
         *std::max_element(model.category_values.begin(), model.category_values.end());
     const double total_count = std::accumulate(
         model.category_values.begin(), model.category_values.end(), 0.0);
+    const double reference = !model.center.empty() && std::isfinite(model.center.front())
+        ? model.center.front() : 0.0;
     // Minitab-style dual axis: left scale tops out at total count so the first
     // cumulative point sits on the first bar top (count/total == first cum%).
-    const double scale_top = std::max({1.0, maximum_count, total_count});
+    // Effects Pareto omits cumulative and scales to the largest bar / reference.
+    const double scale_top = show_cumulative
+        ? std::max({1.0, maximum_count, total_count})
+        : std::max({1.0, maximum_count, reference});
     const double tick_step = std::max(1.0, std::ceil(scale_top / 5.0));
     const double y_max = tick_step * 5.0;
     ChartCoordinateMapper mapper(plot);
@@ -1052,14 +1092,18 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
     painter.translate(area.left() + 12.0, plot.center().y());
     painter.rotate(-90.0);
     painter.drawText(QRectF(-plot.height() / 2.0, -10.0, plot.height(), 20.0),
-                     Qt::AlignCenter, QStringLiteral("计数"));
+                     Qt::AlignCenter,
+                     model.y_axis_title.isEmpty()
+                         ? QStringLiteral("计数") : model.y_axis_title);
     painter.restore();
-    painter.save();
-    painter.translate(area.right() - 12.0, plot.center().y());
-    painter.rotate(90.0);
-    painter.drawText(QRectF(-plot.height() / 2.0, -10.0, plot.height(), 20.0),
-                     Qt::AlignCenter, QStringLiteral("百分比"));
-    painter.restore();
+    if (show_cumulative) {
+        painter.save();
+        painter.translate(area.right() - 12.0, plot.center().y());
+        painter.rotate(90.0);
+        painter.drawText(QRectF(-plot.height() / 2.0, -10.0, plot.height(), 20.0),
+                         Qt::AlignCenter, QStringLiteral("百分比"));
+        painter.restore();
+    }
 
     const double bar_width = std::min(36.0, plot.width() / static_cast<double>(model.category_values.size()) * 0.6);
     for (std::size_t index = 0; index < model.category_values.size(); ++index) {
@@ -1084,6 +1128,16 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
         }
     }
 
+    if (!model.center.empty() && std::isfinite(model.center.front())
+        && model.center.front() > 0.0) {
+        const QPointF left = mapper.to_pixel(-0.5, model.center.front());
+        const QPointF right = mapper.to_pixel(
+            static_cast<double>(model.category_values.size()) - 0.5,
+            model.center.front());
+        painter.setPen(QPen(QColor("#c62828"), 1.6, Qt::DashLine));
+        painter.drawLine(left, right);
+    }
+
     if (!model.cumulative_percent.empty()) {
         // Minitab places cum-% markers on the right edge of each bar, not the center.
         const auto cumulative_point = [&](std::size_t index) -> QPointF {
@@ -1105,14 +1159,20 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
 
     painter.setPen(QColor("#c62828"));
     painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), 8));
-    for (int tick = 0; tick <= 100; tick += 20) {
-        const QPointF point = mapper.to_pixel(
-            static_cast<double>(model.category_values.size()) - 0.5,
-            static_cast<double>(tick) / 100.0 * y_max);
-        painter.drawText(
-            QRectF(plot.right() + 6.0, point.y() - 8.0, 42.0, 16.0),
-            Qt::AlignLeft | Qt::AlignVCenter,
-            QStringLiteral("%1%").arg(tick));
+    if (show_cumulative) {
+        for (int tick = 0; tick <= 100; tick += 20) {
+            const QPointF point = mapper.to_pixel(
+                static_cast<double>(model.category_values.size()) - 0.5,
+                static_cast<double>(tick) / 100.0 * y_max);
+            painter.drawText(
+                QRectF(plot.right() + 6.0, point.y() - 8.0, 42.0, 16.0),
+                Qt::AlignLeft | Qt::AlignVCenter,
+                QStringLiteral("%1%").arg(tick));
+        }
+    }
+
+    if (!show_cumulative) {
+        return;
     }
 
     // Stats rows sit below the slanted-label band to avoid collisions.
@@ -1636,6 +1696,83 @@ void render_contour(QPainter& painter, const QRectF& area, const ChartModel& mod
     draw_title_and_axes(painter, area, plot, model);
 }
 
+void render_surface(QPainter& painter, const QRectF& area, const ChartModel& model)
+{
+    const QRectF plot = plot_rect(area);
+    if (model.contour_x.size() < 2 || model.contour_y.size() < 2
+        || model.matrix_values.size() < model.contour_y.size()) {
+        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        return;
+    }
+    double z_min = std::numeric_limits<double>::infinity();
+    double z_max = -std::numeric_limits<double>::infinity();
+    for (std::size_t row = 0; row < model.contour_y.size(); ++row) {
+        if (row >= model.matrix_values.size()) {
+            break;
+        }
+        for (std::size_t column = 0; column < model.contour_x.size()
+             && column < model.matrix_values[row].size(); ++column) {
+            z_min = std::min(z_min, model.matrix_values[row][column]);
+            z_max = std::max(z_max, model.matrix_values[row][column]);
+        }
+    }
+    if (!std::isfinite(z_min) || !std::isfinite(z_max)) {
+        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        return;
+    }
+    if (qFuzzyCompare(z_min, z_max)) {
+        z_min -= 1.0;
+        z_max += 1.0;
+    }
+    const auto project = [&](std::size_t column, std::size_t row) {
+        const double xn = (model.contour_x[column] - model.contour_x.front())
+            / std::max(1.0e-12, model.contour_x.back() - model.contour_x.front());
+        const double yn = (model.contour_y[row] - model.contour_y.front())
+            / std::max(1.0e-12, model.contour_y.back() - model.contour_y.front());
+        const double zn = (model.matrix_values[row][column] - z_min) / (z_max - z_min);
+        const double u = (xn - yn) * 0.8660254037844386;
+        const double v = (xn + yn) * 0.5 + zn * 0.65;
+        return QPointF(u, v);
+    };
+    double u_min = std::numeric_limits<double>::infinity();
+    double u_max = -std::numeric_limits<double>::infinity();
+    double v_min = std::numeric_limits<double>::infinity();
+    double v_max = -std::numeric_limits<double>::infinity();
+    for (std::size_t row = 0; row < model.contour_y.size(); ++row) {
+        for (std::size_t column = 0; column < model.contour_x.size(); ++column) {
+            const QPointF point = project(column, row);
+            u_min = std::min(u_min, point.x());
+            u_max = std::max(u_max, point.x());
+            v_min = std::min(v_min, point.y());
+            v_max = std::max(v_max, point.y());
+        }
+    }
+    ChartCoordinateMapper mapper(plot);
+    mapper.set_data_range(u_min, u_max, v_min, v_max);
+    for (std::size_t row = 0; row < model.contour_y.size(); ++row) {
+        for (std::size_t column = 0; column + 1 < model.contour_x.size(); ++column) {
+            const QPointF start = mapper.to_pixel(project(column, row).x(), project(column, row).y());
+            const QPointF end = mapper.to_pixel(project(column + 1, row).x(),
+                                                project(column + 1, row).y());
+            painter.setPen(QPen(scale_color(model.matrix_values[row][column], z_min, z_max), 1.2));
+            painter.drawLine(start, end);
+        }
+    }
+    for (std::size_t column = 0; column < model.contour_x.size(); ++column) {
+        for (std::size_t row = 0; row + 1 < model.contour_y.size(); ++row) {
+            const QPointF start = mapper.to_pixel(project(column, row).x(), project(column, row).y());
+            const QPointF end = mapper.to_pixel(project(column, row + 1).x(),
+                                                project(column, row + 1).y());
+            painter.setPen(QPen(scale_color(model.matrix_values[row][column], z_min, z_max), 1.2));
+            painter.drawLine(start, end);
+        }
+    }
+    painter.setPen(QPen(theme_colors(model).axis, 1.2));
+    painter.drawLine(plot.bottomLeft(), plot.topLeft());
+    painter.drawLine(plot.bottomLeft(), plot.bottomRight());
+    draw_title_and_axes(painter, area, plot, model);
+}
+
 void render_pie(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
     if (model.category_values.empty()) {
@@ -1733,6 +1870,9 @@ void ChartRenderer::render(QPainter& painter, const QRectF& area, const ChartMod
         break;
     case ChartKind::Contour:
         render_contour(painter, area, model);
+        break;
+    case ChartKind::Surface:
+        render_surface(painter, area, model);
         break;
     case ChartKind::Pie:
         render_pie(painter, area, model);

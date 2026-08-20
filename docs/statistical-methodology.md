@@ -314,6 +314,10 @@ Laney 输出包含：`p̄/ū`、`Sigma Z`、`MR̄(Z)`、逐子组 `p_i/u_i`、`Z
 - 领域层不假设过程已经稳定或正态，结果带 `assumption_status = not_verified`。
 - 诊断码包括 `invalid_specification`、`invalid_target`、`invalid_within_sigma`、
   `invalid_overall_sigma`、`assumption_not_verified`。
+- 双侧指数置信区间：Cp/Pp 为 χ² 尺度
+  `C·√(χ²_{α/2,ν}/ν)` 至 `C·√(χ²_{1-α/2,ν}/ν)`；Cpk/Ppk 为 Bissell 近似
+  `C ± z_{1-α/2} √(1/(9N)+C²/(2ν))`。缺规格侧保持空值。不是 Kushler–Hurwitz 全套。
+  见 [`docs/adr/0008-capability-index-confidence-intervals.md`](adr/0008-capability-index-confidence-intervals.md)。
 
 ## Johnson 变换过程能力
 
@@ -471,7 +475,7 @@ Z = (W − E(W) − c) / √Var     c = ±0.5 连续性修正
 Z_j = (R̄_j − (N+1)/2) / sqrt( (N+1)(N−n_j)/(12 n_j) )
 ```
 
-有 ties 时分母乘以 H(adj) 的结修正平方根。P 值使用 `χ²(k-1)` 近似；小组样本量小于 5（Mann–Whitney / Wilcoxon 小于 10）时报告近似风险。未拒绝原假设不得写成已证明分布相同。McKean–Ryan 置信区间不实现。
+有 ties 时分母乘以 H(adj) 的结修正平方根。P 值使用 `χ²(k-1)` 近似；小组样本量小于 5（Mann–Whitney / Wilcoxon 小于 10）时报告近似风险。未拒绝原假设不得写成已证明分布相同。Mann–Whitney 位置差异采用 Hodges–Lehmann 点估计与 McKean–Ryan 风格序统计置信区间（`formula_reference`，不是 Minitab golden）。Mann-Whitney / Wilcoxon / Kruskal-Wallis 服务层输出箱线图与个体值图，`source_row` 可追溯。
 
 ## EWMA 与 CUSUM
 
@@ -629,7 +633,7 @@ Levene/Brown–Forsythe 方法将每个观测转换为相对于组中位数的�
 `Z_ij = |Y_ij - median(group_j)|`，再对 Z 做单因素方差分析。菜单方法 `levene`
 使用该中位数口径；`levene_mean` 保留 1960 均值版。缺 JSON 字段仍默认 `f`。
 F-test 只在近似正态时作为主要结论；Levene 用于更稳健的非正态比较。
-k 组等方差使用测量列加分组列。Bonett / 多重比较区间 / Bartlett 不实现。
+k 组等方差使用测量列加分组列。Levene（中位数）为稳健默认。两样本可选 Bonett（Banga–Fox 修正峰度，SD 比区间；公式参考）。k≥2 可选 Bartlett（正态敏感 χ²）。单因素 Tukey 输出下限/上限列、差值区间图与 Grouping Information 字母（近似算法不变）。
 未拒绝原假设不得写成已证明方差相等。零组内偏差只诊断，不伪造 F=1。
 
 ## 时间序列分解
@@ -695,12 +699,16 @@ CI = Kappa ± z_(1-alpha/2) * SE(Kappa)
 报告评估者内一致性、评估者间两两 Cohen Kappa、与标准的一致性，以及在评估者不少于 3 人时的
 Fleiss overall Kappa。空评级不进入分母，但缺失数量必须在诊断中显示。`P_expected = 1` 时
 Kappa 不可识别，不计算无限标准误。重复次数不一致返回 `unbalanced_replicates`，不静默截断。
-`kappa_weight_scheme` 默认 `none`；非 `none` 时输出 `weighted_kappa_not_implemented`，
-不计算 linear/quadratic 加权 Kappa。`ratings_are_ordinal` 默认 false；为 true 且互异数值
-等级不少于 3 时，另输出 Kendall W（无标准）和 Kendall τ_b（有标准）。非数值评级返回
-`ordinal_ratings_unranked`，两水平返回 `kendall_requires_three_ordinal_levels`。拒绝 Kappa=0
-或 Kendall 系数=0 不得写成「已证明评估者一致」。临界值使用标准正态分位数。公式参考
-见 [`docs/research/kendall-exp2-lognormal3-formulas.md`](research/kendall-exp2-lognormal3-formulas.md)。
+`kappa_weight_scheme` 默认 `none`（未加权 Cohen/Fleiss）。为 `linear` / `quadratic` 时两两
+Cohen 与 vs-standard 使用 Cohen (1968) 加权 Kappa（`cohen_linear` / `cohen_quadratic`）；
+Fleiss overall **保持未加权**并诊断 `fleiss_remains_unweighted`。评级须可映射为有序数值
+等级，否则诊断 `ordinal_ratings_unranked` 并回退。这是 DataLab 可选加权 Cohen，**不是**
+Minitab Attribute Agreement 默认输出（有序路径仍走 Kendall）。`ratings_are_ordinal` 默认
+false；为 true 且互异数值等级不少于 3 时，另输出 Kendall W（无标准）和 Kendall τ_b（有标准）。
+两水平返回 `kendall_requires_three_ordinal_levels`。拒绝 Kappa=0 或 Kendall 系数=0 不得写成
+「已证明评估者一致」。临界值使用标准正态分位数。公式参考见
+[`docs/research/p1_weighted_kappa_cohen.md`](research/p1_weighted_kappa_cohen.md)、
+[`docs/research/kendall-exp2-lognormal3-formulas.md`](research/kendall-exp2-lognormal3-formulas.md)。
 
 ## Holt-Winters 季节性预测
 
@@ -850,3 +858,13 @@ One-Way ANOVA 使用非中心 F 分布，`df1=k-1`、`df2=N-k`，非中心参数
 `F_(1-α;df1,df2)` 的非中心 F 尾概率。单比例和双比例分别使用原假设方差
 与备择方差计算标准误，明确单侧/双侧方向以及 pooled/unpooled 选项；样本量
 通过逐个整数搜索返回达到 Target Power 的最小样本量，并同时回显 Actual Power。
+服务层输出「功效与样本量」表与功效曲线，并填充 `PowerFacts`。解释只陈述假设功效与实际功效，不写样本量足够。
+
+## 卡方拟合优度
+
+Pearson `χ²=Σ(O−E)²/E`，`E_i=p_i N`，`DF=k−1`。默认等比例。类别按首次出现顺序。
+命令 `chi_square_gof` 与列联表独立性检验分离。
+
+## G 图与 T 图
+
+G 图：输入为非负数值间隔，`p̂=1/(x̄+1)`，控制限为几何分布分位减 1。T 图：间隔全为正时 Weibull MLE；含 0 间隔则排除后 log-log 回归并诊断 `zero_interval_regression_used`。默认仅 Test 1。不解析事件日期。

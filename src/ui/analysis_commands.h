@@ -35,7 +35,8 @@ enum class InputKind {
     percentage,
     choice,
     boolean,
-    special_cause_tests
+    special_cause_tests,
+    response_objectives
 };
 
 struct InputSpec {

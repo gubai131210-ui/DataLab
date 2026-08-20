@@ -8,13 +8,12 @@
 
 namespace datalab::infrastructure {
 
-class PythonTableImporter final {
+// Reads the first worksheet of an Office Open XML (.xlsx) workbook into DataTable.
+class ExcelTableImporter final {
 public:
     static std::optional<domain::DataTable> import_file(
         const QString& file_path,
-        QString* error_message = nullptr,
-        const QString& interpreter_path = {},
-        const QString& script_path = {});
+        QString* error_message = nullptr);
 };
 
 }  // namespace datalab::infrastructure

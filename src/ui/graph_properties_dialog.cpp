@@ -3,6 +3,7 @@
 #include "reporting/chart_renderer.h"
 
 #include <QCheckBox>
+#include <QAbstractSpinBox>
 #include <QColor>
 #include <QColorDialog>
 #include <QComboBox>
@@ -20,6 +21,7 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSplitter>
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QTableWidget>
@@ -126,6 +128,24 @@ QScrollArea* scrollable_page(QWidget* page, QWidget* parent)
     return scroll;
 }
 
+void configure_double_spin(QDoubleSpinBox* box)
+{
+    if (box == nullptr) {
+        return;
+    }
+    box->setButtonSymbols(QAbstractSpinBox::UpDownArrows);
+    box->setAccelerated(true);
+}
+
+void configure_int_spin(QSpinBox* box)
+{
+    if (box == nullptr) {
+        return;
+    }
+    box->setButtonSymbols(QAbstractSpinBox::UpDownArrows);
+    box->setAccelerated(true);
+}
+
 }  // namespace
 
 GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* parent)
@@ -133,7 +153,31 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
 {
     setWindowTitle(QStringLiteral("编辑图形属性"));
     setMinimumSize(960, 620);
-    resize(1080, 700);
+    resize(1080, 720);
+    setStyleSheet(QStringLiteral(
+        "QSpinBox, QDoubleSpinBox {"
+        " background:#ffffff; color:#243b44; border:1px solid #c8d8dd; border-radius:6px;"
+        " padding:4px 24px 4px 8px; min-height:30px; }"
+        "QSpinBox:focus, QDoubleSpinBox:focus { border:1px solid #35a6aa; }"
+        "QSpinBox::up-button, QDoubleSpinBox::up-button {"
+        " subcontrol-origin: padding; subcontrol-position: top right;"
+        " width:18px; min-height:14px; border-left:1px solid #c8d8dd;"
+        " border-top-right-radius:6px; background:#f7fafb; }"
+        "QSpinBox::down-button, QDoubleSpinBox::down-button {"
+        " subcontrol-origin: padding; subcontrol-position: bottom right;"
+        " width:18px; min-height:14px; border-left:1px solid #c8d8dd;"
+        " border-bottom-right-radius:6px; background:#f7fafb; }"
+        "QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,"
+        "QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {"
+        " background:#eaf6f6; }"
+        "QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {"
+        " image:none; width:0; height:0;"
+        " border-left:4px solid transparent; border-right:4px solid transparent;"
+        " border-bottom:6px solid #49636d; }"
+        "QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {"
+        " image:none; width:0; height:0;"
+        " border-left:4px solid transparent; border-right:4px solid transparent;"
+        " border-top:6px solid #49636d; }"));
     auto* root = new QVBoxLayout(this);
     tabs_ = new QTabWidget(this);
     reference_tab_enabled_ = model.kind == ChartKind::Control;
@@ -155,6 +199,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
     grid_ = new QCheckBox(QStringLiteral("显示网格"), axis_page);
     legend_ = new QCheckBox(QStringLiteral("显示图例"), axis_page);
     line_width_ = new QDoubleSpinBox(axis_page);
+    configure_double_spin(line_width_);
     line_width_->setRange(0.5, 8.0);
     line_width_->setSingleStep(0.5);
     grid_color_ = new QPushButton(axis_page);
@@ -167,6 +212,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
     x_min_ = new QDoubleSpinBox(axis_page);
     x_max_ = new QDoubleSpinBox(axis_page);
     for (QDoubleSpinBox* box : {y_min_, y_max_, x_min_, x_max_}) {
+        configure_double_spin(box);
         box->setRange(-1.0e12, 1.0e12);
         box->setDecimals(6);
         box->setSingleStep(0.1);
@@ -201,6 +247,9 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
     axis_font_size_->setRange(6, 24);
     legend_font_size_ = new QSpinBox(font_page);
     legend_font_size_->setRange(6, 24);
+    configure_int_spin(title_font_size_);
+    configure_int_spin(axis_font_size_);
+    configure_int_spin(legend_font_size_);
     theme_preset_ = new QComboBox(font_page);
     theme_preset_->addItem(QStringLiteral("默认"), QStringLiteral("default"));
     theme_preset_->addItem(QStringLiteral("打印"), QStringLiteral("print"));
@@ -256,6 +305,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
     lower_width_ = new QDoubleSpinBox(reference_page);
     upper_width_ = new QDoubleSpinBox(reference_page);
     for (QDoubleSpinBox* box : {center_width_, lower_width_, upper_width_}) {
+        configure_double_spin(box);
         box->setRange(0.5, 8.0);
         box->setSingleStep(0.5);
     }
@@ -277,14 +327,17 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
 
     preview_ = new QLabel(this);
     preview_->setObjectName(QStringLiteral("preview"));
-    preview_->setMinimumWidth(280);
-    preview_->setMinimumHeight(200);
+    preview_->setMinimumSize(280, 200);
     preview_->setAlignment(Qt::AlignCenter);
     preview_->setStyleSheet(QStringLiteral("background:#ffffff; border:1px solid #d6e1e5;"));
-    auto* body = new QHBoxLayout();
-    body->addWidget(tabs_, 1);
-    body->addWidget(preview_, 1);
-    root->addLayout(body, 1);
+
+    auto* splitter = new QSplitter(Qt::Horizontal, this);
+    splitter->addWidget(tabs_);
+    splitter->addWidget(preview_);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 1);
+    splitter->setChildrenCollapsible(false);
+    root->addWidget(splitter, 1);
 
     auto* buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::RestoreDefaults,
@@ -477,6 +530,7 @@ void GraphPropertiesDialog::populate_from(const ChartModel& model)
         series_table_->setCellWidget(row, 5, point);
 
         auto* width = new QDoubleSpinBox(series_table_);
+        configure_double_spin(width);
         width->setRange(0.5, 8.0);
         width->setSingleStep(0.5);
         width->setValue(series.style.line_width);
@@ -485,6 +539,7 @@ void GraphPropertiesDialog::populate_from(const ChartModel& model)
         series_table_->setCellWidget(row, 6, width);
 
         auto* point_size = new QDoubleSpinBox(series_table_);
+        configure_double_spin(point_size);
         point_size->setRange(1.0, 16.0);
         point_size->setSingleStep(0.5);
         point_size->setValue(series.style.point_size);
@@ -493,6 +548,7 @@ void GraphPropertiesDialog::populate_from(const ChartModel& model)
         series_table_->setCellWidget(row, 7, point_size);
 
         auto* opacity = new QDoubleSpinBox(series_table_);
+        configure_double_spin(opacity);
         opacity->setRange(0.1, 1.0);
         opacity->setSingleStep(0.05);
         opacity->setValue(series.style.opacity);
@@ -629,10 +685,11 @@ bool GraphPropertiesDialog::validate_model(
 void GraphPropertiesDialog::refresh_preview()
 {
     const ChartModel preview_model = collect_model();
-    const int width = preview_->width() > 120 ? preview_->width() : 360;
-    const int height = preview_->height() > 120 ? preview_->height() : 400;
+    const int width = qMax(preview_->width(), 320);
+    const int height = qMax(preview_->height(), 240);
+    const qreal device_ratio = preview_->devicePixelRatioF();
     preview_->setPixmap(
-        ChartRenderer::render_to_pixmap(preview_model, QSize(width, height)));
+        ChartRenderer::render_to_pixmap(preview_model, QSize(width, height), device_ratio));
 }
 
 ChartModel GraphPropertiesDialog::model() const

@@ -62,7 +62,40 @@ Var_ties = n1 n2 / 12 · [N+1 − Σ(t³−t)/(N(N−1))]
 Z = (W − E(W) − c) / √Var        c = ±0.5 连续性修正
 ```
 
-有 ties 时同时给出调整 P 与未调整 P。`n1` 或 `n2` < 10 时小样本警告。McKean–Ryan CI 不实现。位置差为 pairwise 差的中位数（Hodges–Lehmann），不是 Minitab golden。
+有 ties 时同时给出调整 P 与未调整 P。`n1` 或 `n2` < 10 时小样本警告。位置差为 Hodges–Lehmann 估计（全部 pairwise 差 `X_i − Y_j` 的中位数；偶数个取中间两值平均）。
+
+### McKean–Ryan 置信区间（Mann-Whitney）
+
+来源：[Minitab Mann-Whitney methods](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/mann-whitney-test/methods-and-formulas/methods-and-formulas/)（访问 2026-08-20）；McKean & Ryan (1977) TOMS。
+
+```text
+D_ij = X_i − Y_j
+θ̂ = median(D_ij)                    （Hodges–Lehmann 点估计）
+U(θ) = #{i,j : D_ij > θ}             （关于 θ 单调阶梯函数）
+CI = {θ : 不拒绝 H0: η1−η2 = θ}
+```
+
+DataLab 用 Mann–Whitney 结修正方差 + 正态近似，对排序后的 `m = n1·n2` 个差值取序统计量端点（`formula_reference`，不是 Minitab golden）：
+
+```text
+σ_U = sqrt( n1 n2 (N+1)/12 · [1 − Σ(t³−t)/(N(N−1))] )
+k   = floor( m/2 − z_{α/2} · σ_U )
+CI  = [ D_(k+1), D_(m−k) ]          （1-based 序统计；单侧备择只输出可用端）
+```
+
+`m < 2` 或端点交叉时只诊断 `ci_not_computed`，不伪造区间。
+
+### 非参数伴随图
+
+对标 Minitab 非参数输出：Mann-Whitney / Wilcoxon / Kruskal-Wallis 在检验表后追加 **箱线图** + **个体值图**（复用描述统计 `PlotKind::boxplot` / `scatter` 合同）。
+
+| 命令 | 分组 | source_row |
+|---|---|---|
+| Mann-Whitney | 两列独立样本，组标签=列名 | `extract_numeric_column` |
+| Wilcoxon | `align_complete_rows_with_source` 配对两列 | 对齐后 source_rows |
+| Kruskal-Wallis | 测量列 + 因子列 | 与 ANOVA 相同分组 + grouped_rows |
+
+Wilcoxon 另可保留配对散点。缺失/`*` 只诊断不进图。`NonparametricFacts` 可含 `group_count`、`plot_point_count`、`missing_count`。
 
 ### Wilcoxon 符号秩（配对差）
 
@@ -91,6 +124,17 @@ DataLab：`levene` → 中位数；`levene_mean` 保留 1960 均值版；缺 JSO
 
 不做 Bonett、多重比较区间、Bartlett。组内偏差全 0 只诊断，不伪造 F=1。未拒绝 ≠ 已证明方差相等。
 
-## 5. 图表刻度 Auto
+## 5. 卡方关联观察频数热图
+
+对标 Stat > Tables > Chi-Square Test for Association 的简化可视化（**不是**全 Mosaic）。
+
+| 输出 | 合同 |
+|---|---|
+| 三表 | 观察频数 / 卡方检验 / 单元格统计 **不变** |
+| 热图 | `PlotKind::heatmap`；标题「观察频数热图」；`categories`=行标签、`matrix_labels`=列标签、`matrix_values`=观察频数（无合计） |
+| Facts | `ChiSquareFacts.plot_available` |
+| 解释 | 热图只展示观察分布，不写因果 |
+
+## 6. 图表刻度 Auto
 
 Minitab Continuous scale：Min / Max 可分别取消 Auto。`ChartModel` 已有独立可选 `y_min`/`y_max`/`x_min`/`x_max`。对话框四个 Auto 勾选；「清除 Y/X 范围」把该轴 optionals 清空。两侧均手动时要求 min < max。不做注释、图元拖拽、多图 Layout Tool。

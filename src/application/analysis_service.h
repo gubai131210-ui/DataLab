@@ -17,6 +17,10 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage outlier_test(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage correlation(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
@@ -26,6 +30,30 @@ public:
         const domain::AnalysisConfiguration& configuration);
 
     static domain::OutputPage two_sample_t(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage one_sample_equivalence(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage two_sample_equivalence(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage two_sample_equivalence_ratio(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage paired_equivalence(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage one_proportion_equivalence(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage two_proportion_equivalence(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
@@ -45,7 +73,23 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage one_proportion(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage one_poisson_rate(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage two_poisson_rate(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage chi_square(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage chi_square_gof(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
@@ -86,6 +130,14 @@ public:
         const domain::AnalysisConfiguration& configuration);
 
     static domain::OutputPage cusum(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage g_chart(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage t_chart(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
@@ -149,6 +201,10 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage imr_rs(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage p_chart(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
@@ -183,6 +239,22 @@ public:
         const domain::AnalysisConfiguration& configuration);
 
     static domain::OutputPage between_within_capability(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage binomial_capability(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage poisson_capability(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage multi_vari(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage tolerance_intervals(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 

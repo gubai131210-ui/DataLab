@@ -220,6 +220,40 @@ void write_interpretation_facts(
                           QString::fromStdString(facts.capability->method));
         capability.insert(QStringLiteral("johnson_family"),
                           QString::fromStdString(facts.capability->johnson_family));
+        capability.insert(QStringLiteral("normality_p_value"),
+                          optional_number(facts.capability->normality_p_value));
+        capability.insert(QStringLiteral("transform_p_value"),
+                          optional_number(facts.capability->transform_p_value));
+        capability.insert(QStringLiteral("transform_anderson_darling"),
+                          optional_number(facts.capability->transform_anderson_darling));
+        capability.insert(QStringLiteral("nonnormal_distribution"),
+                          QString::fromStdString(facts.capability->nonnormal_distribution));
+        capability.insert(QStringLiteral("fitted_shape"),
+                          optional_number(facts.capability->fitted_shape));
+        capability.insert(QStringLiteral("fitted_scale"),
+                          optional_number(facts.capability->fitted_scale));
+        capability.insert(QStringLiteral("average_p"),
+                          optional_number(facts.capability->average_p));
+        capability.insert(QStringLiteral("percent_defective"),
+                          optional_number(facts.capability->percent_defective));
+        capability.insert(QStringLiteral("ppm_defective"),
+                          optional_number(facts.capability->ppm_defective));
+        capability.insert(QStringLiteral("process_z"),
+                          optional_number(facts.capability->process_z));
+        capability.insert(QStringLiteral("mean_dpu"),
+                          optional_number(facts.capability->mean_dpu));
+        capability.insert(QStringLiteral("cp"), optional_number(facts.capability->cp));
+        capability.insert(QStringLiteral("pp"), optional_number(facts.capability->pp));
+        capability.insert(QStringLiteral("cpk_lower"),
+                          optional_number(facts.capability->cpk_lower));
+        capability.insert(QStringLiteral("cpk_upper"),
+                          optional_number(facts.capability->cpk_upper));
+        capability.insert(QStringLiteral("ppk_lower"),
+                          optional_number(facts.capability->ppk_lower));
+        capability.insert(QStringLiteral("ppk_upper"),
+                          optional_number(facts.capability->ppk_upper));
+        capability.insert(QStringLiteral("capability_ci_method"),
+                          QString::fromStdString(facts.capability->capability_ci_method));
         serialized.insert(QStringLiteral("capability"), capability);
     }
     if (facts.spc.has_value()) {
@@ -227,6 +261,14 @@ void write_interpretation_facts(
         spc.insert(QStringLiteral("out_of_control_count"),
                    optional_size(facts.spc->out_of_control_count));
         spc.insert(QStringLiteral("sigma_z"), optional_number(facts.spc->sigma_z));
+        spc.insert(QStringLiteral("sigma_within"),
+                   optional_number(facts.spc->sigma_within));
+        spc.insert(QStringLiteral("sigma_between"),
+                   optional_number(facts.spc->sigma_between));
+        spc.insert(QStringLiteral("sigma_between_within"),
+                   optional_number(facts.spc->sigma_between_within));
+        spc.insert(QStringLiteral("between_within_method"),
+                   QString::fromStdString(facts.spc->between_within_method));
         serialized.insert(QStringLiteral("spc"), spc);
     }
     if (facts.regression.has_value()) {
@@ -235,6 +277,10 @@ void write_interpretation_facts(
                           optional_number(facts.regression->r_squared));
         regression.insert(QStringLiteral("residual_normality_p"),
                           optional_number(facts.regression->residual_normality_p));
+        regression.insert(QStringLiteral("residual_anderson_darling"),
+                          optional_number(facts.regression->residual_anderson_darling));
+        regression.insert(QStringLiteral("residual_plot_count"),
+                          static_cast<int>(facts.regression->residual_plot_count));
         regression.insert(QStringLiteral("influential_count"),
                           static_cast<int>(facts.regression->influential_count));
         regression.insert(QStringLiteral("assumption_status"),
@@ -272,6 +318,12 @@ void write_interpretation_facts(
                      static_cast<int>(facts.anova->tukey_significant_pairs));
         anova.insert(QStringLiteral("tukey_method"),
                      QString::fromStdString(facts.anova->tukey_method));
+        anova.insert(QStringLiteral("tukey_interval_columns"),
+                     QString::fromStdString(facts.anova->tukey_interval_columns));
+        anova.insert(QStringLiteral("tukey_grouping_available"),
+                     facts.anova->tukey_grouping_available);
+        anova.insert(QStringLiteral("grouping_letter_count"),
+                     static_cast<int>(facts.anova->grouping_letter_count));
         anova.insert(QStringLiteral("assumption_status"),
                      QString::fromStdString(facts.anova->assumption_status));
         anova.insert(QStringLiteral("assumptions"),
@@ -302,8 +354,33 @@ void write_interpretation_facts(
                    optional_number(facts.msa->gage_percent_study_variation));
         msa.insert(QStringLiteral("gage_percent_contribution"),
                    optional_number(facts.msa->gage_percent_contribution));
+        msa.insert(QStringLiteral("linearity"), optional_number(facts.msa->linearity));
+        msa.insert(QStringLiteral("percent_linearity"),
+                   optional_number(facts.msa->percent_linearity));
+        msa.insert(QStringLiteral("slope_p_value"),
+                   optional_number(facts.msa->slope_p_value));
+        msa.insert(QStringLiteral("intercept_p_value"),
+                   optional_number(facts.msa->intercept_p_value));
+        msa.insert(QStringLiteral("residual_s"),
+                   optional_number(facts.msa->residual_s));
+        msa.insert(QStringLiteral("average_bias"),
+                   optional_number(facts.msa->average_bias));
+        msa.insert(QStringLiteral("average_bias_p"),
+                   optional_number(facts.msa->average_bias_p));
+        msa.insert(QStringLiteral("process_variation_used"),
+                   optional_number(facts.msa->process_variation_used));
         msa.insert(QStringLiteral("ratings_are_ordinal"), facts.msa->ratings_are_ordinal);
         msa.insert(QStringLiteral("kendall_available"), facts.msa->kendall_available);
+        msa.insert(QStringLiteral("weighted_kappa_available"),
+                   facts.msa->weighted_kappa_available);
+        msa.insert(QStringLiteral("kappa_weight_scheme"),
+                   QString::fromStdString(facts.msa->kappa_weight_scheme));
+        msa.insert(QStringLiteral("by_part_plot_available"),
+                   facts.msa->by_part_plot_available);
+        msa.insert(QStringLiteral("interaction_plot_available"),
+                   facts.msa->interaction_plot_available);
+        msa.insert(QStringLiteral("plot_point_count"),
+                   static_cast<qint64>(facts.msa->plot_point_count));
         msa.insert(QStringLiteral("kendall_w"), optional_number(facts.msa->kendall_w));
         msa.insert(QStringLiteral("kendall_w_p"), optional_number(facts.msa->kendall_w_p));
         msa.insert(QStringLiteral("kendall_tau"), optional_number(facts.msa->kendall_tau));
@@ -352,6 +429,16 @@ void write_interpretation_facts(
                         optional_number(facts.forecast->rolling_origin_mase));
         serialized.insert(QStringLiteral("forecast"), forecast);
     }
+    if (facts.power.has_value()) {
+        QJsonObject power;
+        power.insert(QStringLiteral("power"), optional_number(facts.power->power));
+        power.insert(QStringLiteral("effect_size"), optional_number(facts.power->effect_size));
+        power.insert(QStringLiteral("mode"), QString::fromStdString(facts.power->mode));
+        power.insert(QStringLiteral("sample_size"), optional_size(facts.power->sample_size));
+        power.insert(QStringLiteral("target"), optional_number(facts.power->target));
+        power.insert(QStringLiteral("actual_power"), optional_number(facts.power->actual_power));
+        serialized.insert(QStringLiteral("power"), power);
+    }
     if (facts.descriptive.has_value()) {
         QJsonObject descriptive;
         descriptive.insert(QStringLiteral("n"), static_cast<int>(facts.descriptive->n));
@@ -372,7 +459,51 @@ void write_interpretation_facts(
                           optional_number(facts.chi_square->degrees_of_freedom));
         chi_square.insert(QStringLiteral("expected_count_warning"),
                           facts.chi_square->expected_count_warning);
+        chi_square.insert(QStringLiteral("row_count"),
+                          static_cast<int>(facts.chi_square->row_count));
+        chi_square.insert(QStringLiteral("column_count"),
+                          static_cast<int>(facts.chi_square->column_count));
+        chi_square.insert(QStringLiteral("total_count"),
+                          static_cast<int>(facts.chi_square->total_count));
+        chi_square.insert(QStringLiteral("missing_count"),
+                          static_cast<int>(facts.chi_square->missing_count));
+        chi_square.insert(QStringLiteral("likelihood_ratio_statistic"),
+                          optional_number(facts.chi_square->likelihood_ratio_statistic));
+        chi_square.insert(QStringLiteral("likelihood_ratio_p_value"),
+                          optional_number(facts.chi_square->likelihood_ratio_p_value));
+        chi_square.insert(QStringLiteral("plot_available"),
+                          facts.chi_square->plot_available);
         serialized.insert(QStringLiteral("chi_square"), chi_square);
+    }
+    if (facts.chi_square_gof.has_value()) {
+        QJsonObject gof;
+        gof.insert(QStringLiteral("statistic"),
+                   optional_number(facts.chi_square_gof->statistic));
+        gof.insert(QStringLiteral("p_value"),
+                   optional_number(facts.chi_square_gof->p_value));
+        gof.insert(QStringLiteral("degrees_of_freedom"),
+                   optional_number(facts.chi_square_gof->degrees_of_freedom));
+        gof.insert(QStringLiteral("category_count"),
+                   static_cast<int>(facts.chi_square_gof->category_count));
+        gof.insert(QStringLiteral("total_count"),
+                   static_cast<int>(facts.chi_square_gof->total_count));
+        gof.insert(QStringLiteral("missing_count"),
+                   static_cast<int>(facts.chi_square_gof->missing_count));
+        gof.insert(QStringLiteral("expected_count_warning"),
+                   facts.chi_square_gof->expected_count_warning);
+        gof.insert(QStringLiteral("expected_below_five_count"),
+                   static_cast<int>(facts.chi_square_gof->expected_below_five_count));
+        gof.insert(QStringLiteral("minimum_expected_count"),
+                   optional_number(facts.chi_square_gof->minimum_expected_count));
+        gof.insert(QStringLiteral("validity_status"),
+                   QString::fromStdString(facts.chi_square_gof->validity_status));
+        gof.insert(QStringLiteral("recommendation"),
+                   QString::fromStdString(facts.chi_square_gof->recommendation));
+        gof.insert(QStringLiteral("plot_available"),
+                   facts.chi_square_gof->plot_available);
+        gof.insert(QStringLiteral("proportion_source"),
+                   QString::fromStdString(facts.chi_square_gof->proportion_source));
+        serialized.insert(QStringLiteral("chi_square_gof"), gof);
     }
     if (facts.nonparametric.has_value()) {
         QJsonObject nonparametric;
@@ -394,6 +525,24 @@ void write_interpretation_facts(
                              optional_number(facts.nonparametric->effect_size));
         nonparametric.insert(QStringLiteral("p_value_unadjusted"),
                              optional_number(facts.nonparametric->p_value_unadjusted));
+        nonparametric.insert(QStringLiteral("group_count"),
+                             static_cast<int>(facts.nonparametric->group_count));
+        nonparametric.insert(QStringLiteral("plot_point_count"),
+                             static_cast<int>(facts.nonparametric->plot_point_count));
+        nonparametric.insert(QStringLiteral("missing_count"),
+                             static_cast<int>(facts.nonparametric->missing_count));
+        nonparametric.insert(QStringLiteral("location_estimate"),
+                             optional_number(facts.nonparametric->location_estimate));
+        nonparametric.insert(QStringLiteral("ci_lower"),
+                             optional_number(facts.nonparametric->ci_lower));
+        nonparametric.insert(QStringLiteral("ci_upper"),
+                             optional_number(facts.nonparametric->ci_upper));
+        nonparametric.insert(QStringLiteral("dunn_available"),
+                             facts.nonparametric->dunn_available);
+        nonparametric.insert(QStringLiteral("posthoc_pair_count"),
+                             static_cast<int>(facts.nonparametric->posthoc_pair_count));
+        nonparametric.insert(QStringLiteral("grouping_letter_count"),
+                             static_cast<int>(facts.nonparametric->grouping_letter_count));
         serialized.insert(QStringLiteral("nonparametric"), nonparametric);
     }
     if (facts.logistic.has_value()) {
@@ -415,6 +564,12 @@ void write_interpretation_facts(
                         QString::fromStdString(facts.logistic->hosmer_lemeshow_status));
         logistic.insert(QStringLiteral("high_leverage_count"),
                         static_cast<qint64>(facts.logistic->high_leverage_count));
+        logistic.insert(QStringLiteral("leverage_threshold"),
+                        optional_number(facts.logistic->leverage_threshold));
+        logistic.insert(QStringLiteral("maximum_leverage"),
+                        optional_number(facts.logistic->maximum_leverage));
+        logistic.insert(QStringLiteral("maximum_vif"),
+                        optional_number(facts.logistic->maximum_vif));
         serialized.insert(QStringLiteral("logistic"), logistic);
     }
     if (facts.distribution_identification.has_value()) {
@@ -444,8 +599,57 @@ void write_interpretation_facts(
                    static_cast<int>(facts.pca->observation_count));
         pca.insert(QStringLiteral("t2_limit"), optional_number(facts.pca->t2_limit));
         pca.insert(QStringLiteral("q_limit"), optional_number(facts.pca->q_limit));
+        pca.insert(QStringLiteral("residual_ad_p"), optional_number(facts.pca->residual_ad_p));
+        pca.insert(QStringLiteral("diagnostic_plot_count"),
+                   static_cast<int>(facts.pca->diagnostic_plot_count));
         pca.insert(QStringLiteral("converged"), facts.pca->converged);
         serialized.insert(QStringLiteral("pca"), pca);
+    }
+    if (facts.multi_vari.has_value()) {
+        QJsonObject multi_vari;
+        multi_vari.insert(QStringLiteral("factor_count"),
+                          static_cast<int>(facts.multi_vari->factor_count));
+        multi_vari.insert(QStringLiteral("valid_count"),
+                          static_cast<int>(facts.multi_vari->valid_count));
+        multi_vari.insert(QStringLiteral("missing_count"),
+                          static_cast<int>(facts.multi_vari->missing_count));
+        multi_vari.insert(QStringLiteral("combination_coverage"),
+                          facts.multi_vari->combination_coverage);
+        multi_vari.insert(QStringLiteral("factor_names"),
+                          string_array(facts.multi_vari->factor_names));
+        serialized.insert(QStringLiteral("multi_vari"), multi_vari);
+    }
+    if (facts.tolerance.has_value()) {
+        QJsonObject tolerance;
+        tolerance.insert(QStringLiteral("valid_count"),
+                         static_cast<int>(facts.tolerance->valid_count));
+        tolerance.insert(QStringLiteral("missing_count"),
+                         static_cast<int>(facts.tolerance->missing_count));
+        tolerance.insert(QStringLiteral("mean"),
+                         optional_number(facts.tolerance->mean));
+        tolerance.insert(QStringLiteral("standard_deviation"),
+                         optional_number(facts.tolerance->standard_deviation));
+        tolerance.insert(QStringLiteral("coverage"),
+                         optional_number(facts.tolerance->coverage));
+        tolerance.insert(QStringLiteral("confidence_level"),
+                         optional_number(facts.tolerance->confidence_level));
+        tolerance.insert(QStringLiteral("lower"),
+                         optional_number(facts.tolerance->lower));
+        tolerance.insert(QStringLiteral("upper"),
+                         optional_number(facts.tolerance->upper));
+        tolerance.insert(QStringLiteral("k_factor"),
+                         optional_number(facts.tolerance->k_factor));
+        tolerance.insert(QStringLiteral("achieved_confidence"),
+                         optional_number(facts.tolerance->achieved_confidence));
+        tolerance.insert(QStringLiteral("method"),
+                         QString::fromStdString(facts.tolerance->method));
+        tolerance.insert(QStringLiteral("method_family"),
+                         QString::fromStdString(facts.tolerance->method_family));
+        tolerance.insert(QStringLiteral("interval_type"),
+                         QString::fromStdString(facts.tolerance->interval_type));
+        tolerance.insert(QStringLiteral("assumption_status"),
+                         QString::fromStdString(facts.tolerance->assumption_status));
+        serialized.insert(QStringLiteral("tolerance"), tolerance);
     }
     if (facts.variance.has_value()) {
         QJsonObject variance;
@@ -455,9 +659,255 @@ void write_interpretation_facts(
                         optional_number(facts.variance->statistic));
         variance.insert(QStringLiteral("p_value"),
                         optional_number(facts.variance->p_value));
+        variance.insert(QStringLiteral("ci_lower"),
+                        optional_number(facts.variance->ci_lower));
+        variance.insert(QStringLiteral("ci_upper"),
+                        optional_number(facts.variance->ci_upper));
         variance.insert(QStringLiteral("group_count"),
                         static_cast<int>(facts.variance->group_count));
         serialized.insert(QStringLiteral("variance"), variance);
+    }
+    if (facts.doe.has_value()) {
+        QJsonObject doe;
+        doe.insert(QStringLiteral("significant_terms"),
+                   string_array(facts.doe->significant_terms));
+        doe.insert(QStringLiteral("has_p_value"), facts.doe->has_p_value);
+        doe.insert(QStringLiteral("response_count"),
+                   static_cast<int>(facts.doe->response_count));
+        doe.insert(QStringLiteral("multi_response"), facts.doe->multi_response);
+        doe.insert(QStringLiteral("best_overall_desirability"),
+                   optional_number(facts.doe->best_overall_desirability));
+        doe.insert(QStringLiteral("response_names"),
+                   string_array(facts.doe->response_names));
+        doe.insert(QStringLiteral("prediction_interval_available"),
+                   facts.doe->prediction_interval_available);
+        doe.insert(QStringLiteral("largest_standardized_effect_term"),
+                   QString::fromStdString(facts.doe->largest_standardized_effect_term));
+        doe.insert(QStringLiteral("pareto_reference"),
+                   optional_number(facts.doe->pareto_reference));
+        doe.insert(QStringLiteral("pareto_method"),
+                   QString::fromStdString(facts.doe->pareto_method));
+        doe.insert(QStringLiteral("residual_count"),
+                   static_cast<int>(facts.doe->residual_count));
+        doe.insert(QStringLiteral("factor_count"),
+                   static_cast<int>(facts.doe->factor_count));
+        doe.insert(QStringLiteral("cube_plot_available"), facts.doe->cube_plot_available);
+        doe.insert(QStringLiteral("contour_plot_available"),
+                   facts.doe->contour_plot_available);
+        doe.insert(QStringLiteral("contour_x_factor"),
+                   QString::fromStdString(facts.doe->contour_x_factor));
+        doe.insert(QStringLiteral("contour_y_factor"),
+                   QString::fromStdString(facts.doe->contour_y_factor));
+        doe.insert(QStringLiteral("held_factor_names"),
+                   string_array(facts.doe->held_factor_names));
+        doe.insert(QStringLiteral("held_actual_values"),
+                   string_array(facts.doe->held_actual_values));
+        doe.insert(QStringLiteral("held_coded_values"),
+                   number_array(facts.doe->held_coded_values));
+        serialized.insert(QStringLiteral("doe"), doe);
+    }
+    if (facts.proportion.has_value()) {
+        QJsonObject proportion;
+        proportion.insert(QStringLiteral("kind"),
+                          QString::fromStdString(facts.proportion->kind));
+        proportion.insert(QStringLiteral("events"),
+                          static_cast<int>(facts.proportion->events));
+        proportion.insert(QStringLiteral("trials"),
+                          static_cast<int>(facts.proportion->trials));
+        proportion.insert(QStringLiteral("proportion"),
+                          optional_number(facts.proportion->proportion));
+        if (facts.proportion->second_events.has_value()) {
+            proportion.insert(QStringLiteral("second_events"),
+                              static_cast<int>(*facts.proportion->second_events));
+        }
+        if (facts.proportion->second_trials.has_value()) {
+            proportion.insert(QStringLiteral("second_trials"),
+                              static_cast<int>(*facts.proportion->second_trials));
+        }
+        proportion.insert(QStringLiteral("second_proportion"),
+                          optional_number(facts.proportion->second_proportion));
+        proportion.insert(QStringLiteral("difference"),
+                          optional_number(facts.proportion->difference));
+        proportion.insert(QStringLiteral("hypothesized"),
+                          optional_number(facts.proportion->hypothesized));
+        proportion.insert(QStringLiteral("method"),
+                          QString::fromStdString(facts.proportion->method));
+        proportion.insert(QStringLiteral("ci_method"),
+                          QString::fromStdString(facts.proportion->ci_method));
+        proportion.insert(QStringLiteral("p_value"),
+                          optional_number(facts.proportion->p_value));
+        proportion.insert(QStringLiteral("fisher_p_value"),
+                          optional_number(facts.proportion->fisher_p_value));
+        proportion.insert(QStringLiteral("ci_lower"),
+                          optional_number(facts.proportion->ci_lower));
+        proportion.insert(QStringLiteral("ci_upper"),
+                          optional_number(facts.proportion->ci_upper));
+        proportion.insert(QStringLiteral("assumption_status"),
+                          QString::fromStdString(facts.proportion->assumption_status));
+        serialized.insert(QStringLiteral("proportion"), proportion);
+    }
+    if (facts.box_cox.has_value()) {
+        QJsonObject box_cox;
+        box_cox.insert(QStringLiteral("lambda"), facts.box_cox->lambda);
+        box_cox.insert(QStringLiteral("n"), static_cast<int>(facts.box_cox->n));
+        box_cox.insert(QStringLiteral("missing_count"),
+                       static_cast<int>(facts.box_cox->missing_count));
+        box_cox.insert(QStringLiteral("transformed_standard_deviation"),
+                       optional_number(facts.box_cox->transformed_standard_deviation));
+        box_cox.insert(QStringLiteral("rounded_lambda"), facts.box_cox->rounded_lambda);
+        box_cox.insert(QStringLiteral("assumption_status"),
+                       QString::fromStdString(facts.box_cox->assumption_status));
+        serialized.insert(QStringLiteral("box_cox"), box_cox);
+    }
+    if (facts.poisson_rate.has_value()) {
+        QJsonObject rate;
+        rate.insert(QStringLiteral("kind"),
+                    QString::fromStdString(facts.poisson_rate->kind));
+        rate.insert(QStringLiteral("events"),
+                    static_cast<int>(facts.poisson_rate->events));
+        rate.insert(QStringLiteral("exposure"), facts.poisson_rate->exposure);
+        rate.insert(QStringLiteral("rate"),
+                    optional_number(facts.poisson_rate->rate));
+        if (facts.poisson_rate->second_events.has_value()) {
+            rate.insert(QStringLiteral("second_events"),
+                        static_cast<int>(*facts.poisson_rate->second_events));
+        }
+        rate.insert(QStringLiteral("second_exposure"),
+                    optional_number(facts.poisson_rate->second_exposure));
+        rate.insert(QStringLiteral("second_rate"),
+                    optional_number(facts.poisson_rate->second_rate));
+        rate.insert(QStringLiteral("hypothesized"),
+                    optional_number(facts.poisson_rate->hypothesized));
+        rate.insert(QStringLiteral("method"),
+                    QString::fromStdString(facts.poisson_rate->method));
+        rate.insert(QStringLiteral("comparison"),
+                    QString::fromStdString(facts.poisson_rate->comparison));
+        rate.insert(QStringLiteral("ratio"),
+                    optional_number(facts.poisson_rate->ratio));
+        rate.insert(QStringLiteral("ratio_ci_lower"),
+                    optional_number(facts.poisson_rate->ratio_ci_lower));
+        rate.insert(QStringLiteral("ratio_ci_upper"),
+                    optional_number(facts.poisson_rate->ratio_ci_upper));
+        rate.insert(QStringLiteral("z_statistic"),
+                    optional_number(facts.poisson_rate->z_statistic));
+        rate.insert(QStringLiteral("p_value"),
+                    optional_number(facts.poisson_rate->p_value));
+        rate.insert(QStringLiteral("ci_lower"),
+                    optional_number(facts.poisson_rate->ci_lower));
+        rate.insert(QStringLiteral("ci_upper"),
+                    optional_number(facts.poisson_rate->ci_upper));
+        rate.insert(QStringLiteral("assumption_status"),
+                    QString::fromStdString(facts.poisson_rate->assumption_status));
+        serialized.insert(QStringLiteral("poisson_rate"), rate);
+    }
+    if (facts.equivalence.has_value()) {
+        QJsonObject equivalence;
+        equivalence.insert(QStringLiteral("kind"),
+                           QString::fromStdString(facts.equivalence->kind));
+        equivalence.insert(QStringLiteral("difference"),
+                           optional_number(facts.equivalence->difference));
+        equivalence.insert(QStringLiteral("lower"),
+                           optional_number(facts.equivalence->lower));
+        equivalence.insert(QStringLiteral("upper"),
+                           optional_number(facts.equivalence->upper));
+        equivalence.insert(QStringLiteral("ci_lower"),
+                           optional_number(facts.equivalence->ci_lower));
+        equivalence.insert(QStringLiteral("ci_upper"),
+                           optional_number(facts.equivalence->ci_upper));
+        equivalence.insert(QStringLiteral("p_lower"),
+                           optional_number(facts.equivalence->p_lower));
+        equivalence.insert(QStringLiteral("p_upper"),
+                           optional_number(facts.equivalence->p_upper));
+        equivalence.insert(QStringLiteral("alpha"),
+                           optional_number(facts.equivalence->alpha));
+        equivalence.insert(QStringLiteral("ci_method"),
+                           QString::fromStdString(facts.equivalence->ci_method));
+        equivalence.insert(QStringLiteral("within_limits"),
+                           facts.equivalence->within_limits);
+        equivalence.insert(QStringLiteral("both_pvalues_below_alpha"),
+                           facts.equivalence->both_pvalues_below_alpha);
+        equivalence.insert(QStringLiteral("assumption_status"),
+                           QString::fromStdString(facts.equivalence->assumption_status));
+        serialized.insert(QStringLiteral("equivalence"), equivalence);
+    }
+    if (facts.t_test.has_value()) {
+        QJsonObject t_test;
+        t_test.insert(QStringLiteral("kind"),
+                      QString::fromStdString(facts.t_test->kind));
+        t_test.insert(QStringLiteral("n"), static_cast<int>(facts.t_test->n));
+        t_test.insert(QStringLiteral("missing_count"),
+                      static_cast<int>(facts.t_test->missing_count));
+        t_test.insert(QStringLiteral("mean"), optional_number(facts.t_test->mean));
+        t_test.insert(QStringLiteral("difference"),
+                      optional_number(facts.t_test->difference));
+        t_test.insert(QStringLiteral("p_value"),
+                      optional_number(facts.t_test->p_value));
+        t_test.insert(QStringLiteral("ci_lower"),
+                      optional_number(facts.t_test->ci_lower));
+        t_test.insert(QStringLiteral("ci_upper"),
+                      optional_number(facts.t_test->ci_upper));
+        t_test.insert(QStringLiteral("variance_method"),
+                      QString::fromStdString(facts.t_test->variance_method));
+        t_test.insert(QStringLiteral("assumption_status"),
+                      QString::fromStdString(facts.t_test->assumption_status));
+        serialized.insert(QStringLiteral("t_test"), t_test);
+    }
+    if (facts.normality.has_value()) {
+        QJsonObject normality;
+        normality.insert(QStringLiteral("n"), static_cast<int>(facts.normality->n));
+        normality.insert(QStringLiteral("missing_count"),
+                         static_cast<int>(facts.normality->missing_count));
+        normality.insert(QStringLiteral("decision"),
+                         QString::fromStdString(facts.normality->decision));
+        normality.insert(QStringLiteral("p_value"),
+                         optional_number(facts.normality->p_value));
+        normality.insert(QStringLiteral("anderson_darling"),
+                         optional_number(facts.normality->anderson_darling));
+        normality.insert(QStringLiteral("alpha"), facts.normality->alpha);
+        normality.insert(QStringLiteral("assumption_status"),
+                         QString::fromStdString(facts.normality->assumption_status));
+        serialized.insert(QStringLiteral("normality"), normality);
+    }
+    if (facts.outlier_test.has_value()) {
+        QJsonObject outlier_test;
+        outlier_test.insert(QStringLiteral("n"), static_cast<int>(facts.outlier_test->n));
+        outlier_test.insert(QStringLiteral("missing_count"),
+                            static_cast<int>(facts.outlier_test->missing_count));
+        outlier_test.insert(QStringLiteral("mean"),
+                            optional_number(facts.outlier_test->mean));
+        outlier_test.insert(QStringLiteral("standard_deviation"),
+                            optional_number(facts.outlier_test->standard_deviation));
+        outlier_test.insert(QStringLiteral("g_statistic"),
+                            optional_number(facts.outlier_test->g_statistic));
+        outlier_test.insert(QStringLiteral("p_value"),
+                            optional_number(facts.outlier_test->p_value));
+        outlier_test.insert(QStringLiteral("outlier_value"),
+                            optional_number(facts.outlier_test->outlier_value));
+        if (facts.outlier_test->source_row.has_value()) {
+            outlier_test.insert(QStringLiteral("source_row"),
+                                static_cast<int>(*facts.outlier_test->source_row));
+        }
+        outlier_test.insert(QStringLiteral("direction"),
+                            QString::fromStdString(facts.outlier_test->direction));
+        outlier_test.insert(QStringLiteral("alternative"),
+                            QString::fromStdString(facts.outlier_test->alternative));
+        outlier_test.insert(QStringLiteral("alpha"), facts.outlier_test->alpha);
+        outlier_test.insert(QStringLiteral("assumption_status"),
+                            QString::fromStdString(facts.outlier_test->assumption_status));
+        serialized.insert(QStringLiteral("outlier_test"), outlier_test);
+    }
+    if (facts.correlation.has_value()) {
+        QJsonObject correlation;
+        correlation.insert(QStringLiteral("method"),
+                           QString::fromStdString(facts.correlation->method));
+        correlation.insert(QStringLiteral("variable_count"),
+                           static_cast<int>(facts.correlation->variable_count));
+        correlation.insert(QStringLiteral("n"), static_cast<int>(facts.correlation->n));
+        correlation.insert(QStringLiteral("missing_skipped"),
+                           static_cast<int>(facts.correlation->missing_skipped));
+        correlation.insert(QStringLiteral("assumption_status"),
+                           QString::fromStdString(facts.correlation->assumption_status));
+        serialized.insert(QStringLiteral("correlation"), correlation);
     }
     if (!serialized.isEmpty()) {
         object.insert(QStringLiteral("facts"), serialized);
@@ -474,22 +924,56 @@ void read_interpretation_facts(
     }
     const QJsonObject capability = serialized.value(QStringLiteral("capability")).toObject();
     if (!capability.isEmpty()) {
-        facts.capability = domain::CapabilityFacts{
-            read_optional(capability.value(QStringLiteral("cpk"))),
-            read_optional(capability.value(QStringLiteral("ppk"))),
-            read_optional(capability.value(QStringLiteral("cpm"))),
-            read_optional(capability.value(QStringLiteral("z_bench"))),
-            capability.value(QStringLiteral("assumption_status"))
-                .toString("not_verified").toStdString(),
-            capability.value(QStringLiteral("specification_mode")).toString().toStdString(),
-            capability.value(QStringLiteral("method")).toString().toStdString(),
-            capability.value(QStringLiteral("johnson_family")).toString().toStdString()};
+        domain::CapabilityFacts value;
+        value.cpk = read_optional(capability.value(QStringLiteral("cpk")));
+        value.ppk = read_optional(capability.value(QStringLiteral("ppk")));
+        value.cpm = read_optional(capability.value(QStringLiteral("cpm")));
+        value.z_bench = read_optional(capability.value(QStringLiteral("z_bench")));
+        value.assumption_status = capability.value(QStringLiteral("assumption_status"))
+            .toString("not_verified").toStdString();
+        value.specification_mode =
+            capability.value(QStringLiteral("specification_mode")).toString().toStdString();
+        value.method = capability.value(QStringLiteral("method")).toString().toStdString();
+        value.johnson_family =
+            capability.value(QStringLiteral("johnson_family")).toString().toStdString();
+        value.normality_p_value =
+            read_optional(capability.value(QStringLiteral("normality_p_value")));
+        value.transform_p_value =
+            read_optional(capability.value(QStringLiteral("transform_p_value")));
+        value.transform_anderson_darling =
+            read_optional(capability.value(QStringLiteral("transform_anderson_darling")));
+        value.nonnormal_distribution =
+            capability.value(QStringLiteral("nonnormal_distribution")).toString().toStdString();
+        value.fitted_shape = read_optional(capability.value(QStringLiteral("fitted_shape")));
+        value.fitted_scale = read_optional(capability.value(QStringLiteral("fitted_scale")));
+        value.average_p = read_optional(capability.value(QStringLiteral("average_p")));
+        value.percent_defective =
+            read_optional(capability.value(QStringLiteral("percent_defective")));
+        value.ppm_defective = read_optional(capability.value(QStringLiteral("ppm_defective")));
+        value.process_z = read_optional(capability.value(QStringLiteral("process_z")));
+        value.mean_dpu = read_optional(capability.value(QStringLiteral("mean_dpu")));
+        value.cp = read_optional(capability.value(QStringLiteral("cp")));
+        value.pp = read_optional(capability.value(QStringLiteral("pp")));
+        value.cpk_lower = read_optional(capability.value(QStringLiteral("cpk_lower")));
+        value.cpk_upper = read_optional(capability.value(QStringLiteral("cpk_upper")));
+        value.ppk_lower = read_optional(capability.value(QStringLiteral("ppk_lower")));
+        value.ppk_upper = read_optional(capability.value(QStringLiteral("ppk_upper")));
+        value.capability_ci_method =
+            capability.value(QStringLiteral("capability_ci_method")).toString().toStdString();
+        facts.capability = std::move(value);
     }
     const QJsonObject spc = serialized.value(QStringLiteral("spc")).toObject();
     if (!spc.isEmpty()) {
-        facts.spc = domain::SpcFacts{
-            read_optional_size(spc.value(QStringLiteral("out_of_control_count"))),
-            read_optional(spc.value(QStringLiteral("sigma_z")))};
+        facts.spc = domain::SpcFacts{};
+        facts.spc->out_of_control_count =
+            read_optional_size(spc.value(QStringLiteral("out_of_control_count")));
+        facts.spc->sigma_z = read_optional(spc.value(QStringLiteral("sigma_z")));
+        facts.spc->sigma_within = read_optional(spc.value(QStringLiteral("sigma_within")));
+        facts.spc->sigma_between = read_optional(spc.value(QStringLiteral("sigma_between")));
+        facts.spc->sigma_between_within =
+            read_optional(spc.value(QStringLiteral("sigma_between_within")));
+        facts.spc->between_within_method =
+            spc.value(QStringLiteral("between_within_method")).toString().toStdString();
     }
     const QJsonObject regression = serialized.value(QStringLiteral("regression")).toObject();
     if (!regression.isEmpty()) {
@@ -497,6 +981,10 @@ void read_interpretation_facts(
         value.r_squared = read_optional(regression.value(QStringLiteral("r_squared")));
         value.residual_normality_p =
             read_optional(regression.value(QStringLiteral("residual_normality_p")));
+        value.residual_anderson_darling =
+            read_optional(regression.value(QStringLiteral("residual_anderson_darling")));
+        value.residual_plot_count = static_cast<std::size_t>(
+            regression.value(QStringLiteral("residual_plot_count")).toInt(0));
         value.influential_count = static_cast<std::size_t>(
             regression.value(QStringLiteral("influential_count")).toInt(0));
         value.assumption_status = regression.value(QStringLiteral("assumption_status"))
@@ -531,6 +1019,12 @@ void read_interpretation_facts(
         value.tukey_significant_pairs = static_cast<std::size_t>(
             anova.value(QStringLiteral("tukey_significant_pairs")).toInt(0));
         value.tukey_method = anova.value(QStringLiteral("tukey_method")).toString().toStdString();
+        value.tukey_interval_columns =
+            anova.value(QStringLiteral("tukey_interval_columns")).toString().toStdString();
+        value.tukey_grouping_available =
+            anova.value(QStringLiteral("tukey_grouping_available")).toBool(false);
+        value.grouping_letter_count = static_cast<std::size_t>(
+            anova.value(QStringLiteral("grouping_letter_count")).toInt(0));
         value.assumption_status = anova.value(QStringLiteral("assumption_status"))
             .toString("not_verified").toStdString();
         value.assumptions = read_assumptions(
@@ -562,10 +1056,35 @@ void read_interpretation_facts(
             read_optional(msa.value(QStringLiteral("gage_percent_study_variation")));
         value.gage_percent_contribution =
             read_optional(msa.value(QStringLiteral("gage_percent_contribution")));
+        value.linearity = read_optional(msa.value(QStringLiteral("linearity")));
+        value.percent_linearity =
+            read_optional(msa.value(QStringLiteral("percent_linearity")));
+        value.slope_p_value = read_optional(msa.value(QStringLiteral("slope_p_value")));
+        value.intercept_p_value =
+            read_optional(msa.value(QStringLiteral("intercept_p_value")));
+        value.residual_s = read_optional(msa.value(QStringLiteral("residual_s")));
+        value.average_bias = read_optional(msa.value(QStringLiteral("average_bias")));
+        value.average_bias_p =
+            read_optional(msa.value(QStringLiteral("average_bias_p")));
+        value.process_variation_used =
+            read_optional(msa.value(QStringLiteral("process_variation_used")));
         value.ratings_are_ordinal =
             msa.value(QStringLiteral("ratings_are_ordinal")).toBool(false);
+        value.weighted_kappa_available =
+            msa.value(QStringLiteral("weighted_kappa_available")).toBool(false);
+        value.kappa_weight_scheme =
+            msa.value(QStringLiteral("kappa_weight_scheme")).toString("none").toStdString();
+        if (value.kappa_weight_scheme.empty()) {
+            value.kappa_weight_scheme = "none";
+        }
         value.kendall_available =
             msa.value(QStringLiteral("kendall_available")).toBool(false);
+        value.by_part_plot_available =
+            msa.value(QStringLiteral("by_part_plot_available")).toBool(false);
+        value.interaction_plot_available =
+            msa.value(QStringLiteral("interaction_plot_available")).toBool(false);
+        value.plot_point_count = static_cast<std::size_t>(
+            msa.value(QStringLiteral("plot_point_count")).toInt(0));
         value.kendall_w = read_optional(msa.value(QStringLiteral("kendall_w")));
         value.kendall_w_p = read_optional(msa.value(QStringLiteral("kendall_w_p")));
         value.kendall_tau = read_optional(msa.value(QStringLiteral("kendall_tau")));
@@ -608,6 +1127,17 @@ void read_interpretation_facts(
             read_optional(forecast.value(QStringLiteral("rolling_origin_mape"))),
             read_optional(forecast.value(QStringLiteral("rolling_origin_mase")))};
     }
+    const QJsonObject power_facts = serialized.value(QStringLiteral("power")).toObject();
+    if (!power_facts.isEmpty()) {
+        domain::PowerFacts value;
+        value.power = read_optional(power_facts.value(QStringLiteral("power")));
+        value.effect_size = read_optional(power_facts.value(QStringLiteral("effect_size")));
+        value.mode = power_facts.value(QStringLiteral("mode")).toString().toStdString();
+        value.sample_size = read_optional_size(power_facts.value(QStringLiteral("sample_size")));
+        value.target = read_optional(power_facts.value(QStringLiteral("target")));
+        value.actual_power = read_optional(power_facts.value(QStringLiteral("actual_power")));
+        facts.power = std::move(value);
+    }
     const QJsonObject descriptive = serialized.value(QStringLiteral("descriptive")).toObject();
     if (!descriptive.isEmpty()) {
         domain::DescriptiveFacts value;
@@ -628,7 +1158,50 @@ void read_interpretation_facts(
             read_optional(chi_square.value(QStringLiteral("degrees_of_freedom")));
         value.expected_count_warning =
             chi_square.value(QStringLiteral("expected_count_warning")).toBool(false);
+        value.row_count = static_cast<std::size_t>(
+            chi_square.value(QStringLiteral("row_count")).toInt(0));
+        value.column_count = static_cast<std::size_t>(
+            chi_square.value(QStringLiteral("column_count")).toInt(0));
+        value.total_count = static_cast<std::size_t>(
+            chi_square.value(QStringLiteral("total_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            chi_square.value(QStringLiteral("missing_count")).toInt(0));
+        value.likelihood_ratio_statistic =
+            read_optional(chi_square.value(QStringLiteral("likelihood_ratio_statistic")));
+        value.likelihood_ratio_p_value =
+            read_optional(chi_square.value(QStringLiteral("likelihood_ratio_p_value")));
+        value.plot_available =
+            chi_square.value(QStringLiteral("plot_available")).toBool(false);
         facts.chi_square = std::move(value);
+    }
+    const QJsonObject chi_square_gof = serialized.value(QStringLiteral("chi_square_gof")).toObject();
+    if (!chi_square_gof.isEmpty()) {
+        domain::ChiSquareGofFacts value;
+        value.statistic = read_optional(chi_square_gof.value(QStringLiteral("statistic")));
+        value.p_value = read_optional(chi_square_gof.value(QStringLiteral("p_value")));
+        value.degrees_of_freedom =
+            read_optional(chi_square_gof.value(QStringLiteral("degrees_of_freedom")));
+        value.category_count = static_cast<std::size_t>(
+            chi_square_gof.value(QStringLiteral("category_count")).toInt(0));
+        value.total_count = static_cast<std::size_t>(
+            chi_square_gof.value(QStringLiteral("total_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            chi_square_gof.value(QStringLiteral("missing_count")).toInt(0));
+        value.expected_count_warning =
+            chi_square_gof.value(QStringLiteral("expected_count_warning")).toBool(false);
+        value.expected_below_five_count = static_cast<std::size_t>(
+            chi_square_gof.value(QStringLiteral("expected_below_five_count")).toInt(0));
+        value.minimum_expected_count =
+            read_optional(chi_square_gof.value(QStringLiteral("minimum_expected_count")));
+        value.validity_status = chi_square_gof.value(QStringLiteral("validity_status"))
+                                    .toString(QStringLiteral("ok")).toStdString();
+        value.recommendation = chi_square_gof.value(QStringLiteral("recommendation"))
+                                   .toString().toStdString();
+        value.plot_available =
+            chi_square_gof.value(QStringLiteral("plot_available")).toBool(false);
+        value.proportion_source = chi_square_gof.value(QStringLiteral("proportion_source"))
+                                      .toString(QStringLiteral("equal")).toStdString();
+        facts.chi_square_gof = std::move(value);
     }
     const QJsonObject nonparametric = serialized.value(QStringLiteral("nonparametric")).toObject();
     if (!nonparametric.isEmpty()) {
@@ -646,6 +1219,22 @@ void read_interpretation_facts(
         value.effect_size = read_optional(nonparametric.value(QStringLiteral("effect_size")));
         value.p_value_unadjusted =
             read_optional(nonparametric.value(QStringLiteral("p_value_unadjusted")));
+        value.group_count = static_cast<std::size_t>(
+            nonparametric.value(QStringLiteral("group_count")).toInt(0));
+        value.plot_point_count = static_cast<std::size_t>(
+            nonparametric.value(QStringLiteral("plot_point_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            nonparametric.value(QStringLiteral("missing_count")).toInt(0));
+        value.location_estimate =
+            read_optional(nonparametric.value(QStringLiteral("location_estimate")));
+        value.ci_lower = read_optional(nonparametric.value(QStringLiteral("ci_lower")));
+        value.ci_upper = read_optional(nonparametric.value(QStringLiteral("ci_upper")));
+        value.dunn_available =
+            nonparametric.value(QStringLiteral("dunn_available")).toBool(false);
+        value.posthoc_pair_count = static_cast<std::size_t>(
+            nonparametric.value(QStringLiteral("posthoc_pair_count")).toInt(0));
+        value.grouping_letter_count = static_cast<std::size_t>(
+            nonparametric.value(QStringLiteral("grouping_letter_count")).toInt(0));
         facts.nonparametric = std::move(value);
     }
     const QJsonObject logistic = serialized.value(QStringLiteral("logistic")).toObject();
@@ -672,6 +1261,12 @@ void read_interpretation_facts(
         value.high_leverage_count =
             static_cast<std::size_t>(
                 logistic.value(QStringLiteral("high_leverage_count")).toInteger(0));
+        value.leverage_threshold =
+            read_optional(logistic.value(QStringLiteral("leverage_threshold")));
+        value.maximum_leverage =
+            read_optional(logistic.value(QStringLiteral("maximum_leverage")));
+        value.maximum_vif =
+            read_optional(logistic.value(QStringLiteral("maximum_vif")));
         facts.logistic = std::move(value);
     }
     const QJsonObject distribution_id =
@@ -703,8 +1298,56 @@ void read_interpretation_facts(
             pca.value(QStringLiteral("observation_count")).toInt(0));
         value.t2_limit = read_optional(pca.value(QStringLiteral("t2_limit")));
         value.q_limit = read_optional(pca.value(QStringLiteral("q_limit")));
+        value.residual_ad_p = read_optional(pca.value(QStringLiteral("residual_ad_p")));
+        value.diagnostic_plot_count = static_cast<std::size_t>(
+            pca.value(QStringLiteral("diagnostic_plot_count")).toInt(0));
         value.converged = pca.value(QStringLiteral("converged")).toBool(false);
         facts.pca = std::move(value);
+    }
+    const QJsonObject multi_vari = serialized.value(QStringLiteral("multi_vari")).toObject();
+    if (!multi_vari.isEmpty()) {
+        domain::MultiVariFacts value;
+        value.factor_count = static_cast<std::size_t>(
+            multi_vari.value(QStringLiteral("factor_count")).toInt(0));
+        value.valid_count = static_cast<std::size_t>(
+            multi_vari.value(QStringLiteral("valid_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            multi_vari.value(QStringLiteral("missing_count")).toInt(0));
+        value.combination_coverage =
+            multi_vari.value(QStringLiteral("combination_coverage")).toDouble(0.0);
+        value.factor_names = to_strings(
+            multi_vari.value(QStringLiteral("factor_names")).toArray());
+        facts.multi_vari = std::move(value);
+    }
+    const QJsonObject tolerance = serialized.value(QStringLiteral("tolerance")).toObject();
+    if (!tolerance.isEmpty()) {
+        domain::ToleranceFacts value;
+        value.valid_count = static_cast<std::size_t>(
+            tolerance.value(QStringLiteral("valid_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            tolerance.value(QStringLiteral("missing_count")).toInt(0));
+        value.mean = read_optional(tolerance.value(QStringLiteral("mean")));
+        value.standard_deviation =
+            read_optional(tolerance.value(QStringLiteral("standard_deviation")));
+        value.coverage = read_optional(tolerance.value(QStringLiteral("coverage")));
+        value.confidence_level =
+            read_optional(tolerance.value(QStringLiteral("confidence_level")));
+        value.lower = read_optional(tolerance.value(QStringLiteral("lower")));
+        value.upper = read_optional(tolerance.value(QStringLiteral("upper")));
+        value.k_factor = read_optional(tolerance.value(QStringLiteral("k_factor")));
+        value.achieved_confidence =
+            read_optional(tolerance.value(QStringLiteral("achieved_confidence")));
+        value.method = tolerance.value(QStringLiteral("method")).toString().toStdString();
+        value.method_family =
+            tolerance.value(QStringLiteral("method_family"))
+                .toString(QStringLiteral("normal")).toStdString();
+        value.interval_type =
+            tolerance.value(QStringLiteral("interval_type"))
+                .toString(QStringLiteral("two_sided")).toStdString();
+        value.assumption_status =
+            tolerance.value(QStringLiteral("assumption_status"))
+                .toString(QStringLiteral("not_verified")).toStdString();
+        facts.tolerance = std::move(value);
     }
     const QJsonObject variance = serialized.value(QStringLiteral("variance")).toObject();
     if (!variance.isEmpty()) {
@@ -712,9 +1355,231 @@ void read_interpretation_facts(
         value.method = variance.value(QStringLiteral("method")).toString().toStdString();
         value.statistic = read_optional(variance.value(QStringLiteral("statistic")));
         value.p_value = read_optional(variance.value(QStringLiteral("p_value")));
+        value.ci_lower = read_optional(variance.value(QStringLiteral("ci_lower")));
+        value.ci_upper = read_optional(variance.value(QStringLiteral("ci_upper")));
         value.group_count = static_cast<std::size_t>(
             variance.value(QStringLiteral("group_count")).toInt(0));
         facts.variance = std::move(value);
+    }
+    const QJsonObject doe = serialized.value(QStringLiteral("doe")).toObject();
+    if (!doe.isEmpty()) {
+        domain::DoeFacts value;
+        value.significant_terms = to_strings(
+            doe.value(QStringLiteral("significant_terms")).toArray());
+        value.has_p_value = doe.value(QStringLiteral("has_p_value")).toBool(false);
+        value.response_count = static_cast<std::size_t>(
+            doe.value(QStringLiteral("response_count")).toInt(0));
+        value.multi_response = doe.value(QStringLiteral("multi_response")).toBool(false);
+        value.best_overall_desirability =
+            read_optional(doe.value(QStringLiteral("best_overall_desirability")));
+        value.response_names = to_strings(
+            doe.value(QStringLiteral("response_names")).toArray());
+        value.prediction_interval_available =
+            doe.value(QStringLiteral("prediction_interval_available")).toBool(false);
+        value.largest_standardized_effect_term =
+            doe.value(QStringLiteral("largest_standardized_effect_term")).toString().toStdString();
+        value.pareto_reference =
+            read_optional(doe.value(QStringLiteral("pareto_reference")));
+        value.pareto_method =
+            doe.value(QStringLiteral("pareto_method")).toString().toStdString();
+        value.residual_count = static_cast<std::size_t>(
+            doe.value(QStringLiteral("residual_count")).toInt(0));
+        value.factor_count = static_cast<std::size_t>(
+            doe.value(QStringLiteral("factor_count")).toInt(0));
+        value.cube_plot_available =
+            doe.value(QStringLiteral("cube_plot_available")).toBool(false);
+        value.contour_plot_available =
+            doe.value(QStringLiteral("contour_plot_available")).toBool(false);
+        value.contour_x_factor =
+            doe.value(QStringLiteral("contour_x_factor")).toString().toStdString();
+        value.contour_y_factor =
+            doe.value(QStringLiteral("contour_y_factor")).toString().toStdString();
+        value.held_factor_names = to_strings(
+            doe.value(QStringLiteral("held_factor_names")).toArray());
+        value.held_actual_values = to_strings(
+            doe.value(QStringLiteral("held_actual_values")).toArray());
+        for (const QJsonValue& coded : doe.value(QStringLiteral("held_coded_values")).toArray()) {
+            value.held_coded_values.push_back(coded.toDouble());
+        }
+        facts.doe = std::move(value);
+    }
+    const QJsonObject proportion = serialized.value(QStringLiteral("proportion")).toObject();
+    if (!proportion.isEmpty()) {
+        domain::ProportionFacts value;
+        value.kind = proportion.value(QStringLiteral("kind"))
+                         .toString(QStringLiteral("one_sample")).toStdString();
+        value.events = static_cast<std::size_t>(
+            proportion.value(QStringLiteral("events")).toInt(0));
+        value.trials = static_cast<std::size_t>(
+            proportion.value(QStringLiteral("trials")).toInt(0));
+        value.proportion = read_optional(proportion.value(QStringLiteral("proportion")));
+        if (proportion.contains(QStringLiteral("second_events"))) {
+            value.second_events = static_cast<std::size_t>(
+                proportion.value(QStringLiteral("second_events")).toInt(0));
+        }
+        if (proportion.contains(QStringLiteral("second_trials"))) {
+            value.second_trials = static_cast<std::size_t>(
+                proportion.value(QStringLiteral("second_trials")).toInt(0));
+        }
+        value.second_proportion =
+            read_optional(proportion.value(QStringLiteral("second_proportion")));
+        value.difference = read_optional(proportion.value(QStringLiteral("difference")));
+        value.hypothesized = read_optional(proportion.value(QStringLiteral("hypothesized")));
+        value.method = proportion.value(QStringLiteral("method")).toString().toStdString();
+        value.ci_method = proportion.value(QStringLiteral("ci_method")).toString().toStdString();
+        value.p_value = read_optional(proportion.value(QStringLiteral("p_value")));
+        value.fisher_p_value = read_optional(proportion.value(QStringLiteral("fisher_p_value")));
+        value.ci_lower = read_optional(proportion.value(QStringLiteral("ci_lower")));
+        value.ci_upper = read_optional(proportion.value(QStringLiteral("ci_upper")));
+        value.assumption_status =
+            proportion.value(QStringLiteral("assumption_status"))
+                .toString(QStringLiteral("not_verified")).toStdString();
+        facts.proportion = std::move(value);
+    }
+    const QJsonObject box_cox = serialized.value(QStringLiteral("box_cox")).toObject();
+    if (!box_cox.isEmpty()) {
+        domain::BoxCoxFacts value;
+        value.lambda = box_cox.value(QStringLiteral("lambda")).toDouble(0.0);
+        value.n = static_cast<std::size_t>(box_cox.value(QStringLiteral("n")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            box_cox.value(QStringLiteral("missing_count")).toInt(0));
+        value.transformed_standard_deviation =
+            read_optional(box_cox.value(QStringLiteral("transformed_standard_deviation")));
+        value.rounded_lambda = box_cox.value(QStringLiteral("rounded_lambda")).toBool(true);
+        value.assumption_status =
+            box_cox.value(QStringLiteral("assumption_status"))
+                .toString(QStringLiteral("not_verified")).toStdString();
+        facts.box_cox = std::move(value);
+    }
+    const QJsonObject poisson_rate = serialized.value(QStringLiteral("poisson_rate")).toObject();
+    if (!poisson_rate.isEmpty()) {
+        domain::PoissonRateFacts value;
+        value.kind = poisson_rate.value(QStringLiteral("kind")).toString().toStdString();
+        value.events = static_cast<std::size_t>(
+            poisson_rate.value(QStringLiteral("events")).toInt(0));
+        value.exposure = poisson_rate.value(QStringLiteral("exposure")).toDouble(0.0);
+        value.rate = read_optional(poisson_rate.value(QStringLiteral("rate")));
+        if (poisson_rate.contains(QStringLiteral("second_events"))) {
+            value.second_events = static_cast<std::size_t>(
+                poisson_rate.value(QStringLiteral("second_events")).toInt(0));
+        }
+        value.second_exposure =
+            read_optional(poisson_rate.value(QStringLiteral("second_exposure")));
+        value.second_rate = read_optional(poisson_rate.value(QStringLiteral("second_rate")));
+        value.hypothesized = read_optional(poisson_rate.value(QStringLiteral("hypothesized")));
+        value.method = poisson_rate.value(QStringLiteral("method")).toString().toStdString();
+        value.comparison =
+            poisson_rate.value(QStringLiteral("comparison")).toString("difference").toStdString();
+        if (value.comparison.empty()) {
+            value.comparison = "difference";
+        }
+        value.ratio = read_optional(poisson_rate.value(QStringLiteral("ratio")));
+        value.ratio_ci_lower =
+            read_optional(poisson_rate.value(QStringLiteral("ratio_ci_lower")));
+        value.ratio_ci_upper =
+            read_optional(poisson_rate.value(QStringLiteral("ratio_ci_upper")));
+        value.z_statistic = read_optional(poisson_rate.value(QStringLiteral("z_statistic")));
+        value.p_value = read_optional(poisson_rate.value(QStringLiteral("p_value")));
+        value.ci_lower = read_optional(poisson_rate.value(QStringLiteral("ci_lower")));
+        value.ci_upper = read_optional(poisson_rate.value(QStringLiteral("ci_upper")));
+        value.assumption_status =
+            poisson_rate.value(QStringLiteral("assumption_status"))
+                .toString(QStringLiteral("not_verified")).toStdString();
+        facts.poisson_rate = std::move(value);
+    }
+    const QJsonObject equivalence = serialized.value(QStringLiteral("equivalence")).toObject();
+    if (!equivalence.isEmpty()) {
+        domain::EquivalenceFacts value;
+        value.kind = equivalence.value(QStringLiteral("kind")).toString().toStdString();
+        value.difference = read_optional(equivalence.value(QStringLiteral("difference")));
+        value.lower = read_optional(equivalence.value(QStringLiteral("lower")));
+        value.upper = read_optional(equivalence.value(QStringLiteral("upper")));
+        value.ci_lower = read_optional(equivalence.value(QStringLiteral("ci_lower")));
+        value.ci_upper = read_optional(equivalence.value(QStringLiteral("ci_upper")));
+        value.p_lower = read_optional(equivalence.value(QStringLiteral("p_lower")));
+        value.p_upper = read_optional(equivalence.value(QStringLiteral("p_upper")));
+        value.alpha = read_optional(equivalence.value(QStringLiteral("alpha")));
+        value.ci_method = equivalence.value(QStringLiteral("ci_method"))
+                              .toString(QStringLiteral("tost_1_minus_alpha")).toStdString();
+        value.within_limits = equivalence.value(QStringLiteral("within_limits")).toBool(false);
+        value.both_pvalues_below_alpha =
+            equivalence.value(QStringLiteral("both_pvalues_below_alpha")).toBool(false);
+        value.assumption_status =
+            equivalence.value(QStringLiteral("assumption_status"))
+                .toString(QStringLiteral("not_verified")).toStdString();
+        facts.equivalence = std::move(value);
+    }
+    const QJsonObject t_test = serialized.value(QStringLiteral("t_test")).toObject();
+    if (!t_test.isEmpty()) {
+        domain::TTestFacts value;
+        value.kind = t_test.value(QStringLiteral("kind")).toString().toStdString();
+        value.n = static_cast<std::size_t>(t_test.value(QStringLiteral("n")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            t_test.value(QStringLiteral("missing_count")).toInt(0));
+        value.mean = read_optional(t_test.value(QStringLiteral("mean")));
+        value.difference = read_optional(t_test.value(QStringLiteral("difference")));
+        value.p_value = read_optional(t_test.value(QStringLiteral("p_value")));
+        value.ci_lower = read_optional(t_test.value(QStringLiteral("ci_lower")));
+        value.ci_upper = read_optional(t_test.value(QStringLiteral("ci_upper")));
+        value.variance_method = t_test.value(QStringLiteral("variance_method"))
+                                    .toString().toStdString();
+        value.assumption_status = t_test.value(QStringLiteral("assumption_status"))
+                                      .toString(QStringLiteral("not_verified")).toStdString();
+        facts.t_test = std::move(value);
+    }
+    const QJsonObject normality = serialized.value(QStringLiteral("normality")).toObject();
+    if (!normality.isEmpty()) {
+        domain::NormalityFacts value;
+        value.n = static_cast<std::size_t>(normality.value(QStringLiteral("n")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            normality.value(QStringLiteral("missing_count")).toInt(0));
+        value.decision = normality.value(QStringLiteral("decision"))
+                             .toString(QStringLiteral("not_computed")).toStdString();
+        value.p_value = read_optional(normality.value(QStringLiteral("p_value")));
+        value.anderson_darling =
+            read_optional(normality.value(QStringLiteral("anderson_darling")));
+        value.alpha = normality.value(QStringLiteral("alpha")).toDouble(0.05);
+        value.assumption_status = normality.value(QStringLiteral("assumption_status"))
+                                      .toString(QStringLiteral("not_verified")).toStdString();
+        facts.normality = std::move(value);
+    }
+    const QJsonObject outlier_test = serialized.value(QStringLiteral("outlier_test")).toObject();
+    if (!outlier_test.isEmpty()) {
+        domain::OutlierTestFacts value;
+        value.n = static_cast<std::size_t>(outlier_test.value(QStringLiteral("n")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            outlier_test.value(QStringLiteral("missing_count")).toInt(0));
+        value.mean = read_optional(outlier_test.value(QStringLiteral("mean")));
+        value.standard_deviation =
+            read_optional(outlier_test.value(QStringLiteral("standard_deviation")));
+        value.g_statistic = read_optional(outlier_test.value(QStringLiteral("g_statistic")));
+        value.p_value = read_optional(outlier_test.value(QStringLiteral("p_value")));
+        value.outlier_value = read_optional(outlier_test.value(QStringLiteral("outlier_value")));
+        if (outlier_test.contains(QStringLiteral("source_row"))) {
+            value.source_row = static_cast<std::size_t>(
+                outlier_test.value(QStringLiteral("source_row")).toInt(0));
+        }
+        value.direction = outlier_test.value(QStringLiteral("direction")).toString().toStdString();
+        value.alternative = outlier_test.value(QStringLiteral("alternative"))
+                                .toString(QStringLiteral("two_sided")).toStdString();
+        value.alpha = outlier_test.value(QStringLiteral("alpha")).toDouble(0.05);
+        value.assumption_status = outlier_test.value(QStringLiteral("assumption_status"))
+                                      .toString(QStringLiteral("not_verified")).toStdString();
+        facts.outlier_test = std::move(value);
+    }
+    const QJsonObject correlation = serialized.value(QStringLiteral("correlation")).toObject();
+    if (!correlation.isEmpty()) {
+        domain::CorrelationFacts value;
+        value.method = correlation.value(QStringLiteral("method"))
+                           .toString(QStringLiteral("pearson")).toStdString();
+        value.variable_count = static_cast<std::size_t>(
+            correlation.value(QStringLiteral("variable_count")).toInt(0));
+        value.n = static_cast<std::size_t>(correlation.value(QStringLiteral("n")).toInt(0));
+        value.missing_skipped = static_cast<std::size_t>(
+            correlation.value(QStringLiteral("missing_skipped")).toInt(0));
+        value.assumption_status = correlation.value(QStringLiteral("assumption_status"))
+                                      .toString(QStringLiteral("not_verified")).toStdString();
+        facts.correlation = std::move(value);
     }
 }
 
@@ -851,6 +1716,10 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   optional_size(page.configuration.inference.row_category_column));
     object.insert(QStringLiteral("column_category_column"),
                   optional_size(page.configuration.inference.column_category_column));
+    object.insert(QStringLiteral("expected_proportions"),
+                  QString::fromStdString(page.configuration.inference.expected_proportions));
+    object.insert(QStringLiteral("gof_category_column"),
+                  optional_size(page.configuration.inference.gof_category_column));
     object.insert(QStringLiteral("lower_spec"), optional_number(page.configuration.specifications.lower));
     object.insert(QStringLiteral("upper_spec"), optional_number(page.configuration.specifications.upper));
     object.insert(QStringLiteral("target_spec"), optional_number(page.configuration.specifications.target));
@@ -859,6 +1728,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     object.insert(QStringLiteral("sigma_method"), QString::fromStdString(page.configuration.control.sigma_method));
     object.insert(QStringLiteral("historical_center"),
                   optional_number(page.configuration.control.historical_center));
+    object.insert(QStringLiteral("historical_sigma"),
+                  optional_number(page.configuration.control.historical_sigma));
     object.insert(QStringLiteral("historical_sigma_z"),
                   optional_number(page.configuration.control.historical_sigma_z));
     object.insert(QStringLiteral("leave_gaps_for_excluded"),
@@ -878,12 +1749,22 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     object.insert(QStringLiteral("hypothesis_mean"),
                   optional_number(page.configuration.inference.hypothesis_mean));
     object.insert(QStringLiteral("confidence_level"), page.configuration.inference.confidence_level);
+    object.insert(QStringLiteral("coverage_proportion"),
+                  optional_number(page.configuration.inference.coverage_proportion));
     object.insert(QStringLiteral("alternative"),
                   QString::fromStdString(page.configuration.inference.alternative));
     object.insert(QStringLiteral("correlation_method"),
                   QString::fromStdString(page.configuration.inference.correlation_method));
     object.insert(QStringLiteral("variance_method"),
                   QString::fromStdString(page.configuration.inference.variance_method));
+    object.insert(QStringLiteral("proportion_method"),
+                  QString::fromStdString(page.configuration.inference.proportion_method));
+    object.insert(QStringLiteral("equivalence_lower"),
+                  optional_number(page.configuration.inference.equivalence_lower));
+    object.insert(QStringLiteral("equivalence_upper"),
+                  optional_number(page.configuration.inference.equivalence_upper));
+    object.insert(QStringLiteral("rate_comparison"),
+                  QString::fromStdString(page.configuration.inference.rate_comparison));
     object.insert(QStringLiteral("gage_measurement_column"),
                   optional_size(page.configuration.msa.gage_measurement_column));
     object.insert(QStringLiteral("gage_part_column"),
@@ -956,6 +1837,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   size_array(page.configuration.doe.factor_columns));
     object.insert(QStringLiteral("doe_response_column"),
                   optional_size(page.configuration.doe.response_column));
+    object.insert(QStringLiteral("doe_response_columns"),
+                  size_array(page.configuration.doe.response_columns));
     object.insert(QStringLiteral("doe_low_levels"),
                   string_array(page.configuration.doe.low_levels));
     object.insert(QStringLiteral("doe_high_levels"),
@@ -979,6 +1862,27 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   page.configuration.doe.optimization_weight);
     object.insert(QStringLiteral("doe_optimization_confidence"),
                   page.configuration.doe.optimization_confidence);
+    object.insert(QStringLiteral("doe_contour_x_factor"),
+                  QString::fromStdString(page.configuration.doe.contour_x_factor));
+    object.insert(QStringLiteral("doe_contour_y_factor"),
+                  QString::fromStdString(page.configuration.doe.contour_y_factor));
+    QJsonObject hold_actual;
+    for (const auto& [name, value] : page.configuration.doe.contour_hold_actual) {
+        hold_actual.insert(QString::fromStdString(name), QString::fromStdString(value));
+    }
+    object.insert(QStringLiteral("doe_contour_hold_actual"), hold_actual);
+    QJsonArray optimization_objectives;
+    for (const auto& objective : page.configuration.doe.optimization_objectives) {
+        QJsonObject item;
+        item.insert(QStringLiteral("goal"),
+                    QString::fromStdString(objective.goal));
+        item.insert(QStringLiteral("lower"), optional_number(objective.lower));
+        item.insert(QStringLiteral("upper"), optional_number(objective.upper));
+        item.insert(QStringLiteral("target"), optional_number(objective.target));
+        item.insert(QStringLiteral("weight"), objective.weight);
+        optimization_objectives.append(item);
+    }
+    object.insert(QStringLiteral("doe_optimization_objectives"), optimization_objectives);
     object.insert(QStringLiteral("nested_gage_measurement_column"),
                   optional_size(page.configuration.msa.nested_measurement_column));
     object.insert(QStringLiteral("nested_gage_part_column"),
@@ -992,6 +1896,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   optional_size(page.configuration.msa.time_column));
     object.insert(QStringLiteral("msa_reference_value"),
                   optional_number(page.configuration.msa.reference_value));
+    object.insert(QStringLiteral("msa_process_variation"),
+                  optional_number(page.configuration.msa.process_variation));
     object.insert(QStringLiteral("msa_mode"),
                   QString::fromStdString(page.configuration.msa.mode));
     object.insert(QStringLiteral("reliability_time_column"),
@@ -1015,8 +1921,14 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   page.configuration.power.null_proportion);
     object.insert(QStringLiteral("power_second_proportion"),
                   page.configuration.power.second_proportion);
+    object.insert(QStringLiteral("power_observation_length"),
+                  page.configuration.power.observation_length);
     object.insert(QStringLiteral("power_variance_method"),
                   QString::fromStdString(page.configuration.power.variance_method));
+    object.insert(QStringLiteral("power_sample_size_list"),
+                  QString::fromStdString(page.configuration.power.sample_size_list));
+    object.insert(QStringLiteral("power_effect_size_list"),
+                  QString::fromStdString(page.configuration.power.effect_size_list));
     object.insert(QStringLiteral("attribute_rating_column"),
                   optional_size(page.configuration.msa.attribute_rating_column));
     object.insert(QStringLiteral("attribute_part_column"),
@@ -1029,6 +1941,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   QString::fromStdString(page.configuration.msa.attribute_agreement_method));
     object.insert(QStringLiteral("ratings_are_ordinal"),
                   page.configuration.msa.ratings_are_ordinal);
+    object.insert(QStringLiteral("kappa_weight_scheme"),
+                  QString::fromStdString(page.configuration.msa.kappa_weight_scheme));
     object.insert(QStringLiteral("seasonal_period"),
                   static_cast<qint64>(page.configuration.time_series.seasonal_period));
     object.insert(QStringLiteral("seasonal_error_model"),
@@ -1368,6 +2282,10 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         read_optional_size(object.value(QStringLiteral("row_category_column")));
     page.configuration.inference.column_category_column =
         read_optional_size(object.value(QStringLiteral("column_category_column")));
+    page.configuration.inference.expected_proportions =
+        object.value(QStringLiteral("expected_proportions")).toString().toStdString();
+    page.configuration.inference.gof_category_column =
+        read_optional_size(object.value(QStringLiteral("gof_category_column")));
     page.configuration.specifications.lower =
         read_optional(object.value(QStringLiteral("lower_spec")));
     page.configuration.specifications.upper =
@@ -1383,6 +2301,8 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
             .toString("average_moving_range").toStdString();
     page.configuration.control.historical_center =
         read_optional(object.value(QStringLiteral("historical_center")));
+    page.configuration.control.historical_sigma =
+        read_optional(object.value(QStringLiteral("historical_sigma")));
     page.configuration.control.historical_sigma_z =
         read_optional(object.value(QStringLiteral("historical_sigma_z")));
     page.configuration.leave_gaps_for_excluded =
@@ -1414,12 +2334,26 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         read_optional(object.value(QStringLiteral("hypothesis_mean")));
     page.configuration.inference.confidence_level =
         object.value(QStringLiteral("confidence_level")).toDouble(0.95);
+    page.configuration.inference.coverage_proportion =
+        read_optional(object.value(QStringLiteral("coverage_proportion")));
     page.configuration.inference.alternative =
         object.value(QStringLiteral("alternative")).toString("two_sided").toStdString();
     page.configuration.inference.correlation_method =
         object.value(QStringLiteral("correlation_method")).toString("pearson").toStdString();
     page.configuration.inference.variance_method =
         object.value(QStringLiteral("variance_method")).toString("welch").toStdString();
+    page.configuration.inference.proportion_method =
+        object.value(QStringLiteral("proportion_method")).toString("exact").toStdString();
+    page.configuration.inference.equivalence_lower =
+        read_optional(object.value(QStringLiteral("equivalence_lower")));
+    page.configuration.inference.equivalence_upper =
+        read_optional(object.value(QStringLiteral("equivalence_upper")));
+    page.configuration.inference.rate_comparison =
+        object.value(QStringLiteral("rate_comparison"))
+            .toString(QStringLiteral("difference")).toStdString();
+    if (page.configuration.inference.rate_comparison.empty()) {
+        page.configuration.inference.rate_comparison = "difference";
+    }
     page.configuration.msa.gage_measurement_column =
         read_optional_size(object.value(QStringLiteral("gage_measurement_column")));
     page.configuration.msa.gage_part_column =
@@ -1499,6 +2433,13 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         to_sizes(object.value(QStringLiteral("doe_factor_columns")).toArray());
     page.configuration.doe.response_column =
         read_optional_size(object.value(QStringLiteral("doe_response_column")));
+    page.configuration.doe.response_columns =
+        to_sizes(object.value(QStringLiteral("doe_response_columns")).toArray());
+    if (page.configuration.doe.response_columns.empty()
+        && page.configuration.doe.response_column.has_value()) {
+        page.configuration.doe.response_columns.push_back(
+            *page.configuration.doe.response_column);
+    }
     page.configuration.doe.low_levels =
         to_strings(object.value(QStringLiteral("doe_low_levels")).toArray());
     page.configuration.doe.high_levels =
@@ -1524,6 +2465,30 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         object.value(QStringLiteral("doe_optimization_weight")).toDouble(1.0);
     page.configuration.doe.optimization_confidence =
         object.value(QStringLiteral("doe_optimization_confidence")).toDouble(0.95);
+    page.configuration.doe.contour_x_factor =
+        object.value(QStringLiteral("doe_contour_x_factor")).toString().toStdString();
+    page.configuration.doe.contour_y_factor =
+        object.value(QStringLiteral("doe_contour_y_factor")).toString().toStdString();
+    page.configuration.doe.contour_hold_actual.clear();
+    const QJsonObject hold_actual =
+        object.value(QStringLiteral("doe_contour_hold_actual")).toObject();
+    for (auto it = hold_actual.begin(); it != hold_actual.end(); ++it) {
+        page.configuration.doe.contour_hold_actual[it.key().toStdString()] =
+            it.value().toString().toStdString();
+    }
+    page.configuration.doe.optimization_objectives.clear();
+    for (const QJsonValue& value :
+         object.value(QStringLiteral("doe_optimization_objectives")).toArray()) {
+        const QJsonObject item = value.toObject();
+        domain::DoeResponseObjectiveConfig objective;
+        objective.goal = item.value(QStringLiteral("goal"))
+                             .toString(QStringLiteral("maximize")).toStdString();
+        objective.lower = read_optional(item.value(QStringLiteral("lower")));
+        objective.upper = read_optional(item.value(QStringLiteral("upper")));
+        objective.target = read_optional(item.value(QStringLiteral("target")));
+        objective.weight = item.value(QStringLiteral("weight")).toDouble(1.0);
+        page.configuration.doe.optimization_objectives.push_back(objective);
+    }
     page.configuration.msa.nested_measurement_column =
         read_optional_size(object.value(QStringLiteral("nested_gage_measurement_column")));
     page.configuration.msa.nested_part_column =
@@ -1538,6 +2503,8 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         read_optional_size(object.value(QStringLiteral("msa_time_column")));
     page.configuration.msa.reference_value =
         read_optional(object.value(QStringLiteral("msa_reference_value")));
+    page.configuration.msa.process_variation =
+        read_optional(object.value(QStringLiteral("msa_process_variation")));
     page.configuration.msa.mode =
         object.value(QStringLiteral("msa_mode")).toString(QStringLiteral("type1")).toStdString();
     page.configuration.reliability.time_column =
@@ -1566,9 +2533,18 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         object.value(QStringLiteral("power_null_proportion")).toDouble(0.5);
     page.configuration.power.second_proportion =
         object.value(QStringLiteral("power_second_proportion")).toDouble(0.7);
+    page.configuration.power.observation_length =
+        object.value(QStringLiteral("power_observation_length")).toDouble(1.0);
+    if (!(page.configuration.power.observation_length > 0.0)) {
+        page.configuration.power.observation_length = 1.0;
+    }
     page.configuration.power.variance_method =
         object.value(QStringLiteral("power_variance_method"))
             .toString(QStringLiteral("pooled")).toStdString();
+    page.configuration.power.sample_size_list =
+        object.value(QStringLiteral("power_sample_size_list")).toString().toStdString();
+    page.configuration.power.effect_size_list =
+        object.value(QStringLiteral("power_effect_size_list")).toString().toStdString();
     page.configuration.msa.attribute_rating_column =
         read_optional_size(object.value(QStringLiteral("attribute_rating_column")));
     page.configuration.msa.attribute_part_column =
@@ -1582,6 +2558,11 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
             .toString("kappa").toStdString();
     page.configuration.msa.ratings_are_ordinal =
         object.value(QStringLiteral("ratings_are_ordinal")).toBool(false);
+    page.configuration.msa.kappa_weight_scheme =
+        object.value(QStringLiteral("kappa_weight_scheme")).toString("none").toStdString();
+    if (page.configuration.msa.kappa_weight_scheme.empty()) {
+        page.configuration.msa.kappa_weight_scheme = "none";
+    }
     page.configuration.time_series.seasonal_period =
         static_cast<std::size_t>(object.value(QStringLiteral("seasonal_period")).toInteger(1));
     page.configuration.time_series.seasonal_error_model =

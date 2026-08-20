@@ -59,6 +59,8 @@ struct TwoProportionsResult {
     double second_proportion = 0.0;
     double difference = 0.0;
     double z_statistic = 0.0;
+    std::string method = "normal";
+    std::string ci_method = "wald";
     std::optional<double> p_value;
     std::optional<double> confidence_lower;
     std::optional<double> confidence_upper;
@@ -100,17 +102,62 @@ TukeyResult tukey_multiple_comparisons(
     const std::vector<std::string>& labels = {},
     double confidence_level = 0.95);
 
+struct TukeyGroupingRow {
+    std::string label;
+    std::size_t count = 0;
+    double mean = 0.0;
+    std::string grouping;
+};
+
+// Compact letter display from existing Tukey pairwise `significant` flags.
+// Same letter ⇒ not significantly different under the product's Tukey rule.
+// Does not recompute critical values.
+std::vector<TukeyGroupingRow> tukey_grouping_letters(
+    const std::vector<std::string>& labels,
+    const std::vector<double>& means,
+    const std::vector<std::size_t>& counts,
+    const std::vector<TukeyComparison>& comparisons);
+
 TwoProportionsResult two_proportions_test(
     std::size_t first_events,
     std::size_t first_trials,
     std::size_t second_events,
     std::size_t second_trials,
     double confidence_level = 0.95,
-    TestAlternative alternative = TestAlternative::two_sided);
+    TestAlternative alternative = TestAlternative::two_sided,
+    bool newcombe_wilson_ci = false);
 
 ChiSquareResult chi_square_association(
     const std::vector<std::vector<double>>& observed,
     const std::vector<std::string>& row_labels = {},
     const std::vector<std::string>& column_labels = {});
+
+struct ChiSquareGofCategory {
+    std::string category;
+    double observed = 0.0;
+    double test_proportion = 0.0;
+    double expected = 0.0;
+    double residual = 0.0;
+    double contribution = 0.0;
+};
+
+struct ChiSquareGofResult {
+    std::size_t total_count = 0;
+    double degrees_of_freedom = 0.0;
+    double pearson_statistic = 0.0;
+    std::optional<double> p_value;
+    std::string proportion_source = "equal";
+    std::size_t expected_below_five_count = 0;
+    std::optional<double> minimum_expected_count;
+    std::string validity_status = "ok";
+    std::string recommendation;
+    std::vector<ChiSquareGofCategory> categories;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+ChiSquareGofResult chi_square_goodness_of_fit(
+    const std::vector<std::string>& categories,
+    const std::vector<double>& counts,
+    const std::vector<double>& proportions = {});
 
 }  // namespace datalab::domain::statistics

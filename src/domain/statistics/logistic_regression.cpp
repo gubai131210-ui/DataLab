@@ -168,6 +168,67 @@ double chi_square_right_tail(double value, double degrees_of_freedom)
         - std::lgamma(shape)) * continued, 0.0, 1.0);
 }
 
+std::vector<std::optional<double>> compute_vif(
+    const std::vector<std::vector<double>>& predictors)
+{
+    if (predictors.empty() || predictors.front().empty()) {
+        return {};
+    }
+    const std::size_t n = predictors.size();
+    const std::size_t p = predictors.front().size();
+    std::vector<std::optional<double>> vif(p, std::nullopt);
+    if (n <= p) {
+        return vif;
+    }
+    for (std::size_t target = 0; target < p; ++target) {
+        Matrix design(n, std::vector<double>(p, 1.0));
+        std::vector<double> y(n, 0.0);
+        for (std::size_t row = 0; row < n; ++row) {
+            y[row] = predictors[row][target];
+            std::size_t col = 1;
+            for (std::size_t feature = 0; feature < p; ++feature) {
+                if (feature == target) {
+                    continue;
+                }
+                design[row][col++] = predictors[row][feature];
+            }
+        }
+        Matrix normal(p, std::vector<double>(p, 0.0));
+        std::vector<double> rhs(p, 0.0);
+        for (std::size_t row = 0; row < n; ++row) {
+            for (std::size_t i = 0; i < p; ++i) {
+                rhs[i] += design[row][i] * y[row];
+                for (std::size_t j = 0; j < p; ++j) {
+                    normal[i][j] += design[row][i] * design[row][j];
+                }
+            }
+        }
+        std::vector<double> beta;
+        if (!solve_linear_system(normal, rhs, beta)) {
+            continue;
+        }
+        double y_mean = std::accumulate(y.cbegin(), y.cend(), 0.0) / static_cast<double>(n);
+        double ss_tot = 0.0;
+        double ss_res = 0.0;
+        for (std::size_t row = 0; row < n; ++row) {
+            double fitted = 0.0;
+            for (std::size_t i = 0; i < p; ++i) {
+                fitted += design[row][i] * beta[i];
+            }
+            const double d_tot = y[row] - y_mean;
+            const double d_res = y[row] - fitted;
+            ss_tot += d_tot * d_tot;
+            ss_res += d_res * d_res;
+        }
+        if (!(ss_tot > 0.0)) {
+            continue;
+        }
+        const double r2 = std::clamp(1.0 - ss_res / ss_tot, 0.0, 1.0 - 1.0e-12);
+        vif[target] = 1.0 / (1.0 - r2);
+    }
+    return vif;
+}
+
 void compute_hosmer_lemeshow(LogisticRegressionResult& result)
 {
     result.hosmer_lemeshow_status = "not_computed";
@@ -454,11 +515,32 @@ LogisticRegressionResult fit_logistic_regression(
         }
         result.observations[row].leverage = weight * quadratic;
     }
-    const double leverage_threshold =
-        2.0 * static_cast<double>(predictor_count + 1)
-        / static_cast<double>(response.size());
+    const double leverage_threshold = std::min(
+        3.0 * static_cast<double>(predictor_count + 1)
+            / static_cast<double>(response.size()),
+        0.99);
+    result.leverage_threshold = leverage_threshold;
+    double maximum_leverage = 0.0;
     for (auto& observation : result.observations) {
         observation.high_leverage = observation.leverage > leverage_threshold;
+        maximum_leverage = std::max(maximum_leverage, observation.leverage);
+    }
+    if (!result.observations.empty()) {
+        result.maximum_leverage = maximum_leverage;
+    }
+    const std::vector<std::optional<double>> vif = compute_vif(predictors);
+    std::optional<double> maximum_vif;
+    for (std::size_t feature = 0; feature < predictor_count; ++feature) {
+        if (feature + 1 < result.coefficients.size()) {
+            result.coefficients[feature + 1].vif = vif[feature];
+        }
+        if (vif[feature].has_value()) {
+            maximum_vif = maximum_vif.has_value()
+                ? std::max(*maximum_vif, *vif[feature]) : *vif[feature];
+        }
+    }
+    if (maximum_vif.has_value()) {
+        result.maximum_vif = maximum_vif;
     }
     compute_hosmer_lemeshow(result);
     const double parameter_count_value = static_cast<double>(parameter_count);

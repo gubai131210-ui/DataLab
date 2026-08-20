@@ -2,10 +2,12 @@
 #include "domain/statistics/reliability.h"
 #include "domain/statistics/t_power.h"
 #include "domain/statistics/attribute_agreement.h"
+#include "domain/statistics/hypothesis_tests.h"
 #include "application/analysis_service.h"
 
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 
@@ -19,8 +21,14 @@ private slots:
     void tPowerAndSampleSize();
     void extendedPowerAndSampleSize();
     void buildsServiceOutputPages();
+    void type1HistogramAndRunChartKeepSourceRows();
+    void biasLinearityPlotUsesCompleteCaseAndMeanBand();
+    void biasLinearityProcessVariationTables();
+    void biasLinearityGageBiasTablesAndInference();
     void fitsThreeParameterWeibullFormulaReference();
     void fleissKappaOverallAgreement();
+    void attributeAgreementRateCharts();
+    void weightedKappaLinearFormulaReference();
     void kendallConcordanceAndTauFormulaReference();
     void fitsExponential2AndLognormal3FormulaReference();
 };
@@ -202,6 +210,62 @@ void ReliabilityMsaPowerTest::extendedPowerAndSampleSize()
     QCOMPARE(two_proportion.total_sample_size, 2 * two_proportion.sample_size_per_group);
     QVERIFY(two_proportion.power >= 0.8);
     QVERIFY(two_proportion.critical_value > 1.9);
+
+    const auto one_variance =
+        datalab::domain::statistics::one_variance_sample_size(
+            1.4, 0.8, 0.05,
+            datalab::domain::statistics::PowerAlternative::greater);
+    QVERIFY(one_variance.sample_size >= 2);
+    QCOMPARE(one_variance.total_sample_size, one_variance.sample_size);
+    QVERIFY(one_variance.power >= 0.8);
+    QVERIFY(datalab::domain::statistics::one_variance_power(
+                one_variance.sample_size - 1, 1.4, 0.05,
+                datalab::domain::statistics::PowerAlternative::greater).power < 0.8);
+
+    const auto two_variance =
+        datalab::domain::statistics::two_variance_sample_size(
+            1.5, 0.8, 0.05,
+            datalab::domain::statistics::PowerAlternative::greater);
+    QVERIFY(two_variance.sample_size_per_group >= 2);
+    QCOMPARE(two_variance.total_sample_size, 2 * two_variance.sample_size_per_group);
+    QVERIFY(two_variance.power >= 0.8);
+    QVERIFY(datalab::domain::statistics::two_variance_power(
+                two_variance.sample_size_per_group - 1, 1.5, 0.05,
+                datalab::domain::statistics::PowerAlternative::greater).power < 0.8);
+
+    // # source: formula_reference — one-sample Poisson normal power
+    const auto one_poisson_power = datalab::domain::statistics::one_poisson_rate_power(
+        40, 2.0, 2.5, 1.0, 0.05,
+        datalab::domain::statistics::PowerAlternative::two_sided);
+    QVERIFY(one_poisson_power.power > 0.0);
+    QVERIFY(one_poisson_power.power < 1.0);
+    QCOMPARE(one_poisson_power.effect_size, 0.5);
+    const auto one_poisson_n = datalab::domain::statistics::one_poisson_rate_sample_size(
+        2.0, 2.5, 0.8, 1.0, 0.05,
+        datalab::domain::statistics::PowerAlternative::two_sided);
+    QVERIFY(one_poisson_n.sample_size >= 1);
+    QVERIFY(one_poisson_n.power >= 0.8);
+    const auto two_poisson_n = datalab::domain::statistics::two_poisson_rate_sample_size(
+        2.0, 2.8, 0.8, 1.0, 0.05,
+        datalab::domain::statistics::PowerAlternative::two_sided);
+    QVERIFY(two_poisson_n.sample_size_per_group >= 1);
+    QCOMPARE(two_poisson_n.total_sample_size, 2 * two_poisson_n.sample_size_per_group);
+    QVERIFY(two_poisson_n.power >= 0.8);
+
+    datalab::domain::AnalysisConfiguration poisson_power_config;
+    poisson_power_config.power.mode = "one_poisson_power";
+    poisson_power_config.power.sample_size = 40;
+    poisson_power_config.power.null_proportion = 2.0;
+    poisson_power_config.power.second_proportion = 2.5;
+    poisson_power_config.power.observation_length = 1.0;
+    poisson_power_config.power.alpha = 0.05;
+    poisson_power_config.power.target = 0.8;
+    datalab::domain::DataTable empty;
+    const auto poisson_page = datalab::application::AnalysisService::t_power(
+        empty, poisson_power_config);
+    QVERIFY(poisson_page.facts.power.has_value());
+    QCOMPARE(poisson_page.facts.power->mode, std::string("one_poisson_power"));
+    QVERIFY(poisson_page.facts.power->actual_power.has_value());
 }
 
 void ReliabilityMsaPowerTest::buildsServiceOutputPages()
@@ -216,7 +280,7 @@ void ReliabilityMsaPowerTest::buildsServiceOutputPages()
     msa.msa.gage_tolerance = 1.0;
     const auto msa_page = datalab::application::AnalysisService::msa_type1(table, msa);
     QCOMPARE(msa_page.tables.size(), std::size_t{1});
-    QCOMPARE(msa_page.plots.size(), std::size_t{1});
+    QCOMPARE(msa_page.plots.size(), std::size_t{2});
 
     datalab::domain::AnalysisConfiguration reliability;
     reliability.reliability.time_column = 2;
@@ -237,6 +301,19 @@ void ReliabilityMsaPowerTest::buildsServiceOutputPages()
     QCOMPARE(weibull3_page.method_name, std::string("3-Parameter Weibull Lifetime"));
     QVERIFY(!weibull3_page.tables.empty());
     QCOMPARE(weibull3_page.tables.front().headers[2], std::string("Threshold"));
+    QVERIFY(std::any_of(
+        weibull3_page.plots.cbegin(), weibull3_page.plots.cend(),
+        [](const datalab::domain::PlotSpec& plot) {
+            return plot.title == "三参数 Weibull 生存曲线"
+                || plot.title == "三参数 Weibull 概率图";
+        })
+        || std::any_of(weibull3_page.diagnostics.cbegin(), weibull3_page.diagnostics.cend(),
+                       [](const datalab::domain::DiagnosticMessage& diagnostic) {
+                           return diagnostic.severity
+                               == datalab::domain::DiagnosticMessage::Severity::error
+                               || diagnostic.severity
+                               == datalab::domain::DiagnosticMessage::Severity::warning;
+                       }));
 
     reliability.reliability.model = "exponential2";
     const auto exponential2_page =
@@ -245,6 +322,19 @@ void ReliabilityMsaPowerTest::buildsServiceOutputPages()
              std::string("2-Parameter Exponential Lifetime"));
     QVERIFY(!exponential2_page.tables.empty());
     QCOMPARE(exponential2_page.tables.front().headers[1], std::string("Threshold"));
+    QVERIFY(std::any_of(
+        exponential2_page.plots.cbegin(), exponential2_page.plots.cend(),
+        [](const datalab::domain::PlotSpec& plot) {
+            return plot.title.find("两参数指数") != std::string::npos;
+        })
+        || std::any_of(exponential2_page.diagnostics.cbegin(),
+                       exponential2_page.diagnostics.cend(),
+                       [](const datalab::domain::DiagnosticMessage& diagnostic) {
+                           return diagnostic.severity
+                               == datalab::domain::DiagnosticMessage::Severity::error
+                               || diagnostic.severity
+                               == datalab::domain::DiagnosticMessage::Severity::warning;
+                       }));
 
     reliability.reliability.model = "lognormal3";
     const auto lognormal3_page =
@@ -253,11 +343,207 @@ void ReliabilityMsaPowerTest::buildsServiceOutputPages()
              std::string("3-Parameter Lognormal Lifetime"));
     QVERIFY(!lognormal3_page.tables.empty());
     QCOMPARE(lognormal3_page.tables.front().headers[2], std::string("Threshold"));
+    QVERIFY(std::any_of(
+        lognormal3_page.plots.cbegin(), lognormal3_page.plots.cend(),
+        [](const datalab::domain::PlotSpec& plot) {
+            return plot.title.find("三参数对数正态") != std::string::npos;
+        })
+        || std::any_of(lognormal3_page.diagnostics.cbegin(),
+                       lognormal3_page.diagnostics.cend(),
+                       [](const datalab::domain::DiagnosticMessage& diagnostic) {
+                           return diagnostic.severity
+                               == datalab::domain::DiagnosticMessage::Severity::error
+                               || diagnostic.severity
+                               == datalab::domain::DiagnosticMessage::Severity::warning;
+                       }));
 
     datalab::domain::AnalysisConfiguration power;
     power.power.mode = "two_sample_sample_size";
     const auto power_page = datalab::application::AnalysisService::t_power(table, power);
     QCOMPARE(power_page.tables.size(), std::size_t{1});
+
+    power.power.mode = "two_variance_sample_size";
+    power.power.effect_size = 1.5;
+    power.power.target = 0.8;
+    power.power.alpha = 0.05;
+    power.inference.alternative = "greater";
+    const auto variance_power_page = datalab::application::AnalysisService::t_power(table, power);
+    QCOMPARE(variance_power_page.tables.size(), std::size_t{1});
+    QVERIFY(variance_power_page.facts.power.has_value());
+    QCOMPARE(variance_power_page.facts.power->mode, std::string("two_variance_sample_size"));
+}
+
+void ReliabilityMsaPowerTest::type1HistogramAndRunChartKeepSourceRows()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Measurement"};
+    table.rows = {{"10.0"}, {"*"}, {"10.1"}, {"9.9"}, {"10.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.msa.gage_measurement_column = 0;
+    configuration.msa.reference_value = 10.0;
+    configuration.msa.gage_tolerance = 2.0;
+    configuration.msa.mode = "type1";
+    const auto page = datalab::application::AnalysisService::msa_type1(table, configuration);
+    QCOMPARE(page.plots.size(), std::size_t{2});
+    QCOMPARE(page.plots[0].kind, datalab::domain::PlotKind::histogram);
+    QCOMPARE(page.plots[0].title, std::string("Type 1 Gage 直方图"));
+    QVERIFY(page.plots[0].target.has_value());
+    QCOMPARE(*page.plots[0].target, 10.0);
+    QVERIFY(page.plots[0].lsl.has_value());
+    QVERIFY(page.plots[0].usl.has_value());
+    QCOMPARE(*page.plots[0].lsl, 9.0);
+    QCOMPARE(*page.plots[0].usl, 11.0);
+    QCOMPARE(page.plots[0].center_label, std::string("Ref"));
+    QCOMPARE(page.plots[0].source_rows, (std::vector<std::size_t>{0, 2, 3, 4}));
+    QCOMPARE(page.plots[1].kind, datalab::domain::PlotKind::control);
+    QCOMPARE(page.plots[1].title, std::string("Gage Run Chart"));
+    QCOMPARE(page.plots[1].source_rows, page.plots[0].source_rows);
+    QVERIFY(page.facts.msa.has_value());
+    QVERIFY(page.facts.msa->cgk.has_value());
+    QVERIFY(std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "missing_values";
+        }));
+}
+
+void ReliabilityMsaPowerTest::biasLinearityPlotUsesCompleteCaseAndMeanBand()
+{
+    // # source: formula_reference — OLS mean CI at x-bar, not a Minitab export.
+    const auto domain = datalab::domain::statistics::bias_linearity(
+        {1.0, 2.0, 3.0}, {2.0, 3.0, 5.0}, 0.95, {10, 20, 30});
+    QCOMPARE(domain.slope, 0.5);
+    QVERIFY(std::abs(domain.intercept - (1.0 / 3.0)) < 1.0e-12);
+    QCOMPARE(domain.observation_source_rows, (std::vector<std::size_t>{10, 20, 30}));
+    QVERIFY(!domain.mean_band.empty());
+    const double xbar = 2.0;
+    const double sigma = std::sqrt(domain.mean_square_error);
+    const double critical = datalab::domain::statistics::student_t_quantile(0.975, 1.0);
+    auto nearest = domain.mean_band.front();
+    for (const auto& point : domain.mean_band) {
+        if (std::abs(point.x - xbar) < std::abs(nearest.x - xbar)) {
+            nearest = point;
+        }
+    }
+    const double fitted_at = domain.intercept + domain.slope * nearest.x;
+    const double se = sigma * std::sqrt(
+        1.0 / 3.0 + (nearest.x - xbar) * (nearest.x - xbar) / domain.sum_of_squares_x);
+    QVERIFY(std::abs(nearest.fitted - fitted_at) < 1.0e-9);
+    QVERIFY(std::abs(nearest.ci_upper - (fitted_at + critical * se)) < 1.0e-9);
+    QVERIFY(std::abs(nearest.ci_lower - (fitted_at - critical * se)) < 1.0e-9);
+
+    datalab::domain::DataTable table;
+    table.columns = {"Reference", "Measurement"};
+    table.rows = {{"1.0", "1.1"}, {"*", "2.2"}, {"3.0", "3.3"}, {"4.0", "4.4"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.msa.gage_measurement_column = 1;
+    configuration.msa.reference_column = 0;
+    configuration.msa.mode = "bias_linearity";
+    configuration.inference.confidence_level = 0.95;
+    const auto page = datalab::application::AnalysisService::msa_type1(table, configuration);
+    QCOMPARE(page.plots.size(), std::size_t{1});
+    QCOMPARE(page.tables.size(), std::size_t{3});
+    QCOMPARE(page.tables[0].title, std::string("Coef"));
+    QCOMPARE(page.tables[1].title, std::string("S and R-Sq"));
+    QCOMPARE(page.tables[2].title, std::string("Gage Bias"));
+    QCOMPARE(page.tables[2].rows.back().front(), std::string("Average"));
+    QCOMPARE(page.plots[0].source_rows, (std::vector<std::size_t>{0, 2, 3}));
+    QCOMPARE(page.plots[0].values.size(), std::size_t{3});
+    QVERIFY(page.plots[0].series.size() >= std::size_t{3});
+    QCOMPARE(page.plots[0].series[0].role, datalab::domain::PlotSeriesRole::actual);
+    QCOMPARE(page.plots[0].series[1].role, datalab::domain::PlotSeriesRole::fitted);
+    QCOMPARE(page.plots[0].series[2].role, datalab::domain::PlotSeriesRole::confidence_band);
+    QVERIFY(!page.plots[0].series[1].values.empty());
+    QVERIFY(!page.plots[0].series[2].lower.empty());
+    QVERIFY(page.facts.msa.has_value());
+    QVERIFY(page.facts.msa->slope.has_value());
+    QVERIFY(std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "missing_values";
+        }));
+    QVERIFY(std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "process_variation_not_provided";
+        }));
+}
+
+void ReliabilityMsaPowerTest::biasLinearityProcessVariationTables()
+{
+    // # source: formula_reference — %Linearity = |slope| × 100 when process_variation supplied.
+    const double process_variation = 16.5368;
+    const auto domain = datalab::domain::statistics::bias_linearity(
+        {1.0, 2.0, 3.0}, {2.0, 3.0, 5.0}, 0.95, {10, 20, 30}, process_variation);
+    QCOMPARE(domain.slope, 0.5);
+    QVERIFY(domain.process_variation_used.has_value());
+    QCOMPARE(*domain.process_variation_used, process_variation);
+    QVERIFY(domain.linearity.has_value());
+    QCOMPARE(*domain.linearity, std::abs(domain.slope) * process_variation);
+    QVERIFY(domain.percent_linearity.has_value());
+    QCOMPARE(*domain.percent_linearity, std::abs(domain.slope) * 100.0);
+    QVERIFY(domain.slope_p_value.has_value());
+    QCOMPARE(domain.levels.size(), std::size_t{3});
+    for (const auto& level : domain.levels) {
+        QVERIFY(level.percent_bias.has_value());
+        QCOMPARE(*level.percent_bias, level.bias / process_variation * 100.0);
+    }
+
+    datalab::domain::DataTable table;
+    table.columns = {"Reference", "Measurement"};
+    table.rows = {{"1.0", "2.0"}, {"2.0", "3.0"}, {"3.0", "5.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.msa.gage_measurement_column = 1;
+    configuration.msa.reference_column = 0;
+    configuration.msa.mode = "bias_linearity";
+    configuration.msa.process_variation = process_variation;
+    configuration.inference.confidence_level = 0.95;
+    const auto page = datalab::application::AnalysisService::msa_type1(table, configuration);
+    QCOMPARE(page.tables.size(), std::size_t{4});
+    QCOMPARE(page.tables[0].title, std::string("Coef"));
+    QCOMPARE(page.tables[1].title, std::string("S and R-Sq"));
+    QCOMPARE(page.tables[2].title, std::string("Gage Linearity"));
+    QCOMPARE(page.tables[3].title, std::string("Gage Bias"));
+    QCOMPARE(page.tables[3].rows.back().front(), std::string("Average"));
+    QVERIFY(page.facts.msa.has_value());
+    QVERIFY(page.facts.msa->intercept_p_value.has_value());
+    QVERIFY(page.facts.msa->residual_s.has_value());
+    QVERIFY(page.facts.msa->average_bias.has_value());
+    QVERIFY(page.facts.msa->average_bias_p.has_value());
+    QVERIFY(page.facts.msa->percent_linearity.has_value());
+    QCOMPARE(*page.facts.msa->percent_linearity, *domain.percent_linearity);
+    QVERIFY(!std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "process_variation_not_provided";
+        }));
+}
+
+void ReliabilityMsaPowerTest::biasLinearityGageBiasTablesAndInference()
+{
+    // # source: formula_reference — per-level and average bias t-tests, not Minitab export.
+    const auto single_replicate = datalab::domain::statistics::bias_linearity(
+        {1.0, 2.0, 3.0}, {2.0, 3.0, 5.0}, 0.95, {10, 20, 30});
+    for (const auto& level : single_replicate.levels) {
+        QVERIFY(!level.t_statistic.has_value());
+        QVERIFY(!level.p_value.has_value());
+    }
+    QVERIFY(single_replicate.intercept_p_value.has_value());
+    QVERIFY(single_replicate.residual_s.has_value());
+    QCOMPARE(single_replicate.average_bias, 4.0 / 3.0);
+
+    const auto replicated = datalab::domain::statistics::bias_linearity(
+        {1.0, 1.0, 2.0, 2.0, 3.0, 3.0},
+        {2.0, 2.2, 3.0, 3.2, 5.0, 5.2},
+        0.95, {1, 2, 3, 4, 5, 6});
+    QCOMPARE(replicated.levels.size(), std::size_t{3});
+    for (const auto& level : replicated.levels) {
+        QVERIFY(level.t_statistic.has_value());
+        QVERIFY(level.p_value.has_value());
+        QVERIFY(*level.p_value >= 0.0 && *level.p_value <= 1.0);
+    }
+    QVERIFY(replicated.average_bias_t.has_value());
+    QVERIFY(replicated.average_bias_p.has_value());
 }
 
 void ReliabilityMsaPowerTest::fitsThreeParameterWeibullFormulaReference()
@@ -313,6 +599,123 @@ void ReliabilityMsaPowerTest::fleissKappaOverallAgreement()
     QVERIFY(chance.overall_available);
     QVERIFY(chance.overall.identifiable);
     QVERIFY(chance.overall.kappa < 0.5);
+}
+
+void ReliabilityMsaPowerTest::attributeAgreementRateCharts()
+{
+    // # source: formula_reference — cell rate vs standard, not Minitab golden.
+    const auto with_standard = datalab::domain::statistics::attribute_agreement(
+        {"Pass", "Pass", "Fail", "Pass",
+         "Pass", "Fail", "Fail", "Pass",
+         "Pass", "Pass", "Fail", "Pass"},
+        {"P01", "P02", "P03", "P04",
+         "P01", "P02", "P03", "P04",
+         "P01", "P02", "P03", "P04"},
+        {"A", "A", "A", "A",
+         "B", "B", "B", "B",
+         "C", "C", "C", "C"},
+        {"Pass", "Pass", "Fail", "Pass",
+         "Pass", "Pass", "Fail", "Pass",
+         "Pass", "Pass", "Fail", "Pass"});
+    QCOMPARE(with_standard.agreement_evaluator_labels.size(), std::size_t{3});
+    QCOMPARE(with_standard.agreement_item_labels.size(), std::size_t{4});
+    QCOMPARE(with_standard.agreement_percent_matrix.size(), std::size_t{3});
+    QVERIFY(qAbs(with_standard.agreement_percent_matrix[0][1] - 100.0) < 1.0e-12);
+    QVERIFY(qAbs(with_standard.agreement_percent_matrix[1][1] - 0.0) < 1.0e-12);
+    QVERIFY(qAbs(with_standard.agreement_percent_matrix[0][2] - 100.0) < 1.0e-12);
+
+    const auto tied = datalab::domain::statistics::attribute_agreement(
+        {"Pass", "Fail", "Pass", "Pass"},
+        {"P1", "P1", "P2", "P2"},
+        {"A", "B", "A", "B"});
+    QVERIFY(std::any_of(tied.diagnostics.cbegin(), tied.diagnostics.cend(),
+                        [](const datalab::domain::DiagnosticMessage& message) {
+                            return message.code == "ambiguous_part_mode";
+                        }));
+    QVERIFY(!std::isfinite(tied.agreement_percent_matrix[0][0]));
+    QVERIFY(qAbs(tied.agreement_percent_matrix[0][1] - 100.0) < 1.0e-12);
+
+    datalab::domain::DataTable table;
+    table.columns = {"Rating", "Part", "Appraiser", "Standard"};
+    table.rows = {
+        {"1", "P01", "A", "1"}, {"1", "P02", "A", "1"},
+        {"2", "P03", "A", "2"}, {"1", "P04", "A", "1"},
+        {"1", "P01", "B", "1"}, {"2", "P02", "B", "1"},
+        {"2", "P03", "B", "2"}, {"1", "P04", "B", "1"},
+        {"1", "P01", "C", "1"}, {"1", "P02", "C", "1"},
+        {"2", "P03", "C", "2"}, {"1", "P04", "C", "1"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.msa.attribute_rating_column = 0;
+    configuration.msa.attribute_part_column = 1;
+    configuration.msa.attribute_appraiser_column = 2;
+    configuration.msa.attribute_standard_column = 3;
+    configuration.msa.kappa_weight_scheme = "linear";
+    const auto page = datalab::application::AnalysisService::attribute_agreement(
+        table, configuration);
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.title == "评估者×零件一致率"
+                                && plot.kind == datalab::domain::PlotKind::heatmap
+                                && plot.matrix_values.size() == 3
+                                && plot.matrix_labels.size() == 4
+                                && plot.color_min.has_value()
+                                && *plot.color_min == 0.0;
+                        }));
+    QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
+                        [](const datalab::domain::PlotSpec& plot) {
+                            return plot.title == "评估者一致率"
+                                && plot.kind == datalab::domain::PlotKind::pareto
+                                && plot.cumulative_percent.empty()
+                                && plot.category_values.size() == 3;
+                        }));
+    QVERIFY(std::any_of(page.diagnostics.cbegin(), page.diagnostics.cend(),
+                        [](const datalab::domain::DiagnosticMessage& message) {
+                            return message.code == "fleiss_remains_unweighted";
+                        }));
+    QVERIFY(std::none_of(page.diagnostics.cbegin(), page.diagnostics.cend(),
+                         [](const datalab::domain::DiagnosticMessage& message) {
+                             return message.code == "weighted_kappa_not_implemented";
+                         }));
+    QVERIFY(page.facts.msa.has_value());
+    QVERIFY(page.facts.msa->weighted_kappa_available);
+    QCOMPARE(page.facts.msa->kappa_weight_scheme, std::string{"linear"});
+}
+
+void ReliabilityMsaPowerTest::weightedKappaLinearFormulaReference()
+{
+    // # source: formula_reference — 3×3 ordinal table; not Minitab export.
+    // Raters A/B on parts with ratings 1,2,3. Perfect agreement → κ_w = 1.
+    const auto perfect = datalab::domain::statistics::attribute_agreement(
+        {"1", "1", "2", "2", "3", "3"},
+        {"P1", "P1", "P2", "P2", "P3", "P3"},
+        {"A", "B", "A", "B", "A", "B"},
+        {}, 0.95, false, "linear");
+    QCOMPARE(perfect.between_evaluator.size(), std::size_t{1});
+    QCOMPARE(perfect.between_evaluator.front().estimate.method,
+             std::string{"cohen_linear"});
+    QVERIFY(perfect.between_evaluator.front().estimate.identifiable);
+    QVERIFY(qAbs(perfect.between_evaluator.front().estimate.kappa - 1.0) < 1.0e-9);
+
+    const auto quadratic = datalab::domain::statistics::attribute_agreement(
+        {"1", "1", "2", "2", "3", "3"},
+        {"P1", "P1", "P2", "P2", "P3", "P3"},
+        {"A", "B", "A", "B", "A", "B"},
+        {}, 0.95, false, "quadratic");
+    QCOMPARE(quadratic.between_evaluator.front().estimate.method,
+             std::string{"cohen_quadratic"});
+    QVERIFY(qAbs(quadratic.between_evaluator.front().estimate.kappa - 1.0) < 1.0e-9);
+
+    const auto unordered = datalab::domain::statistics::attribute_agreement(
+        {"Pass", "Pass", "Fail", "Fail"},
+        {"P1", "P1", "P2", "P2"},
+        {"A", "B", "A", "B"},
+        {}, 0.95, false, "linear");
+    QVERIFY(std::any_of(unordered.diagnostics.cbegin(), unordered.diagnostics.cend(),
+                        [](const datalab::domain::DiagnosticMessage& message) {
+                            return message.code == "ordinal_ratings_unranked";
+                        }));
+    QCOMPARE(unordered.between_evaluator.front().estimate.method,
+             std::string{"cohen_unweighted"});
 }
 
 void ReliabilityMsaPowerTest::kendallConcordanceAndTauFormulaReference()

@@ -11,7 +11,7 @@ DataLab is a Windows Qt/C++ quality analysis tool for automotive manufacturing q
 - Basic PDF report export.
 - Qt Test coverage for the first statistical seams.
 
-Core quality calculations are implemented in C++. Python is reserved for future Excel/data-processing and charting adapters.
+Core quality calculations are implemented in C++. The desktop app natively imports CSV, TXT, and XLSX without a Python runtime. Legacy `.xls` is not supported.
 
 ## Development environment
 
@@ -19,9 +19,13 @@ Core quality calculations are implemented in C++. Python is reserved for future 
 - MinGW 13.1
 - CMake
 - C++17
-- Python virtual environment: `D:\QT_CppPrograms\DataLab\.venv`
+- zlib (vendored miniz for native `.xlsx` import; no Python runtime required)
 
-PowerShell:
+Optional Python virtual environment for **dev tools only** (Minitab fixture scripts, not required to run the app):
+
+`D:\QT_CppPrograms\DataLab\.venv`
+
+PowerShell (dev tools only):
 
 ```powershell
 & ".\.venv\Scripts\python.exe" --version

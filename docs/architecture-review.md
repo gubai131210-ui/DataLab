@@ -82,12 +82,9 @@
 
 `.gitignore` 存在但**整个项目（含父目录）无 `.git`**。无历史、无回滚、无备份、无法 diff/协作。一次误删或磁盘故障即丢失全部（含 samples 中珍贵的 Minitab 对照数据）。**应立刻 `git init` 并提交。**
 
-### 5.2 Python 桥部署脆弱（`python_table_importer.cpp` + `tools/import_table.py`）
+### 5.2 ~~Python 桥部署脆弱~~ → 已解决（ADR 0006）
 
-- 脚本路径为编译期烧死的 `DATALAB_SOURCE_DIR "/tools/import_table.py"`（`python_table_importer.cpp:32-33`，`CMakeLists.txt:123`），换机/换目录失效，且 install 规则不装该脚本。
-- 解释器优先探测"exe 旁 `.venv`"（18-22 行），仓库 .venv 在项目根——开发回退系统 python，部署需把数百 MB 科学栈 venv 拷到 exe 旁，install 未做。
-- **同步阻塞**：`waitForFinished(120000)`（43 行）在 UI 事件槽里同步等 Python，大 Excel 冻结界面最长 120 秒。
-- JSON 协议无版本字段；`import_table.py` 实际只需 pandas+openpyxl+xlrd，scipy/statsmodels/matplotlib 为部署死重。
+原 `PythonTableImporter` + pandas 方案已移除。现由 `ExcelTableImporter`（Qt + zlib）在 infrastructure 层原生读取 `.xlsx`，无需 Python 运行时或 exe 旁 `.venv`。
 
 ### 5.3 存储层无 seam、无迁移
 

@@ -176,6 +176,10 @@ RegressionFacts regression_facts_from(const RegressionResult& result)
         result.diagnostics_summary.residual_normality.has_value()
             ? result.diagnostics_summary.residual_normality->p_value
             : std::nullopt;
+    if (result.diagnostics_summary.residual_normality.has_value()) {
+        facts.residual_anderson_darling =
+            result.diagnostics_summary.residual_normality->anderson_darling;
+    }
     facts.influential_count = result.diagnostics_summary.influential_count;
     facts.outlier_count = result.diagnostics_summary.outlier_count;
     facts.high_leverage_count = result.diagnostics_summary.high_leverage_count;
@@ -200,7 +204,9 @@ RegressionFacts regression_facts_from(const RegressionResult& result)
 
 AnovaFacts one_way_anova_facts_from(
     const AnovaResult& result,
-    const TukeyResult& tukey)
+    const TukeyResult& tukey,
+    const bool tukey_grouping_available,
+    const std::size_t grouping_letter_count)
 {
     AnovaFacts facts;
     facts.p_value = result.p_value;
@@ -214,11 +220,16 @@ AnovaFacts one_way_anova_facts_from(
     }
     facts.family_confidence_level = tukey.family_confidence_level;
     facts.tukey_method = tukey.method;
+    if (!tukey.comparisons.empty()) {
+        facts.tukey_interval_columns = "lower_upper";
+    }
     for (const auto& comparison : tukey.comparisons) {
         if (comparison.significant) {
             ++facts.tukey_significant_pairs;
         }
     }
+    facts.tukey_grouping_available = tukey_grouping_available;
+    facts.grouping_letter_count = grouping_letter_count;
     facts.rules.insert(facts.rules.end(), tukey.rules.cbegin(), tukey.rules.cend());
     return facts;
 }
@@ -282,6 +293,7 @@ MsaFacts nested_gage_facts_from(const NestedGageRrResult& result)
     facts.ndc_available = result.ndc_available;
     facts.design_balanced = result.design_balanced;
     facts.interaction_retained = false;
+    facts.interaction_plot_available = false;
     facts.negative_variance_truncated = result.negative_variance_truncated;
     facts.gage_percent_study_variation = nested_component_percent(
         result.variance_components, "Total Gage R&R", true);
@@ -317,6 +329,15 @@ MsaFacts bias_linearity_facts_from(const BiasLinearityResult& result)
     facts.slope = result.slope;
     facts.bias_low = result.bias_at_low;
     facts.bias_high = result.bias_at_high;
+    facts.linearity = result.linearity;
+    facts.percent_linearity = result.percent_linearity;
+    facts.slope_p_value = result.slope_p_value;
+    facts.intercept_p_value = result.intercept_p_value;
+    facts.residual_s = result.residual_s;
+    facts.average_bias = result.average_bias;
+    facts.average_bias_p = result.average_bias_p;
+    facts.process_variation_used = result.process_variation_used;
+    facts.p_value = result.slope_p_value;
     facts.rules = result.rules;
     facts.assumption_status = "not_verified";
     return facts;
@@ -337,6 +358,27 @@ MsaFacts attribute_agreement_facts_from(const AttributeAgreementResult& result)
     facts.ratings_are_ordinal = result.ratings_are_ordinal;
     facts.p_value = result.overall_available && result.overall.identifiable
         ? std::optional<double>(result.overall.kappa) : std::nullopt;
+    facts.weighted_kappa_available = false;
+    for (const auto& row : result.between_evaluator) {
+        if (row.estimate.method == "cohen_linear"
+            || row.estimate.method == "cohen_quadratic") {
+            facts.weighted_kappa_available = true;
+            facts.kappa_weight_scheme = row.estimate.method == "cohen_quadratic"
+                ? "quadratic" : "linear";
+            break;
+        }
+    }
+    if (!facts.weighted_kappa_available) {
+        for (const auto& row : result.against_standard) {
+            if (row.estimate.method == "cohen_linear"
+                || row.estimate.method == "cohen_quadratic") {
+                facts.weighted_kappa_available = true;
+                facts.kappa_weight_scheme = row.estimate.method == "cohen_quadratic"
+                    ? "quadratic" : "linear";
+                break;
+            }
+        }
+    }
     if (result.between_kendall.has_value() && result.between_kendall->identifiable) {
         facts.kendall_available = true;
         facts.kendall_w = result.between_kendall->coefficient;
@@ -358,6 +400,14 @@ MsaFacts attribute_agreement_facts_from(const AttributeAgreementResult& result)
         "拒绝 Kappa=0 不等于已证明评估者一致。",
         {},
         "Kappa 只描述超出偶然的绝对一致率，不能写成测量系统合格。"));
+    if (facts.weighted_kappa_available) {
+        facts.rules.push_back(make_rule_evidence(
+            "weighted_kappa_not_minitab_aaa",
+            "not_triggered",
+            "Weighted Kappa 是 DataLab 可选 Cohen 加权，不是 Minitab AAA 默认输出。",
+            {},
+            "Minitab 有序评级路径使用 Kendall；不要把加权 κ 写成 Minitab AAA 结果。"));
+    }
     if (result.ratings_are_ordinal) {
         facts.rules.push_back(make_rule_evidence(
             "kendall_interpretation",

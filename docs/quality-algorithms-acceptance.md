@@ -4,6 +4,11 @@
 
 - [x] 公式、假设、边界和容差记录在 `docs/research/quality-algorithms-next-stage.md` 与
       `docs/statistical-methodology.md`。
+- [x] P0 研究文档补齐：控制图规则、TOST、GOF 有效性提示（Minitab 来源 + 公式）。
+- [x] GOF Facts 增加 `minimum_expected_count`、`expected_below_five_count`、`validity_status`、`recommendation`，解释层按建议输出而非硬判 invalid。
+- [x] Logistic Facts 增加 `leverage_threshold`、`maximum_leverage`、`maximum_vif`，系数表新增 VIF 列。
+- [x] Tolerance Facts 增加 `method_family` 与 `achieved_confidence`，支持 nonparametric 输出一致化。
+- [x] Equivalence Facts 增加 `ci_method` 与 `both_pvalues_below_alpha`，1/2 sample 输出口径统一。
 - [x] CSV 导入覆盖 BOM、引号分隔符、跨行引号、短行、缺失值和非法数值。
 - [x] 导入结果包含 `RowId`、列类型、`valid/missing/invalid`、`dataset_id` 和契约校验。
 - [x] 正态概率图排序后仍保留原始行映射。
@@ -33,31 +38,123 @@
 - [x] Minitab golden 脚手架：`golden_loader`、`minitab_numerical_golden_test`（回归 Seq/Adj、ARIMA 候选/预测；golden 缺失时 QSKIP）。
 - [x] 导入 A→B 契约：`import_state_reset_test` 验证 `dataset_id` 变更与不串数据。
 - [x] 三参数 Weibull（剖面似然，β>1）；无界似然只诊断；菜单 `model=weibull3`。
-- [x] Fleiss overall Kappa（≥3 评估者）；两两仍 Cohen；`kappa_weight_scheme != none` 仍诊断。
+- [x] Fleiss overall Kappa（≥3 评估者）；两两仍 Cohen；`kappa_weight_scheme=linear|quadratic` 为 Cohen 加权（非 Minitab AAA）；Fleiss overall 仍未加权。
 - [x] 图表复制使用 PNG+图像 MIME；编辑页可选 Y 刻度与数据区填色。
+- [x] 配对等价命令 `paired_equivalence`：complete-case 配对差值 + 100(1−2α)% CI + `EquivalenceFacts.kind=paired`；解释不写“已证明等价”。
+- [x] `t_power` 支持 `one_variance_*` / `two_variance_*` / `one_poisson_*` / `two_poisson_*`，输出 Actual Power 表与曲线；旧 t/ANOVA/比例模式兼容。
+- [x] DOE 响应优化区间优先使用精确协方差；缺 `xtx_inverse` 时 CI/PI=`*` 且给诊断。
+- [x] Crossed / Nested Gage：有公差时新增 `%Tolerance` Pareto；无公差时不出图且表内 `%Tolerance` 为 `*`。
+- [x] Bias/Linearity 的 `Gage Bias` 表补 `N` / `SE Bias`；Average 行同步显示。
+- [x] 图表属性编辑支持聚焦图表 Ctrl+Z / Ctrl+Y 撤销重做；复制与 PNG 导出复用同一 pixmap 渲染路径。
+- [x] 比例等价 z-TOST：命令 `one_proportion_equivalence` / `two_proportion_equivalence`；Wald；`ci_method=wald_z_tost`；`EquivalenceFacts`；解释不写“已证明等价”。
+- [x] DOE 等值线/曲面可选 `contour_x_factor` / `contour_y_factor`；其余默认 hold 编码 0，也可实际单位 hold；2 因子默认不变。
+- [x] `two_poisson_rate` 支持 `comparison=ratio`（率比主输出 + log-Wald）；默认 `difference` 兼容。
 - [x] Kendall W/τ（`ordinal=true`，≥3 数值等级）；默认不计算；解释不写「已证明有序一致」。
 - [x] 两参数指数 / 三参数对数正态（剖面似然）；菜单 `exponential2` / `lognormal3`；比较表仍二参数。
 - [x] 可选 `x_min`/`x_max`；Shift+框选写入数据刻度；适合窗口清除。
 - [x] PCA 系数表（特征向量 V）、相关载荷、得分表、T²/Q 阈值与残差；解释率用全部特征值；PcaFacts 含限；解释不写过程合格。
 - [x] 非参数表暴露 ties、未调整 P、连续性修正、近似方法和小样本警告；Kruskal 组 Z；Facts 只读。
-- [x] 等方差 `levene` 对齐中位数 Brown–Forsythe；测量+分组 k 组；VarianceFacts；不做 Bonett。
+- [x] 等方差 `levene` 对齐中位数 Brown–Forsythe；测量+分组 k 组；`bonett` 两样本 SD 比；`bartlett` k≥2；VarianceFacts。
+- [x] 单比例 `agresti_coull` CI（score z 与 normal/wilson 一致）；不做 Blaker。
+- [x] DOE 等值线/曲面可选实际单位 `hold`（名=值;…）；空仍编码 0；不做可旋转 3D。
+- [x] 单因素 ANOVA「Grouping Information」字母（CLD，基于现有 Tukey significant）；不改近似算法。
 - [x] 图表属性 Min/Max 分别 Auto；清除 X/Y 范围；两侧手动时校验 min < max。
 - [x] Logistic 独立「拟合优度」表（HL 卡方/DF/组数/P/状态）；「拟合与残差」含影响点；`LogisticFacts` round-trip。
 - [x] 个体分布识别：四族二参数 AD 排序表 + 概率图；命令 `distribution_identification`；不改 `capability_method`。
 - [x] 组间/组内能力：命令 `between_within_capability`；Process Data 含 Within/Between/BW/Overall σ；无子组只诊断。
 - [x] 图表属性页预览在右侧；非控制图无「参考线」Tab；`graph_properties_dialog_test`。
+- [x] 时间序列分解：预测准确度 / 拟合与预测明细 / 季节指数；`ForecastFacts` + `method_metadata(classical_decomposition_cma_trend)`；服务层测试。
+- [x] 指数平滑（单/双）：拟合与预测明细 / 预测准确度；`ForecastFacts` + `method_metadata(single_exponential_ses|holt_linear_des)`；服务层测试。
+- [x] 线性回归「异常观测」表：仅 R/X/I 打标行；无打标则缺席；`RegressionFacts` 计数语义不变。
+- [x] Multi-Vari：领域均值/覆盖诊断 + `AnalysisService::multi_vari` + 命令 `multi_vari` + `MultiVariFacts` round-trip；因子 2～4。
+- [x] 双样本均值比 TOST：命令 `two_sample_equivalence_ratio`；Fieller 100(1−2α)%；`kind=two_sample_ratio`；不做对数。
+- [x] 两比例 Newcombe–Wilson：`two_proportions` method=`wilson`；CI=`newcombe_wilson`；Z 仍 Wald。
+- [x] Kruskal Dunn–Bonferroni 成对表 + Grouping Information；`NonparametricFacts.dunn_available`。
+- [x] DOE 每响应独立 goal/权重：`intent.inputs["objectives"]` JSON 覆盖 `optimization_objectives`；单响应无 JSON 时旧字段写入 `[0]`。
+- [x] 图表属性：预览在 Tabs 右侧；`GraphPropertiesPanel::set_selected_path` 联动系列列表；浏览模式不遮挡画布；复制仍走 `ChartRenderer`。
+- [x] 单预测变量回归 Fitted Line（观测/拟合线/CI/PI 带）+ 残差图 y=0；多预测变量为每个 X 一张「残差与预测变量」（无 Fitted Line）；Unusual/`RegressionFacts` 计数语义不变。
+- [x] DOE 析因响应页：标准化效应 Pareto（df=0 走 Lenth）、2/3 因子立方图、主效应系列；`DoeFacts` 最大效应项可缺省。
+- [x] 正态容差区间：命令 `tolerance_intervals`；过程数据 + 区间表；Howe/Natrella 近似诊断；`ToleranceFacts` round-trip；解释无「合格/规格已覆盖」。
+- [x] 侧栏选中系列写回 `ChartModel.series[].style.color` 与 `line_width`；未选中系列时全局默认线宽仍写 `model.line_width`。
+- [x] 二项过程能力：命令 `binomial_capability`；过程数据 + %Defective/PPM/Process Z + CI；累计图 + P 图；`CapabilityFacts.method=binomial`；解释无「合格」。Sixpack 仍只正态。
+- [x] 泊松过程能力：命令 `poisson_capability`；Mean DPU/Defective + CI；累计 DPU + U 图；`CapabilityFacts.method=poisson`。
+- [x] DOE 析因响应页：编码网格等值线 + 静态等轴测曲面（可选 X/Y 因子，其余 hold 0）；不改优化器 D。
+- [x] 单因素 ANOVA：组均值 pooled MSE 个体 CI 列 + 区间图 + 残差四图；Tukey 下限/上限列 + 差值同时区间图 + Grouping Information（近似算法不变）。
+- [x] 侧栏选中系列写回 `style.line_style` / `point_style`；`show_points` 随点型；未选中不改各系列线型。
+- [x] 单比例检验：命令 `one_proportion`；complete-case 多行求和；exact / normal / wilson / agresti_coull；`ProportionFacts.ci_method`；解释不是规格判定。
+- [x] 单/双样本 TOST：命令 `one_sample_equivalence` / `two_sample_equivalence`；100(1−2α)% CI + 双侧单侧检验；`EquivalenceFacts`；解释只述界限。
+- [x] DOE 析因响应页残差 4 图（vs 拟合 y=0 / 观测顺序 / 正态概率 / 直方图）；`DoeFacts.residual_count`；不改 Pareto/立方/等值线/优化器 D。
+- [x] I-MR-R/S：命令 `imr_rs`；I+MR+R(n≤8)/S(n≥9)；σ 与组间/组内能力同口径（n=5 用 R̄/d2）；无子组只诊断。
+- [x] 1/2-Sample Poisson Rate：命令 `one_poisson_rate` / `two_poisson_rate`；1-sample 多行求和、2-sample 每组一行；exact=Garwood+泊松尾 / 条件二项；normal=score/Wald；可选 `comparison=ratio`；`PoissonRateFacts`；解释不是规格判定。
+- [x] 双因素 ANOVA：残差 4 图（拟合 y=0 / 顺序 / 正态 / 直方图）+ 交互均值连线；`source_rows`；不可估计项 F/P 仍为 `*`。
+- [x] Winters：季节指数表；`holt_winters_additive` / `holt_winters_multiplicative`；`parameter_source=specified`；加法与乘法都有 `ForecastFacts.mape`；不把 SARIMA 当 TSERIES golden。
+- [x] 交叉 Gage：%Contribution + **%Study Var** 条 + **Gage Run Chart** + **按零件** Xbar-R + By Part + 交互；ndc 与截断不变。
+- [x] Nested Gage：%Contribution + **%Study Var** 条 + 按操作者 Xbar/R；complete-case 跳过缺失零件/操作者；ndc 与截断语义不变。
+- [x] ARIMA：拟合与预测明细含原始行与预测行；保留候选表与 `arima_candidate_css`；ForecastFacts.mape；不是 TSERIES golden。
+- [x] 属性一致性：评估者×零件一致率热图 + 评估者一致率条；Fleiss/Cohen；可选 Weighted Kappa（linear/quadratic）。
+- [x] 单因素 ANOVA：残差四图含直方图；Tukey 下限/上限列与差值区间图；含 0 / 不含 0 显著语义不变。
+- [x] Type 1 Gage：直方图（Ref/规格）+ Run Chart `source_rows`；缺失诊断；不改 Cg/Cgk；零重复性不输出 p=0。
+- [x] 交叉 Gage：%Contribution + **%Study Var** 条；`gage_rr_output_test` 断言柱高=`percent_study_variation`。
+- [x] Nested Gage：%Contribution + **%Study Var** 条；`gage_rr_output_test` nested 对称断言。
+- [x] Bias/Linearity Minitab 全表形：Coef / S and R-Sq / Gage Linearity / Gage Bias（各级 Bias/%Bias/t/P + Average）；无 PV 仍出 Gage Bias；`intercept_p_value` / `average_bias_p` / `residual_s` round-trip；OLS 不变。
+- [x] 交叉 Gage：Gage Run Chart + **按零件** Xbar-R（替换按操作者）；表/ANOVA/ndc 不变；`gage_rr_output_test`。
+- [x] DOE 2^k 响应页图序：`doe_factorial_output_test` index 合同（2 因子 11 图）；`quality_statistics_test` plot count 修正。
+- [x] 两比例检验：每组独立多行求和；`ProportionFacts.kind=two_sample`；差值 Wald 区间图；解释不是规格判定。
+- [x] Box-Cox：λ–SD 诊断图 + 变换前/后概率图；`BoxCoxFacts`；变换后能力表不作合格判定。
+- [x] 单/双/配对 t：双侧区间图；单样本须=μ0+差值CI；双样本组均值个体 CI（不改 Welch/pooled）；配对散点 `source_rows`；`TTestFacts`。
+- [x] 描述统计：箱线图 + 个体值图；缺失/`*` 诊断；解释不写过程合格。
+- [x] 正态性检验：概率图+直方图 `source_rows`；`NormalityFacts`；未拒绝不得写成已正态。
+- [x] 相关：complete-case 矩阵散点与两列散点 `source_rows`；`CorrelationFacts`；不改 Pearson/Spearman。
+- [x] I-MR / Xbar Test 7：`special_cause_rule_test` 含 I/Xbar synthetic、I-MR 历史 σ、I-MR/Xbar-R 服务夹具；恰好 1σ 不触发。
+- [x] SPC Test 2–6、Test 8 边界：`special_cause_rule_test` 每 Test 独立负例 synthetic + I-MR 服务夹具（Test 2/5/6/8）；Test 7 语义不变。
+- [x] 正态能力直方图：LSL/USL/Target + Within/Overall 图例；组间/组内曲线用 σ_BW；Sixpack 继承；解释无合格判定。
+- [x] 卡方关联：观察频数表 + 检验 + 单元格统计；`ChiSquareFacts` 扩展 round-trip；解释不写因果。
+- [x] SPC Test 2–6、Test 8 边界：`special_cause_rule_test` 每 Test 独立负例 synthetic + I-MR 服务夹具（Test 2/5/6/8）；Test 7 语义不变。
+- [x] 正态能力 Process Data 含 Anderson-Darling A²/A²*/P/判定；Performance (PPM) 观测/期望 Within/期望 Overall；单侧缺失侧 `*`；`CapabilityFacts.normality_p_value` round-trip。
+- [x] Sixpack 六图顺序与标题；直方图与正态能力 PlotSpec 合同一致。
+- [x] Johnson 变换表 + Overall Capability；非正态分布参数表 + Overall；Johnson/非正态 PPM 无 Within 期望列；无 Within Cp/Cpk 表；`CapabilityFacts` transform/nonnormal 字段 round-trip。
+- [x] Grubbs 异常值检验：命令 `outlier_test`；`OutlierTestFacts`；个体值图 `source_rows`；解释无删除/已确认异常措辞。
+- [x] 交叉 Gage：By Part 散点+均值连线 + Operator×Part 交互图；complete-case `source_row`；ANOVA/ndc 不变。
+- [x] Nested Gage：By Part 散点+均值连线（平衡且 replicate≥2）；complete-case `source_row`；不做 Operator×Part；ANOVA/ndc 不变；`MsaFacts.by_part_plot_available` / `plot_point_count` round-trip。
+- [x] I-MR / I-MR-R/S：逐点表含触发测试集与 `source_row`；阶段列打断窗口；历史 μ/σ 标注；n≥9 σ 与组间/组内同口径。
+- [x] Johnson 变换成功后「变换后正态概率图」；失败不出该图。
+- [x] 可靠性 weibull3 / exponential2 / lognormal3：参数表 + 生存/概率图（可识别才出）。
+- [x] `docs/algorithm-wiring-index.md` 命令/Facts/公式索引。
+- [x] RegressionFacts 残差 AD 与 plot 计数、PcaFacts 残差 AD p JSON round-trip。
+- [x] Laney P'/U'：`phase_labels` 打断 Test 窗口；逐子组表 Test 1–8 + 阶段 + `source_row`；`SpcFacts.sigma_z` / 超限计数 round-trip。
+- [x] P/NP/C/U：菜单可选阶段列；逐子组表含阶段；`phase_labels` 重算特殊原因；`SpcFacts.out_of_control_count`。
+- [x] DOE ≥4 因子：`cube_plot_requires_2_or_3_factors` 诊断文案；`DoeFacts.factor_count` / `cube_plot_available` round-trip；解读 limitations。
+- [x] Xbar-R/S：`subgroup_dual_point_table` 合并 Xbar/R(S) 触发测试；阶段双图重算；`SpcFacts.sigma_within` / 并集 `out_of_control_count`；`xbar_output_test`。
+- [x] I-MR：`SpcFacts.sigma_within` / `out_of_control_count` 显式填充。
+- [x] EWMA：「EWMA 参数」+「EWMA 逐点统计」；`historical_sigma` 接线；`SpcFacts` round-trip；`ewma_cusum_output_test`。
+- [x] CUSUM：「CUSUM 参数」+ 逐点表 + 全部信号表；`SpcFacts.out_of_control_count`；解读无删点措辞。
+- [x] 非参数 Mann-Whitney / Wilcoxon / Kruskal-Wallis：箱线 + 个体值图（Wilcoxon 含配对散点）；`source_rows`；`NonparametricFacts` group/plot/missing round-trip。
+- [x] Mann-Whitney McKean–Ryan CI：位置差异 + 置信区间列；`location_estimate` / `ci_lower` / `ci_upper`；`formula_reference` 测试。
+- [x] 卡方关联：观察频数热图；三表不变；`ChiSquareFacts.plot_available` round-trip；解释无因果。
+- [x] 算法与公式帮助中心：每条命令内置完整方法说明（步骤/公式/符号/判定/边界），不依赖仓库 Markdown；`algorithm_help_catalog_test` / `algorithm_help_dialog_test`。
+- [x] 正态能力 Cp/Cpk/Pp/Ppk 置信区间（χ² 尺度 + Bissell）；Potential/Overall 估计/下限/上限；单侧 `*`。
+- [x] 卡方拟合优度 `chi_square_gof`（独立于列联表热图）。
+- [x] G 图 / T 图：数值间隔、Test 1、逐点表 `source_row`、`SpcFacts`。
+- [x] t 功效：`PowerFacts`、Actual Power 表、功效曲线。
+- [x] 侧栏 X/Y Auto 与字号写回 `ChartModel`；复制图形 PNG+图像；清除单元格空串显示空白。
 
 ## 中文路径 Qt Creator 手工验收
 
 在中文目录下用 Qt Creator 打开项目并运行 Debug 构建：
 
+- [ ] **帮助 → 算法、公式与参考资料**：不打开任何 `docs/*.md`、断网也能读懂「正态过程能力」「I-MR」「回归」的计算步骤、公式、符号和判定条件；页内不得把方法正文写成“见某文档”；复制摘要含用途/步骤/判定；复制公式为纯文本；官方链接可选打开浏览器。
+- [ ] **帮助 → 算法、公式与参考资料**：窗口可最大化；左侧分类树 + 搜索（含 Grubbs、σ_within）；关闭后导入/分析状态不变。
 - [ ] 导入中文路径 CSV，确认 BOM、中文列名、空单元格、`*`、`NA/N/A/NaN` 和非法数值
       的提示与行数正确。
 - [ ] 导入包含跨行引号字段的 CSV，确认字段没有被拆成额外数据行。
 - [ ] 先导入文件 A 并生成分析，再导入文件 B；确认旧排除行、旧输出页、旧 undo、旧行选择全部失效。
 - [ ] 运行 DOE 响应优化，核对候选组合、desirability 和最佳组合；缺协方差时区间显示为 *。
+- [ ] 多响应优化：选择 2 个响应列，核对「响应目标」表、各响应预测/D 列与总体 D；解读页应引用 DoeFacts（多响应数、最佳总体 D、区间限制）。
 - [ ] 编辑图表属性页（系列颜色/线型/参考线/字体 Tab），确认预览、报告、PDF/PNG 与复制一致。
 - [ ] 图表 Ctrl+C、右键复制与 PDF 导出视觉一致。
+- [ ] 配对等价：两列配对样本 + 上下界；描述统计显示“配对差值”；缺失值按 complete-case 跳过；解释无“已证明等价”。
+- [ ] `t_power`：`one_variance_*` / `two_variance_*` / `one_poisson_*` / `two_poisson_*` 都能出 Actual Power 与曲线；旧 one/two sample、ANOVA、proportion 模式仍正常。
+- [ ] DOE 响应优化：有协方差时 CI/PI 非 `*`；人为走无协方差路径时 CI/PI=`*` 且有明确诊断。
 - [ ] 打开任一控制图 → 属性 →「字体与主题」切 打印/深色：背景与文字网格变色；手改系列色后换主题不被冲掉。
 - [ ] 工作表 Delete 清除单元格（含空白网格区），已空时状态栏提示；undo 可还原。
 - [ ] 多预测变量回归 ANOVA 见 Seq/Adj 分列。
@@ -71,8 +168,74 @@
 - [ ] 统计 > 回归 > 二元 Logistic：n≥20 时见独立「拟合优度」表；n&lt;20 时 HL 状态为未计算；解释含「拒绝/未拒绝拟合不足」且无「模型已充分」。
 - [ ] 质量工具 > 个体分布识别：四行 AD 排序 + 概率图；含非正值时 Weibull/指数/对数正态未计算；再开正态能力默认仍为 normal。
 - [ ] 质量工具 > 组间/组内过程能力：无子组列被拒；有等量子组见 StDev Within/Between/BW/Overall；Between/Within Capability 表；解释无「合格」。
-- [ ] 控制图 → 编辑图形属性：预览在 Tab 右侧且有「参考线」Tab；直方图/散点无「参考线」Tab；改系列色后预览/复制/PDF 一致。
+- [ ] 统计 > 时间序列 > 分解：见预测准确度、明细（含原始行/Forecast）、季节指数；解释只读 `ForecastFacts`，不写“已验证”。
+- [ ] 统计 > 时间序列 > 指数平滑（单/双）：见拟合与预测明细、预测区间图；缺失单元格有诊断；解释含 MAPE 提示。
+- [ ] 任意图：右键「编辑图形…」进入编辑，属性面板在图表右侧不遮挡；点选系列与列表联动；侧栏改系列色/线宽后预览/复制/PDF 一致；Ctrl+C 仍为 PNG。「完整属性…」对话框预览在 Tabs 右侧。
+- [ ] 统计 > 回归：单预测变量见「拟合线图」CI/PI 带与残差 4 图（y=0）；悬停点对上原始行；多预测变量无 Fitted Line。有打标点时出现「异常观测」表（R/X/I），解读只提示调查、不删点。
+- [ ] 统计 > DOE > 析因设计：响应页见标准化效应 Pareto、2 因子立方图、主效应连线；≥4 因子无立方图只有诊断；解释陈述最大效应与参考线方法，无「过程合格」。
+- [ ] 质量工具 > 容差区间：测量列 + 覆盖率 95 + 双侧；见过程数据 N/N* 与正态容差区间表；缺失 `*` 计入 N*；解释无「合格」或「规格已覆盖」。
+- [ ] 质量工具 > Multi-Vari：测量 + 2～4 因子；图为点+均值线；缺失/`*` 有诊断；导入 A 再导入 B 不串行。1 因子或覆盖不足只诊断不画图。
+- [ ] 质量工具 > 二项过程能力：不合格品+检验列；过程数据与 %Defective/PPM/Z+CI；累计图参考线；P 图；`*` 有诊断；解释无「合格」。Sixpack 仍为正态六图。
+- [ ] 质量工具 > 泊松过程能力：缺陷+单位列；Mean DPU/CI；累计 DPU；U 图。
+- [ ] 质量工具 > DOE 响应优化：两响应分别 maximize/minimize；见各响应 D 列与合成 D；单响应旧字段仍可用。
+- [ ] 统计 > DOE > 析因设计：≥2 因子见等值线（编码 −1~+1）与曲面线框；3 因子时其余因子 hold 0 有说明；Pareto/立方/优化 D 仍在；响应页另有残差 4 图（拟合 y=0 / 顺序 / 正态概率 / 直方图），悬停原始行，解读不写残差已正态。
+- [ ] 统计 > 基础统计 > 单比例：同一数据分别选 exact / normal / wilson；CI 不同、wilson 与 normal 的 Z/P 一致；`*` 诊断；解释不是规格判定。导入 A 再导入 B 后重跑不串行。
+- [ ] 统计 > 假设检验 > 方差检验：两列分别跑 f / levene / bonett；Bonett 见 SD 比 CI；k=3 分组列选 bonett 只有诊断；解释不写「已证明等方差」。
+- [ ] `t_power`：`one_poisson_power` / `one_poisson_sample_size` / `two_poisson_*` 出 Actual Power 与曲线；旧 one/two sample、ANOVA、proportion、variance 模式仍正常。
+- [ ] 统计 > ANOVA > 单因素：Tukey 表见「下限」「上限」列（无合并 `[L,U]` 列）；见「Tukey 差值同时区间」图；含 0 / 不含 0 显著列语义不变。
+- [ ] 统计 > 基础统计 > 单样本/双样本等价性检验：改界限使 CI 落入/越界；解读只陈述界限内/未落入，无「过程合格」或「已证明等价」。
+- [ ] 控制图 > I-MR-R/S：有子组三图（I/MR/R 或 n≥9 的 S）；无子组被拒；σ 与组间/组内能力口径一致；悬停为子组首行；解释无合格。
+- [ ] 统计 > 基础统计 > 1-Sample Poisson Rate：缺陷+长度多行求和；exact/normal；`*` 诊断；解释不是规格判定。导入 A 再导入 B 后重跑不串行。
+- [ ] 统计 > 基础统计 > 2-Sample Poisson Rate：四列每组一行；默认差值 CI 与 P；`comparison=ratio` 时主输出率比与 CI（参考 1）；零事件有诊断；多行应有诊断。
+- [ ] 统计 > 基础统计 > 单比例等价：事件/试验可多行求和；改界限使 CI 落入/越界；解读无「已证明等价」。含 `*` 行计入 N*。导入 A 再 B 不串行。
+- [ ] 统计 > 基础统计 > 两比例等价：每组独立求和；一组 `*` 不污染另一组。
+- [ ] 质量工具 > 属性一致性：`kappa_weight=none` 与现在一致；`linear`/`quadratic` 见加权 κ、无 `weighted_kappa_not_implemented`；`ordinal=true` 仍有 Kendall。保存重开权重仍在。解释无「已证明一致」。
+- [ ] 统计 > DOE > 析因设计：≥3 因子指定 X/Y 为第 1 与第 3 因子，等值线/曲面轴名变化，其余 hold 0 有说明；2 因子不填则与现在相同。
+- [ ] 统计 > ANOVA > 双因素：原 ANOVA 表 + 残差 4 图（拟合 y=0 / 顺序 / 正态 / 直方图）+ 交互均值连线；悬停原始行；不可估计项仍无伪造 F/P。
+- [ ] 统计 > 时间序列 > 季节性预测：加法与乘法都能看到季节指数表、拟合-预测明细（原始行）、ForecastFacts 解读；无「已验证」；不要拿 SARIMA 表对 Minitab TSERIES。
+- [ ] 质量工具 > Crossed Gage R&R：原方差表仍在；图序 %Contribution → %Study Var → **Gage Run Chart** → **按零件 Xbar/R** → 按零件散点 → 交互图；Run Chart 悬停原始行；ndc 与截断与改前一致；解释无「量具通过」。
+- [ ] 质量工具 > Nested Gage R&R：原 ANOVA/分量/ndc 仍在；%Contribution 三条（无 Total Gage R&R）+ 按操作者 Xbar/R；缺失 `*` 零件行被跳过；解释无「量具通过」。导入 A 再导入 B 不串行。
+- [ ] 质量工具 > Crossed/Nested Gage R&R：有公差时出现 `%Tolerance` 条图；无公差时不出现该图，方差分量表 `%Tolerance` 列显示 `*` 而不是 `0.0`。
+- [ ] 统计 > 时间序列 > ARIMA：候选表仍 >3 行；「拟合与预测明细」含原始行与预测行；解读有 MAPE；不要对 Minitab TSERIES。
+- [ ] 质量工具 > 属性一致性：热图（评估者×零件）+ 评估者一致率条；Fleiss/Cohen 表仍在；解释无「已证明一致」。
+- [ ] 统计 > ANOVA > 单因素：组均值含 CI；区间图；残差四图（含直方图、y=0）；Tukey 下限/上限与差值区间图；悬停对上原始行。
+- [ ] 质量工具 > Type 1 Gage：直方图见 Ref（公差时见规格线）；Run Chart 悬停原始行；含 `*` 有诊断；零重复性无 p=0；解释无「量具通过」。导入 A 再 B 不串行。
+- [ ] 质量工具 > MSA Bias/Linearity：无 PV 见 Coef、S and R-Sq、Gage Bias（t/P + Average，%Bias 为 `*`）；填 6×σ 另见 Gage Linearity；散点+CI 带；悬停 `source_row`；解释无「量具通过」。
+- [ ] 质量工具 > MSA Bias/Linearity：`Gage Bias` 表列顺序为 `Reference / N / Bias / SE Bias / %Bias / t / P`，Average 行也有 `N` 与 `SE Bias`。
+- [ ] 统计 > 基础统计 > 两比例：每组可多行求和；差值区间图；解读是差值证据不是规格；一组 `*` 不污染另一组求和。导入 A 再 B 后重跑不串行。
+- [ ] 质量工具 > Box-Cox：λ–SD 图 + 变换前/后概率图（悬停原始行）；有 LSL/USL 时变换后能力表仍在；解读无「已正态/合格」。
+- [ ] 统计 > 基础统计 > 单样本 t：双侧见均值区间图；悬停原始行；单侧无区间图有说明；解读无合格。导入 A 再 B 不串行。
+- [ ] 统计 > 基础统计 > 双样本 t：Welch 与合并方差各跑一次，两组须不同；检验表 t/P 与改前一致。
+- [ ] 统计 > 基础统计 > 配对 t：散点仅为 complete-case；`*` 不进图；差值区间图；悬停原始行。
+- [ ] 统计 > 基础统计 > 显示描述性统计：箱线 + 个体值；By 分组；`*` 诊断；解读无过程合格。
+- [ ] 统计 > 基础统计 > 正态性检验：概率图悬停排序后仍对原始行；直方图悬停观测行；未拒绝解读不得写成已正态。
+- [ ] 统计 > 基础统计 > 相关：两列散点与矩阵图；故意错位缺失不串行；解读无因果/已证明。
+- [ ] 控制图 → I-MR：15 点全在 ±1σ 内且有一点恰在 +1σ → Test 7 不标红；全严格 `<1σ` 的 15 点 → Test 7 标红；悬停见 `source_row`。
+- [ ] 控制图 → Xbar-R：同上逻辑作用于子组均值图；仅勾选 Test 7。
+- [ ] 质量工具 > 正态过程能力：直方图见 LSL/USL/Target 虚线与 Within/Overall 图例；Sixpack 直方图一致；解读无「合格」。
+- [ ] 质量工具 > 组间/组内过程能力：直方图 Within 曲线对应 σ_BW（Between/Within 标签）。
+- [ ] 统计 > 假设检验 > 列联表卡方：观察频数表（含合计）+ 卡方检验 + 单元格统计 + **观察频数热图**；含 `*` 行 N* 正确；解读无因果措辞。
+- [ ] 统计 > 非参数 > Mann-Whitney：秩和表含位置差异与 95% CI + 箱线/个体值图；悬停 `source_row`；含 `*` 有诊断；解读不写已证明不同。
+- [ ] 统计 > 非参数 > Wilcoxon：符号秩表 + 箱线/个体值 + 配对散点（complete-case）；`*` 不进图。
+- [ ] 统计 > 非参数 > Kruskal-Wallis：测量+分组；组箱线/个体值；悬停原始行。
+- [ ] 控制图 → I-MR：Test 2 仅勾选时 8 点同侧不标红、9 点标红；Test 5/6/8 边界同计划手工项；Test 7 回归仍通过。
+- [ ] 质量工具 > 正态过程能力：Process Data 见 AD 行与假设状态；Performance 三列 PPM；单侧规格缺失侧为 `*`。
+- [ ] 质量工具 > 过程能力 Sixpack：六图顺序 I/MR/直方图/正态概率/最后 25/能力图；直方图与正态能力一致。
+- [ ] 正态能力 + `transform=johnson`：Johnson 变换表 + Overall Pp/Ppk；无 Cp/Cpk 表；解读无合格。
+- [ ] 质量工具 > 非正态过程能力：分布参数表 + Overall 指数；PPM 无 Within 期望列；导入 A 再 B 不串行。
+- [ ] 质量工具 > 组间/组内过程能力：直方图 Between/Within 曲线；Sixpack 子图标题与 I/MR 图用语一致。
+- [ ] 统计 > 基础统计 > 异常值检验（Grubbs）：单列 + 含 `*`；输出 G/P 与个体值图；悬停 `source_row`；解读无「必须删除/已确认异常」；导入 A 再 B 不串行。
+- [ ] 质量工具 > Crossed Gage R&R：方差分量表 `%Study Var` 列与图一致；Run Chart + 按零件 Xbar-R；By Part / 交互仍在；解释无「量具通过」。
+- [ ] 质量工具 > Nested Gage R&R：同上 %Study Var 图；By Part / **按操作者** Xbar-R 仍在；导入 A 再 B 不串行。
+- [ ] 统计 > DOE > 析因设计（2 因子）：图序 Pareto(0)→立方(1)→主效应→交互→等值线/曲面→残差 4 图(7–10)。
+- [ ] 控制图 → I-MR：见「I-MR 逐点统计」；可选阶段列；历史均值/σ 时参数表标注历史参数；Test 7 恰 1σ 不触发仍成立。
+- [ ] 控制图 → I-MR-R/S：三图 + 逐子组统计；n=5 与 n=9 的 σ 与组间/组内能力一致。
+- [ ] 统计 > 回归：两个预测变量见「残差与预测变量」各一张，无 Fitted Line；悬停 `source_row`。
+- [ ] 正态能力 + Johnson：变换成功见「变换后正态概率图」；失败仅诊断。
+- [ ] 可靠性 weibull3 / exponential2 / lognormal3：参数表含 Threshold；可识别时见生存曲线与概率图；无失效仅诊断。
+- [ ] 任意图 → 侧栏选中系列：改线型/点型后预览与「完整属性」一致；颜色/线宽仍可用。
 - [ ] 任意图 → 属性：Y/X 的 Min、Max 可分别取消 Auto；清除 Y/X 范围后预览恢复自动刻度。
+- [ ] 任意图 → 属性：改颜色/刻度后 Ctrl+Z / Ctrl+Y 仅作用于当前聚焦图表；复制与“保存图形为 PNG”尺寸/DPI 一致；非法 `Min >= Max` 会被自动纠正。
 - [ ] 统计 > 多变量 > 主成分：特征值 Proportion；系数表与相关载荷表；得分表有原始行；T²/Q 有限；解释无「合格」。
 - [ ] Mann-Whitney / Wilcoxon / Kruskal：有结数据见 ties 与两种 P；小组见警告；解释无「已证明相同」。
 - [ ] 统计 > 假设检验 > 方差检验：两列 Levene（中位数）；测量+分组 k 组；一方差需假设方差；旧项目打开不坏。
@@ -83,6 +246,13 @@
       Cook's D、DFITS、内部标准化/删除学生化残差、原始行号和“规则证据”表。
 - [ ] 运行 Gage R&R / Nested / Type 1 / Kappa / 可靠性，核对 ndc、负方差截断提示、
       交互项保留说明、未知事件编码拒绝、KM 风险集和删失比例；确认解释层不写“合格/不合格”。
+- [ ] 控制图 → Laney P'：见逐子组表（Z/MR/Test 1–8/触发测试）；阶段列打断 Test 2；历史 μ/σ 参数表标注；悬停 `source_row`。
+- [ ] 控制图 → P/NP/C/U：可选阶段列；逐子组表含阶段与触发测试；导入 A 再 B 不串行。
+- [ ] 统计 > DOE > 析因设计：4 因子无立方图、见明确诊断；2/3 因子立方图仍在；解读 limitations 提及立方图限制。
+- [ ] 控制图 → Xbar-R：5 点子组 + 阶段列 → 「Xbar-R 逐子组统计」含阶段、原始行为子组首行；仅 R 图超限时触发测试列含 `R: Test 1`；解读有 σ(within)/超限子组数、无「过程合格」；导入 A 再 B 不串行。
+- [ ] 控制图 → Xbar-S（n≥9）：同上表形与 SpcFacts。
+- [ ] 控制图 → EWMA：见「EWMA 参数」（N、λ、μ、σ、参数来源）+「EWMA 逐点统计」含 σ 与 CL/LCL/UCL；可选历史 μ/σ；仅 Test 1；悬停原始行；保存重载后 SpcFacts 仍在。
+- [ ] 控制图 → CUSUM：见「CUSUM 参数」（T、σ、k、h、FIR）+「CUSUM 逐点统计」+ 全部「CUSUM 信号」行；上下侧双图悬停原始行；解读无「必须删点」。
 - [ ] 运行 I-MR、Xbar-R/S、P/NP/C/U/Laney，核对阶段、历史参数、Test 5–8、逐点表和
       悬停原始行号。
 - [ ] 打开控制图设置弹窗，确认特殊原因测试默认全选适用规则；取消部分规则后输出只标记
@@ -92,18 +262,31 @@
 - [ ] 在统计表上使用右键复制 TSV、导出 CSV；确认只导出当前输出对象。
 - [ ] 复制图形、导出 PDF/PNG，确认中文标题、长表头、多图页面、图例和诊断卡片不重叠。
 - [ ] 保存项目并重新打开，确认原始数据、排除行、输出页、方法参数和诊断仍可用。
+- [ ] 统计 > 基础统计 > 单比例：同数据切换 exact / normal / wilson / agresti_coull；后三者 Z/P 相同、CI 不同；含 `*` 行 N*；解读无合格；导入 A→B 不串行。
+- [ ] 统计 > 假设检验 > 方差检验：测量+3 组选 Bartlett 见 χ²/P；同数据 Levene 仍可用；Bonett+k=3 仍诊断；解读无「已证明等方差」。
+- [ ] 统计 > DOE > 析因设计（≥3 因子）：设 X/Y；`hold` 如 `B=1`；等值线变化且轴仍为编码；空 hold 与旧行为一致；非法 hold 有诊断。
+- [ ] 统计 > ANOVA > 单因素：见 Grouping Information 字母与 Tukey 显著列一致；下限/上限表与差值图仍在；解读无「已证明相同」。
+- [ ] 统计 > 基础统计 > 双样本均值比等价：检验+参考列；界限 0.8/1.25；比值 CI 图；参考均值≤0 诊断；解读无「已证明等价」。
+- [ ] 统计 > 基础统计 > 两比例：同数据 `normal` 与 `wilson`；Z/P 相同、CI 不同；默认仍 Wald。
+- [ ] 统计 > 假设检验 > Kruskal-Wallis：≥3 组见 Dunn 表与 Grouping Information (Dunn)；箱线悬停原始行。
+- [ ] 质量工具 > Multi-Vari：4 因子 complete-case 出图；3 因子仍可用；覆盖不足无图；悬停 `source_row`。
 - [ ] 本地运行 `tools/check_layering.ps1`，确认 `ui → application/infrastructure/reporting → domain` 分层未破。
 
 ## 明确后续缺口（本轮不实现）
 
-本轮已接入 Kendall W/τ（公式参考）、两参数指数、三参数对数正态、图表数据区 X 刻度与 Shift+框选缩放、PCA 系数/得分/T²Q 表、非参数 ties 暴露、Levene 中位数等方差、图表 Min/Max 分别 Auto。仍未实现（见 [`docs/research/deferred-capability-agreement.md`](research/deferred-capability-agreement.md)）：
+本轮已接入 …（略，见上文勾选）。仍未实现（见 [`docs/research/deferred-capability-agreement.md`](research/deferred-capability-agreement.md)）：
 
-- Weighted Kappa（linear/quadratic）。
+- 单比例 Adjusted Blaker（**Wilson / Agresti–Coull / 两比例 Newcombe–Wilson 已接入**）。
+- 泊松 Blaker（**泊松功效已接入 `t_power`**）。
+- Nested Gage 图已接入（分量条 + 按操作者 Xbar-R + **By Part**）；交叉 Gage By Part / Operator×Part 已接入。
+- TOST **对数变换**（**均值比非对数已接入**）。
 - Minitab 无界似然 bias-correction 数值对齐。
 - 图表拖拽布局、注释系统和多图拼版。
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 的数值对齐。
-- Bonett / 多重比较区间 / Bartlett；Jackson–Mudholkar T²/Q 解析限。
-- 将公式参考测试覆盖为真实 Minitab 导出 golden（Johnson / 非正态 / 对数正态 / SARIMA / Weibull3 / Fleiss / Kendall / exponential2 / lognormal3 / PCA / 非参数 / Levene）。
+- Jackson–Mudholkar T²/Q 解析限（**Bonett / Bartlett / Tukey 表形与字母已接入**）。
+- Steel–Dwass（**Dunn 已接入**）。
+- 可旋转 3D 曲面。
+- 将公式参考测试覆盖为真实 Minitab 导出 golden（…）。
 
 使用 `tests/fixtures/minitab/VALIDATION_MATRIX.md` 的原始数据，在 Minitab 中按同一
 配置导出结果后，填写文件映射、DataLab 数值、Minitab 数值、绝对误差、相对误差和

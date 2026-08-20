@@ -59,7 +59,8 @@ domain::StatisticTable attribute_chart_table(
     const domain::statistics::ControlChartResult& chart,
     const std::string& count_header,
     const std::string& denominator_header,
-    const std::string& rate_header);
+    const std::string& rate_header,
+    const std::vector<std::string>& stages = {});
 
 domain::StatisticTable laney_chart_table(
     const std::vector<std::size_t>& counts,
@@ -68,6 +69,41 @@ domain::StatisticTable laney_chart_table(
     const std::vector<std::string>& stages,
     const std::string& count_header,
     const std::string& denominator_header);
+
+domain::StatisticTable individuals_point_table(
+    const domain::statistics::ControlChartResult& individuals,
+    const domain::statistics::ControlChartResult& moving_range,
+    const std::vector<std::size_t>& source_rows,
+    const std::vector<std::string>& stages);
+
+domain::StatisticTable subgroup_dual_point_table(
+    const domain::statistics::ControlChartResult& primary,
+    const domain::statistics::ControlChartResult& secondary,
+    const std::vector<std::vector<double>>& subgroups,
+    const std::vector<std::size_t>& subgroup_source_rows,
+    const std::vector<std::string>& labels,
+    const std::vector<std::string>& stages,
+    const std::string& title,
+    const std::string& secondary_short);
+
+domain::StatisticTable ewma_point_table(
+    const domain::statistics::ControlChartResult& chart,
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows);
+
+domain::StatisticTable rare_event_point_table(
+    const std::string& title,
+    const domain::statistics::ControlChartResult& chart,
+    const std::vector<std::size_t>& source_rows);
+
+domain::StatisticTable cusum_point_table(
+    const domain::statistics::TimeWeightedControlChartResult& chart,
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows);
+
+domain::StatisticTable cusum_signal_table(
+    const domain::statistics::TimeWeightedControlChartResult& chart,
+    const std::vector<std::size_t>& source_rows);
 
 domain::PlotSpec control_plot(
     const std::string& title,

@@ -36,6 +36,8 @@ struct RegressionObservation {
     bool is_outlier = false;
     bool is_high_leverage = false;
     bool is_influential = false;
+    bool unusual_r = false;
+    bool unusual_x = false;
     std::vector<std::string> diagnostic_flags;
 };
 
@@ -66,10 +68,24 @@ struct RegressionAnovaEffect {
     bool estimable = true;
 };
 
+struct RegressionBandPoint {
+    double x = 0.0;
+    double fitted = 0.0;
+    double se_fit = 0.0;
+    double se_pred = 0.0;
+    double ci_lower = 0.0;
+    double ci_upper = 0.0;
+    double pi_lower = 0.0;
+    double pi_upper = 0.0;
+};
+
 struct RegressionResult {
     std::size_t observation_count = 0;
     std::size_t predictor_count = 0;
     double residual_standard_deviation = 0.0;
+    std::vector<std::vector<double>> xtx_inverse;
+    std::vector<double> simple_predictor_values;
+    double confidence_level = 0.95;
     double r_squared = 0.0;
     double adjusted_r_squared = 0.0;
     double predicted_r_squared = 0.0;
@@ -96,5 +112,11 @@ RegressionResult fit_linear_regression(
     const std::vector<std::string>& predictor_labels = {},
     double confidence_level = 0.95,
     const std::vector<std::size_t>& source_rows = {});
+
+// Simple-regression (one predictor) fitted-line CI/PI grid.
+// Empty when predictor_count != 1, error_df <= 0, or (X'X)^{-1} missing.
+std::vector<RegressionBandPoint> fitted_line_bands(
+    const RegressionResult& result,
+    std::size_t grid_count = 40);
 
 }  // namespace datalab::domain::statistics

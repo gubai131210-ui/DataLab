@@ -8,6 +8,7 @@ method family so a menu remains scannable without reading every label.
 
 - `descriptive.svg` — summary bars, mean marker, and spread range.
 - `normality_test.svg` — bell curve with a fitted center line.
+- `outlier_test.svg` — one extreme observation marked against a sample cloud.
 - `correlation.svg` — paired observations with a rising association axis.
 - `one_sample_t.svg` — one sample distribution tested against a reference.
 - `two_sample_t.svg` — two separated sample distributions and comparison bar.

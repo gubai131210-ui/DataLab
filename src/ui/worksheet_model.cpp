@@ -82,6 +82,9 @@ QVariant WorksheetModel::data(const QModelIndex& index, int role) const
     if (role == Qt::EditRole) {
         return QString::fromStdString(cell == "*" ? std::string() : cell);
     }
+    if (cell.empty()) {
+        return QString();
+    }
     if (datalab::domain::is_missing_cell(cell)) {
         return QStringLiteral("*");
     }

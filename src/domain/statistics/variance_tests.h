@@ -105,5 +105,42 @@ LeveneTestResult levene_k_groups(
     double confidence_level = 0.95,
     VarianceRobustMethod method = VarianceRobustMethod::brown_forsythe_median);
 
+// Bonett (Banga–Fox corrected) two-sample test/CI for the ratio of standard deviations.
+// confidence_* are limits for σ1/σ2. P-value tests H0: σ1/σ2 = 1 (two-sided by default).
+struct BonettVarianceResult {
+    std::size_t first_count = 0;
+    std::size_t second_count = 0;
+    double first_standard_deviation = 0.0;
+    double second_standard_deviation = 0.0;
+    double standard_deviation_ratio = 0.0;
+    double z_statistic = 0.0;
+    double confidence_level = 0.95;
+    std::optional<double> p_value;
+    std::optional<double> confidence_lower;
+    std::optional<double> confidence_upper;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+BonettVarianceResult bonett_two_variances(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    double confidence_level = 0.95,
+    TestAlternative alternative = TestAlternative::two_sided);
+
+// Bartlett test for equal variances across k≥2 groups (normality-sensitive).
+struct BartlettVarianceResult {
+    std::size_t group_count = 0;
+    std::size_t total_count = 0;
+    double chi_square_statistic = 0.0;
+    double degrees_of_freedom = 0.0;
+    double confidence_level = 0.95;
+    std::optional<double> p_value;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+BartlettVarianceResult bartlett_k_groups(
+    const std::vector<std::vector<double>>& groups,
+    double confidence_level = 0.95);
+
 }  // namespace datalab::domain::statistics
 

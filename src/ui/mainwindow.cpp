@@ -14,6 +14,7 @@
 #include "ui/worksheet_model.h"
 #include "ui/worksheet_view.h"
 #include "ui/report_preview_dialog.h"
+#include "ui/algorithm_help_dialog.h"
 
 #include <QAction>
 #include <QAbstractItemDelegate>
@@ -73,6 +74,30 @@ AnalysisChartWidget* chart_widget_on_page(QWidget* page)
     return charts.isEmpty() ? nullptr : charts.front();
 }
 
+bool data_tables_equal(
+    const datalab::domain::DataTable& left,
+    const datalab::domain::DataTable& right)
+{
+    return left.name == right.name
+        && left.source_path == right.source_path
+        && left.columns == right.columns
+        && left.rows == right.rows
+        && left.import_warnings == right.import_warnings
+        && left.import_metadata.schema_version == right.import_metadata.schema_version
+        && left.import_metadata.source_path == right.import_metadata.source_path
+        && left.import_metadata.file_type == right.import_metadata.file_type
+        && left.import_metadata.sheet_name == right.import_metadata.sheet_name
+        && left.import_metadata.sheet_index == right.import_metadata.sheet_index
+        && left.import_metadata.original_row_count == right.import_metadata.original_row_count
+        && left.import_metadata.column_count == right.import_metadata.column_count
+        && left.import_metadata.dataset_id == right.import_metadata.dataset_id
+        && left.import_metadata.imported_at == right.import_metadata.imported_at
+        && left.import_metadata.warnings == right.import_metadata.warnings
+        && left.row_ids == right.row_ids
+        && left.column_types == right.column_types
+        && left.cell_states == right.cell_states;
+}
+
 QString primary_analysis_menu(const analysis_commands::AnalysisCommand& command)
 {
     if (command.id == QStringLiteral("pareto")) {
@@ -100,10 +125,20 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
     }
     if (id == QStringLiteral("descriptive")
         || id == QStringLiteral("normality_test")
+        || id == QStringLiteral("outlier_test")
         || id == QStringLiteral("one_sample_t")
         || id == QStringLiteral("two_sample_t")
         || id == QStringLiteral("paired_t")
-        || id == QStringLiteral("correlation")) {
+        || id == QStringLiteral("correlation")
+        || id == QStringLiteral("one_proportion")
+        || id == QStringLiteral("one_poisson_rate")
+        || id == QStringLiteral("two_poisson_rate")
+        || id == QStringLiteral("one_sample_equivalence")
+        || id == QStringLiteral("paired_equivalence")
+        || id == QStringLiteral("two_sample_equivalence")
+        || id == QStringLiteral("two_sample_equivalence_ratio")
+        || id == QStringLiteral("one_proportion_equivalence")
+        || id == QStringLiteral("two_proportion_equivalence")) {
         return QStringLiteral("基础统计");
     }
     if (id == QStringLiteral("one_way_anova")
@@ -317,6 +352,8 @@ void MainWindow::create_commands()
     copy_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(copy_action, &QAction::triggered, this, &MainWindow::copy_selection);
     QAction* copy_chart_action = commands_->add(QStringLiteral("copy_chart"), QStringLiteral("复制图形"));
+    copy_chart_action->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
+    copy_chart_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(copy_chart_action, &QAction::triggered, this, &MainWindow::copy_chart);
     QAction* cut_action = commands_->add(QStringLiteral("cut"), QStringLiteral("剪切"));
     cut_action->setShortcut(QKeySequence::Cut);
@@ -401,6 +438,18 @@ void MainWindow::create_commands()
     menuBar()->addMenu(QStringLiteral("查看"));
 
     auto* help_menu = menuBar()->addMenu(QStringLiteral("帮助"));
+    help_menu->addAction(QStringLiteral("算法、公式与参考资料"), this, [this] {
+        if (algorithm_help_dialog_ == nullptr) {
+            algorithm_help_dialog_ = new AlgorithmHelpDialog(this);
+            algorithm_help_dialog_->setAttribute(Qt::WA_DeleteOnClose);
+            connect(algorithm_help_dialog_, &QObject::destroyed, this, [this] {
+                algorithm_help_dialog_ = nullptr;
+            });
+        }
+        algorithm_help_dialog_->show();
+        algorithm_help_dialog_->raise();
+        algorithm_help_dialog_->activateWindow();
+    });
     help_menu->addAction(QStringLiteral("关于 DataLab"), this, [this] {
         QMessageBox::about(
             this,
@@ -502,6 +551,9 @@ void MainWindow::create_layout()
             });
     connect(worksheet_model_, &QAbstractItemModel::dataChanged, this,
             [this](const QModelIndex&, const QModelIndex&, const QList<int>&) {
+                if (suppress_table_edit_undo_) {
+                    return;
+                }
                 const datalab::domain::DataTable before = table_;
                 const datalab::domain::DataTable after = worksheet_model_->table();
                 push_table_change(before, after, QStringLiteral("编辑单元格"), true);
@@ -640,14 +692,16 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
         auto* key_event = static_cast<QKeyEvent*>(event);
         if (key_event->matches(QKeySequence::Copy)) {
             if (AnalysisChartWidget* chart = chart_widget_from_focus()) {
-                chart->copy_to_clipboard();
-                statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+                statusBar()->showMessage(chart->copy_to_clipboard()
+                        ? QStringLiteral("已复制图形到剪贴板。")
+                        : QStringLiteral("当前图形暂时无法复制。"));
                 return true;
             }
             if (AnalysisChartWidget* chart =
                     chart_widget_on_page(output_workspace_->currentWidget())) {
-                chart->copy_to_clipboard();
-                statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+                statusBar()->showMessage(chart->copy_to_clipboard()
+                        ? QStringLiteral("已复制图形到剪贴板。")
+                        : QStringLiteral("当前图形暂时无法复制。"));
                 return true;
             }
         }
@@ -683,7 +737,7 @@ void MainWindow::push_table_change(
     const QString& text,
     bool already_applied)
 {
-    if (before.rows == after.rows && before.columns == after.columns) {
+    if (data_tables_equal(before, after)) {
         return;
     }
     undo_stack_->push(
@@ -697,15 +751,17 @@ void MainWindow::copy_selection()
         && (focus == data_table_ || data_table_->isAncestorOf(focus));
     if (!worksheet_focused) {
         if (AnalysisChartWidget* chart = chart_widget_from_focus()) {
-            chart->copy_to_clipboard();
-            statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+            statusBar()->showMessage(chart->copy_to_clipboard()
+                    ? QStringLiteral("已复制图形到剪贴板。")
+                    : QStringLiteral("当前图形暂时无法复制。"));
             return;
         }
         if (output_workspace_ != nullptr) {
             if (AnalysisChartWidget* chart =
                     chart_widget_on_page(output_workspace_->currentWidget())) {
-                chart->copy_to_clipboard();
-                statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+                statusBar()->showMessage(chart->copy_to_clipboard()
+                        ? QStringLiteral("已复制图形到剪贴板。")
+                        : QStringLiteral("当前图形暂时无法复制。"));
                 return;
             }
         }
@@ -752,8 +808,9 @@ void MainWindow::copy_chart()
         statusBar()->showMessage(QStringLiteral("当前输出页没有可复制的图形。"));
         return;
     }
-    chart->copy_to_clipboard();
-    statusBar()->showMessage(QStringLiteral("已复制图形到剪贴板。"));
+    statusBar()->showMessage(chart->copy_to_clipboard()
+            ? QStringLiteral("已复制图形到剪贴板。")
+            : QStringLiteral("当前图形暂时无法复制。"));
 }
 
 void MainWindow::cut_selection()
@@ -765,9 +822,12 @@ void MainWindow::cut_selection()
     copy_selection();
     const datalab::domain::DataTable before = table_;
     const QModelIndexList indexes = data_table_->selectionModel()->selectedIndexes();
+    suppress_table_edit_undo_ = true;
     if (!worksheet_model_->clear_cells(indexes)) {
+        suppress_table_edit_undo_ = false;
         return;
     }
+    suppress_table_edit_undo_ = false;
     table_ = worksheet_model_->table();
     push_table_change(before, table_, QStringLiteral("剪切单元格"));
 }
@@ -781,15 +841,22 @@ void MainWindow::clear_selection()
     if (view->is_editing()) {
         view->commit_editing();
     }
-    const QModelIndexList indexes = data_table_->selectionModel()->selectedIndexes();
+    const QModelIndexList selected = data_table_->selectionModel()->selectedIndexes();
+    QModelIndexList indexes = selected;
+    if (indexes.isEmpty() && data_table_->currentIndex().isValid()) {
+        indexes.push_back(data_table_->currentIndex());
+    }
     if (indexes.isEmpty()) {
         return;
     }
     const datalab::domain::DataTable before = table_;
+    suppress_table_edit_undo_ = true;
     if (!worksheet_model_->clear_cells(indexes)) {
-        statusBar()->showMessage(QStringLiteral("所选单元格已为空或无法清除。"));
+        suppress_table_edit_undo_ = false;
+        statusBar()->showMessage(QStringLiteral("所选单元格已为空。"));
         return;
     }
+    suppress_table_edit_undo_ = false;
     table_ = worksheet_model_->table();
     push_table_change(before, table_, QStringLiteral("清除单元格"));
     statusBar()->showMessage(QStringLiteral("已清除 %1 个单元格。").arg(indexes.size()));
@@ -903,7 +970,7 @@ void MainWindow::import_data()
         this,
         QStringLiteral("导入数据"),
         QString(),
-        QStringLiteral("数据文件 (*.csv *.txt *.xlsx *.xls);;所有文件 (*.*)"));
+        QStringLiteral("数据文件 (*.csv *.txt *.xlsx);;所有文件 (*.*)"));
     if (file_path.isEmpty()) {
         return;
     }

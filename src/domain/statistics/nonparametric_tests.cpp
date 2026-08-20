@@ -62,6 +62,92 @@ std::vector<RankedValue> rank_values(const std::vector<std::vector<double>>& gro
     return values;
 }
 
+double tie_correction_sum(const std::vector<RankedValue>& ranked)
+{
+    double tie_sum = 0.0;
+    for (std::size_t index = 0; index < ranked.size();) {
+        std::size_t end = index + 1;
+        while (end < ranked.size() && ranked[end].value == ranked[index].value) {
+            ++end;
+        }
+        const double size = static_cast<double>(end - index);
+        tie_sum += size * size * size - size;
+        index = end;
+    }
+    return tie_sum;
+}
+
+std::optional<double> hodges_lehmann_estimate(std::vector<double> differences)
+{
+    if (differences.empty()) {
+        return std::nullopt;
+    }
+    std::sort(differences.begin(), differences.end());
+    const std::size_t middle = differences.size() / 2;
+    if (differences.size() % 2 == 1) {
+        return differences[middle];
+    }
+    return (differences[middle - 1] + differences[middle]) / 2.0;
+}
+
+void compute_mckean_ryan_ci(
+    RankSumResult& result,
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    double confidence_level,
+    TestAlternative alternative)
+{
+    std::vector<double> differences;
+    differences.reserve(first.size() * second.size());
+    for (const double first_value : first) {
+        for (const double second_value : second) {
+            differences.push_back(first_value - second_value);
+        }
+    }
+    const auto estimate = hodges_lehmann_estimate(differences);
+    if (!estimate.has_value()) {
+        return;
+    }
+    result.location_difference = estimate;
+    result.location_estimate = estimate;
+    if (!(confidence_level > 0.0 && confidence_level < 1.0) || differences.size() < 2) {
+        return;
+    }
+    std::sort(differences.begin(), differences.end());
+    const std::size_t m = differences.size();
+    const auto ranked = rank_values({first, second});
+    const double tie_sum = tie_correction_sum(ranked);
+    const double n1 = static_cast<double>(first.size());
+    const double n2 = static_cast<double>(second.size());
+    const double total = n1 + n2;
+    const double tie_factor = total > 1.0
+        ? 1.0 - tie_sum / (total * (total - 1.0)) : 1.0;
+    const double sigma_u = std::sqrt(n1 * n2 * (total + 1.0) / 12.0 * tie_factor);
+    const double alpha = 1.0 - confidence_level;
+    const double z = alternative == TestAlternative::two_sided
+        ? standard_normal_quantile(1.0 - alpha / 2.0)
+        : standard_normal_quantile(1.0 - alpha);
+    long lower_index = static_cast<long>(std::floor(
+        static_cast<double>(m) / 2.0 - z * sigma_u));
+    lower_index = std::max(0L, lower_index);
+    const long upper_index = static_cast<long>(m) - lower_index - 1;
+    if (lower_index >= static_cast<long>(m) || upper_index < lower_index) {
+        warning(result.diagnostics, "ci_not_computed",
+                "样本量过小，无法计算 McKean–Ryan 置信区间。");
+        return;
+    }
+    const double lower = differences[static_cast<std::size_t>(lower_index)];
+    const double upper = differences[static_cast<std::size_t>(upper_index)];
+    if (alternative == TestAlternative::less) {
+        result.ci_upper = upper;
+    } else if (alternative == TestAlternative::greater) {
+        result.ci_lower = lower;
+    } else {
+        result.ci_lower = lower;
+        result.ci_upper = upper;
+    }
+}
+
 double chi_square_right_tail(double value, double degrees_of_freedom)
 {
     if (!(value >= 0.0) || !(degrees_of_freedom > 0.0)) {
@@ -103,7 +189,8 @@ double chi_square_right_tail(double value, double degrees_of_freedom)
 RankSumResult mann_whitney(
     const std::vector<double>& first,
     const std::vector<double>& second,
-    TestAlternative alternative)
+    TestAlternative alternative,
+    double confidence_level)
 {
     RankSumResult result;
     result.first_count = first.size();
@@ -168,14 +255,7 @@ RankSumResult mann_whitney(
     if (n1 * n2 > 0.0) {
         result.effect_size = 1.0 - 2.0 * u_statistic / (n1 * n2);
     }
-    std::vector<double> differences;
-    for (const double first_value : first) {
-        for (const double second_value : second) {
-            differences.push_back(first_value - second_value);
-        }
-    }
-    std::sort(differences.begin(), differences.end());
-    result.location_difference = differences[differences.size() / 2];
+    compute_mckean_ryan_ci(result, first, second, confidence_level, alternative);
     return result;
 }
 
@@ -325,6 +405,47 @@ KruskalWallisResult kruskal_wallis(
         [](const std::vector<double>& group) { return group.size() < 5; });
     if (total > 1.0) {
         result.effect_size = result.adjusted_h_statistic / (total - 1.0);
+    }
+
+    // Dunn pairwise (global ranks) + Bonferroni family-wise α.
+    const double c_tie = (total > 1.0)
+        ? tie_sum / (12.0 * (total - 1.0)) : 0.0;
+    const double base_variance = total * (total + 1.0) / 12.0 - c_tie;
+    const std::size_t k = result.groups.size();
+    const double pair_count = static_cast<double>(k * (k - 1) / 2);
+    result.family_alpha = 0.05;
+    for (std::size_t i = 0; i < k; ++i) {
+        for (std::size_t j = i + 1; j < k; ++j) {
+            DunnComparison comparison;
+            comparison.first_label = result.groups[i].label;
+            comparison.second_label = result.groups[j].label;
+            comparison.mean_rank_difference =
+                result.groups[i].mean_rank - result.groups[j].mean_rank;
+            const double ni = static_cast<double>(result.groups[i].count);
+            const double nj = static_cast<double>(result.groups[j].count);
+            comparison.standard_error =
+                std::sqrt(base_variance * (1.0 / ni + 1.0 / nj));
+            if (!(comparison.standard_error > 0.0)) {
+                comparison.z_statistic = 0.0;
+                comparison.p_value = 1.0;
+                comparison.adjusted_p_value = 1.0;
+                comparison.significant = false;
+                result.dunn_comparisons.push_back(comparison);
+                continue;
+            }
+            comparison.z_statistic =
+                std::abs(comparison.mean_rank_difference)
+                / comparison.standard_error;
+            const double p_raw = std::clamp(
+                2.0 * (1.0 - standard_normal_cdf(comparison.z_statistic)),
+                0.0, 1.0);
+            comparison.p_value = p_raw;
+            comparison.adjusted_p_value =
+                std::clamp(pair_count * p_raw, 0.0, 1.0);
+            comparison.significant =
+                *comparison.adjusted_p_value <= result.family_alpha;
+            result.dunn_comparisons.push_back(comparison);
+        }
     }
     return result;
 }

@@ -7,7 +7,10 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -348,19 +351,116 @@ TukeyResult tukey_multiple_comparisons(
     return result;
 }
 
+std::vector<TukeyGroupingRow> tukey_grouping_letters(
+    const std::vector<std::string>& labels,
+    const std::vector<double>& means,
+    const std::vector<std::size_t>& counts,
+    const std::vector<TukeyComparison>& comparisons)
+{
+    std::vector<TukeyGroupingRow> rows;
+    const std::size_t group_count = labels.size();
+    if (group_count == 0 || means.size() != group_count || counts.size() != group_count) {
+        return rows;
+    }
+    std::vector<std::vector<bool>> significant(
+        group_count, std::vector<bool>(group_count, false));
+    auto index_of = [&](const std::string& label) -> std::size_t {
+        for (std::size_t index = 0; index < group_count; ++index) {
+            if (labels[index] == label) {
+                return index;
+            }
+        }
+        return group_count;
+    };
+    for (const auto& comparison : comparisons) {
+        const std::size_t first = index_of(comparison.first_label);
+        const std::size_t second = index_of(comparison.second_label);
+        if (first >= group_count || second >= group_count) {
+            continue;
+        }
+        significant[first][second] = comparison.significant;
+        significant[second][first] = comparison.significant;
+    }
+
+    std::vector<std::size_t> order(group_count);
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
+        if (means[a] != means[b]) {
+            return means[a] > means[b];
+        }
+        return labels[a] < labels[b];
+    });
+
+    std::vector<std::set<char>> letter_sets(group_count);
+    char next_letter = 'A';
+    for (std::size_t order_index = 0; order_index < group_count; ++order_index) {
+        const std::size_t group = order[order_index];
+        for (char letter = 'A'; letter < next_letter; ++letter) {
+            bool compatible = true;
+            for (std::size_t other = 0; other < group_count; ++other) {
+                if (letter_sets[other].count(letter) > 0
+                    && significant[group][other]) {
+                    compatible = false;
+                    break;
+                }
+            }
+            if (compatible) {
+                letter_sets[group].insert(letter);
+            }
+        }
+        if (letter_sets[group].empty()) {
+            const char letter = next_letter;
+            letter_sets[group].insert(letter);
+            for (std::size_t later = order_index + 1; later < group_count; ++later) {
+                const std::size_t candidate = order[later];
+                bool compatible = true;
+                for (std::size_t other = 0; other < group_count; ++other) {
+                    if (letter_sets[other].count(letter) > 0
+                        && significant[candidate][other]) {
+                        compatible = false;
+                        break;
+                    }
+                }
+                if (compatible) {
+                    letter_sets[candidate].insert(letter);
+                }
+            }
+            if (next_letter < 'Z') {
+                ++next_letter;
+            }
+        }
+    }
+
+    rows.reserve(group_count);
+    for (const std::size_t index : order) {
+        TukeyGroupingRow row;
+        row.label = labels[index];
+        row.count = counts[index];
+        row.mean = means[index];
+        for (const char letter : letter_sets[index]) {
+            row.grouping.push_back(letter);
+        }
+        rows.push_back(std::move(row));
+    }
+    return rows;
+}
+
 TwoProportionsResult two_proportions_test(
     std::size_t first_events,
     std::size_t first_trials,
     std::size_t second_events,
     std::size_t second_trials,
     double confidence_level,
-    TestAlternative alternative)
+    TestAlternative alternative,
+    bool newcombe_wilson_ci)
 {
     TwoProportionsResult result;
     result.first_events = first_events;
     result.first_trials = first_trials;
     result.second_events = second_events;
     result.second_trials = second_trials;
+    result.method = newcombe_wilson_ci ? "wilson" : "normal";
+    result.ci_method = newcombe_wilson_ci ? "newcombe_wilson" : "wald";
     if (!valid_confidence(confidence_level)
         || first_trials == 0 || second_trials == 0
         || first_events > first_trials || second_events > second_trials) {
@@ -394,7 +494,46 @@ TwoProportionsResult two_proportions_test(
     const double critical = alternative == TestAlternative::two_sided
         ? normal_quantile(0.5 + confidence_level / 2.0)
         : normal_quantile(confidence_level);
-    if (alternative == TestAlternative::less) {
+
+    if (newcombe_wilson_ci) {
+        const auto wilson_bounds = [&](std::size_t events, std::size_t trials)
+            -> std::pair<double, double> {
+            const double n = static_cast<double>(trials);
+            const double p = static_cast<double>(events) / n;
+            const double z2 = critical * critical;
+            const double denom = 1.0 + z2 / n;
+            const double center = (p + z2 / (2.0 * n)) / denom;
+            const double half = critical
+                * std::sqrt(p * (1.0 - p) / n + z2 / (4.0 * n * n)) / denom;
+            double lower = center - half;
+            double upper = center + half;
+            if (events == 0) {
+                lower = 0.0;
+            }
+            if (events == trials) {
+                upper = 1.0;
+            }
+            lower = std::clamp(lower, 0.0, 1.0);
+            upper = std::clamp(upper, 0.0, 1.0);
+            return {lower, upper};
+        };
+        const auto [l1, u1] = wilson_bounds(first_events, first_trials);
+        const auto [l2, u2] = wilson_bounds(second_events, second_trials);
+        const double p1 = result.first_proportion;
+        const double p2 = result.second_proportion;
+        const double lower = (p1 - p2)
+            - std::sqrt((p1 - l1) * (p1 - l1) + (u2 - p2) * (u2 - p2));
+        const double upper = (p1 - p2)
+            + std::sqrt((u1 - p1) * (u1 - p1) + (p2 - l2) * (p2 - l2));
+        if (alternative == TestAlternative::less) {
+            result.confidence_upper = upper;
+        } else if (alternative == TestAlternative::greater) {
+            result.confidence_lower = lower;
+        } else {
+            result.confidence_lower = lower;
+            result.confidence_upper = upper;
+        }
+    } else if (alternative == TestAlternative::less) {
         result.confidence_upper = result.difference + critical * separate_se;
     } else if (alternative == TestAlternative::greater) {
         result.confidence_lower = result.difference - critical * separate_se;
@@ -499,6 +638,121 @@ ChiSquareResult chi_square_association(
             result.likelihood_ratio_p_value.reset();
             break;
         }
+    }
+    return result;
+}
+
+ChiSquareGofResult chi_square_goodness_of_fit(
+    const std::vector<std::string>& categories,
+    const std::vector<double>& counts,
+    const std::vector<double>& proportions)
+{
+    ChiSquareGofResult result;
+    if (categories.size() < 2 || categories.size() != counts.size()) {
+        add_error(result.diagnostics, "invalid_gof_categories",
+                  "拟合优度至少需要两个类别，且类别与计数长度相同。");
+        return result;
+    }
+    double total = 0.0;
+    for (std::size_t index = 0; index < counts.size(); ++index) {
+        if (!(counts[index] >= 0.0) || !std::isfinite(counts[index])
+            || categories[index].empty()) {
+            add_error(result.diagnostics, "invalid_gof_count",
+                      "各类观察计数必须为非负有限数，类别名不能为空。");
+            return result;
+        }
+        total += counts[index];
+    }
+    if (!(total > 0.0)) {
+        add_error(result.diagnostics, "empty_gof_table", "观察总计数必须大于 0。");
+        return result;
+    }
+    std::vector<double> used_proportions = proportions;
+    if (used_proportions.empty()) {
+        used_proportions.assign(categories.size(), 1.0 / static_cast<double>(categories.size()));
+        result.proportion_source = "equal";
+    } else {
+        result.proportion_source = "specified";
+        if (used_proportions.size() != categories.size()) {
+            add_error(result.diagnostics, "proportion_count_mismatch",
+                      "期望比例个数必须与类别个数相同。");
+            return result;
+        }
+        double proportion_sum = 0.0;
+        for (const double proportion : used_proportions) {
+            if (!(proportion > 0.0) || !std::isfinite(proportion)) {
+                add_error(result.diagnostics, "invalid_test_proportion",
+                          "期望比例必须为正有限数。");
+                return result;
+            }
+            proportion_sum += proportion;
+        }
+        if (std::abs(proportion_sum - 1.0) > 1.0e-8) {
+            add_error(result.diagnostics, "proportions_not_sum_to_one",
+                      "期望比例之和必须为 1。");
+            return result;
+        }
+    }
+    result.total_count = static_cast<std::size_t>(std::llround(total));
+    result.degrees_of_freedom = static_cast<double>(categories.size() - 1);
+    for (std::size_t index = 0; index < categories.size(); ++index) {
+        ChiSquareGofCategory row;
+        row.category = categories[index];
+        row.observed = counts[index];
+        row.test_proportion = used_proportions[index];
+        row.expected = used_proportions[index] * total;
+        if (row.expected > 0.0) {
+            row.residual = (row.observed - row.expected) / std::sqrt(row.expected);
+            row.contribution = (row.observed - row.expected) * (row.observed - row.expected)
+                / row.expected;
+            result.pearson_statistic += row.contribution;
+        }
+        result.categories.push_back(row);
+    }
+    result.p_value = regularized_gamma_q(
+        result.degrees_of_freedom / 2.0, result.pearson_statistic / 2.0);
+    double min_expected = std::numeric_limits<double>::infinity();
+    for (const auto& row : result.categories) {
+        min_expected = std::min(min_expected, row.expected);
+        if (row.expected < 5.0) {
+            ++result.expected_below_five_count;
+        }
+    }
+    if (std::isfinite(min_expected)) {
+        result.minimum_expected_count = min_expected;
+    }
+    const std::size_t category_count = result.categories.size();
+    const double low_expected_ratio = category_count == 0 ? 0.0
+        : static_cast<double>(result.expected_below_five_count)
+            / static_cast<double>(category_count);
+    const bool rule_a_ok = result.minimum_expected_count.has_value()
+        && *result.minimum_expected_count >= 1.25
+        && low_expected_ratio <= 0.5;
+    const bool rule_b_ok = result.minimum_expected_count.has_value()
+        && *result.minimum_expected_count >= 2.5;
+
+    if (rule_a_ok || rule_b_ok) {
+        result.validity_status = "ok";
+    } else if (result.minimum_expected_count.has_value()
+               && *result.minimum_expected_count >= 1.0) {
+        result.validity_status = "caution";
+    } else {
+        result.validity_status = "poor";
+    }
+    if (result.expected_below_five_count > 0) {
+        add_warning(result.diagnostics, "expected_count_below_five",
+                    "存在期望频数小于 5 的类别，卡方近似可能不可靠。");
+    }
+    if (result.validity_status == "caution") {
+        result.recommendation
+            = "建议合并相邻类别后复算；当前 P 值可作为探索性证据。";
+        add_warning(result.diagnostics, "gof_validity_caution",
+                    "低期望频数比例偏高，建议合并类别并谨慎解释 P 值。");
+    } else if (result.validity_status == "poor") {
+        result.recommendation
+            = "期望频数过低，建议先调整分组（合并类别）再进行拟合优度检验。";
+        add_warning(result.diagnostics, "gof_validity_poor",
+                    "期望频数过低，卡方近似可靠性较差。");
     }
     return result;
 }

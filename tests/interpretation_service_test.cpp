@@ -15,6 +15,16 @@ private slots:
     void usesStructuredGageFacts();
     void usesStructuredReliabilityFacts();
     void usesStructuredDescriptiveAndAdvancedFacts();
+    void usesChiSquareFactsWithoutCausalClaim();
+    void usesStructuredForecastFactsForTimeSeriesMethods();
+    void usesStructuredDoeFactsForResponseOptimization();
+    void usesToleranceFactsWithoutCapabilityClaim();
+    void usesBinomialCapabilityFactsWithoutPassClaim();
+    void usesProportionFactsWithoutPassClaim();
+    void usesBoxCoxFactsWithoutNormalityClaim();
+    void usesPoissonRateFactsWithoutPassClaim();
+    void usesEquivalenceFactsWithoutPassClaim();
+    void usesDoeResidualFactsWithoutNormalityClaim();
 };
 
 void InterpretationServiceTest::usesStructuredCapabilityFacts()
@@ -69,6 +79,16 @@ void InterpretationServiceTest::usesStructuredRegressionFacts()
         [](const auto& section) { return section.heading == "统计结论"; });
     QVERIFY(conclusion != page.interpretation.cend());
     QVERIFY(conclusion->bullets.front().find("R²") != std::string::npos);
+    const auto limitations = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) { return section.heading == "限制与数据质量"; });
+    QVERIFY(limitations != page.interpretation.cend());
+    QVERIFY(std::any_of(
+        limitations->bullets.cbegin(), limitations->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("异常观测表") != std::string::npos
+                && bullet.find("不会自动删除") != std::string::npos;
+        }));
 }
 
 void InterpretationServiceTest::usesStructuredAnovaFacts()
@@ -209,6 +229,258 @@ void InterpretationServiceTest::usesStructuredDescriptiveAndAdvancedFacts()
         [](const auto& section) { return section.heading == "统计结论"; });
     QVERIFY(variance_conclusion != variance.interpretation.cend());
     QVERIFY(variance_conclusion->bullets.front().find("不能证明方差相等") != std::string::npos);
+}
+
+void InterpretationServiceTest::usesChiSquareFactsWithoutCausalClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Chi-Square Association";
+    datalab::domain::ChiSquareFacts facts;
+    facts.statistic = 4.2;
+    facts.p_value = 0.04;
+    facts.expected_count_warning = true;
+    page.facts.chi_square = facts;
+    datalab::application::InterpretationService::enrich(page);
+    const auto conclusion = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) { return section.heading == "统计结论"; });
+    QVERIFY(conclusion != page.interpretation.cend());
+    QVERIFY(conclusion->bullets.front().find("不能证明因果关系") != std::string::npos);
+    QVERIFY(conclusion->bullets.front().find("已证明") == std::string::npos);
+    QVERIFY(conclusion->bullets.front().find("显著相关") == std::string::npos);
+    const auto limitations = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) { return section.heading == "限制与数据质量"; });
+    QVERIFY(limitations != page.interpretation.cend());
+    QVERIFY(limitations->bullets.front().find("期望频数") != std::string::npos);
+}
+
+void InterpretationServiceTest::usesStructuredForecastFactsForTimeSeriesMethods()
+{
+    datalab::domain::OutputPage decomposition;
+    decomposition.method_name = "Time Series Decomposition";
+    decomposition.configuration.time_series.decomposition_seasonal_period = 4;
+    decomposition.configuration.time_series.decomposition_model = "additive";
+    decomposition.facts.forecast = datalab::domain::ForecastFacts{12.5, std::nullopt,
+                                                                  std::nullopt, std::nullopt};
+    datalab::application::InterpretationService::enrich(decomposition);
+    const auto decomposition_conclusion = std::find_if(
+        decomposition.interpretation.cbegin(), decomposition.interpretation.cend(),
+        [](const auto& section) { return section.heading == "统计结论"; });
+    QVERIFY(decomposition_conclusion != decomposition.interpretation.cend());
+    QVERIFY(decomposition_conclusion->bullets.front().find("MAPE = 12.500000")
+            != std::string::npos);
+    const auto decomposition_advice = std::find_if(
+        decomposition.interpretation.cbegin(), decomposition.interpretation.cend(),
+        [](const auto& section) { return section.heading == "工程建议"; });
+    QVERIFY(decomposition_advice != decomposition.interpretation.cend());
+    QVERIFY(decomposition_advice->bullets.front().find("加法分解") != std::string::npos);
+
+    datalab::domain::OutputPage smoothing;
+    smoothing.method_name = "Double Exponential Smoothing";
+    smoothing.facts.forecast = datalab::domain::ForecastFacts{8.0, std::nullopt,
+                                                               std::nullopt, std::nullopt};
+    datalab::application::InterpretationService::enrich(smoothing);
+    const auto smoothing_conclusion = std::find_if(
+        smoothing.interpretation.cbegin(), smoothing.interpretation.cend(),
+        [](const auto& section) { return section.heading == "统计结论"; });
+    QVERIFY(smoothing_conclusion != smoothing.interpretation.cend());
+    QVERIFY(smoothing_conclusion->bullets.front().find("MAPE = 8.000000")
+            != std::string::npos);
+}
+
+void InterpretationServiceTest::usesStructuredDoeFactsForResponseOptimization()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Response Optimization";
+    page.configuration.inference.confidence_level = 0.95;
+    datalab::domain::DoeFacts facts;
+    facts.multi_response = true;
+    facts.response_count = 2;
+    facts.response_names = {"Y", "Y2"};
+    facts.best_overall_desirability = 0.92;
+    facts.has_p_value = true;
+    facts.significant_terms = {"A", "B"};
+    facts.prediction_interval_available = false;
+    page.facts.doe = facts;
+
+    datalab::application::InterpretationService::enrich(page);
+
+    const auto conclusion = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) { return section.heading == "统计结论"; });
+    QVERIFY(conclusion != page.interpretation.cend());
+    QVERIFY(std::any_of(
+        conclusion->bullets.cbegin(), conclusion->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("多响应 Desirability") != std::string::npos;
+        }));
+    QVERIFY(std::any_of(
+        conclusion->bullets.cbegin(), conclusion->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("总体 Desirability = 0.920000") != std::string::npos;
+        }));
+    const auto limitations = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) { return section.heading == "限制与数据质量"; });
+    QVERIFY(limitations != page.interpretation.cend());
+    QVERIFY(std::any_of(
+        limitations->bullets.cbegin(), limitations->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("置信/预测区间不可用") != std::string::npos;
+        }));
+}
+
+void InterpretationServiceTest::usesToleranceFactsWithoutCapabilityClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Tolerance Intervals";
+    datalab::domain::ToleranceFacts facts;
+    facts.method = "howe_two_sided";
+    facts.coverage = 0.95;
+    facts.confidence_level = 0.95;
+    facts.lower = 1.2;
+    facts.upper = 8.4;
+    facts.assumption_status = "not_verified";
+    page.facts.tolerance = facts;
+    datalab::application::InterpretationService::enrich(page);
+    const auto conclusion = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) { return section.heading == "统计结论"; });
+    QVERIFY(conclusion != page.interpretation.cend());
+    QVERIFY(conclusion->bullets.front().find("howe_two_sided") != std::string::npos);
+    QVERIFY(conclusion->bullets.front().find("not_verified") != std::string::npos);
+    QVERIFY(conclusion->bullets.front().find("合格") == std::string::npos);
+    QVERIFY(conclusion->bullets.front().find("规格已覆盖") == std::string::npos);
+}
+
+void InterpretationServiceTest::usesBinomialCapabilityFactsWithoutPassClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Binomial Capability";
+    datalab::domain::CapabilityFacts facts;
+    facts.method = "binomial";
+    facts.average_p = 0.04;
+    facts.percent_defective = 4.0;
+    facts.process_z = 1.75;
+    facts.assumption_status = "not_verified";
+    page.facts.capability = facts;
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("合格") == std::string::npos);
+            QVERIFY(bullet.find("Cpk") == std::string::npos);
+        }
+    }
+}
+
+void InterpretationServiceTest::usesProportionFactsWithoutPassClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "1 Proportion";
+    datalab::domain::ProportionFacts facts;
+    facts.method = "exact";
+    facts.proportion = 0.2;
+    facts.hypothesized = 0.5;
+    facts.p_value = 0.109375;
+    facts.assumption_status = "not_verified";
+    page.facts.proportion = facts;
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("合格") == std::string::npos);
+        }
+    }
+}
+
+void InterpretationServiceTest::usesBoxCoxFactsWithoutNormalityClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Box-Cox Transformation";
+    datalab::domain::BoxCoxFacts facts;
+    facts.lambda = 0.0;
+    facts.n = 4;
+    facts.missing_count = 1;
+    facts.transformed_standard_deviation = 0.5;
+    facts.assumption_status = "not_verified";
+    page.facts.box_cox = facts;
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("合格") == std::string::npos);
+            QVERIFY(bullet.find("已正态") == std::string::npos);
+            QVERIFY(bullet.find("过程合格") == std::string::npos);
+        }
+    }
+}
+
+void InterpretationServiceTest::usesPoissonRateFactsWithoutPassClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "1-Sample Poisson Rate";
+    datalab::domain::PoissonRateFacts facts;
+    facts.kind = "one_sample";
+    facts.method = "exact";
+    facts.rate = 0.2;
+    facts.hypothesized = 0.5;
+    facts.p_value = 0.124672;
+    facts.assumption_status = "not_verified";
+    page.facts.poisson_rate = facts;
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("合格") == std::string::npos);
+        }
+    }
+}
+
+void InterpretationServiceTest::usesEquivalenceFactsWithoutPassClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "1-Sample Equivalence Test";
+    datalab::domain::EquivalenceFacts facts;
+    facts.kind = "one_sample";
+    facts.lower = -1.0;
+    facts.upper = 1.0;
+    facts.ci_lower = -0.4;
+    facts.ci_upper = 0.4;
+    facts.within_limits = false;
+    facts.assumption_status = "not_verified";
+    page.facts.equivalence = facts;
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("合格") == std::string::npos);
+            QVERIFY(bullet.find("已证明等价") == std::string::npos
+                    || bullet.find("不能写成已证明等价") != std::string::npos);
+        }
+    }
+}
+
+void InterpretationServiceTest::usesDoeResidualFactsWithoutNormalityClaim()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "2-Level Factorial Response Analysis";
+    datalab::domain::DoeFacts facts;
+    facts.residual_count = 8;
+    page.facts.doe = facts;
+    datalab::application::InterpretationService::enrich(page);
+    bool mentions_histogram = false;
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("残差已正态") == std::string::npos);
+            QVERIFY(bullet.find("模型合格") == std::string::npos);
+            if (bullet.find("直方图") != std::string::npos) {
+                mentions_histogram = true;
+            }
+        }
+    }
+    QVERIFY(mentions_histogram);
 }
 
 QTEST_MAIN(InterpretationServiceTest)

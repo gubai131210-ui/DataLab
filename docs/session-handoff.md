@@ -12,7 +12,7 @@
 |---|---|
 | 项目路径 | `D:\QT_CppPrograms\DataLab` |
 | 产品 | 模仿 Minitab 的汽车质量分析工具（46 种分析） |
-| 技术栈 | Qt 6.11.1 / MinGW 13.1 / C++17 / CMake / SQLite；Python(pandas) 仅用于 Excel 导入桥 |
+| 技术栈 | Qt 6.11.1 / MinGW 13.1 / C++17 / CMake / SQLite / zlib；原生 C++ XLSX 导入（无运行时 Python） |
 | 规模 | 约 20,500 行 C++（src+tests），12 个测试目标 |
 | 版本控制 | 本地 git 仓库（初始提交 `26ad743` 后 14 个重构提交）；无远端 |
 
@@ -121,7 +121,7 @@ e44552a docs: 补充图表子系统 thread_local 气味至已知缺陷清单
 DataLab(exe: main.cpp+资源) ── PRIVATE → datalab_ui
 datalab_ui（src/ui/** + mainwindow）── PUBLIC: domain, Widgets；PRIVATE: application/infrastructure/reporting
 datalab_infrastructure（csv_importer, data_import_service, project_repository, output_serialization,
-  pdf_report_writer, report_layout_cursor, report_painter, python_table_importer）
+  pdf_report_writer, report_layout_cursor, report_painter, excel_table_importer）
   ── PUBLIC: domain, Core, Gui；PRIVATE: reporting, Sql；PUBLIC 定义 DATALAB_SOURCE_DIR
 datalab_reporting（src/reporting/**：chart_model/renderer/adapter/coordinate_mapper）── PUBLIC: domain, Gui
 datalab_application（analysis_service, analysis_catalog, interpretation_service,
@@ -147,8 +147,10 @@ include 根统一为 `src/`（保留 `domain/...`、`ui/...` 自描述前缀）�
 - 证据：`error_page` 44 处、`analysis_name` 39 处全部内容唯一——集中化零去重且调用点变长；i18n 形态（tr() 原位 vs 单语声明）未定，两种都可能推翻 messages.h 大迁移
 - 触发条件：阶段 6 i18n 决策确定后按所选形态一次执行（详见 refactor-plan 2.4）
 
-### 阶段 4：Python 桥与序列化
-- Python 桥：脚本入 Qt 资源/随 install（删 `DATALAB_SOURCE_DIR` 依赖）、QProcess 异步化、协议版本化、瘦 venv/PyInstaller、补 `PythonTableImporter` 测试（4 类用例）
+### 阶段 4：Excel 导入与序列化加固
+
+- **Excel 导入 ✅（ADR 0006）**：`ExcelTableImporter` 替代 Python 桥；支持 `.xlsx`，拒绝 `.xls`；依赖 Qt + zlib；`excel_table_importer_test` 覆盖 fixture/契约/错误边界。
+- 序列化声明式化、存储层迁移等见 `docs/refactor-plan.md` 阶段 4.2/4.3。
 - 序列化：150 字段声明式映射（键+成员+默认值各一次）+ 全字段 round-trip 测试
 - 存储：抽 `ProjectStore` 端口（ADR #5）；`raw_rows.values_json` 改 JSON（注意旧 .dlab 兼容）；schema `user_version` 迁移
 

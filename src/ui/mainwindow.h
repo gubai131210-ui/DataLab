@@ -4,6 +4,7 @@
 
 #include "domain/quality_types.h"
 
+class AlgorithmHelpDialog;
 class CommandRegistry;
 class OutputWorkspace;
 class ProjectNavigator;
@@ -68,4 +69,6 @@ private:
     CommandRegistry* commands_ = nullptr;
     QUndoStack* undo_stack_ = nullptr;
     bool import_in_progress_ = false;
+    bool suppress_table_edit_undo_ = false;
+    AlgorithmHelpDialog* algorithm_help_dialog_ = nullptr;
 };

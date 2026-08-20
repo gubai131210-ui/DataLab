@@ -2,7 +2,9 @@
 
 #include <QApplication>
 #include <QContextMenuEvent>
+#include <QClipboard>
 #include <QMenu>
+#include <QMimeData>
 #include <QTest>
 #include <QTimer>
 
@@ -12,6 +14,9 @@ class AnalysisChartWidgetTest final : public QObject {
 private slots:
     void doubleClickDoesNotOpenGraphProperties();
     void contextMenuProvidesGraphPropertiesAction();
+    void browseModeKeepsChartSurface();
+    void copyToClipboardPublishesImageMime();
+    void ctrlCOnSurfaceCopiesChart();
 };
 
 ChartModel make_chart_model()
@@ -62,6 +67,57 @@ void AnalysisChartWidgetTest::contextMenuProvidesGraphPropertiesAction()
 
     QVERIFY(event.isAccepted());
     QVERIFY(has_edit_action);
+}
+
+void AnalysisChartWidgetTest::browseModeKeepsChartSurface()
+{
+    AnalysisChartWidget widget;
+    widget.set_model(make_chart_model());
+    widget.resize(640, 420);
+    widget.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&widget));
+    const auto* surface = widget.findChild<QWidget*>(QStringLiteral("chart_surface"));
+    QVERIFY(surface != nullptr);
+    QVERIFY(surface->width() >= 600);
+    QVERIFY(widget.findChild<QWidget*>(QStringLiteral("graph_properties_panel")) == nullptr);
+}
+
+void AnalysisChartWidgetTest::copyToClipboardPublishesImageMime()
+{
+    AnalysisChartWidget widget;
+    widget.set_model(make_chart_model());
+    widget.resize(640, 420);
+    widget.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&widget));
+
+    QVERIFY(widget.copy_to_clipboard());
+    const QMimeData* mime = QApplication::clipboard()->mimeData();
+    QVERIFY(mime != nullptr);
+    QVERIFY(mime->hasImage());
+    QVERIFY(mime->hasFormat(QStringLiteral("image/png")));
+    QVERIFY(!QApplication::clipboard()->image().isNull());
+}
+
+void AnalysisChartWidgetTest::ctrlCOnSurfaceCopiesChart()
+{
+    AnalysisChartWidget widget;
+    widget.set_model(make_chart_model());
+    widget.resize(640, 420);
+    widget.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&widget));
+
+    QWidget* surface = widget.findChild<QWidget*>(QStringLiteral("chart_surface"));
+    QVERIFY(surface != nullptr);
+
+    QApplication::clipboard()->clear();
+    QTest::mouseClick(surface, Qt::LeftButton, Qt::NoModifier, QPoint(120, 120));
+    QVERIFY(surface->hasFocus());
+    QTest::keyClick(surface, Qt::Key_C, Qt::ControlModifier);
+
+    const QMimeData* mime = QApplication::clipboard()->mimeData();
+    QVERIFY(mime != nullptr);
+    QVERIFY(mime->hasImage());
+    QVERIFY(mime->hasFormat(QStringLiteral("image/png")));
 }
 
 QTEST_MAIN(AnalysisChartWidgetTest)

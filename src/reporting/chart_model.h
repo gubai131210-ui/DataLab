@@ -25,7 +25,8 @@ enum class ChartKind {
     TimeSeries,
     Area,
     Contour,
-    Pie
+    Pie,
+    Surface
 };
 
 enum class ChartSeriesRole {

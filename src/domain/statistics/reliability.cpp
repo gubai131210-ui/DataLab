@@ -950,6 +950,39 @@ double percentile_life_lognormal3(double location, double scale, double threshol
     return threshold + percentile_life_lognormal_impl(location, scale, percentile);
 }
 
+double cdf_weibull3(double time, double shape, double scale, double threshold)
+{
+    if (!(shape > 0.0) || !(scale > 0.0) || !std::isfinite(time)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (time <= threshold) {
+        return 0.0;
+    }
+    return 1.0 - std::exp(-std::pow((time - threshold) / scale, shape));
+}
+
+double cdf_exponential2(double time, double rate, double threshold)
+{
+    if (!(rate > 0.0) || !std::isfinite(time)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (time <= threshold) {
+        return 0.0;
+    }
+    return 1.0 - std::exp(-rate * (time - threshold));
+}
+
+double cdf_lognormal3(double time, double location, double scale, double threshold)
+{
+    if (!(scale > 0.0) || !std::isfinite(time)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (time <= threshold) {
+        return 0.0;
+    }
+    return standard_normal_cdf((std::log(time - threshold) - location) / scale);
+}
+
 std::optional<double> percentile_life_km(
     const std::vector<KaplanMeierPoint>& points,
     double percentile)

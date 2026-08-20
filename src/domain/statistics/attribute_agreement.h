@@ -88,18 +88,23 @@ struct AttributeAgreementResult {
     std::vector<AttributeEvaluatorKendallConcordance> within_kendall;
     std::vector<AttributeStandardKendall> against_standard_kendall;
     std::optional<KendallCorrelationEstimate> overall_kendall;
+    std::vector<std::string> agreement_item_labels;
+    std::vector<std::string> agreement_evaluator_labels;
+    std::vector<std::vector<double>> agreement_percent_matrix;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
 // Ratings are aligned row-wise with items and evaluators. Empty strings are
 // treated as missing ratings. Standards may be empty, or one label per item.
 // Kendall W/τ is computed only when ratings_are_ordinal is true.
+// kappa_weight_scheme: "none" | "linear" | "quadratic" (Cohen weighted).
 AttributeAgreementResult attribute_agreement(
     const std::vector<std::string>& ratings,
     const std::vector<std::string>& items,
     const std::vector<std::string>& evaluators,
     const std::vector<std::string>& standards = {},
     double confidence_level = 0.95,
-    bool ratings_are_ordinal = false);
+    bool ratings_are_ordinal = false,
+    const std::string& kappa_weight_scheme = "none");
 
 }  // namespace datalab::domain::statistics

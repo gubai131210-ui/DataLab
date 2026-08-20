@@ -1,3 +1,4 @@
+#include "reporting/chart_adapter.h"
 #include "reporting/chart_renderer.h"
 
 #include <QColor>
@@ -14,6 +15,7 @@ private slots:
     void printThemeKeepsLightBackground();
     void unknownPresetFallsBackToDefault();
     void customYRangeAndDataRegionFillRender();
+    void histogramCurveLegendRoundTrips();
 };
 
 ChartModel sample_control_model()
@@ -93,6 +95,40 @@ void ChartRendererTest::customYRangeAndDataRegionFillRender()
     missing.values = {1.0, 2.0};
     const QPixmap auto_scale = ChartRenderer::render_to_pixmap(missing, QSize(320, 160), 1.0);
     QVERIFY(!auto_scale.isNull());
+}
+
+void ChartRendererTest::histogramCurveLegendRoundTrips()
+{
+    datalab::domain::PlotSpec plot;
+    plot.kind = datalab::domain::PlotKind::histogram;
+    plot.histogram_edges = {0.0, 1.0, 2.0};
+    plot.histogram_counts = {1.0, 2.0};
+    plot.process_mean = 1.0;
+    plot.within_sigma = 0.5;
+    plot.overall_sigma = 0.6;
+    plot.lsl = 0.0;
+    plot.usl = 2.0;
+    plot.target = 1.0;
+    datalab::domain::PlotSeries within;
+    within.label = "Within";
+    within.style.color = "#455a64";
+    plot.series.push_back(within);
+    datalab::domain::PlotSeries overall;
+    overall.label = "Overall";
+    overall.style.color = "#c62828";
+    plot.series.push_back(overall);
+
+    const ChartModel model = chart_model_from_plot(plot);
+    QCOMPARE(model.series.size(), std::size_t{2});
+    QCOMPARE(model.series[0].label, QStringLiteral("Within"));
+    QCOMPARE(model.series[1].label, QStringLiteral("Overall"));
+    QCOMPARE(model.lsl, plot.lsl);
+    const datalab::domain::PlotSpec restored = plot_from_chart_model(model);
+    QCOMPARE(restored.series.size(), std::size_t{2});
+    QCOMPARE(restored.series[0].label, std::string{"Within"});
+    QCOMPARE(restored.series[1].label, std::string{"Overall"});
+    const QPixmap pixmap = ChartRenderer::render_to_pixmap(model, QSize(320, 200), 1.0);
+    QVERIFY(!pixmap.isNull());
 }
 
 QTEST_MAIN(ChartRendererTest)

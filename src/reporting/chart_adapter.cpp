@@ -198,6 +198,9 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
     case datalab::domain::PlotKind::pie:
         model.kind = ChartKind::Pie;
         break;
+    case datalab::domain::PlotKind::surface:
+        model.kind = ChartKind::Surface;
+        break;
     case datalab::domain::PlotKind::control:
     default:
         model.kind = ChartKind::Control;
@@ -336,6 +339,7 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
     case ChartKind::Area: plot.kind = datalab::domain::PlotKind::area; break;
     case ChartKind::Contour: plot.kind = datalab::domain::PlotKind::contour; break;
     case ChartKind::Pie: plot.kind = datalab::domain::PlotKind::pie; break;
+    case ChartKind::Surface: plot.kind = datalab::domain::PlotKind::surface; break;
     case ChartKind::Control:
     default: plot.kind = datalab::domain::PlotKind::control; break;
     }

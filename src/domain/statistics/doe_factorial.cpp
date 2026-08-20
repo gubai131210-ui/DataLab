@@ -1,5 +1,6 @@
 #include "domain/statistics/doe_factorial.h"
 
+#include "domain/column_extract.h"
 #include "domain/statistics/regression.h"
 #include "domain/statistics/hypothesis_tests.h"
 
@@ -33,6 +34,39 @@ bool is_binary_level(int level)
 std::string interaction_name(const DoeFactor& first, const DoeFactor& second)
 {
     return first.name + "*" + second.name;
+}
+
+double median_absolute(std::vector<double> values)
+{
+    if (values.empty()) {
+        return 0.0;
+    }
+    std::sort(values.begin(), values.end());
+    const std::size_t middle = values.size() / 2;
+    if (values.size() % 2 == 1) {
+        return values[middle];
+    }
+    return 0.5 * (values[middle - 1] + values[middle]);
+}
+
+double lenth_pseudo_standard_error(const std::vector<double>& effects)
+{
+    std::vector<double> absolute;
+    absolute.reserve(effects.size());
+    for (const double effect : effects) {
+        absolute.push_back(std::abs(effect));
+    }
+    const double scale = 1.5 * median_absolute(absolute);
+    std::vector<double> trimmed;
+    for (const double value : absolute) {
+        if (value < 2.5 * scale) {
+            trimmed.push_back(value);
+        }
+    }
+    if (trimmed.empty()) {
+        trimmed = std::move(absolute);
+    }
+    return 1.5 * median_absolute(trimmed);
 }
 
 }  // namespace
@@ -465,6 +499,12 @@ DoeResponseAnalysisResult fit_response_analysis(
         result.coefficients.push_back(coefficient.coefficient);
     }
     result.effects.assign(result.coefficients.size(), 0.0);
+    result.standard_errors.assign(regression.coefficients.size(), 0.0);
+    result.t_statistics.assign(regression.coefficients.size(), 0.0);
+    for (std::size_t index = 0; index < regression.coefficients.size(); ++index) {
+        result.standard_errors[index] = regression.coefficients[index].standard_error;
+        result.t_statistics[index] = regression.coefficients[index].t_statistic;
+    }
     for (std::size_t index = 1; index < result.coefficients.size(); ++index) {
         result.term_names.push_back(labels[index - 1]);
         result.effects[index] = 2.0 * result.coefficients[index];
@@ -473,6 +513,7 @@ DoeResponseAnalysisResult fit_response_analysis(
     result.residual_degrees_of_freedom =
         regression.observation_count - regression.predictor_count - 1;
     result.residual_mean_square = regression.error_mean_square;
+    result.xtx_inverse = regression.xtx_inverse;
     result.r_squared = regression.r_squared;
     for (std::size_t index = 1; index < regression.coefficients.size(); ++index) {
         const RegressionCoefficient& coefficient = regression.coefficients[index];
@@ -642,7 +683,238 @@ DoeResponseAnalysisResult fit_response_analysis(
             source_rows[index], observation.response, observation.fitted,
             observation.residual, observation.standardized_residual});
     }
+
+    std::vector<double> effect_magnitudes;
+    for (std::size_t index = 1; index < result.effects.size(); ++index) {
+        effect_magnitudes.push_back(std::abs(result.effects[index]));
+    }
+    if (result.residual_degrees_of_freedom > 0
+        && !result.t_statistics.empty()) {
+        result.pareto_method = "standardized_t";
+        result.pareto_reference = student_t_quantile(
+            0.975, static_cast<double>(result.residual_degrees_of_freedom));
+    } else if (!effect_magnitudes.empty()) {
+        result.lenth_pse = lenth_pseudo_standard_error(
+            std::vector<double>(result.effects.begin() + 1, result.effects.end()));
+        const double effect_df = std::max(
+            1.0, static_cast<double>(effect_magnitudes.size()) / 3.0);
+        result.pareto_reference = student_t_quantile(0.975, effect_df)
+            * result.lenth_pse;
+        result.pareto_method = "lenth_pse";
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                       "lenth_pse_unreplicated",
+                       "误差自由度为 0，标准化效应 Pareto 使用 Lenth PSE 参考线。");
+    }
     return result;
+}
+
+double predict_coded_response(
+    const DoeResponseAnalysisResult& fit,
+    const DoeFactorialDesign& design,
+    const std::vector<double>& coded)
+{
+    double predicted = 0.0;
+    for (std::size_t term = 0; term < fit.term_names.size()
+         && term < fit.coefficients.size(); ++term) {
+        const std::string& name = fit.term_names[term];
+        const double coefficient = fit.coefficients[term];
+        if (name == "Constant") {
+            predicted += coefficient;
+            continue;
+        }
+        if (name.rfind("Block[", 0) == 0) {
+            continue;
+        }
+        const auto star = name.find('*');
+        if (star == std::string::npos) {
+            for (std::size_t factor = 0; factor < design.factors.size()
+                 && factor < coded.size(); ++factor) {
+                if (design.factors[factor].name == name) {
+                    predicted += coefficient * coded[factor];
+                    break;
+                }
+            }
+            continue;
+        }
+        const std::string first = name.substr(0, star);
+        const std::string second = name.substr(star + 1);
+        double first_level = 0.0;
+        double second_level = 0.0;
+        for (std::size_t factor = 0; factor < design.factors.size()
+             && factor < coded.size(); ++factor) {
+            if (design.factors[factor].name == first) {
+                first_level = coded[factor];
+            }
+            if (design.factors[factor].name == second) {
+                second_level = coded[factor];
+            }
+        }
+        predicted += coefficient * first_level * second_level;
+    }
+    return predicted;
+}
+
+DoeCodedGrid evaluate_coded_grid(
+    const DoeResponseAnalysisResult& fit,
+    const DoeFactorialDesign& design,
+    const std::size_t x_factor_index,
+    const std::size_t y_factor_index,
+    const std::size_t resolution,
+    const std::vector<double>* hold_coded)
+{
+    DoeCodedGrid grid;
+    grid.x_factor_index = x_factor_index;
+    grid.y_factor_index = y_factor_index;
+    if (design.factors.size() < 2) {
+        add_diagnostic(grid.diagnostics, DiagnosticMessage::Severity::info,
+                       "contour_requires_two_factors",
+                       "等值线/曲面图需要至少两个连续因子。");
+        return grid;
+    }
+    if (x_factor_index >= design.factors.size()
+        || y_factor_index >= design.factors.size()
+        || x_factor_index == y_factor_index) {
+        add_diagnostic(grid.diagnostics, DiagnosticMessage::Severity::error,
+                       "invalid_contour_factors",
+                       "等值线因子索引无效。");
+        return grid;
+    }
+    if (fit.coefficients.empty() || fit.term_names.empty()) {
+        add_diagnostic(grid.diagnostics, DiagnosticMessage::Severity::error,
+                       "missing_factorial_coefficients",
+                       "没有可用于求值的析因系数。");
+        return grid;
+    }
+    add_diagnostic(grid.diagnostics, DiagnosticMessage::Severity::info,
+                   "factorial_contour_no_quadratic",
+                   "二水平模型无平方项，等值线为双线性面，不能表示曲率。");
+    std::vector<double> coded(design.factors.size(), 0.0);
+    if (hold_coded != nullptr && hold_coded->size() == design.factors.size()) {
+        coded = *hold_coded;
+    }
+    bool any_nonzero_hold = false;
+    for (std::size_t factor = 0; factor < design.factors.size(); ++factor) {
+        if (factor != x_factor_index && factor != y_factor_index) {
+            grid.held_factor_names.push_back(design.factors[factor].name);
+            grid.held_coded_values.push_back(coded[factor]);
+            if (std::abs(coded[factor]) > 1.0e-12) {
+                any_nonzero_hold = true;
+            }
+        }
+    }
+    if (!grid.held_factor_names.empty()) {
+        if (any_nonzero_hold) {
+            add_diagnostic(grid.diagnostics, DiagnosticMessage::Severity::info,
+                           "contour_factors_held_at_actual",
+                           "未作图的因子按指定实际单位 hold（已转换为编码）求值。");
+        } else {
+            add_diagnostic(grid.diagnostics, DiagnosticMessage::Severity::info,
+                           "contour_factors_held_at_zero",
+                           "未作图的因子在编码 0 处保持不变。");
+        }
+    }
+    const std::size_t steps = std::max<std::size_t>(2, resolution);
+    grid.x.resize(steps);
+    grid.y.resize(steps);
+    for (std::size_t index = 0; index < steps; ++index) {
+        const double fraction =
+            static_cast<double>(index) / static_cast<double>(steps - 1);
+        grid.x[index] = -1.0 + 2.0 * fraction;
+        grid.y[index] = -1.0 + 2.0 * fraction;
+    }
+    grid.z.assign(steps, std::vector<double>(steps, 0.0));
+    for (std::size_t row = 0; row < steps; ++row) {
+        for (std::size_t column = 0; column < steps; ++column) {
+            coded[x_factor_index] = grid.x[column];
+            coded[y_factor_index] = grid.y[row];
+            grid.z[row][column] = predict_coded_response(fit, design, coded);
+        }
+    }
+    return grid;
+}
+
+std::vector<double> resolve_contour_hold_coded(
+    const DoeFactorialDesign& design,
+    const std::size_t x_factor_index,
+    const std::size_t y_factor_index,
+    const std::map<std::string, std::string>& hold_actual,
+    std::vector<std::string>& held_actual_values,
+    std::vector<DiagnosticMessage>& diagnostics)
+{
+    std::vector<double> coded(design.factors.size(), 0.0);
+    held_actual_values.clear();
+    for (std::size_t factor = 0; factor < design.factors.size(); ++factor) {
+        if (factor == x_factor_index || factor == y_factor_index) {
+            continue;
+        }
+        const auto& name = design.factors[factor].name;
+        const auto found = hold_actual.find(name);
+        if (found == hold_actual.end() || found->second.empty()) {
+            held_actual_values.push_back("");
+            continue;
+        }
+        held_actual_values.push_back(found->second);
+        const auto& low = design.factors[factor].low_level;
+        const auto& high = design.factors[factor].high_level;
+        double low_value = 0.0;
+        double high_value = 0.0;
+        double actual_value = 0.0;
+        const bool low_ok = parse_finite_number(low, low_value);
+        const bool high_ok = parse_finite_number(high, high_value);
+        const bool actual_ok = parse_finite_number(found->second, actual_value);
+        if (low_ok && high_ok && actual_ok) {
+            if (!(std::abs(high_value - low_value) > 0.0)) {
+                add_diagnostic(diagnostics, DiagnosticMessage::Severity::warning,
+                               "invalid_hold_levels",
+                               "因子高低水平相等，hold 回退编码 0。");
+                coded[factor] = 0.0;
+                continue;
+            }
+            double coded_value = 2.0 * (actual_value - low_value) / (high_value - low_value) - 1.0;
+            if (coded_value < -1.0 || coded_value > 1.0) {
+                add_diagnostic(diagnostics, DiagnosticMessage::Severity::warning,
+                               "hold_out_of_range",
+                               "hold 实际值超出高低水平，已 clamp 到编码 [-1,1]。");
+                coded_value = std::clamp(coded_value, -1.0, 1.0);
+            }
+            coded[factor] = coded_value;
+            continue;
+        }
+        if (found->second == low) {
+            coded[factor] = -1.0;
+        } else if (found->second == high) {
+            coded[factor] = 1.0;
+        } else {
+            add_diagnostic(diagnostics, DiagnosticMessage::Severity::warning,
+                           "invalid_hold_value",
+                           "hold 实际值无法匹配高低水平，该因子回退编码 0。");
+            coded[factor] = 0.0;
+        }
+    }
+    for (const auto& [name, value] : hold_actual) {
+        if (value.empty()) {
+            continue;
+        }
+        bool known = false;
+        for (std::size_t factor = 0; factor < design.factors.size(); ++factor) {
+            if (design.factors[factor].name != name) {
+                continue;
+            }
+            known = true;
+            if (factor == x_factor_index || factor == y_factor_index) {
+                add_diagnostic(diagnostics, DiagnosticMessage::Severity::info,
+                               "hold_ignored_axis_factor",
+                               "轴因子的 hold 条目已忽略。");
+            }
+            break;
+        }
+        if (!known) {
+            add_diagnostic(diagnostics, DiagnosticMessage::Severity::warning,
+                           "unknown_hold_factor",
+                           "hold 中出现未知因子名，已忽略。");
+        }
+    }
+    return coded;
 }
 
 }  // namespace datalab::domain::statistics

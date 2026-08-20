@@ -14,6 +14,7 @@ private slots:
     void scatterChartHidesReferenceTab();
     void previewIsRightOfTabs();
     void layoutHasSafeMinimumAndScrollableSeries();
+    void seriesTableShowsSeriesLabels();
 };
 
 ChartModel make_model(ChartKind kind)
@@ -104,6 +105,24 @@ void GraphPropertiesDialogTest::layoutHasSafeMinimumAndScrollableSeries()
     QVERIFY(buttons->isVisible());
     QVERIFY(series->horizontalScrollBarPolicy() == Qt::ScrollBarAsNeeded);
     QVERIFY(series->verticalScrollBarPolicy() == Qt::ScrollBarAsNeeded);
+    dialog.close();
+}
+
+void GraphPropertiesDialogTest::seriesTableShowsSeriesLabels()
+{
+    ChartModel model = make_model(ChartKind::Scatter);
+    model.series[0].label = QStringLiteral("实际");
+    ChartSeries fitted;
+    fitted.label = QStringLiteral("拟合");
+    model.series.push_back(fitted);
+    GraphPropertiesDialog dialog(model);
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    const auto* series = dialog.findChild<QTableWidget*>(QStringLiteral("series_table"));
+    QVERIFY(series != nullptr);
+    QCOMPARE(series->rowCount(), 2);
+    QCOMPARE(series->item(0, 1)->text(), QStringLiteral("实际"));
+    QCOMPARE(series->item(1, 1)->text(), QStringLiteral("拟合"));
     dialog.close();
 }
 

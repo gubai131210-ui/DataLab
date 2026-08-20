@@ -28,13 +28,70 @@ double critical_value(double confidence_level)
     return standard_normal_quantile(0.5 + confidence_level / 2.0);
 }
 
+std::optional<std::vector<std::string>> ordered_numeric_categories(
+    const std::map<std::string, std::size_t>& left_counts,
+    const std::map<std::string, std::size_t>& right_counts)
+{
+    std::map<std::string, std::size_t> all = left_counts;
+    for (const auto& [label, count] : right_counts) {
+        all[label] += count;
+    }
+    std::vector<std::pair<double, std::string>> ranked;
+    ranked.reserve(all.size());
+    for (const auto& [label, count] : all) {
+        (void)count;
+        char* end = nullptr;
+        const double value = std::strtod(label.c_str(), &end);
+        if (end == label.c_str() || end == nullptr || *end != '\0'
+            || !std::isfinite(value)) {
+            return std::nullopt;
+        }
+        ranked.emplace_back(value, label);
+    }
+    std::sort(ranked.begin(), ranked.end(),
+              [](const auto& a, const auto& b) {
+                  if (a.first == b.first) {
+                      return a.second < b.second;
+                  }
+                  return a.first < b.first;
+              });
+    std::vector<std::string> categories;
+    categories.reserve(ranked.size());
+    for (const auto& entry : ranked) {
+        categories.push_back(entry.second);
+    }
+    return categories;
+}
+
+double kappa_weight(
+    const std::string& scheme,
+    const std::size_t row,
+    const std::size_t column,
+    const std::size_t category_count)
+{
+    if (category_count <= 1) {
+        return row == column ? 1.0 : 0.0;
+    }
+    const double distance = std::abs(static_cast<double>(row)
+                                     - static_cast<double>(column));
+    const double denom = static_cast<double>(category_count - 1);
+    if (scheme == "quadratic") {
+        return 1.0 - (distance / denom) * (distance / denom);
+    }
+    return 1.0 - distance / denom;
+}
+
 AgreementEstimate estimate(const std::vector<std::pair<std::string, std::string>>& pairs,
-                           double confidence_level)
+                           double confidence_level,
+                           const std::string& weight_scheme,
+                           std::vector<DiagnosticMessage>* diagnostics)
 {
     AgreementEstimate result;
     result.confidence_level = confidence_level;
+    result.method = "cohen_unweighted";
     std::map<std::string, std::size_t> left_counts;
     std::map<std::string, std::size_t> right_counts;
+    std::map<std::pair<std::string, std::string>, std::size_t> joint;
     std::size_t observed_count = 0;
     for (const auto& [left, right] : pairs) {
         if (left.empty() || right.empty()) {
@@ -43,6 +100,7 @@ AgreementEstimate estimate(const std::vector<std::pair<std::string, std::string>
         ++result.valid_count;
         ++left_counts[left];
         ++right_counts[right];
+        ++joint[{left, right}];
         if (left == right) {
             ++observed_count;
         }
@@ -52,6 +110,66 @@ AgreementEstimate estimate(const std::vector<std::pair<std::string, std::string>
         return result;
     }
     result.agreement_percent = 100.0 * observed_count / result.valid_count;
+
+    const bool want_weighted = weight_scheme == "linear"
+        || weight_scheme == "quadratic";
+    if (want_weighted) {
+        const auto categories = ordered_numeric_categories(left_counts, right_counts);
+        if (!categories.has_value() || categories->size() < 2) {
+            if (diagnostics != nullptr) {
+                add_diagnostic(*diagnostics, DiagnosticMessage::Severity::warning,
+                               "ordinal_ratings_unranked",
+                               "加权 Kappa 需要可排序的数值评级；已回退未加权 Cohen。");
+            }
+        } else {
+            const std::size_t k = categories->size();
+            std::map<std::string, std::size_t> index;
+            for (std::size_t i = 0; i < k; ++i) {
+                index[(*categories)[i]] = i;
+            }
+            const double n = static_cast<double>(result.valid_count);
+            double p_o = 0.0;
+            double p_e = 0.0;
+            for (std::size_t i = 0; i < k; ++i) {
+                for (std::size_t j = 0; j < k; ++j) {
+                    const double w = kappa_weight(weight_scheme, i, j, k);
+                    const auto joint_it = joint.find(
+                        {(*categories)[i], (*categories)[j]});
+                    const double p_ij = joint_it == joint.end()
+                        ? 0.0
+                        : static_cast<double>(joint_it->second) / n;
+                    const double p_i = static_cast<double>(
+                        left_counts[(*categories)[i]]) / n;
+                    const double p_j = static_cast<double>(
+                        right_counts[(*categories)[j]]) / n;
+                    p_o += w * p_ij;
+                    p_e += w * p_i * p_j;
+                }
+            }
+            result.expected_agreement = p_e;
+            result.method = weight_scheme == "quadratic"
+                ? "cohen_quadratic" : "cohen_linear";
+            if (std::abs(1.0 - p_e) <= 1e-12) {
+                result.identifiable = false;
+                result.kappa = 0.0;
+                result.kappa_standard_error = 0.0;
+                result.kappa_ci_low = 0.0;
+                result.kappa_ci_high = 0.0;
+                return result;
+            }
+            result.kappa = (p_o - p_e) / (1.0 - p_e);
+            const double variance = p_o * (1.0 - p_o)
+                / (n * std::pow(1.0 - p_e, 2.0));
+            result.kappa_standard_error = std::sqrt(std::max(0.0, variance));
+            const double z = critical_value(confidence_level);
+            const double margin = std::isfinite(z)
+                ? z * result.kappa_standard_error : 0.0;
+            result.kappa_ci_low = std::max(-1.0, result.kappa - margin);
+            result.kappa_ci_high = std::min(1.0, result.kappa + margin);
+            return result;
+        }
+    }
+
     double expected = 0.0;
     for (const auto& [label, count] : left_counts) {
         const auto right = right_counts.find(label);
@@ -637,6 +755,93 @@ void append_kendall(
     }
 }
 
+std::optional<std::string> unique_mode(const std::vector<std::string>& ratings)
+{
+    std::map<std::string, std::size_t> counts;
+    for (const std::string& rating : ratings) {
+        if (!rating.empty()) {
+            ++counts[rating];
+        }
+    }
+    if (counts.empty()) {
+        return std::nullopt;
+    }
+    std::size_t best = 0;
+    for (const auto& [label, count] : counts) {
+        best = std::max(best, count);
+    }
+    std::optional<std::string> mode;
+    for (const auto& [label, count] : counts) {
+        if (count != best) {
+            continue;
+        }
+        if (mode.has_value()) {
+            return std::nullopt;
+        }
+        mode = label;
+    }
+    return mode;
+}
+
+void append_agreement_rate_matrix(
+    AttributeAgreementResult& result,
+    const std::vector<std::vector<std::vector<std::string>>>& matrix,
+    const std::vector<std::string>& item_names,
+    const std::vector<std::string>& evaluator_names,
+    const std::vector<std::string>& standard_by_item,
+    bool has_standard)
+{
+    result.agreement_item_labels = item_names;
+    result.agreement_evaluator_labels = evaluator_names;
+    result.agreement_percent_matrix.assign(
+        evaluator_names.size(),
+        std::vector<double>(item_names.size(),
+                            std::numeric_limits<double>::quiet_NaN()));
+    bool ambiguous_mode = false;
+    for (std::size_t item = 0; item < item_names.size(); ++item) {
+        std::optional<std::string> reference;
+        if (has_standard && !standard_by_item[item].empty()) {
+            reference = standard_by_item[item];
+        } else if (!has_standard) {
+            std::vector<std::string> pooled;
+            for (std::size_t evaluator = 0; evaluator < evaluator_names.size();
+                 ++evaluator) {
+                pooled.insert(pooled.end(),
+                              matrix[item][evaluator].cbegin(),
+                              matrix[item][evaluator].cend());
+            }
+            reference = unique_mode(pooled);
+            if (!reference.has_value()) {
+                ambiguous_mode = true;
+            }
+        }
+        for (std::size_t evaluator = 0; evaluator < evaluator_names.size();
+             ++evaluator) {
+            std::size_t valid = 0;
+            std::size_t matches = 0;
+            for (const std::string& rating : matrix[item][evaluator]) {
+                if (rating.empty()) {
+                    continue;
+                }
+                ++valid;
+                if (reference.has_value() && rating == *reference) {
+                    ++matches;
+                }
+            }
+            if (valid == 0 || !reference.has_value()) {
+                continue;
+            }
+            result.agreement_percent_matrix[evaluator][item] =
+                100.0 * static_cast<double>(matches) / static_cast<double>(valid);
+        }
+    }
+    if (ambiguous_mode) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "ambiguous_part_mode",
+                       "部分零件评级众数平票，对应评估者×零件一致率未计算。");
+    }
+}
+
 }  // namespace
 
 AttributeAgreementResult attribute_agreement(
@@ -645,11 +850,21 @@ AttributeAgreementResult attribute_agreement(
     const std::vector<std::string>& evaluators,
     const std::vector<std::string>& standards,
     double confidence_level,
-    bool ratings_are_ordinal)
+    bool ratings_are_ordinal,
+    const std::string& kappa_weight_scheme)
 {
     AttributeAgreementResult result;
     result.confidence_level = confidence_level;
     result.ratings_are_ordinal = ratings_are_ordinal;
+    std::string weight_scheme = kappa_weight_scheme.empty()
+        ? "none" : kappa_weight_scheme;
+    if (weight_scheme != "none" && weight_scheme != "linear"
+        && weight_scheme != "quadratic") {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "unknown_kappa_weight_scheme",
+                       "未知的 kappa_weight_scheme，已回退为 none。");
+        weight_scheme = "none";
+    }
     if (ratings.empty() || ratings.size() != items.size()
         || ratings.size() != evaluators.size() || confidence_level <= 0.0
         || confidence_level >= 1.0
@@ -763,7 +978,7 @@ AttributeAgreementResult attribute_agreement(
         }
         AgreementEstimate within_estimate = (uniform_trials && trial_count >= 3)
             ? fleiss_from_item_ratings(item_trials, confidence_level)
-            : estimate(pairs, confidence_level);
+            : estimate(pairs, confidence_level, weight_scheme, &result.diagnostics);
         result.within_evaluator.push_back(
             {evaluator_names[evaluator], std::move(within_estimate)});
         if (!standards.empty()) {
@@ -775,7 +990,8 @@ AttributeAgreementResult attribute_agreement(
             }
             result.against_standard.push_back(
                 {evaluator_names[evaluator],
-                 estimate(standard_pairs, confidence_level)});
+                 estimate(standard_pairs, confidence_level, weight_scheme,
+                          &result.diagnostics)});
         }
     }
     for (std::size_t first = 0; first < result.evaluator_count; ++first) {
@@ -795,7 +1011,8 @@ AttributeAgreementResult attribute_agreement(
             }
             result.between_evaluator.push_back(
                 {evaluator_names[first], evaluator_names[second],
-                 estimate(pairs, confidence_level)});
+                 estimate(pairs, confidence_level, weight_scheme,
+                          &result.diagnostics)});
         }
     }
     if (result.evaluator_count >= 3) {
@@ -819,6 +1036,11 @@ AttributeAgreementResult attribute_agreement(
         }
         result.overall = fleiss_from_item_ratings(item_ratings, confidence_level);
         result.overall_available = result.overall.valid_count > 0;
+        if (weight_scheme != "none") {
+            add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                           "fleiss_remains_unweighted",
+                           "Fleiss overall Kappa 保持未加权；linear/quadratic 仅用于两两 Cohen。");
+        }
     }
     auto mark_unidentifiable = [&](const AgreementEstimate& estimate) {
         if (!estimate.identifiable) {
@@ -839,6 +1061,9 @@ AttributeAgreementResult attribute_agreement(
     if (result.overall_available) {
         mark_unidentifiable(result.overall);
     }
+    append_agreement_rate_matrix(
+        result, matrix, item_names, evaluator_names, standard_by_item,
+        !standards.empty());
     if (ratings_are_ordinal) {
         append_kendall(result, matrix, evaluator_names, standard_by_item,
                        !standards.empty());

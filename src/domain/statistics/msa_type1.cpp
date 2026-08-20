@@ -89,7 +89,9 @@ MsaType1Result msa_type1(const std::vector<double>& measurements,
 
 BiasLinearityResult bias_linearity(const std::vector<double>& references,
                                    const std::vector<double>& measurements,
-                                   double confidence_level)
+                                   double confidence_level,
+                                   const std::vector<std::size_t>& source_rows,
+                                   std::optional<double> process_variation)
 {
     BiasLinearityResult r;
     if (references.size() < 3 || references.size() != measurements.size()
@@ -121,6 +123,8 @@ BiasLinearityResult bias_linearity(const std::vector<double>& references,
     }
     r.slope = sxy / sxx;
     r.intercept = ybar - r.slope * xbar;
+    r.reference_mean = xbar;
+    r.sum_of_squares_x = sxx;
     double ss_total = 0.0;
     double ss_error = 0.0;
     for (std::size_t i = 0; i < references.size(); ++i) {
@@ -130,28 +134,124 @@ BiasLinearityResult bias_linearity(const std::vector<double>& references,
     }
     r.r_squared = ss_total > 0.0 ? 1.0 - ss_error / ss_total : 0.0;
     const double degrees_of_freedom = static_cast<double>(references.size() - 2);
+    r.residual_degrees_of_freedom = degrees_of_freedom;
     if (degrees_of_freedom > 0.0) {
         const double mean_square_error = ss_error / degrees_of_freedom;
+        r.mean_square_error = mean_square_error;
         r.slope_standard_error = std::sqrt(mean_square_error / sxx);
         const double critical = student_t_quantile(
             0.5 + confidence_level / 2.0, degrees_of_freedom);
         r.slope_ci_lower = r.slope - critical * r.slope_standard_error;
         r.slope_ci_upper = r.slope + critical * r.slope_standard_error;
+        if (r.slope_standard_error > 0.0) {
+            const double t_statistic = r.slope / r.slope_standard_error;
+            r.slope_p_value = std::clamp(
+                2.0 * (1.0 - student_t_cdf(
+                    std::abs(t_statistic), degrees_of_freedom)),
+                0.0, 1.0);
+        }
+        if (mean_square_error > 0.0 && std::isfinite(critical)) {
+            const auto [x_min_it, x_max_it] = std::minmax_element(
+                references.begin(), references.end());
+            double x_min = *x_min_it;
+            double x_max = *x_max_it;
+            if (!(x_max > x_min)) {
+                x_min -= 1.0;
+                x_max += 1.0;
+            }
+            const double sigma = std::sqrt(mean_square_error);
+            const double n = static_cast<double>(references.size());
+            constexpr std::size_t grid_count = 40;
+            r.mean_band.reserve(grid_count);
+            for (std::size_t index = 0; index < grid_count; ++index) {
+                const double fraction = static_cast<double>(index)
+                    / static_cast<double>(grid_count - 1);
+                const double x = x_min + fraction * (x_max - x_min);
+                const double fitted = r.intercept + r.slope * x;
+                const double se = sigma * std::sqrt(
+                    1.0 / n + (x - xbar) * (x - xbar) / sxx);
+                BiasLinearityBandPoint point;
+                point.x = x;
+                point.fitted = fitted;
+                point.ci_lower = fitted - critical * se;
+                point.ci_upper = fitted + critical * se;
+                r.mean_band.push_back(point);
+            }
+        }
+    }
+    if (degrees_of_freedom > 0.0 && r.mean_square_error > 0.0) {
+        r.residual_s = std::sqrt(r.mean_square_error);
+        const double n = static_cast<double>(references.size());
+        r.intercept_standard_error = std::sqrt(
+            r.mean_square_error * (1.0 / n + xbar * xbar / sxx));
+        if (r.intercept_standard_error > 0.0) {
+            const double intercept_t = r.intercept / *r.intercept_standard_error;
+            r.intercept_p_value = std::clamp(
+                2.0 * (1.0 - student_t_cdf(
+                    std::abs(intercept_t), degrees_of_freedom)),
+                0.0, 1.0);
+        }
     }
     const auto [low, high] = std::minmax_element(references.begin(), references.end());
     r.bias_at_low = r.intercept + r.slope * *low;
     r.bias_at_high = r.intercept + r.slope * *high;
-    std::map<double, BiasLinearityLevel> by_reference;
+    std::map<double, std::vector<double>> biases_by_reference;
+    std::map<double, std::vector<std::size_t>> rows_by_reference;
     for (std::size_t i = 0; i < references.size(); ++i) {
-        BiasLinearityLevel& level = by_reference[references[i]];
-        level.reference = references[i];
-        ++level.valid_count;
-        level.bias += measurements[i] - references[i];
-        level.source_rows.push_back(i);
+        const double ref = references[i];
+        biases_by_reference[ref].push_back(measurements[i] - ref);
+        const std::size_t row = i < source_rows.size() ? source_rows[i] : i;
+        rows_by_reference[ref].push_back(row);
+        r.observation_source_rows.push_back(row);
     }
-    for (auto& [_, level] : by_reference) {
-        level.bias /= static_cast<double>(level.valid_count);
+    for (const auto& [ref, level_biases] : biases_by_reference) {
+        BiasLinearityLevel level;
+        level.reference = ref;
+        level.valid_count = level_biases.size();
+        level.bias = mean(level_biases);
+        level.source_rows = rows_by_reference[ref];
+        if (level.valid_count >= 2) {
+            const double level_std = std::sqrt(
+                std::max(0.0, variance(level_biases, level.bias)));
+            if (level_std > 0.0) {
+                const double level_df = static_cast<double>(level.valid_count - 1);
+                level.standard_error = level_std
+                    / std::sqrt(static_cast<double>(level.valid_count));
+                level.t_statistic = level.bias / *level.standard_error;
+                level.p_value = std::clamp(
+                    2.0 * (1.0 - student_t_cdf(
+                        std::abs(*level.t_statistic), level_df)),
+                    0.0, 1.0);
+            }
+        }
         r.levels.push_back(level);
+    }
+    r.average_bias = ybar;
+    if (references.size() >= 2) {
+        const double overall_std = std::sqrt(std::max(0.0, variance(bias, ybar)));
+        if (overall_std > 0.0) {
+            const double overall_df = static_cast<double>(references.size() - 1);
+            const double overall_se = overall_std
+                / std::sqrt(static_cast<double>(references.size()));
+            r.average_bias_t = ybar / overall_se;
+            r.average_bias_p = std::clamp(
+                2.0 * (1.0 - student_t_cdf(
+                    std::abs(*r.average_bias_t), overall_df)),
+                0.0, 1.0);
+        }
+    }
+    if (process_variation.has_value()) {
+        if (!std::isfinite(*process_variation) || *process_variation <= 0.0) {
+            error(r.diagnostics, "invalid_process_variation",
+                  "过程变差必须为有限正数（6×过程标准差）。");
+        } else {
+            r.process_variation_used = *process_variation;
+            r.linearity = std::abs(r.slope) * *process_variation;
+            r.percent_linearity = std::abs(r.slope) * 100.0;
+            for (auto& level : r.levels) {
+                level.percent_bias = level.bias / *process_variation * 100.0;
+            }
+        }
     }
     r.rules.push_back({
         "bias_linearity", "not_triggered",

@@ -30,7 +30,18 @@ struct BiasLinearityLevel {
     double reference = 0.0;
     std::size_t valid_count = 0;
     double bias = 0.0;
+    std::optional<double> percent_bias;
+    std::optional<double> standard_error;
+    std::optional<double> t_statistic;
+    std::optional<double> p_value;
     std::vector<std::size_t> source_rows;
+};
+
+struct BiasLinearityBandPoint {
+    double x = 0.0;
+    double fitted = 0.0;
+    double ci_lower = 0.0;
+    double ci_upper = 0.0;
 };
 
 struct BiasLinearityResult {
@@ -42,7 +53,23 @@ struct BiasLinearityResult {
     double r_squared = 0.0;
     double bias_at_low = 0.0;
     double bias_at_high = 0.0;
+    double reference_mean = 0.0;
+    double sum_of_squares_x = 0.0;
+    double mean_square_error = 0.0;
+    double residual_degrees_of_freedom = 0.0;
+    std::optional<double> residual_s;
+    std::optional<double> intercept_standard_error;
+    std::optional<double> intercept_p_value;
+    double average_bias = 0.0;
+    std::optional<double> average_bias_t;
+    std::optional<double> average_bias_p;
+    std::optional<double> linearity;
+    std::optional<double> percent_linearity;
+    std::optional<double> slope_p_value;
+    std::optional<double> process_variation_used;
     std::vector<BiasLinearityLevel> levels;
+    std::vector<std::size_t> observation_source_rows;
+    std::vector<BiasLinearityBandPoint> mean_band;
     std::vector<RuleEvidence> rules;
     std::vector<DiagnosticMessage> diagnostics;
 };
@@ -68,7 +95,9 @@ MsaType1Result msa_type1(const std::vector<double>& measurements,
                          double confidence_level = 0.95);
 BiasLinearityResult bias_linearity(const std::vector<double>& references,
                                    const std::vector<double>& measurements,
-                                   double confidence_level = 0.95);
+                                   double confidence_level = 0.95,
+                                   const std::vector<std::size_t>& source_rows = {},
+                                   std::optional<double> process_variation = std::nullopt);
 StabilityResult gage_stability(const std::vector<double>& measurements);
 
 }  // namespace datalab::domain::statistics

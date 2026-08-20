@@ -190,7 +190,18 @@ MRz=[.6667,1.3333,.6667], SigmaZ≈0.7876
 underdispersion 的收紧效果。真实实现应保留 `SigmaZ`、每个 z、MR 和
 截断前后控制限，便于复核。
 
-来源：
+### 5.1 阶段列与特殊原因测试
+
+逐子组表输出阶段列；`phase_labels` 在 `mark_special_cause_tests` 之前
+写入 `ControlChartResult`，Tests 2–8 的连续点窗口**不跨阶段**（与 I-MR /
+Xbar 及 ADR 0007 一致）。参数表在有历史中心线 / 历史 Sigma Z 时标注
+「历史参数」；`SpcFacts.sigma_z` 与 Test 1 超限点数供解读层只读。
+
+来源（访问日期 2026-08-20）：
+
+- 同上 Laney P′/U′ methods；Minitab tests for special causes（阶段打断窗口）
+- [`docs/adr/0007-spc-point-result-contract.md`](../adr/0007-spc-point-result-contract.md)
+
 
 - Minitab，Laney P′ methods and formulas：
   https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/attributes-charts/laney-p-chart/methods-and-formulas/methods-and-formulas/
@@ -355,4 +366,58 @@ Nelson 1–8。实现和报告中应明确“使用的规则集合”，不能�
 LCL/UCL、估计方法、阶段、有效样本量、缺失/断点、启用测试、每项失败点集。
 边界值（恰好等于 1σ/2σ/3σ）、零下限、可变子组大小、零计数、缺失值、
 历史参数、Laney `SigmaZ`、EWMA 初始点、CUSUM FIR 都应有独立测试。
+
+### 9.1 Xbar-R/S 逐子组表（对齐 I-MR / Laney）
+
+服务层表名：`Xbar-R 逐子组统计` / `Xbar-S 逐子组统计`。
+
+| 列 | 含义 |
+|---|---|
+| 原始行 | 子组首观测的 `source_row + 1`（1-based 显示） |
+| 子组 | 子组标签 |
+| 阶段 | 可选阶段列；阶段切换打断 Test 2–8 窗口（Xbar 与 R/S 均重算） |
+| N | 子组大小 |
+| Xbar / R 或 S | 双图绘图值 |
+| Xbar CL/LCL/UCL | 子组均值控制限 |
+| R/S CL/LCL/UCL | 极差或标准差控制限 |
+| 触发测试 | 合并格式：`Xbar: Test n,...; R: Test m,...`（仅一侧失败时只列该侧） |
+| 最小测试 | 两侧 `primary_test_by_point` 中较小非零值；仅 R/S 失败时形如 `R: Test 1` |
+
+`SpcFacts`：`sigma_within = σ(within)`；`out_of_control_count` = Xbar 或 R/S 任一侧 Test 1 失败的子组并集计数。
+
+参考：Minitab [Xbar-R methods](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-subgroups/xbar-r-chart/methods-and-formulas/methods-and-formulas/)、[R chart tests](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-subgroups/r-chart/perform-the-analysis/r-options/select-tests-for-special-causes/)（访问日期 2026-08-20）。
+
+### 9.2 EWMA 逐点表
+
+表名：`EWMA 逐点统计`。参数表：`EWMA 参数`（N、N*、λ、控制限倍数、μ、σ、参数来源、Test 1 超限点数、启用测试）。
+
+| 列 | 含义 |
+|---|---|
+| 原始行 | `source_row + 1` |
+| 观测值 | 原始测量值（非 EWMA 平滑值） |
+| EWMA | 平滑统计量 Z_t |
+| σ | 逐点标准误（时变） |
+| CL / LCL / UCL | 逐点控制限 |
+| 触发测试 | 仅 Test 1 |
+| 最小测试 | `primary_test_by_point` |
+
+`SpcFacts`：`sigma_within` = 过程 σ；`out_of_control_count` = Test 1 点数。EWMA 只开放 Test 1（Minitab 同口径）。
+
+参考：Minitab [EWMA methods and formulas](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/time-weighted-charts/ewma-chart/methods-and-formulas/methods-and-formulas/)（访问日期 2026-08-20）。
+
+### 9.3 CUSUM 逐点表与信号表
+
+表名：`CUSUM 逐点统计`；参数表：`CUSUM 参数`；信号表：`CUSUM 信号`（**全部**信号点，非仅首次）。
+
+| 逐点列 | 含义 |
+|---|---|
+| 原始行 | `source_row + 1` |
+| 观测值 | 原始测量值 |
+| C+ | 上侧累计和 |
+| C− | 下侧累计和（展示为负值） |
+| 信号 | 上侧 / 下侧 / 上/下 / 无 |
+
+CUSUM 不套用 Tests 1–8。`SpcFacts.out_of_control_count` = 上/下侧信号点去重计数。
+
+参考：Minitab [CUSUM methods and formulas](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/time-weighted-charts/cusum-chart/methods-and-formulas/methods-and-formulas/)（访问日期 2026-08-20）。
 

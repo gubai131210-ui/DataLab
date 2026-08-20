@@ -27,7 +27,8 @@ void WorksheetModelTest::editsAndReplacesCells()
     datalab::domain::DataTable replacement = model.table();
     replacement.rows[1][0].clear();
     model.replace_table(replacement);
-    QCOMPARE(model.data(model.index(1, 0), Qt::DisplayRole).toString(), QStringLiteral("*"));
+    QCOMPARE(model.data(model.index(1, 0), Qt::DisplayRole).toString(), QString());
+    QCOMPARE(model.data(model.index(1, 1), Qt::DisplayRole).toString(), QStringLiteral("*"));
 }
 
 void WorksheetModelTest::clearsCellsBeyondCurrentRows()
@@ -43,7 +44,7 @@ void WorksheetModelTest::clearsCellsBeyondCurrentRows()
     indexes.push_back(model.index(5, 2));
     indexes.push_back(model.index(5, 3));
     QVERIFY(model.clear_cells(indexes));
-    QCOMPARE(model.data(model.index(5, 2), Qt::DisplayRole).toString(), QStringLiteral("*"));
+    QCOMPARE(model.data(model.index(5, 2), Qt::DisplayRole).toString(), QString());
     QVERIFY(model.table().rows.size() >= 6);
     QVERIFY(model.table().columns.size() >= 4);
     QCOMPARE(model.table().rows[5][2], std::string{});
