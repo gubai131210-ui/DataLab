@@ -472,4 +472,47 @@ ui → application / infrastructure / reporting → domain
 
 ## 7. 可贴给新对话的短提示词
 
-见仓库外用户粘贴稿；仓库内权威范围以本节之上第 5、6 节为准。新对话应先 SwitchMode 到 **plan**，研究完成后再 agent 实现。
+```text
+## 项目
+DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
+分层：ui → application / infrastructure / reporting → domain。
+新/深化算法必须闭环：research md → domain → *Facts → AnalysisService → analysis_commands → interpretation → output_serialization → tests（# source: formula_reference）→ algorithm_help.json → acceptance。
+
+## 必读（按序）
+1. docs/algorithm-session-brief.md（尤其 §5g 已完成、§5b/§6 硬约束；禁止重做 §4–§5g）
+2. docs/research/deferred-capability-agreement.md
+3. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
+4. docs/quality-algorithms-acceptance.md
+5. docs/algorithm-wiring-index.md、docs/statistical-methodology.md、CONTEXT.md
+6. ADR 0001 / 0003 / 0004；session-handoff 只读踩坑，不当任务
+
+## Skills
+- research（公式：Minitab methods + NIST/教材，URL+访问日期；对照表形不填未导出数）
+- codebase-design（加深现有 seam，不新架构）
+- tdd + cpp-coding
+- 计划里必须写「禁止偷懒做 XXX」清单
+
+## 本轮目标（一次性多做，但每项竖切闭环）
+从 gap-matrix / deferred 里选 3～4 项「深化已有 + 高杠杆新缺口」，对照 Minitab 输出表形与优势学习点。
+实现前每项先写 docs/research/p1_*.md。
+默认候选（计划里锁定二选一/明确不做）：
+- Friedman 后多重比较（Nemenyi 或复用 Steel–Dwass 近似接 friedman；勿重做 Kruskal Dunn/SD）
+- McNemar（配对 2×2 属性；complete-case 两二元列；勿碰 chi_square / chi_square_gof 边界除非明确包含）
+- 符号检验 Sign test（单样本/配对；接 Wilcoxon 缝；勿重做 Wilcoxon 本体）
+- Mood 中位数检验 或 回归 Durbin–Watson 临界/判定（二选一作第 4 项；深化已有 AD/残差或 KW 族）
+你研究后可调整优先级，但必须在计划里锁定选型与「明确不做」。
+
+## 硬约束
+- complete-case / align_complete_rows / parse_numeric_cell / source_row / dataset_id；导入 A→B 旧输出失效
+- 解释只读 Facts，不写合格/已证明等价或一致/已证明等方差/样本量足够
+- 禁止假 Minitab golden；禁止碰 chi_square 与 chi_square_gof 边界除非本轮明确包含
+- 禁止重做：§5a–§5g 已完成项（含 Wilson、Agresti–Coull 单/两比例、Bonett、Bartlett、DOE hold、Tukey 表形/Grouping、比例 z-TOST、配对 TOST、泊松率比/功效、Weighted Kappa、均值比 TOST±对数、Newcombe–Wilson、Kruskal Dunn/Steel–Dwass、Multi-Vari 4 因子、Friedman 主检验、帮助中心 UI、图表复制清除等）
+- 待修改.md 是给人看的旧笔记，不当任务
+- 中文路径：agent 不跑 cmake/ctest；改完列 Qt Creator 手工验收项
+- 帮助：改 generate_algorithm_help_catalog.py + help_catalog_families.py 再生成 JSON，正文禁止「见 md」
+
+请先 SwitchMode 到 plan，输出详细计划（含文件级清单、风险、手工验收、禁止偷懒），等我确认后再实现。
+上一轮四项（log TOST / 两比例 AC / Steel–Dwass / Friedman）我都验证完了。
+```
+
+仓库内权威范围以本节之上第 5、6 节为准。新对话应先 SwitchMode 到 **plan**，研究完成后再 agent 实现。
