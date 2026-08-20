@@ -437,9 +437,26 @@ ui → application / infrastructure / reporting → domain
 
 公式：[`p1_two_sample_mean_ratio_tost.md`](research/p1_two_sample_mean_ratio_tost.md)、[`p1_two_proportion_newcombe_wilson.md`](research/p1_two_proportion_newcombe_wilson.md)、[`p1_kruskal_dunn_posthoc.md`](research/p1_kruskal_dunn_posthoc.md)、[`p1_multi_vari_fourth_factor.md`](research/p1_multi_vari_fourth_factor.md)
 
+## 5g. 2026-08-20 算法深化（本轮四项竖切）✅
+
+1. **均值比 TOST 对数变换**
+   - `two_sample_equivalence_ratio` + `transform=log`；几何均值比；`ci_method=tost_ratio_log_1_minus_alpha`
+   - 默认 `none` 非对数 Fieller 不变；全正值门控
+2. **两比例 Agresti–Coull 差值 CI**
+   - `two_proportions` method=`agresti_coull`；`ci_method=agresti_coull_diff`
+   - 检验 Z 仍 unpooled Wald；默认/wilson 不变；不做 Blaker
+3. **Kruskal 后 Steel–Dwass（近似）**
+   - `posthoc=steel_dwass`；成对 Wilcoxon + 渐近 TK 临界；Grouping (Steel-Dwass)
+   - 默认 `dunn` 不变
+4. **Friedman 检验**
+   - 命令 `friedman`；响应+处理+区组；complete-case / `source_row`；平衡设计；结修正 χ²
+   - 不做后比较
+
+公式：[`p1_tost_ratio_log_transform.md`](research/p1_tost_ratio_log_transform.md)、[`p1_two_proportion_agresti_coull_ci.md`](research/p1_two_proportion_agresti_coull_ci.md)、[`p1_kruskal_steel_dwass.md`](research/p1_kruskal_steel_dwass.md)、[`p1_friedman_test.md`](research/p1_friedman_test.md)
+
 ## 5b. 以后再计划的项（不要从本节当成本轮任务）
 
-不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f 已完成项。帮助中心已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、TOST 对数、Kalman/TSERIES、可旋转 3D、Steel–Dwass、Jackson–Mudholkar 解析限、重构阶段 5/6）。
+不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g 已完成项。帮助中心已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、重构阶段 5/6）。
 
 ## 6. 硬约束
 
@@ -451,7 +468,7 @@ ui → application / infrastructure / reporting → domain
 - 源码 UTF-8 无 BOM。
 - 回复格式：切入点理解、任务、影响文件、测试策略、实现说明；改完列 Qt Creator 手工验收项。
 
-本轮不做（见 `deferred-capability-agreement.md`）：Blaker；TOST 对数变换；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Steel–Dwass；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST / 两比例 Newcombe–Wilson / Kruskal Dunn / Multi-Vari 第 4 因子。
+本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi 独立命令 / Friedman 后比较；精确 studentized-range；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman。
 
 ## 7. 可贴给新对话的短提示词
 

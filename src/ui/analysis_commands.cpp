@@ -804,6 +804,7 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("lower"), QStringLiteral("比值等价下限"), QStringLiteral("例如 0.8")},
              {QStringLiteral("upper"), QStringLiteral("比值等价上限"), QStringLiteral("例如 1.25")},
              {QStringLiteral("variance"), QStringLiteral("方差方法"), QStringLiteral("welch 或 pooled")},
+             {QStringLiteral("transform"), QStringLiteral("变换"), QStringLiteral("none / log")},
              {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const std::vector<int> columns = d.role_indices("variables");
@@ -826,6 +827,10 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.variance_method = normalize(d.line_text("variance"));
                 if (c.inference.variance_method != "pooled") {
                     c.inference.variance_method = "welch";
+                }
+                c.inference.equivalence_ratio_transform = normalize(d.line_text("transform"));
+                if (c.inference.equivalence_ratio_transform != "log") {
+                    c.inference.equivalence_ratio_transform = "none";
                 }
                 c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 if (c.inference.confidence_level > 1.0) {
@@ -1056,7 +1061,7 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("second_trials"), QStringLiteral("第二组试验数"), false, false}},
             {{QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"), QStringLiteral("95")},
              {QStringLiteral("method"), QStringLiteral("方法"),
-              QStringLiteral("normal / wilson")},
+              QStringLiteral("normal / wilson / agresti_coull")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
@@ -1079,7 +1084,8 @@ const std::vector<AnalysisCommand>& all()
                     c.inference.confidence_level = *confidence > 1.0 ? *confidence / 100.0 : *confidence;
                 }
                 c.inference.proportion_method = normalize(d.line_text("method"));
-                if (c.inference.proportion_method != "wilson") {
+                if (c.inference.proportion_method != "wilson"
+                    && c.inference.proportion_method != "agresti_coull") {
                     c.inference.proportion_method = "normal";
                 }
                 c.inference.alternative = normalize(d.line_text("alternative"));
@@ -1191,7 +1197,8 @@ const std::vector<AnalysisCommand>& all()
             false, true,
             {{QStringLiteral("response"), QStringLiteral("测量值"), false, false},
              {QStringLiteral("factor"), QStringLiteral("分组列"), false, false}},
-            {},
+            {{QStringLiteral("posthoc"), QStringLiteral("多重比较"),
+              QStringLiteral("dunn / steel_dwass")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const int response = d.first_role_index("response");
                 const int factor = d.first_role_index("factor");
@@ -1203,9 +1210,40 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "kruskal_wallis";
                 c.variable_columns = {static_cast<std::size_t>(response)};
                 c.by_column = static_cast<std::size_t>(factor);
+                c.inference.nonparametric_posthoc = normalize(d.line_text("posthoc"));
+                if (c.inference.nonparametric_posthoc != "steel_dwass") {
+                    c.inference.nonparametric_posthoc = "dunn";
+                }
                 return {};
             },
             AnalysisService::kruskal_wallis},
+        {
+            QStringLiteral("friedman"),
+            QStringLiteral("Friedman 检验"),
+            QStringLiteral("Friedman 检验"),
+            QStringLiteral("统计"),
+            QStringLiteral("friedman"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), false, false},
+             {QStringLiteral("treatment"), QStringLiteral("处理"), false, false},
+             {QStringLiteral("block"), QStringLiteral("区组"), false, false}},
+            {},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                const int treatment = d.first_role_index("treatment");
+                const int block = d.first_role_index("block");
+                if (response < 0 || treatment < 0 || block < 0) {
+                    return apply_error(QStringLiteral("参数不足"),
+                                       QStringLiteral("请选择响应、处理与区组列。"));
+                }
+                c.analysis_name = "Friedman 检验";
+                c.chart_type = "friedman";
+                c.variable_columns = {static_cast<std::size_t>(response)};
+                c.by_column = static_cast<std::size_t>(treatment);
+                c.inference.anova_factor_b_column = static_cast<std::size_t>(block);
+                return {};
+            },
+            AnalysisService::friedman},
         {
             QStringLiteral("time_series_smoothing"),
             QStringLiteral("时间序列平滑"),

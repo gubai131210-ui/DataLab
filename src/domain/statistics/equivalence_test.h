@@ -53,15 +53,19 @@ EquivalenceTestResult two_sample_equivalence_test(
     double confidence_level = 0.95,
     VarianceMethod variance_method = VarianceMethod::welch);
 
-// Ratio TOST for μ_test / μ_reference (non-log). Bounds are on the ratio scale.
-// EquivalenceTestResult::difference holds ρ̂; kind = "two_sample_ratio".
+// Ratio TOST for μ_test / μ_reference. Bounds are on the ratio scale.
+// EquivalenceTestResult::difference holds ρ̂ (arithmetic) or ρ̂_g (log path);
+// kind = "two_sample_ratio".
+// log_transform=false: Fieller / non-log (default). log_transform=true: log then
+// difference TOST with bounds log(δ); CI/point estimate back-transformed.
 EquivalenceTestResult two_sample_equivalence_ratio_test(
     const std::vector<double>& test_sample,
     const std::vector<double>& reference_sample,
     double lower,
     double upper,
     double confidence_level = 0.95,
-    VarianceMethod variance_method = VarianceMethod::welch);
+    VarianceMethod variance_method = VarianceMethod::welch,
+    bool log_transform = false);
 
 EquivalenceTestResult paired_equivalence_test(
     const std::vector<double>& first,

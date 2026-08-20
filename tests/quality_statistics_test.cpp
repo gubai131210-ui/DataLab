@@ -1021,6 +1021,65 @@ void QualityStatisticsTest::buildsNonparametricServiceOutputContract()
             QVERIFY(!plot.source_rows.empty());
         }
     }
+
+    kruskal_config.inference.nonparametric_posthoc = "steel_dwass";
+    const auto steel_page = datalab::application::AnalysisService::kruskal_wallis(
+        kruskal_table, kruskal_config);
+    QVERIFY(steel_page.facts.nonparametric.has_value());
+    QVERIFY(steel_page.facts.nonparametric->steel_dwass_available);
+    QVERIFY(!steel_page.facts.nonparametric->dunn_available);
+    QCOMPARE(steel_page.facts.nonparametric->posthoc_method, std::string{"steel_dwass"});
+    QVERIFY(std::any_of(
+        steel_page.tables.cbegin(), steel_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Steel-Dwass 成对比较";
+        }));
+    QVERIFY(std::any_of(
+        steel_page.tables.cbegin(), steel_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Grouping Information (Steel-Dwass)";
+        }));
+
+    datalab::domain::DataTable friedman_table;
+    friedman_table.columns = {"Y", "Treat", "Block"};
+    friedman_table.rows = {
+        {"1", "A", "1"}, {"2", "B", "1"},
+        {"1", "A", "2"}, {"2", "B", "2"},
+        {"*", "A", "x"},
+        {"1", "A", "3"}, {"2", "B", "3"}};
+    datalab::domain::AnalysisConfiguration friedman_config;
+    friedman_config.variable_columns = {0};
+    friedman_config.by_column = 1;
+    friedman_config.inference.anova_factor_b_column = 2;
+    auto friedman_page = datalab::application::AnalysisService::friedman(
+        friedman_table, friedman_config);
+    QVERIFY(friedman_page.facts.nonparametric.has_value());
+    QCOMPARE(friedman_page.facts.nonparametric->method, std::string{"friedman"});
+    QCOMPARE(friedman_page.facts.nonparametric->group_count, std::size_t{2});
+    QVERIFY(friedman_page.facts.nonparametric->p_value.has_value());
+    QVERIFY(std::any_of(
+        friedman_page.diagnostics.cbegin(), friedman_page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "missing_values";
+        }));
+    QVERIFY(std::any_of(
+        friedman_page.tables.cbegin(), friedman_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Friedman 检验";
+        }));
+    QCOMPARE(friedman_page.plots.size(), std::size_t{2});
+    for (const auto& plot : friedman_page.plots) {
+        if (plot.kind == datalab::domain::PlotKind::scatter && plot.title == "个体值图") {
+            QCOMPARE(plot.source_rows.size(), plot.values.size());
+            QVERIFY(!plot.source_rows.empty());
+        }
+    }
+    datalab::application::InterpretationService::enrich(friedman_page);
+    for (const auto& section : friedman_page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("已证明") == std::string::npos);
+        }
+    }
 }
 
 void QualityStatisticsTest::calculatesMckeanRyanConfidenceInterval()
@@ -1188,6 +1247,51 @@ void QualityStatisticsTest::calculatesGageRrAndNonparametric()
     for (const auto& comparison : equal_groups.dunn_comparisons) {
         QVERIFY(!comparison.significant);
     }
+
+    // # source: formula_reference — Steel-Dwass pairwise Wilcoxon + asymptotic TK
+    const auto steel = datalab::domain::statistics::steel_dwass_pairwise(
+        {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0}},
+        {"A", "B", "C"}, 0.05);
+    QCOMPARE(steel.size(), std::size_t{3});
+    bool saw_steel_ac = false;
+    for (const auto& comparison : steel) {
+        if ((comparison.first_label == "A" && comparison.second_label == "C")
+            || (comparison.first_label == "C" && comparison.second_label == "A")) {
+            saw_steel_ac = true;
+            QVERIFY(comparison.significant);
+        }
+    }
+    QVERIFY(saw_steel_ac);
+    const auto steel_equal = datalab::domain::statistics::steel_dwass_pairwise(
+        {{1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}},
+        {"X", "Y", "Z"}, 0.05);
+    for (const auto& comparison : steel_equal) {
+        QVERIFY(!comparison.significant);
+    }
+
+    // # source: formula_reference — Friedman balanced 2 treatments × 3 blocks
+    // Block ranks: (1,2), (1,2), (1,2) → R1=3, R2=6; S=12/(3*2*3)*(9+36)-3*3*3=3
+    const auto friedman = datalab::domain::statistics::friedman_test(
+        {1.0, 2.0, 1.0, 2.0, 1.0, 2.0},
+        {"A", "B", "A", "B", "A", "B"},
+        {"1", "1", "2", "2", "3", "3"});
+    QVERIFY(friedman.diagnostics.empty());
+    QCOMPARE(friedman.block_count, std::size_t{3});
+    QCOMPARE(friedman.treatment_count, std::size_t{2});
+    QVERIFY(std::abs(friedman.s_statistic - 3.0) < 1.0e-12);
+    QCOMPARE(friedman.degrees_of_freedom, 1.0);
+    QVERIFY(friedman.p_value.has_value());
+
+    const auto friedman_unbalanced = datalab::domain::statistics::friedman_test(
+        {1.0, 2.0, 1.0},
+        {"A", "B", "A"},
+        {"1", "1", "2"});
+    QVERIFY(std::any_of(
+        friedman_unbalanced.diagnostics.cbegin(),
+        friedman_unbalanced.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "friedman_unbalanced";
+        }));
 }
 
 void QualityStatisticsTest::calculatesTimeSeries()

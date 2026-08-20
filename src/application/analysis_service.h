@@ -125,6 +125,10 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage friedman(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage ewma(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);

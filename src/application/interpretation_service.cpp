@@ -878,6 +878,19 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 + std::to_string(facts.posthoc_pair_count)
                 + " 对；Grouping 字母只反映该规则下的显著矩阵，不能写成组间已证明相同或不同。");
         }
+        if (facts.steel_dwass_available) {
+            conclusion.bullets.push_back(
+                "Steel–Dwass（近似）成对比较共 "
+                + std::to_string(facts.posthoc_pair_count)
+                + " 对；Grouping 字母只反映该规则下的显著矩阵，不能写成组间已证明相同或不同。");
+        }
+        if (facts.method == "friedman" && facts.statistic.has_value()
+            && facts.p_value.has_value()) {
+            conclusion.bullets.push_back(
+                "Friedman S（调整后）= " + std::to_string(*facts.statistic)
+                + "，P = " + std::to_string(*facts.p_value)
+                + "。这只陈述区组设计下处理间秩差异证据，不能写成已证明相同或不同。");
+        }
         if (facts.small_sample_warning) {
             raise_severity(limitations.severity, Severity::warning);
             limitations.bullets.push_back("存在小样本组，近似 P 值只作提示。");
@@ -1142,7 +1155,12 @@ void InterpretationService::enrich(domain::OutputPage& page)
         } else if (facts.kind == "one_proportion" || facts.kind == "two_proportion") {
             assumption_text = "独立二项试验与大样本正态近似（Wald z-TOST）";
         } else if (facts.kind == "two_sample_ratio") {
-            assumption_text = "独立正态样本与正参考均值（均值比 TOST，非对数）";
+            if (facts.ci_method == "tost_ratio_log_1_minus_alpha") {
+                assumption_text =
+                    "独立对数正态样本与全正观测（均值比 TOST，对数变换 / 几何均值比）";
+            } else {
+                assumption_text = "独立正态样本与正参考均值（均值比 TOST，非对数）";
+            }
         }
         limitations.bullets.push_back(
             "TOST 依赖" + assumption_text + "假设（assumption_status="

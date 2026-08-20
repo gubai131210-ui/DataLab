@@ -25,6 +25,9 @@ private slots:
     void twoSampleRatioTostMatchesWorkedExample();
     void twoSampleRatioDiagnosesNonpositiveReference();
     void twoSampleRatioServicePageUsesRatioAxis();
+    void twoSampleRatioLogServicePageUsesLogCiMethod();
+    void twoSampleRatioLogTostMatchesWorkedExample();
+    void twoSampleRatioLogDiagnosesNonpositive();
 };
 
 void EquivalenceTest::oneSampleTostMatchesWorkedExample()
@@ -310,6 +313,89 @@ void EquivalenceTest::twoSampleRatioServicePageUsesRatioAxis()
         }
     }
     QVERIFY(mentions_ratio);
+}
+
+void EquivalenceTest::twoSampleRatioLogServicePageUsesLogCiMethod()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Test", "Ref"};
+    table.rows = {{"8", "9"}, {"10", "10"}, {"12", "11"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0, 1};
+    configuration.inference.equivalence_lower = 0.8;
+    configuration.inference.equivalence_upper = 1.25;
+    configuration.inference.confidence_level = 0.95;
+    configuration.inference.variance_method = "welch";
+    configuration.inference.equivalence_ratio_transform = "log";
+    datalab::domain::OutputPage page =
+        datalab::application::AnalysisService::two_sample_equivalence_ratio(
+            table, configuration);
+    QVERIFY(page.facts.equivalence.has_value());
+    QCOMPARE(page.facts.equivalence->ci_method,
+             std::string{"tost_ratio_log_1_minus_alpha"});
+    QCOMPARE(page.configuration.inference.equivalence_ratio_transform,
+             std::string{"log"});
+    datalab::application::InterpretationService::enrich(page);
+    for (const auto& section : page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("已证明等价") == std::string::npos);
+        }
+    }
+}
+
+void EquivalenceTest::twoSampleRatioLogTostMatchesWorkedExample()
+{
+    // # source: formula_reference — log path: geometric mean ratio
+    // test {e, e, e}, ref {e, e, e} → θ̂=0, ρ̂_g=1; δ=0.8/1.25
+    const std::vector<double> test_sample{std::exp(1.0), std::exp(1.0), std::exp(1.0)};
+    const std::vector<double> reference{std::exp(1.0), std::exp(1.0), std::exp(1.0)};
+    const auto result = datalab::domain::statistics::two_sample_equivalence_ratio_test(
+        test_sample, reference, 0.8, 1.25, 0.95,
+        datalab::domain::statistics::VarianceMethod::welch, true);
+    QCOMPARE(result.kind, std::string{"two_sample_ratio"});
+    QCOMPARE(result.ci_method, std::string{"tost_ratio_log_1_minus_alpha"});
+    QVERIFY(std::abs(result.difference - 1.0) < 1.0e-12);
+    // Zero log-variance → diagnostics (cannot compute TOST SE)
+    QVERIFY(!result.diagnostics.empty());
+
+    // Distinct positive samples with common ratio ~1
+    const std::vector<double> test2{8.0, 10.0, 12.0};
+    const std::vector<double> ref2{9.0, 10.0, 11.0};
+    const auto log_result = datalab::domain::statistics::two_sample_equivalence_ratio_test(
+        test2, ref2, 0.8, 1.25, 0.95,
+        datalab::domain::statistics::VarianceMethod::welch, true);
+    QCOMPARE(log_result.ci_method, std::string{"tost_ratio_log_1_minus_alpha"});
+    QVERIFY(log_result.diagnostics.empty());
+    const double expected_rho = std::exp(
+        (std::log(8.0) + std::log(10.0) + std::log(12.0)) / 3.0
+        - (std::log(9.0) + std::log(10.0) + std::log(11.0)) / 3.0);
+    QVERIFY(std::abs(log_result.difference - expected_rho) < 1.0e-12);
+    QVERIFY(log_result.confidence_lower.has_value());
+    QVERIFY(log_result.confidence_upper.has_value());
+    QVERIFY(*log_result.confidence_lower > 0.0);
+    QVERIFY(*log_result.confidence_upper > *log_result.confidence_lower);
+    QVERIFY(std::abs(log_result.lower - 0.8) < 1.0e-15);
+    QVERIFY(std::abs(log_result.upper - 1.25) < 1.0e-15);
+
+    const auto none_result = datalab::domain::statistics::two_sample_equivalence_ratio_test(
+        test2, ref2, 0.8, 1.25, 0.95,
+        datalab::domain::statistics::VarianceMethod::welch, false);
+    QCOMPARE(none_result.ci_method, std::string{"tost_ratio_1_minus_alpha"});
+    QVERIFY(std::abs(none_result.difference - 1.0) < 1.0e-12);
+}
+
+void EquivalenceTest::twoSampleRatioLogDiagnosesNonpositive()
+{
+    const std::vector<double> test_sample{8.0, 10.0, 12.0};
+    const std::vector<double> reference{-1.0, 10.0, 11.0};
+    const auto result = datalab::domain::statistics::two_sample_equivalence_ratio_test(
+        test_sample, reference, 0.8, 1.25, 0.95,
+        datalab::domain::statistics::VarianceMethod::welch, true);
+    QVERIFY(std::any_of(
+        result.diagnostics.cbegin(), result.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "nonpositive_for_log_ratio";
+        }));
 }
 
 QTEST_APPLESS_MAIN(EquivalenceTest)

@@ -452,15 +452,23 @@ TwoProportionsResult two_proportions_test(
     std::size_t second_trials,
     double confidence_level,
     TestAlternative alternative,
-    bool newcombe_wilson_ci)
+    TwoProportionCiMethod ci_method)
 {
     TwoProportionsResult result;
     result.first_events = first_events;
     result.first_trials = first_trials;
     result.second_events = second_events;
     result.second_trials = second_trials;
-    result.method = newcombe_wilson_ci ? "wilson" : "normal";
-    result.ci_method = newcombe_wilson_ci ? "newcombe_wilson" : "wald";
+    if (ci_method == TwoProportionCiMethod::newcombe_wilson) {
+        result.method = "wilson";
+        result.ci_method = "newcombe_wilson";
+    } else if (ci_method == TwoProportionCiMethod::agresti_coull) {
+        result.method = "agresti_coull";
+        result.ci_method = "agresti_coull_diff";
+    } else {
+        result.method = "normal";
+        result.ci_method = "wald";
+    }
     if (!valid_confidence(confidence_level)
         || first_trials == 0 || second_trials == 0
         || first_events > first_trials || second_events > second_trials) {
@@ -495,7 +503,7 @@ TwoProportionsResult two_proportions_test(
         ? normal_quantile(0.5 + confidence_level / 2.0)
         : normal_quantile(confidence_level);
 
-    if (newcombe_wilson_ci) {
+    if (ci_method == TwoProportionCiMethod::newcombe_wilson) {
         const auto wilson_bounds = [&](std::size_t events, std::size_t trials)
             -> std::pair<double, double> {
             const double n = static_cast<double>(trials);
@@ -532,6 +540,26 @@ TwoProportionsResult two_proportions_test(
         } else {
             result.confidence_lower = lower;
             result.confidence_upper = upper;
+        }
+    } else if (ci_method == TwoProportionCiMethod::agresti_coull) {
+        const double z2 = critical * critical;
+        const double n1_tilde = static_cast<double>(first_trials) + z2;
+        const double n2_tilde = static_cast<double>(second_trials) + z2;
+        const double p1_tilde =
+            (static_cast<double>(first_events) + z2 / 2.0) / n1_tilde;
+        const double p2_tilde =
+            (static_cast<double>(second_events) + z2 / 2.0) / n2_tilde;
+        const double se_tilde = std::sqrt(
+            p1_tilde * (1.0 - p1_tilde) / n1_tilde
+            + p2_tilde * (1.0 - p2_tilde) / n2_tilde);
+        const double diff_tilde = p1_tilde - p2_tilde;
+        if (alternative == TestAlternative::less) {
+            result.confidence_upper = diff_tilde + critical * se_tilde;
+        } else if (alternative == TestAlternative::greater) {
+            result.confidence_lower = diff_tilde - critical * se_tilde;
+        } else {
+            result.confidence_lower = diff_tilde - critical * se_tilde;
+            result.confidence_upper = diff_tilde + critical * se_tilde;
         }
     } else if (alternative == TestAlternative::less) {
         result.confidence_upper = result.difference + critical * separate_se;

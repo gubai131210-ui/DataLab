@@ -853,13 +853,13 @@
       ],
       "implemented_status": "implemented",
       "purpose": "比较两组事件比例之差。",
-      "method_overview": "每组可多行求和。差值 Δ=p̂1−p̂2；检验 Z 始终用分位 unpooled Wald。method=normal（默认）时 CI 为 Wald；method=wilson 时 CI 为 Newcombe–Wilson（两单比例 Wilson 端点再组合）。适用时另给 Fisher 精确检验。",
-      "input_description": "两组各自的事件列与试验列；可选 method=normal|wilson。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "每组可多行求和。差值 Δ=p̂1−p̂2；检验 Z 始终用分位 unpooled Wald。method=normal（默认）时 CI 为 Wald；method=wilson 时 CI 为 Newcombe–Wilson；method=agresti_coull 时 CI 为 Agresti–Coull 差值区间。适用时另给 Fisher 精确检验。",
+      "input_description": "两组各自的事件列与试验列；可选 method=normal|wilson|agresti_coull。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "各组求和得到 x1,n1,x2,n2。",
         "p̂i=xi/ni。",
-        "Δ 与 SE_sep 得 Z/P；按 method 输出 Wald 或 Newcombe–Wilson 区间；必要时 Fisher。"
+        "Δ 与 SE_sep 得 Z/P；按 method 输出 Wald、Newcombe–Wilson 或 Agresti–Coull 差值区间；必要时 Fisher。"
       ],
       "symbol_definitions": [
         {
@@ -872,13 +872,13 @@
         },
         {
           "symbol": "ci_method",
-          "meaning": "wald 或 newcombe_wilson"
+          "meaning": "wald / newcombe_wilson / agresti_coull_diff"
         }
       ],
       "decision_rules": [
         "一组缺失不拿另一组去填。",
         "解释是差值证据不是规格判定。",
-        "不做 Agresti–Coull 或 Blaker。"
+        "不做 Blaker。"
       ],
       "invalid_input_conditions": "任一组 n=0、计数非法或事件>试验时诊断。",
       "output_description": "两组比例、差值区间图、检验表（含方法与 CI）。",
@@ -913,6 +913,13 @@
           "plain_text": "先算两组 Wilson 区间 [l_i,u_i]，再 CI_L=(p̂1−p̂2)−√[(p̂1−l1)²+(u2−p̂2)²]，CI_U=(p̂1−p̂2)+√[(u1−p̂1)²+(p̂2−l2)²]。",
           "explanation": "",
           "conditions": "method=wilson；检验 Z 仍用 Wald。",
+          "note": ""
+        },
+        {
+          "title": "Agresti–Coull 差值 CI",
+          "plain_text": "ñ_i=n_i+z²，x̃_i=x_i+z²/2，p̃_i=x̃_i/ñ_i；CI=(p̃1−p̃2)±z√[p̃1(1−p̃1)/ñ1+p̃2(1−p̃2)/ñ2]。",
+          "explanation": "",
+          "conditions": "method=agresti_coull；检验 Z 仍用 Wald。",
           "note": ""
         }
       ],
@@ -1282,19 +1289,19 @@
         "双样本均值比等价性检验"
       ],
       "implemented_status": "implemented",
-      "purpose": "检验两组均值比值 ρ=μ_test/μ_ref 是否落入比值等价界限（非对数 TOST）。",
-      "method_overview": "对 ρ 做两个单侧 t：t(δ)=(ȳ1−δ·ȳ2)/SE(δ)。输出 `ci_method=tost_ratio_1_minus_alpha` 的 100(1−2α)% Fieller 比值区间，以及 `both_pvalues_below_alpha`。`EquivalenceFacts.difference` 存 ρ̂。",
-      "input_description": "检验列、参考列、比值下/上界限（须 >0）、Welch 或 pooled、置信水平。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "purpose": "检验两组均值比值 ρ=μ_test/μ_ref 是否落入比值等价界限（TOST）。",
+      "method_overview": "默认 transform=none：非对数 Fieller TOST，`ci_method=tost_ratio_1_minus_alpha`。transform=log：两侧取 ln 后做差值 TOST，界限 log(δ)，点估计与 CI 回变换为几何均值比，`ci_method=tost_ratio_log_1_minus_alpha`。`EquivalenceFacts.difference` 存比值尺度估计。",
+      "input_description": "检验列、参考列、比值下/上界限（须 >0）、Welch 或 pooled、transform=none|log、置信水平。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
-        "计算两组均值与 SD。",
-        "ρ̂=ȳ_test/ȳ_ref。",
-        "两侧 t 与 Fieller CI。"
+        "计算两组均值与 SD（原始尺度）。",
+        "none：ρ̂=ȳ_test/ȳ_ref 与 Fieller CI。",
+        "log：全正值取 ln 后差值 TOST，再 exp 回比值。"
       ],
       "symbol_definitions": [
         {
-          "symbol": "ρ̂",
-          "meaning": "ȳ1/ȳ2"
+          "symbol": "ρ̂ / ρ̂_g",
+          "meaning": "算术或几何均值比"
         },
         {
           "symbol": "δ1,δ2",
@@ -1302,25 +1309,31 @@
         },
         {
           "symbol": "ci_method",
-          "meaning": "tost_ratio_1_minus_alpha"
+          "meaning": "tost_ratio_1_minus_alpha 或 tost_ratio_log_1_minus_alpha"
         }
       ],
       "decision_rules": [
         "不得写成已证明等价。",
-        "参考均值必须为正。",
-        "本命令不做对数变换。"
+        "非对数路径参考均值须为正；对数路径全部观测须为正。"
       ],
-      "invalid_input_conditions": "参考均值≤0、界限非法、Fieller 条件失败或方差不可用时诊断。",
+      "invalid_input_conditions": "参考均值≤0（none）、非正观测（log）、界限非法、Fieller 条件失败或方差不可用时诊断。",
       "output_description": "描述统计、TOST 表、比值区间图。",
-      "output_interpretation": "先确认界限是比值尺度（如 0.8～1.25），再看区间是否完整落入。",
+      "output_interpretation": "先确认界限是比值尺度（如 0.8～1.25），再看区间是否完整落入；切换 transform 时核对 ci_method。",
       "assumptions_and_boundaries": "差值等价仍用 two_sample_equivalence。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
-          "title": "均值比 TOST",
+          "title": "均值比 TOST（非对数）",
           "plain_text": "t1=(ȳ1−δ1ȳ2)/SE(δ1)，t2=(ȳ1−δ2ȳ2)/SE(δ2)。within_limits 当且仅当两单侧 p≤α。",
           "explanation": "",
-          "conditions": "",
+          "conditions": "transform=none。",
+          "note": ""
+        },
+        {
+          "title": "均值比 TOST（对数）",
+          "plain_text": "y=ln x；对 θ=ȳ1−ȳ2 做差值 TOST，界限 ln δ；ρ̂_g=exp(θ̂)，CI=exp(CI_θ)。",
+          "explanation": "",
+          "conditions": "transform=log；全部观测 >0。",
           "note": ""
         }
       ],
@@ -2358,14 +2371,14 @@
       ],
       "implemented_status": "implemented",
       "purpose": "不假设正态，比较 k 组位置。",
-      "method_overview": "全体赋秩后看组平均秩。输出组 Z，并追加 Dunn–Bonferroni 成对比较与 Grouping Information 字母（复用显著矩阵 CLD）。",
-      "input_description": "测量列+分组列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "全体赋秩后看组平均秩。默认 posthoc=dunn：Dunn–Bonferroni 成对比较与 Grouping Information。可选 posthoc=steel_dwass：成对 Wilcoxon + 渐近 Tukey–Kramer 临界（近似），Grouping 标题标明 Steel-Dwass。",
+      "input_description": "测量列+分组列；可选 posthoc=dunn|steel_dwass。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "全体 complete-case 赋平均秩。",
         "计算 H 与 p。",
         "报告组平均秩与 Z。",
-        "Dunn 成对 Z 与 Bonferroni 调整 P；按显著矩阵生成 Grouping 字母。"
+        "按 posthoc 输出 Dunn 或 Steel–Dwass 成对表；按显著矩阵生成 Grouping 字母。"
       ],
       "symbol_definitions": [
         {
@@ -2381,18 +2394,22 @@
           "meaning": "|R̄_i−R̄_j|/SE"
         },
         {
+          "symbol": "Steel–Dwass Z",
+          "meaning": "成对 Wilcoxon 标准化统计量"
+        },
+        {
           "symbol": "Grouping",
-          "meaning": "Dunn–Bonferroni 字母"
+          "meaning": "多重比较字母"
         }
       ],
       "decision_rules": [
         "显著不等于过程不合格。",
         "不得写已证明相同或不同。",
-        "不做 Steel–Dwass。"
+        "不做精确 studentized-range 表。"
       ],
       "invalid_input_conditions": "组数<2 或有效观测不足时诊断。",
-      "output_description": "KW 表、Dunn 成对表、Grouping Information、组箱线/个体值。",
-      "output_interpretation": "先看 H/p，再看 Dunn 哪对显著与字母分组。",
+      "output_description": "KW 表、成对比较表、Grouping Information、组箱线/个体值。",
+      "output_interpretation": "先看 H/p，再看哪对显著与字母分组；切换 posthoc 时默认仍为 Dunn。",
       "assumptions_and_boundaries": "有结时使用结修正。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
@@ -2407,7 +2424,14 @@
           "title": "Dunn",
           "plain_text": "SE=√[(N(N+1)/12−C_tie)·(1/n_i+1/n_j)]；p_adj=min(1,m·p_raw)。",
           "explanation": "",
-          "conditions": "",
+          "conditions": "posthoc=dunn（默认）。",
+          "note": ""
+        },
+        {
+          "title": "Steel–Dwass（近似）",
+          "plain_text": "每对做 Wilcoxon 秩和得 |Z|；显著当 |Z|≥q_{α,k,∞}/√2（本产品用渐近正态 Bonferroni/TK 临界）。",
+          "explanation": "",
+          "conditions": "posthoc=steel_dwass；formula_reference，非 Minitab golden。",
           "note": ""
         }
       ],
@@ -2429,6 +2453,80 @@
       "wiring": {
         "command_id": "kruskal_wallis",
         "service_method": "kruskal_wallis",
+        "facts_type": "nonparametric",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "friedman",
+      "title": "Friedman 检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "friedman",
+        "Friedman 检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "区组设计下比较多个处理的位置（非参数重复测量）。",
+      "method_overview": "每个区组内对处理赋秩，汇总处理秩和后计算 Friedman S（可结修正），近似 χ²_{k−1}。要求每区组×处理恰 1 个观测。",
+      "input_description": "响应列、处理列、区组列；complete-case。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "三列 complete-case 对齐并保留 source_row。",
+        "检查平衡设计。",
+        "区组内赋秩并汇总。",
+        "计算 S / 调整 S 与 p。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "S",
+          "meaning": "Friedman 统计量"
+        },
+        {
+          "symbol": "S′",
+          "meaning": "结修正后统计量"
+        },
+        {
+          "symbol": "R̄_j",
+          "meaning": "处理 j 平均秩"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明相同或不同。",
+        "本命令不做后多重比较。"
+      ],
+      "invalid_input_conditions": "不平衡区组、重复单元格、处理/区组不足或输入错位时诊断。",
+      "output_description": "处理摘要、Friedman 检验表、按处理箱线/个体值。",
+      "output_interpretation": "先确认区组完整，再看 S/p 与处理平均秩。",
+      "assumptions_and_boundaries": "独立样本多组比较请用 Kruskal-Wallis。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Friedman",
+          "plain_text": "S=12/(bk(k+1))Σ R_.j² − 3b(k+1)；结修正 S′=S/(1−C/(bk(k²−1)))。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 t 检验方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "friedman",
+        "service_method": "friedman",
         "facts_type": "nonparametric",
         "primary_test": "quality_statistics_test"
       }

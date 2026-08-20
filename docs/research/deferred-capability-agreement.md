@@ -5,8 +5,9 @@
 > **配对 TOST**、**泊松率比**、**Wilson 比例 CI**、**Bonett 等方差**、**泊松功效**、
 > **Tukey 区间表形**、**Agresti–Coull**、**Bartlett**、**DOE 实际单位 hold**、
 > **Tukey Grouping 字母**、**双样本均值比 TOST**、**两比例 Newcombe–Wilson**、
-> **Kruskal Dunn**、**Multi-Vari 第 4 因子** 公式已实现（非 Minitab golden，除非另有导出）。Blaker /
-> TOST 对数变换 / 可旋转 3D / Jackson–Mudholkar 解析限等仍延后。
+> **Kruskal Dunn**、**Multi-Vari 第 4 因子**、**TOST 对数变换**、**两比例 Agresti–Coull**、
+> **Steel–Dwass（近似）**、**Friedman** 公式已实现（非 Minitab golden，除非另有导出）。Blaker /
+> 可旋转 3D / Jackson–Mudholkar 解析限等仍延后。
 
 ## 1. Johnson / 非正态能力
 
@@ -60,18 +61,21 @@
 | 两比例 Newcombe–Wilson | **已落地** — `two_proportions` method=`wilson`；见 [`p1_two_proportion_newcombe_wilson.md`](p1_two_proportion_newcombe_wilson.md) |
 | Kruskal Dunn | **已落地** — Dunn–Bonferroni + Grouping；见 [`p1_kruskal_dunn_posthoc.md`](p1_kruskal_dunn_posthoc.md) |
 | Multi-Vari 第 4 因子 | **已落地** — 2～4 因子；见 [`p1_multi_vari_fourth_factor.md`](p1_multi_vari_fourth_factor.md) |
+| 均值比 TOST 对数 | **已落地** — `transform=log`；见 [`p1_tost_ratio_log_transform.md`](p1_tost_ratio_log_transform.md) |
+| 两比例 Agresti–Coull | **已落地** — method=`agresti_coull`；见 [`p1_two_proportion_agresti_coull_ci.md`](p1_two_proportion_agresti_coull_ci.md) |
+| Kruskal Steel–Dwass | **已落地（近似）** — `posthoc=steel_dwass`；见 [`p1_kruskal_steel_dwass.md`](p1_kruskal_steel_dwass.md) |
+| Friedman | **已落地** — 命令 `friedman`；见 [`p1_friedman_test.md`](p1_friedman_test.md) |
 
 ## 5. 仍延后
 
-- Blaker / Adjusted Blaker（比例区间族；**Wilson / Agresti–Coull / 两比例 Newcombe–Wilson 已落地**）
-- TOST **对数变换**（**均值比非对数已落地**）
+- Blaker / Adjusted Blaker（比例区间族；**Wilson / Agresti–Coull / 两比例 Newcombe–Wilson / 两比例 AC 已落地**）
 - 泊松 Blaker（**泊松功效已落地**，见 [`p1_poisson_rate_power.md`](p1_poisson_rate_power.md)）
 - Jackson–Mudholkar T²/Q 解析限（**Bonett / Bartlett / Tukey 表形与字母已落地**）
 - 可旋转 3D 曲面
 - Minitab 无界似然 bias-correction 数值对齐
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 数值对齐
 - 图表注释、拖拽布局、多图拼版
-- Steel–Dwass / Nemenyi（**Dunn 已落地**）
+- Nemenyi 独立命令 / Friedman 后比较（**Steel–Dwass 近似与 Friedman 主检验已落地**）
 - 重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住接线
 
 ## 6. 下一批接入条件

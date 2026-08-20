@@ -102,6 +102,8 @@ struct InferenceConfiguration {
     std::optional<std::size_t> gof_category_column;
     std::optional<double> equivalence_lower;
     std::optional<double> equivalence_upper;
+    std::string equivalence_ratio_transform = "none";
+    std::string nonparametric_posthoc = "dunn";
     std::string rate_comparison = "difference";
 };
 
@@ -722,6 +724,8 @@ struct NonparametricFacts {
     std::optional<double> ci_lower;
     std::optional<double> ci_upper;
     bool dunn_available = false;
+    bool steel_dwass_available = false;
+    std::string posthoc_method = "dunn";
     std::size_t posthoc_pair_count = 0;
     std::size_t grouping_letter_count = 0;
 };

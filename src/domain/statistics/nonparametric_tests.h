@@ -92,4 +92,37 @@ KruskalWallisResult kruskal_wallis(
     const std::vector<std::vector<double>>& groups,
     const std::vector<std::string>& labels = {});
 
+// Approximate Steel–Dwass: pairwise Wilcoxon Z + asymptotic Tukey–Kramer critical.
+// Reuses DunnComparison fields (Z / P / significant). formula_reference only.
+std::vector<DunnComparison> steel_dwass_pairwise(
+    const std::vector<std::vector<double>>& groups,
+    const std::vector<std::string>& labels = {},
+    double family_alpha = 0.05);
+
+struct FriedmanTreatment {
+    std::string label;
+    std::size_t count = 0;
+    double median = 0.0;
+    double mean_rank = 0.0;
+};
+
+struct FriedmanResult {
+    std::vector<FriedmanTreatment> treatments;
+    double s_statistic = 0.0;
+    double adjusted_s_statistic = 0.0;
+    double degrees_of_freedom = 0.0;
+    std::optional<double> p_value;
+    bool tie_correction = false;
+    std::size_t block_count = 0;
+    std::size_t treatment_count = 0;
+    std::string approximation = "chi_square";
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Stacked complete-case: one observation per (block, treatment). Unbalanced → error.
+FriedmanResult friedman_test(
+    const std::vector<double>& responses,
+    const std::vector<std::string>& treatments,
+    const std::vector<std::string>& blocks);
+
 }  // namespace datalab::domain::statistics

@@ -453,6 +453,8 @@ void OutputSerializationTest::preservesStructuredAnalysisFacts()
     page.facts.nonparametric->ci_lower = -4.0;
     page.facts.nonparametric->ci_upper = -1.0;
     page.facts.nonparametric->dunn_available = true;
+    page.facts.nonparametric->steel_dwass_available = false;
+    page.facts.nonparametric->posthoc_method = "dunn";
     page.facts.nonparametric->posthoc_pair_count = 3;
     page.facts.nonparametric->grouping_letter_count = 3;
     page.facts.variance = datalab::domain::VarianceFacts{"Levene", 2.2, 0.176, 2};
@@ -469,6 +471,8 @@ void OutputSerializationTest::preservesStructuredAnalysisFacts()
     QCOMPARE(*restored_new.facts.nonparametric->ci_lower, -4.0);
     QCOMPARE(*restored_new.facts.nonparametric->ci_upper, -1.0);
     QVERIFY(restored_new.facts.nonparametric->dunn_available);
+    QVERIFY(!restored_new.facts.nonparametric->steel_dwass_available);
+    QCOMPARE(restored_new.facts.nonparametric->posthoc_method, std::string{"dunn"});
     QCOMPARE(restored_new.facts.nonparametric->posthoc_pair_count, std::size_t{3});
     QCOMPARE(restored_new.facts.nonparametric->grouping_letter_count, std::size_t{3});
     QVERIFY(restored_new.facts.variance.has_value());

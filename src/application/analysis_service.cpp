@@ -2364,17 +2364,21 @@ OutputPage AnalysisService::two_sample_equivalence_ratio(
         table, configuration.variable_columns[0], configuration.excluded_rows);
     const ExtractedNumericColumn second = extract_numeric_column(
         table, configuration.variable_columns[1], configuration.excluded_rows);
+    const bool use_log =
+        configuration.inference.equivalence_ratio_transform == "log";
     const auto result = datalab::domain::statistics::two_sample_equivalence_ratio_test(
         first.values, second.values,
         *configuration.inference.equivalence_lower,
         *configuration.inference.equivalence_upper,
         configuration.inference.confidence_level,
-        parse_variance_method(configuration.inference.variance_method));
+        parse_variance_method(configuration.inference.variance_method),
+        use_log);
     OutputPage page = make_equivalence_page(
         "双样本均值比等价性检验", "2-Sample Equivalence Ratio Test",
         "two_sample_eq_ratio", configuration, result);
     page.parameter_summary += "    方法 = "
         + std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch")
+        + "    变换 = " + std::string(use_log ? "log" : "none")
         + "    检验 = " + first.name + "    参考 = " + second.name;
     if (first.missing_count > 0 || second.missing_count > 0) {
         page.diagnostics.push_back({
@@ -3236,12 +3240,18 @@ OutputPage AnalysisService::two_proportions(
         return error_page("两比例检验", "2 Proportions",
                           "第二组：" + second.error);
     }
-    const bool use_wilson = configuration.inference.proportion_method == "wilson";
+    datalab::domain::statistics::TwoProportionCiMethod ci_method =
+        datalab::domain::statistics::TwoProportionCiMethod::wald;
+    if (configuration.inference.proportion_method == "wilson") {
+        ci_method = datalab::domain::statistics::TwoProportionCiMethod::newcombe_wilson;
+    } else if (configuration.inference.proportion_method == "agresti_coull") {
+        ci_method = datalab::domain::statistics::TwoProportionCiMethod::agresti_coull;
+    }
     const auto result = datalab::domain::statistics::two_proportions_test(
         first.events, first.trials, second.events, second.trials,
         configuration.inference.confidence_level,
         parse_alternative(configuration.inference.alternative),
-        use_wilson);
+        ci_method);
     OutputPage page;
     page.id = new_id("two_proportions");
     page.title = "两比例检验";
@@ -4458,24 +4468,42 @@ OutputPage AnalysisService::kruskal_wallis(
         result.approximation,
         format_optional(result.effect_size)});
     page.tables.push_back(summary);
-    if (!result.dunn_comparisons.empty()) {
-        StatisticTable dunn;
-        dunn.title = "Dunn 成对比较";
-        dunn.headers = {"对比", "平均秩差", "SE", "Z", "未调整 P", "Bonferroni P", "显著"};
-        for (const auto& comparison : result.dunn_comparisons) {
-            dunn.rows.push_back({
-                comparison.first_label + " - " + comparison.second_label,
-                format_number(comparison.mean_rank_difference),
-                format_number(comparison.standard_error),
-                format_number(comparison.z_statistic),
-                format_optional(comparison.p_value),
-                format_optional(comparison.adjusted_p_value),
-                comparison.significant ? "是" : "否"});
+    const bool use_steel_dwass =
+        configuration.inference.nonparametric_posthoc == "steel_dwass";
+    const auto posthoc = use_steel_dwass
+        ? datalab::domain::statistics::steel_dwass_pairwise(
+              groups, group_labels, result.family_alpha)
+        : result.dunn_comparisons;
+    if (!posthoc.empty()) {
+        StatisticTable pairs;
+        pairs.title = use_steel_dwass ? "Steel-Dwass 成对比较" : "Dunn 成对比较";
+        pairs.headers = use_steel_dwass
+            ? std::vector<std::string>{"对比", "Z", "未调整 P", "Bonferroni P", "显著"}
+            : std::vector<std::string>{
+                  "对比", "平均秩差", "SE", "Z", "未调整 P", "Bonferroni P", "显著"};
+        for (const auto& comparison : posthoc) {
+            if (use_steel_dwass) {
+                pairs.rows.push_back({
+                    comparison.first_label + " - " + comparison.second_label,
+                    format_number(comparison.z_statistic),
+                    format_optional(comparison.p_value),
+                    format_optional(comparison.adjusted_p_value),
+                    comparison.significant ? "是" : "否"});
+            } else {
+                pairs.rows.push_back({
+                    comparison.first_label + " - " + comparison.second_label,
+                    format_number(comparison.mean_rank_difference),
+                    format_number(comparison.standard_error),
+                    format_number(comparison.z_statistic),
+                    format_optional(comparison.p_value),
+                    format_optional(comparison.adjusted_p_value),
+                    comparison.significant ? "是" : "否"});
+            }
         }
-        page.tables.push_back(std::move(dunn));
+        page.tables.push_back(std::move(pairs));
 
         std::vector<datalab::domain::statistics::TukeyComparison> tukey_like;
-        for (const auto& comparison : result.dunn_comparisons) {
+        for (const auto& comparison : posthoc) {
             datalab::domain::statistics::TukeyComparison row;
             row.first_label = comparison.first_label;
             row.second_label = comparison.second_label;
@@ -4496,7 +4524,9 @@ OutputPage AnalysisService::kruskal_wallis(
             grouping_labels, grouping_means, grouping_counts, tukey_like);
         if (!letters.empty()) {
             StatisticTable grouping;
-            grouping.title = "Grouping Information (Dunn)";
+            grouping.title = use_steel_dwass
+                ? "Grouping Information (Steel-Dwass)"
+                : "Grouping Information (Dunn)";
             grouping.headers = {"水平", "N", "中位数", "Grouping"};
             for (const auto& row : letters) {
                 grouping.rows.push_back({
@@ -4534,15 +4564,146 @@ OutputPage AnalysisService::kruskal_wallis(
     facts.group_count = group_labels.size();
     facts.plot_point_count = plots.point_count;
     facts.missing_count = extracted.missing_count;
-    facts.dunn_available = !result.dunn_comparisons.empty();
-    facts.posthoc_pair_count = result.dunn_comparisons.size();
+    facts.posthoc_method = use_steel_dwass ? "steel_dwass" : "dunn";
+    facts.dunn_available = !use_steel_dwass && !posthoc.empty();
+    facts.steel_dwass_available = use_steel_dwass && !posthoc.empty();
+    facts.posthoc_pair_count = posthoc.size();
     facts.grouping_letter_count = 0;
     for (const auto& table_out : page.tables) {
-        if (table_out.title == "Grouping Information (Dunn)") {
+        if (table_out.title.find("Grouping Information") != std::string::npos) {
             facts.grouping_letter_count = table_out.rows.size();
             break;
         }
     }
+    page.facts.nonparametric = std::move(facts);
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::friedman(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.variable_columns.empty() || !configuration.by_column.has_value()
+        || !configuration.inference.anova_factor_b_column.has_value()) {
+        return error_page("Friedman 检验", "Friedman",
+                          "请选择响应、处理与区组列。");
+    }
+    const std::size_t response_column = configuration.variable_columns.front();
+    const std::size_t treatment_column = *configuration.by_column;
+    const std::size_t block_column = *configuration.inference.anova_factor_b_column;
+    std::set<std::size_t> excluded(
+        configuration.excluded_rows.cbegin(), configuration.excluded_rows.cend());
+    std::vector<double> responses;
+    std::vector<std::string> treatments;
+    std::vector<std::string> blocks;
+    std::vector<std::size_t> source_rows;
+    std::size_t missing_count = 0;
+    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
+        if (excluded.count(row_index) != 0) {
+            continue;
+        }
+        const auto& row = table.rows[row_index];
+        const std::string response_text =
+            response_column < row.size() ? row[response_column] : "";
+        const std::string treatment_text =
+            treatment_column < row.size() ? row[treatment_column] : "";
+        const std::string block_text =
+            block_column < row.size() ? row[block_column] : "";
+        const auto numeric = parse_numeric_cell(response_text);
+        if (!numeric.has_value() || is_missing_cell(treatment_text)
+            || is_missing_cell(block_text)) {
+            ++missing_count;
+            continue;
+        }
+        responses.push_back(*numeric);
+        treatments.push_back(treatment_text);
+        blocks.push_back(block_text);
+        source_rows.push_back(row_index);
+    }
+    const auto result = datalab::domain::statistics::friedman_test(
+        responses, treatments, blocks);
+    OutputPage page;
+    page.id = new_id("friedman");
+    page.title = "Friedman 检验";
+    page.method_name = "Friedman";
+    page.configuration = configuration;
+    page.parameter_summary =
+        "响应 = " + (response_column < table.columns.size()
+                         ? table.columns[response_column] : std::to_string(response_column))
+        + "    处理 = "
+        + (treatment_column < table.columns.size()
+               ? table.columns[treatment_column] : std::to_string(treatment_column))
+        + "    区组 = "
+        + (block_column < table.columns.size()
+               ? table.columns[block_column] : std::to_string(block_column));
+    page.diagnostics = result.diagnostics;
+    if (missing_count > 0) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning,
+            "missing_values",
+            "Friedman 按 complete-case 跳过 " + std::to_string(missing_count)
+                + " 个缺失或非法单元格（含 *）。"});
+    }
+    if (!result.diagnostics.empty()) {
+        domain::NonparametricFacts facts;
+        facts.method = "friedman";
+        facts.missing_count = missing_count;
+        facts.group_count = result.treatment_count;
+        page.facts.nonparametric = std::move(facts);
+        return finalize_page(std::move(page));
+    }
+    StatisticTable summary;
+    summary.title = "处理摘要";
+    summary.headers = {"处理", "N", "中位数", "平均秩"};
+    for (const auto& treatment : result.treatments) {
+        summary.rows.push_back({
+            treatment.label, std::to_string(treatment.count),
+            format_number(treatment.median), format_number(treatment.mean_rank)});
+    }
+    page.tables.push_back(std::move(summary));
+    StatisticTable test;
+    test.title = "Friedman 检验";
+    test.headers = {"S", "调整后 S", "DF", "P-Value", "Ties 修正", "区组数", "处理数"};
+    test.rows.push_back({
+        format_number(result.s_statistic),
+        format_number(result.adjusted_s_statistic),
+        format_number(result.degrees_of_freedom),
+        format_optional(result.p_value),
+        result.tie_correction ? "是" : "否",
+        std::to_string(result.block_count),
+        std::to_string(result.treatment_count)});
+    page.tables.push_back(std::move(test));
+
+    std::vector<std::string> order;
+    std::vector<std::vector<double>> grouped;
+    std::vector<std::vector<std::size_t>> grouped_rows;
+    for (std::size_t index = 0; index < responses.size(); ++index) {
+        const std::size_t group_index =
+            datalab::domain::stable_group_index(order, treatments[index]);
+        if (group_index >= grouped.size()) {
+            grouped.emplace_back();
+            grouped_rows.emplace_back();
+        }
+        grouped[group_index].push_back(responses[index]);
+        grouped_rows[group_index].push_back(source_rows[index]);
+    }
+    auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
+    for (std::size_t group = 0; group < order.size(); ++group) {
+        append_group_to_distribution_plots(
+            plots, order[group], grouped[group], grouped_rows[group]);
+    }
+    push_distribution_plots(page, plots);
+
+    domain::NonparametricFacts facts;
+    facts.method = "friedman";
+    facts.statistic = result.adjusted_s_statistic;
+    facts.p_value = result.p_value;
+    facts.tie_correction = result.tie_correction;
+    facts.continuity_correction = false;
+    facts.approximation = result.approximation;
+    facts.group_count = result.treatment_count;
+    facts.plot_point_count = plots.point_count;
+    facts.missing_count = missing_count;
     page.facts.nonparametric = std::move(facts);
     return finalize_page(std::move(page));
 }

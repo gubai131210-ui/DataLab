@@ -267,16 +267,87 @@ EquivalenceTestResult two_sample_equivalence_ratio_test(
     const double lower,
     const double upper,
     const double confidence_level,
-    const VarianceMethod variance_method)
+    const VarianceMethod variance_method,
+    const bool log_transform)
 {
     EquivalenceTestResult result;
     result.kind = "two_sample_ratio";
-    result.ci_method = "tost_ratio_1_minus_alpha";
+    result.ci_method = log_transform ? "tost_ratio_log_1_minus_alpha"
+                                     : "tost_ratio_1_minus_alpha";
     result.variance_method = variance_method;
     result.confidence_level = confidence_level;
     result.alpha = 1.0 - confidence_level;
     result.lower = lower;
     result.upper = upper;
+
+    if (!(confidence_level > 0.0 && confidence_level < 1.0)) {
+        add_error(result.diagnostics, "invalid_confidence_level",
+                  "置信水平必须大于 0 且小于 1。");
+        return result;
+    }
+    if (!(lower > 0.0) || !(lower < upper) || !std::isfinite(lower)
+        || !std::isfinite(upper)) {
+        add_error(result.diagnostics, "invalid_equivalence_limits",
+                  "比值等价下限必须大于 0 且小于上限。");
+        return result;
+    }
+
+    if (log_transform) {
+        const auto all_positive = [](const std::vector<double>& values) {
+            return std::all_of(values.cbegin(), values.cend(), [](const double value) {
+                return std::isfinite(value) && value > 0.0;
+            });
+        };
+        if (test_sample.empty() || reference_sample.empty()
+            || !all_positive(test_sample) || !all_positive(reference_sample)) {
+            add_error(result.diagnostics, "nonpositive_for_log_ratio",
+                      "对数均值比 TOST 要求检验列与参考列的全部观测均为正值。");
+            return result;
+        }
+        const TwoSampleTTestResult raw_summary = two_sample_t_test(
+            test_sample, reference_sample, confidence_level,
+            TestAlternative::two_sided, variance_method);
+        result.first_count = raw_summary.first.count;
+        result.second_count = raw_summary.second.count;
+        result.first_mean = raw_summary.first.mean;
+        result.second_mean = raw_summary.second.mean;
+        result.first_standard_deviation = raw_summary.first.sample_standard_deviation;
+        result.second_standard_deviation = raw_summary.second.sample_standard_deviation;
+
+        std::vector<double> log_test;
+        std::vector<double> log_reference;
+        log_test.reserve(test_sample.size());
+        log_reference.reserve(reference_sample.size());
+        for (const double value : test_sample) {
+            log_test.push_back(std::log(value));
+        }
+        for (const double value : reference_sample) {
+            log_reference.push_back(std::log(value));
+        }
+        EquivalenceTestResult log_result = two_sample_equivalence_test(
+            log_test, log_reference, std::log(lower), std::log(upper),
+            confidence_level, variance_method);
+        result.diagnostics = log_result.diagnostics;
+        if (!result.diagnostics.empty()) {
+            return result;
+        }
+        result.standard_error = log_result.standard_error;
+        result.degrees_of_freedom = log_result.degrees_of_freedom;
+        result.t_lower = log_result.t_lower;
+        result.t_upper = log_result.t_upper;
+        result.p_lower = log_result.p_lower;
+        result.p_upper = log_result.p_upper;
+        result.both_pvalues_below_alpha = log_result.both_pvalues_below_alpha;
+        result.within_limits = log_result.within_limits;
+        result.difference = std::exp(log_result.difference);
+        if (log_result.confidence_lower.has_value()) {
+            result.confidence_lower = std::exp(*log_result.confidence_lower);
+        }
+        if (log_result.confidence_upper.has_value()) {
+            result.confidence_upper = std::exp(*log_result.confidence_upper);
+        }
+        return result;
+    }
 
     const TwoSampleTTestResult summary = two_sample_t_test(
         test_sample, reference_sample, confidence_level,
@@ -289,17 +360,6 @@ EquivalenceTestResult two_sample_equivalence_ratio_test(
     result.first_standard_deviation = summary.first.sample_standard_deviation;
     result.second_standard_deviation = summary.second.sample_standard_deviation;
     if (!result.diagnostics.empty()) {
-        return result;
-    }
-    if (!(confidence_level > 0.0 && confidence_level < 1.0)) {
-        add_error(result.diagnostics, "invalid_confidence_level",
-                  "置信水平必须大于 0 且小于 1。");
-        return result;
-    }
-    if (!(lower > 0.0) || !(lower < upper) || !std::isfinite(lower)
-        || !std::isfinite(upper)) {
-        add_error(result.diagnostics, "invalid_equivalence_limits",
-                  "比值等价下限必须大于 0 且小于上限。");
         return result;
     }
     if (!(result.second_mean > 0.0) || !std::isfinite(result.second_mean)) {

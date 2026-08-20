@@ -539,6 +539,10 @@ void write_interpretation_facts(
                              optional_number(facts.nonparametric->ci_upper));
         nonparametric.insert(QStringLiteral("dunn_available"),
                              facts.nonparametric->dunn_available);
+        nonparametric.insert(QStringLiteral("steel_dwass_available"),
+                             facts.nonparametric->steel_dwass_available);
+        nonparametric.insert(QStringLiteral("posthoc_method"),
+                             QString::fromStdString(facts.nonparametric->posthoc_method));
         nonparametric.insert(QStringLiteral("posthoc_pair_count"),
                              static_cast<int>(facts.nonparametric->posthoc_pair_count));
         nonparametric.insert(QStringLiteral("grouping_letter_count"),
@@ -1231,6 +1235,10 @@ void read_interpretation_facts(
         value.ci_upper = read_optional(nonparametric.value(QStringLiteral("ci_upper")));
         value.dunn_available =
             nonparametric.value(QStringLiteral("dunn_available")).toBool(false);
+        value.steel_dwass_available =
+            nonparametric.value(QStringLiteral("steel_dwass_available")).toBool(false);
+        value.posthoc_method = nonparametric.value(QStringLiteral("posthoc_method"))
+                                   .toString(QStringLiteral("dunn")).toStdString();
         value.posthoc_pair_count = static_cast<std::size_t>(
             nonparametric.value(QStringLiteral("posthoc_pair_count")).toInt(0));
         value.grouping_letter_count = static_cast<std::size_t>(
@@ -1763,6 +1771,12 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   optional_number(page.configuration.inference.equivalence_lower));
     object.insert(QStringLiteral("equivalence_upper"),
                   optional_number(page.configuration.inference.equivalence_upper));
+    object.insert(QStringLiteral("equivalence_ratio_transform"),
+                  QString::fromStdString(
+                      page.configuration.inference.equivalence_ratio_transform));
+    object.insert(QStringLiteral("nonparametric_posthoc"),
+                  QString::fromStdString(
+                      page.configuration.inference.nonparametric_posthoc));
     object.insert(QStringLiteral("rate_comparison"),
                   QString::fromStdString(page.configuration.inference.rate_comparison));
     object.insert(QStringLiteral("gage_measurement_column"),
@@ -2348,6 +2362,18 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         read_optional(object.value(QStringLiteral("equivalence_lower")));
     page.configuration.inference.equivalence_upper =
         read_optional(object.value(QStringLiteral("equivalence_upper")));
+    page.configuration.inference.equivalence_ratio_transform =
+        object.value(QStringLiteral("equivalence_ratio_transform"))
+            .toString(QStringLiteral("none")).toStdString();
+    if (page.configuration.inference.equivalence_ratio_transform != "log") {
+        page.configuration.inference.equivalence_ratio_transform = "none";
+    }
+    page.configuration.inference.nonparametric_posthoc =
+        object.value(QStringLiteral("nonparametric_posthoc"))
+            .toString(QStringLiteral("dunn")).toStdString();
+    if (page.configuration.inference.nonparametric_posthoc != "steel_dwass") {
+        page.configuration.inference.nonparametric_posthoc = "dunn";
+    }
     page.configuration.inference.rate_comparison =
         object.value(QStringLiteral("rate_comparison"))
             .toString(QStringLiteral("difference")).toStdString();

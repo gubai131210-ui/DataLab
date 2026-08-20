@@ -56,7 +56,7 @@
 | 正态能力 / Sixpack | 已接入且需手工验收 | 测量、LSL/USL/Target | N/N* | Cp/Cpk 用 σwithin，Pp/Ppk 用 σoverall；CI：χ² 尺度 + Bissell | Process Data 含 AD；PPM 三列；能力表估计/下限/上限；Sixpack 六图标题；直方图 LSL/USL/Target + Within/Overall；解释不写合格 |
 | 线性回归 | 已有且需核对 | 响应 + 预测变量 | complete-case | QR、VIF、Cook、DFITS、内部/删除学生化残差 | Unusual 表仅列 R/X/I 打标行；单预测变量 Fitted Line 含 CI/PI 带；残差图含 y=0；多预测变量每 X 一张「残差与预测变量」+ `source_row`；`RegressionFacts` 含残差 AD 与 plot 计数 |
 | 单/双因素 ANOVA | 已有且需核对 | 响应 + 因子 | 不可估计项不输出 F/P | RSS 差值、Tukey；单因素组均值个体 CI 用 pooled MSE；Grouping CLD | 单因素含区间图、残差 4 图、Tukey 下限/上限 + 差值区间图 + Grouping Information；双因素含残差 4 图与交互均值连线 |
-| 描述统计 / 卡方 / 非参数 | 已有且需核对 | 变量或分类列 | 跳过缺失 | 正态近似、ties 修正；Kruskal+Dunn–Bonferroni | 描述页含箱线+个体值图；卡方三表 + 观察频数热图；非参数三命令含箱线/个体值；Kruskal 含 Dunn 表与 Grouping；Mann-Whitney McKean–Ryan CI |
+| 描述统计 / 卡方 / 非参数 | 已有且需核对 | 变量或分类列 | 跳过缺失 | 正态近似、ties 修正；Kruskal+Dunn 或 Steel–Dwass；Friedman | 描述页含箱线+个体值图；卡方三表 + 观察频数热图；非参数含 Mann-Whitney/Wilcoxon/Kruskal/Friedman；Kruskal 默认 Dunn，可选 Steel–Dwass；Mann-Whitney McKean–Ryan CI |
 | 卡方拟合优度 | 已接入且需手工验收 | 一个分类列；可选期望比例 | complete-case；`*` 计 N* | Pearson χ²；E=pN；DF=k−1 | 命令 `chi_square_gof`；条图；不改关联热图；比例个数错只诊断 |
 | G 图 / T 图 | 已接入且需手工验收 | 数值间隔列 | complete-case；`source_row` | 几何 INVCDF−1 / Weibull 分位；默认 Test 1 | 逐点表；不解析事件日期；0 间隔 T 图诊断 `zero_interval_regression_used` |
 | t/方差/泊松 功效与样本量 | 已接入且需手工验收 | 不读工作表 | — | 非中心 t / F / 比例；单方差 χ²；双方差 F；泊松率正态近似；表含 Actual Power | `PowerFacts`；功效曲线；`one_poisson_*`/`two_poisson_*`；解释不写样本量足够 |
@@ -65,12 +65,12 @@
 | 正态性检验 | 已有且需核对 | 单列 | N/N*；`*` 计入 N* | AD A²/A²*；未拒绝≠已正态 | 概率图+直方图悬停原始行；`NormalityFacts` |
 | 相关 | 已有且需核对 | ≥2 数值列 | complete-case 行主序 | Pearson/Spearman 公式不改 | 矩阵散点 + 两列散点 `source_row`；禁止按索引 zip |
 | 单比例检验 | 已接入且需手工验收 | 事件 + 试验 | complete-case 多行求和；`*` 计入 N* | exact=Clopper–Pearson；normal=Wald CI + score z；wilson=Wilson score；agresti_coull=Agresti–Coull | 命令 `one_proportion`；不做 Blaker |
-| 两比例检验 | 已接入且需手工验收 | 两组事件 + 试验 | 每组独立 complete-case 多行求和；`*` 计入 N* | 检验 unpooled Wald Z；CI=`wald`（默认）或 `newcombe_wilson`（method=wilson）；Fisher | 命令 `two_proportions`；差值区间图；`ProportionFacts.kind=two_sample`；不做 Agresti–Coull/Blaker |
+| 两比例检验 | 已接入且需手工验收 | 两组事件 + 试验 | 每组独立 complete-case 多行求和；`*` 计入 N* | 检验 unpooled Wald Z；CI=`wald`（默认）或 `newcombe_wilson`（method=wilson）或 `agresti_coull_diff`（method=agresti_coull）；Fisher | 命令 `two_proportions`；差值区间图；`ProportionFacts.kind=two_sample`；不做 Blaker |
 | Type 1 Gage | 已接入且需手工验收 | 测量 + 参考值 | 跳过缺失；`*` 诊断 | Bias t；Cg=Tol/(6s)（全公差，非 Minitab K=20%） | 直方图 Ref/规格 + Run Chart `source_row`；不改 Cg/Cgk |
 | Bias/Linearity | 已接入且需手工验收 | 参考列 + 测量列 | complete-case | OLS bias~reference；均值 CI 带；可选过程变差 | 散点+拟合+CI；可选 Linearity/%Linearity/%Bias 表；`process_variation`=6σ |
 | Box-Cox | 已接入且需手工验收 | 正值列 | 跳过缺失；非正值报错 | 网格最小化 SD(W)；可圆整 λ | λ–SD 图 + 变换前/后概率图；`BoxCoxFacts` |
 | 1/2-Sample Poisson Rate | 已接入且需手工验收 | 缺陷 + 观测长度 | 1-sample 多行求和；2-sample 每组一行；`*` 计入 missing | λ̂=x/t；exact=Garwood+泊松尾 / 条件二项；normal=score/Wald；`comparison=ratio`→ρ=λ1/λ2 log-Wald | 命令 `one_poisson_rate` / `two_poisson_rate`；默认差值兼容；不做 Blaker；功效见 `t_power` `one_poisson_*`/`two_poisson_*` |
-| 单/双样本 / 配对 / 比例 / 均值比 TOST | 已接入且需手工验收 | 一列、两列、配对、事件/试验或检验+参考 | 缺失跳过并计 N*；配对/比例走 complete-case | t1/t2、Wald z 或均值比 Fieller；100(1−2α)% CI；within_limits⇔p1≤α且p2≤α | 命令含 `two_sample_equivalence_ratio`（ρ̂ 存 `difference`）；不做对数 |
+| 单/双样本 / 配对 / 比例 / 均值比 TOST | 已接入且需手工验收 | 一列、两列、配对、事件/试验或检验+参考 | 缺失跳过并计 N*；配对/比例走 complete-case | t1/t2、Wald z 或均值比 Fieller / 对数几何比；100(1−2α)% CI；within_limits⇔p1≤α且p2≤α | 命令含 `two_sample_equivalence_ratio`（`transform=none|log`；ρ̂/ρ̂_g 存 `difference`） |
 | DOE 响应优化 | 已接入且需手工验收 | 因子列 + 1～N 响应列 | 无协方差时给诊断 | coded ±1 desirability；多响应几何平均 D；区间走 `MSE * (X'X)^-1` | 每响应独立 goal/权重已从 UI 写入 `optimization_objectives`；单响应旧字段兼容；缺协方差时 CI/PI=`*` |
 | ARIMA / 季节预测 | 已有且需核对（Winters 输出已补；ARIMA 明细已补） | 时间、数值 | 乱序/重复时间报错；缺失计 `missing_values` | Winters 用户给定 α/β/γ；乘法 SARIMA CSS；ARIMA 候选 CSS | ARIMA「拟合与预测明细」含原始行；季节指数表；`holt_winters_additive`/`holt_winters_multiplicative`；SARIMA 仍非 TSERIES golden |
 | 交叉 Gage R&R | 已接入且需手工验收 | 测量 + 零件 + 操作员 | 平衡设计；complete-case | ANOVA 分量；ndc=floor(1.41×Part/Gage)；负方差截断；%Tolerance=StudyVar/Tol×100 | 表不变；%Contribution + **%Study Var** + **%Tolerance** 条 + **Gage Run Chart** + **按零件 Xbar-R** + By Part + 交互图；无公差不出 `%Tolerance` 图 |

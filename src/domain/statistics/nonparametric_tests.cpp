@@ -7,6 +7,7 @@
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <map>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -446,6 +447,241 @@ KruskalWallisResult kruskal_wallis(
                 *comparison.adjusted_p_value <= result.family_alpha;
             result.dunn_comparisons.push_back(comparison);
         }
+    }
+    return result;
+}
+
+std::vector<DunnComparison> steel_dwass_pairwise(
+    const std::vector<std::vector<double>>& groups,
+    const std::vector<std::string>& labels,
+    const double family_alpha)
+{
+    std::vector<DunnComparison> comparisons;
+    if (groups.size() < 2) {
+        return comparisons;
+    }
+    const std::size_t k = groups.size();
+    const double pair_count = static_cast<double>(k * (k - 1) / 2);
+    // Asymptotic Tukey–Kramer critical for |Z|: q_{α,k,∞}/√2 ≈ z_{1-α/(2m)}
+    // (same ∞ approximation family as product Tukey).
+    const double z_critical = pair_count > 0.0
+        ? standard_normal_quantile(1.0 - family_alpha / (2.0 * pair_count))
+        : standard_normal_quantile(1.0 - family_alpha / 2.0);
+    for (std::size_t i = 0; i < k; ++i) {
+        for (std::size_t j = i + 1; j < k; ++j) {
+            DunnComparison comparison;
+            comparison.first_label = labels.size() == groups.size()
+                ? labels[i] : std::to_string(i + 1);
+            comparison.second_label = labels.size() == groups.size()
+                ? labels[j] : std::to_string(j + 1);
+            if (groups[i].empty() || groups[j].empty()) {
+                comparison.significant = false;
+                comparison.p_value = 1.0;
+                comparison.adjusted_p_value = 1.0;
+                comparisons.push_back(comparison);
+                continue;
+            }
+            const auto ranked = rank_values({groups[i], groups[j]});
+            double rank_sum = 0.0;
+            double tie_sum = 0.0;
+            for (std::size_t index = 0; index < ranked.size();) {
+                std::size_t end = index + 1;
+                while (end < ranked.size()
+                       && ranked[end].value == ranked[index].value) {
+                    ++end;
+                }
+                const double tie_size = static_cast<double>(end - index);
+                tie_sum += tie_size * tie_size * tie_size - tie_size;
+                index = end;
+            }
+            for (const auto& value : ranked) {
+                if (value.group == 0) {
+                    rank_sum += value.rank;
+                }
+            }
+            const double n1 = static_cast<double>(groups[i].size());
+            const double n2 = static_cast<double>(groups[j].size());
+            const double total = n1 + n2;
+            const double expected = n1 * (total + 1.0) / 2.0;
+            const double variance = n1 * n2 / 12.0
+                * (total + 1.0 - tie_sum / (total * (total - 1.0)));
+            comparison.mean_rank_difference = rank_sum - expected;
+            comparison.standard_error =
+                variance > 0.0 ? std::sqrt(variance) : 0.0;
+            if (!(comparison.standard_error > 0.0)) {
+                comparison.z_statistic = 0.0;
+                comparison.p_value = 1.0;
+                comparison.adjusted_p_value = 1.0;
+                comparison.significant = false;
+                comparisons.push_back(comparison);
+                continue;
+            }
+            comparison.z_statistic =
+                std::abs(rank_sum - expected) / comparison.standard_error;
+            const double p_raw = std::clamp(
+                2.0 * (1.0 - standard_normal_cdf(comparison.z_statistic)),
+                0.0, 1.0);
+            comparison.p_value = p_raw;
+            comparison.adjusted_p_value =
+                std::clamp(pair_count * p_raw, 0.0, 1.0);
+            comparison.significant = comparison.z_statistic >= z_critical;
+            comparisons.push_back(comparison);
+        }
+    }
+    return comparisons;
+}
+
+namespace {
+
+std::size_t local_group_index(std::vector<std::string>& labels, const std::string& value)
+{
+    for (std::size_t index = 0; index < labels.size(); ++index) {
+        if (labels[index] == value) {
+            return index;
+        }
+    }
+    labels.push_back(value);
+    return labels.size() - 1;
+}
+
+double median_of(std::vector<double> values)
+{
+    if (values.empty()) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    std::sort(values.begin(), values.end());
+    const std::size_t mid = values.size() / 2;
+    if (values.size() % 2 == 1) {
+        return values[mid];
+    }
+    return 0.5 * (values[mid - 1] + values[mid]);
+}
+
+}  // namespace
+
+FriedmanResult friedman_test(
+    const std::vector<double>& responses,
+    const std::vector<std::string>& treatments,
+    const std::vector<std::string>& blocks)
+{
+    FriedmanResult result;
+    if (responses.size() != treatments.size() || responses.size() != blocks.size()
+        || responses.empty()) {
+        error(result.diagnostics, "friedman_input_mismatch",
+              "Friedman 检验要求响应、处理与区组等长且非空。");
+        return result;
+    }
+    std::vector<std::string> treatment_order;
+    std::vector<std::string> block_order;
+    for (std::size_t index = 0; index < responses.size(); ++index) {
+        if (!std::isfinite(responses[index]) || treatments[index].empty()
+            || blocks[index].empty()) {
+            error(result.diagnostics, "friedman_invalid_row",
+                  "Friedman 检验要求数值响应与非空处理/区组标签。");
+            return result;
+        }
+        local_group_index(treatment_order, treatments[index]);
+        local_group_index(block_order, blocks[index]);
+    }
+    const std::size_t k = treatment_order.size();
+    const std::size_t b = block_order.size();
+    result.treatment_count = k;
+    result.block_count = b;
+    if (k < 2 || b < 2) {
+        error(result.diagnostics, "friedman_insufficient_levels",
+              "Friedman 检验至少需要 2 个处理与 2 个区组。");
+        return result;
+    }
+    // cell[block][treatment] = optional value; must be exactly one per cell.
+    std::vector<std::vector<std::optional<double>>> cells(
+        b, std::vector<std::optional<double>>(k));
+    for (std::size_t index = 0; index < responses.size(); ++index) {
+        const std::size_t treatment =
+            local_group_index(treatment_order, treatments[index]);
+        const std::size_t block = local_group_index(block_order, blocks[index]);
+        if (cells[block][treatment].has_value()) {
+            error(result.diagnostics, "friedman_duplicate_cell",
+                  "同一区组与处理出现重复观测，Friedman 要求每格恰 1 个观测。");
+            return result;
+        }
+        cells[block][treatment] = responses[index];
+    }
+    for (std::size_t block = 0; block < b; ++block) {
+        for (std::size_t treatment = 0; treatment < k; ++treatment) {
+            if (!cells[block][treatment].has_value()) {
+                error(result.diagnostics, "friedman_unbalanced",
+                      "存在缺失的区组×处理组合，Friedman 要求平衡设计。");
+                return result;
+            }
+        }
+    }
+
+    std::vector<double> rank_sums(k, 0.0);
+    double tie_cube_sum = 0.0;
+    std::vector<std::vector<double>> treatment_values(k);
+    for (std::size_t block = 0; block < b; ++block) {
+        std::vector<double> block_values;
+        block_values.reserve(k);
+        for (std::size_t treatment = 0; treatment < k; ++treatment) {
+            block_values.push_back(*cells[block][treatment]);
+            treatment_values[treatment].push_back(*cells[block][treatment]);
+        }
+        std::vector<RankedValue> ranked;
+        ranked.reserve(k);
+        for (std::size_t treatment = 0; treatment < k; ++treatment) {
+            ranked.push_back({block_values[treatment], treatment, 0.0, treatment});
+        }
+        std::sort(ranked.begin(), ranked.end(),
+                  [](const RankedValue& first, const RankedValue& second) {
+                      return first.value < second.value;
+                  });
+        std::size_t start = 0;
+        while (start < ranked.size()) {
+            std::size_t end = start + 1;
+            while (end < ranked.size()
+                   && ranked[end].value == ranked[start].value) {
+                ++end;
+            }
+            const double rank = (static_cast<double>(start + 1)
+                + static_cast<double>(end)) / 2.0;
+            const double tie_size = static_cast<double>(end - start);
+            tie_cube_sum += tie_size * tie_size * tie_size - tie_size;
+            for (std::size_t index = start; index < end; ++index) {
+                ranked[index].rank = rank;
+            }
+            start = end;
+        }
+        for (const auto& value : ranked) {
+            rank_sums[value.group] += value.rank;
+        }
+    }
+
+    double sum_sq = 0.0;
+    for (const double rank_sum : rank_sums) {
+        sum_sq += rank_sum * rank_sum;
+    }
+    const double bk = static_cast<double>(b) * static_cast<double>(k);
+    result.s_statistic =
+        12.0 / (bk * (static_cast<double>(k) + 1.0)) * sum_sq
+        - 3.0 * static_cast<double>(b) * (static_cast<double>(k) + 1.0);
+    const double denom =
+        1.0 - tie_cube_sum / (bk * (static_cast<double>(k) * static_cast<double>(k) - 1.0));
+    result.tie_correction = tie_cube_sum > 0.0;
+    result.adjusted_s_statistic =
+        (result.tie_correction && denom > 0.0) ? result.s_statistic / denom
+                                               : result.s_statistic;
+    result.degrees_of_freedom = static_cast<double>(k - 1);
+    result.p_value = chi_square_right_tail(
+        result.adjusted_s_statistic, result.degrees_of_freedom);
+
+    result.treatments.reserve(k);
+    for (std::size_t treatment = 0; treatment < k; ++treatment) {
+        FriedmanTreatment row;
+        row.label = treatment_order[treatment];
+        row.count = b;
+        row.median = median_of(treatment_values[treatment]);
+        row.mean_rank = rank_sums[treatment] / static_cast<double>(b);
+        result.treatments.push_back(std::move(row));
     }
     return result;
 }

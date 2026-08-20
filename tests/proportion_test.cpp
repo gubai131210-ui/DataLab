@@ -29,6 +29,7 @@ private slots:
     void serviceSumsCompleteCaseRows();
     void twoProportionsSumsIndependentGroups();
     void twoProportionsNewcombeWilsonKeepsWaldZ();
+    void twoProportionsAgrestiCoullKeepsWaldZ();
     void interpretationDoesNotClaimPass();
     void twoProportionsInterpretationIsNotOneSample();
 };
@@ -267,10 +268,12 @@ void ProportionTest::twoProportionsNewcombeWilsonKeepsWaldZ()
     // # source: formula_reference — x1=20,n1=50,x2=10,n2=50; Z same; CI Newcombe
     const auto wald = datalab::domain::statistics::two_proportions_test(
         20, 50, 10, 50, 0.95,
-        datalab::domain::statistics::TestAlternative::two_sided, false);
+        datalab::domain::statistics::TestAlternative::two_sided,
+        datalab::domain::statistics::TwoProportionCiMethod::wald);
     const auto wilson = datalab::domain::statistics::two_proportions_test(
         20, 50, 10, 50, 0.95,
-        datalab::domain::statistics::TestAlternative::two_sided, true);
+        datalab::domain::statistics::TestAlternative::two_sided,
+        datalab::domain::statistics::TwoProportionCiMethod::newcombe_wilson);
     QCOMPARE(wald.ci_method, std::string("wald"));
     QCOMPARE(wilson.method, std::string("wilson"));
     QCOMPARE(wilson.ci_method, std::string("newcombe_wilson"));
@@ -316,6 +319,54 @@ void ProportionTest::twoProportionsNewcombeWilsonKeepsWaldZ()
     QVERIFY(page.facts.proportion.has_value());
     QCOMPARE(page.facts.proportion->method, std::string("wilson"));
     QCOMPARE(page.facts.proportion->ci_method, std::string("newcombe_wilson"));
+}
+
+void ProportionTest::twoProportionsAgrestiCoullKeepsWaldZ()
+{
+    // # source: formula_reference — AC diff CI; Z stays unpooled Wald
+    const auto wald = datalab::domain::statistics::two_proportions_test(
+        20, 50, 10, 50, 0.95,
+        datalab::domain::statistics::TestAlternative::two_sided,
+        datalab::domain::statistics::TwoProportionCiMethod::wald);
+    const auto ac = datalab::domain::statistics::two_proportions_test(
+        20, 50, 10, 50, 0.95,
+        datalab::domain::statistics::TestAlternative::two_sided,
+        datalab::domain::statistics::TwoProportionCiMethod::agresti_coull);
+    QCOMPARE(ac.method, std::string("agresti_coull"));
+    QCOMPARE(ac.ci_method, std::string("agresti_coull_diff"));
+    QVERIFY(std::abs(wald.z_statistic - ac.z_statistic) < 1.0e-12);
+    QVERIFY(wald.p_value.has_value() && ac.p_value.has_value());
+    QVERIFY(std::abs(*wald.p_value - *ac.p_value) < 1.0e-12);
+    QVERIFY(ac.confidence_lower.has_value() && ac.confidence_upper.has_value());
+    QVERIFY(std::abs(*wald.confidence_lower - *ac.confidence_lower) > 1.0e-6);
+
+    const double z = datalab::domain::statistics::standard_normal_quantile(0.975);
+    const double z2 = z * z;
+    const double n1t = 50.0 + z2;
+    const double n2t = 50.0 + z2;
+    const double p1t = (20.0 + z2 / 2.0) / n1t;
+    const double p2t = (10.0 + z2 / 2.0) / n2t;
+    const double se = std::sqrt(p1t * (1.0 - p1t) / n1t + p2t * (1.0 - p2t) / n2t);
+    const double expected_lower = (p1t - p2t) - z * se;
+    const double expected_upper = (p1t - p2t) + z * se;
+    QVERIFY(std::abs(*ac.confidence_lower - expected_lower) < 1.0e-9);
+    QVERIFY(std::abs(*ac.confidence_upper - expected_upper) < 1.0e-9);
+
+    datalab::domain::DataTable table;
+    table.columns = {"E1", "N1", "E2", "N2"};
+    table.rows = {{"20", "50", "10", "50"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.inference.first_events_column = 0;
+    configuration.inference.first_trials_column = 1;
+    configuration.inference.second_events_column = 2;
+    configuration.inference.second_trials_column = 3;
+    configuration.inference.confidence_level = 0.95;
+    configuration.inference.proportion_method = "agresti_coull";
+    const auto page = datalab::application::AnalysisService::two_proportions(
+        table, configuration);
+    QVERIFY(page.facts.proportion.has_value());
+    QCOMPARE(page.facts.proportion->method, std::string("agresti_coull"));
+    QCOMPARE(page.facts.proportion->ci_method, std::string("agresti_coull_diff"));
 }
 
 void ProportionTest::interpretationDoesNotClaimPass()

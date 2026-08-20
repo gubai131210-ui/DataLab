@@ -67,9 +67,12 @@
 - [x] 指数平滑（单/双）：拟合与预测明细 / 预测准确度；`ForecastFacts` + `method_metadata(single_exponential_ses|holt_linear_des)`；服务层测试。
 - [x] 线性回归「异常观测」表：仅 R/X/I 打标行；无打标则缺席；`RegressionFacts` 计数语义不变。
 - [x] Multi-Vari：领域均值/覆盖诊断 + `AnalysisService::multi_vari` + 命令 `multi_vari` + `MultiVariFacts` round-trip；因子 2～4。
-- [x] 双样本均值比 TOST：命令 `two_sample_equivalence_ratio`；Fieller 100(1−2α)%；`kind=two_sample_ratio`；不做对数。
+- [x] 双样本均值比 TOST：命令 `two_sample_equivalence_ratio`；默认非对数 Fieller；可选 `transform=log` 几何均值比；`kind=two_sample_ratio`。
 - [x] 两比例 Newcombe–Wilson：`two_proportions` method=`wilson`；CI=`newcombe_wilson`；Z 仍 Wald。
+- [x] 两比例 Agresti–Coull 差值 CI：method=`agresti_coull`；CI=`agresti_coull_diff`；Z 仍 Wald。
 - [x] Kruskal Dunn–Bonferroni 成对表 + Grouping Information；`NonparametricFacts.dunn_available`。
+- [x] Kruskal Steel–Dwass（近似）：`posthoc=steel_dwass`；Grouping (Steel-Dwass)；默认 Dunn 不变。
+- [x] Friedman：命令 `friedman`；响应+处理+区组 complete-case；结修正 χ²；不做后比较。
 - [x] DOE 每响应独立 goal/权重：`intent.inputs["objectives"]` JSON 覆盖 `optimization_objectives`；单响应无 JSON 时旧字段写入 `[0]`。
 - [x] 图表属性：预览在 Tabs 右侧；`GraphPropertiesPanel::set_selected_path` 联动系列列表；浏览模式不遮挡画布；复制仍走 `ChartRenderer`。
 - [x] 单预测变量回归 Fitted Line（观测/拟合线/CI/PI 带）+ 残差图 y=0；多预测变量为每个 X 一张「残差与预测变量」（无 Fitted Line）；Unusual/`RegressionFacts` 计数语义不变。
@@ -266,9 +269,10 @@
 - [ ] 统计 > 假设检验 > 方差检验：测量+3 组选 Bartlett 见 χ²/P；同数据 Levene 仍可用；Bonett+k=3 仍诊断；解读无「已证明等方差」。
 - [ ] 统计 > DOE > 析因设计（≥3 因子）：设 X/Y；`hold` 如 `B=1`；等值线变化且轴仍为编码；空 hold 与旧行为一致；非法 hold 有诊断。
 - [ ] 统计 > ANOVA > 单因素：见 Grouping Information 字母与 Tukey 显著列一致；下限/上限表与差值图仍在；解读无「已证明相同」。
-- [ ] 统计 > 基础统计 > 双样本均值比等价：检验+参考列；界限 0.8/1.25；比值 CI 图；参考均值≤0 诊断；解读无「已证明等价」。
-- [ ] 统计 > 基础统计 > 两比例：同数据 `normal` 与 `wilson`；Z/P 相同、CI 不同；默认仍 Wald。
-- [ ] 统计 > 假设检验 > Kruskal-Wallis：≥3 组见 Dunn 表与 Grouping Information (Dunn)；箱线悬停原始行。
+- [ ] 统计 > 基础统计 > 双样本均值比等价：检验+参考列；界限 0.8/1.25；`transform=none` 与改前一致；`log` 全正值见几何比 CI；含 ≤0 诊断；解读无「已证明等价」。
+- [ ] 统计 > 基础统计 > 两比例：同数据 `normal` / `wilson` / `agresti_coull`；Z/P 相同、CI 不同；默认仍 Wald。
+- [ ] 统计 > 假设检验 > Kruskal-Wallis：默认 Dunn 表与 Grouping (Dunn)；`posthoc=steel_dwass` 见 SD 表与 Grouping (Steel-Dwass)；箱线悬停原始行。
+- [ ] 统计 > 假设检验 > Friedman：响应+处理+区组；平衡设计出 S/P 与箱线；缺处理区组诊断；悬停原始行；解读无「已证明一致」。
 - [ ] 质量工具 > Multi-Vari：4 因子 complete-case 出图；3 因子仍可用；覆盖不足无图；悬停 `source_row`。
 - [ ] 本地运行 `tools/check_layering.ps1`，确认 `ui → application/infrastructure/reporting → domain` 分层未破。
 
@@ -276,15 +280,14 @@
 
 本轮已接入 …（略，见上文勾选）。仍未实现（见 [`docs/research/deferred-capability-agreement.md`](research/deferred-capability-agreement.md)）：
 
-- 单比例 Adjusted Blaker（**Wilson / Agresti–Coull / 两比例 Newcombe–Wilson 已接入**）。
+- 单比例 Adjusted Blaker（**Wilson / Agresti–Coull / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull 已接入**）。
 - 泊松 Blaker（**泊松功效已接入 `t_power`**）。
 - Nested Gage 图已接入（分量条 + 按操作者 Xbar-R + **By Part**）；交叉 Gage By Part / Operator×Part 已接入。
-- TOST **对数变换**（**均值比非对数已接入**）。
 - Minitab 无界似然 bias-correction 数值对齐。
 - 图表拖拽布局、注释系统和多图拼版。
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 的数值对齐。
 - Jackson–Mudholkar T²/Q 解析限（**Bonett / Bartlett / Tukey 表形与字母已接入**）。
-- Steel–Dwass（**Dunn 已接入**）。
+- Nemenyi 独立命令 / Friedman 后比较（**Steel–Dwass 近似与 Friedman 主检验已接入**）。
 - 可旋转 3D 曲面。
 - 将公式参考测试覆盖为真实 Minitab 导出 golden（…）。
 

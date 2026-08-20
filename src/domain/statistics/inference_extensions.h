@@ -118,6 +118,12 @@ std::vector<TukeyGroupingRow> tukey_grouping_letters(
     const std::vector<std::size_t>& counts,
     const std::vector<TukeyComparison>& comparisons);
 
+enum class TwoProportionCiMethod {
+    wald,
+    newcombe_wilson,
+    agresti_coull
+};
+
 TwoProportionsResult two_proportions_test(
     std::size_t first_events,
     std::size_t first_trials,
@@ -125,7 +131,7 @@ TwoProportionsResult two_proportions_test(
     std::size_t second_trials,
     double confidence_level = 0.95,
     TestAlternative alternative = TestAlternative::two_sided,
-    bool newcombe_wilson_ci = false);
+    TwoProportionCiMethod ci_method = TwoProportionCiMethod::wald);
 
 ChiSquareResult chi_square_association(
     const std::vector<std::vector<double>>& observed,
