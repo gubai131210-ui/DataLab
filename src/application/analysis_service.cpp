@@ -4341,75 +4341,141 @@ OutputPage AnalysisService::wilcoxon_signed_rank(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
 {
-    if (configuration.variable_columns.size() != 2) {
-        return error_page("Wilcoxon 符号秩检验", "Wilcoxon signed-rank", "请选择正好两列配对样本。");
+    if (configuration.variable_columns.empty()
+        || configuration.variable_columns.size() > 2) {
+        return error_page("Wilcoxon 符号秩检验", "Wilcoxon signed-rank",
+                          "请选择一列（相对 η0）或两列配对样本。");
     }
-    const auto first = extract_numeric_column(
-        table, configuration.variable_columns[0], configuration.excluded_rows);
-    const auto second = extract_numeric_column(
-        table, configuration.variable_columns[1], configuration.excluded_rows);
-    const auto aligned = align_complete_rows_with_source({first, second});
-    std::vector<double> first_values;
-    std::vector<double> second_values;
-    first_values.reserve(aligned.values.size());
-    second_values.reserve(aligned.values.size());
-    for (const auto& row : aligned.values) {
-        first_values.push_back(row[0]);
-        second_values.push_back(row[1]);
+    const double hypothesized =
+        configuration.inference.hypothesis_mean.value_or(0.0);
+    double confidence = 0.95;
+    if (configuration.inference.confidence_level > 0.0) {
+        confidence = configuration.inference.confidence_level;
+        if (confidence > 1.0) {
+            confidence /= 100.0;
+        }
     }
-    const auto result = datalab::domain::statistics::wilcoxon_signed_rank(
-        first_values, second_values, parse_alternative(configuration.inference.alternative));
     OutputPage page;
     page.id = new_id("wilcoxon");
     page.title = "Wilcoxon 符号秩检验";
     page.method_name = "Wilcoxon signed-rank";
     page.configuration = configuration;
-    page.parameter_summary = first.name + " vs " + second.name;
-    page.diagnostics = result.diagnostics;
+
+    datalab::domain::statistics::SignedRankResult result;
+    std::size_t missing_count = 0;
+    std::size_t plot_point_count = 0;
+    const bool one_sample = configuration.variable_columns.size() == 1;
+
+    if (one_sample) {
+        const auto extracted = extract_numeric_column(
+            table, configuration.variable_columns.front(), configuration.excluded_rows);
+        missing_count = extracted.missing_count;
+        page.parameter_summary = extracted.name + "  vs η0 = "
+            + format_number(hypothesized);
+        result = datalab::domain::statistics::wilcoxon_signed_rank_one_sample(
+            extracted.values, hypothesized,
+            parse_alternative(configuration.inference.alternative),
+            confidence);
+        page.diagnostics = result.diagnostics;
+        auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
+        append_group_to_distribution_plots(
+            plots, extracted.name, extracted.values, extracted.source_rows);
+        push_distribution_plots(page, plots);
+        plot_point_count = plots.point_count;
+    } else {
+        const auto first = extract_numeric_column(
+            table, configuration.variable_columns[0], configuration.excluded_rows);
+        const auto second = extract_numeric_column(
+            table, configuration.variable_columns[1], configuration.excluded_rows);
+        const auto aligned = align_complete_rows_with_source({first, second});
+        std::vector<double> first_values;
+        std::vector<double> second_values;
+        first_values.reserve(aligned.values.size());
+        second_values.reserve(aligned.values.size());
+        for (const auto& row : aligned.values) {
+            first_values.push_back(row[0]);
+            second_values.push_back(row[1]);
+        }
+        result = datalab::domain::statistics::wilcoxon_signed_rank(
+            first_values, second_values,
+            parse_alternative(configuration.inference.alternative));
+        page.parameter_summary = first.name + " vs " + second.name;
+        page.diagnostics = result.diagnostics;
+        missing_count = first.total_count > aligned.source_rows.size()
+            ? first.total_count - aligned.source_rows.size() : 0;
+        if (missing_count > 0) {
+            page.diagnostics.push_back({
+                DiagnosticMessage::Severity::warning,
+                "missing_values",
+                "Wilcoxon 跳过 " + std::to_string(missing_count)
+                    + " 个缺失或非法单元格（含 *）。"});
+        }
+        auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
+        append_group_to_distribution_plots(plots, first.name, first_values, aligned.source_rows);
+        append_group_to_distribution_plots(plots, second.name, second_values, aligned.source_rows);
+        push_distribution_plots(page, plots);
+        plot_point_count = plots.point_count;
+        PlotSpec paired;
+        paired.kind = PlotKind::scatter;
+        paired.title = "配对测量散点图";
+        paired.x_axis_title = first.name;
+        paired.y_axis_title = second.name;
+        paired.x_values = first_values;
+        paired.values = second_values;
+        paired.source_rows = aligned.source_rows;
+        page.plots.push_back(std::move(paired));
+    }
+
     StatisticTable output;
     output.title = "符号秩检验";
-    output.headers = {"非零差值 N", "正秩和", "负秩和", "Z", "P-Value", "Ties 修正",
-                      "连续性修正", "近似方法", "小样本警告"};
-    output.rows.push_back({std::to_string(result.count), format_number(result.positive_rank_sum),
-        format_number(result.negative_rank_sum), format_number(result.z_statistic),
-        format_optional(result.p_value),
-        result.tie_correction ? "是" : "否",
-        result.continuity_correction ? "是" : "否", result.approximation,
-        result.small_sample_warning ? "是" : "否"});
-    page.tables.push_back(output);
-    const std::size_t missing_count = first.total_count > aligned.source_rows.size()
-        ? first.total_count - aligned.source_rows.size() : 0;
-    if (missing_count > 0) {
-        page.diagnostics.push_back({
-            DiagnosticMessage::Severity::warning,
-            "missing_values",
-            "Wilcoxon 跳过 " + std::to_string(missing_count)
-                + " 个缺失或非法单元格（含 *）。"});
+    if (one_sample) {
+        output.headers = {"非零差值 N", "η0", "正秩和", "负秩和", "Z", "P-Value",
+                          "Ties 修正", "连续性修正", "近似方法", "小样本警告"};
+        output.rows.push_back({
+            std::to_string(result.count), format_number(result.hypothesized_median),
+            format_number(result.positive_rank_sum),
+            format_number(result.negative_rank_sum), format_number(result.z_statistic),
+            format_optional(result.p_value),
+            result.tie_correction ? "是" : "否",
+            result.continuity_correction ? "是" : "否", result.approximation,
+            result.small_sample_warning ? "是" : "否"});
+    } else {
+        output.headers = {"非零差值 N", "正秩和", "负秩和", "Z", "P-Value", "Ties 修正",
+                          "连续性修正", "近似方法", "小样本警告"};
+        output.rows.push_back({
+            std::to_string(result.count), format_number(result.positive_rank_sum),
+            format_number(result.negative_rank_sum), format_number(result.z_statistic),
+            format_optional(result.p_value),
+            result.tie_correction ? "是" : "否",
+            result.continuity_correction ? "是" : "否", result.approximation,
+            result.small_sample_warning ? "是" : "否"});
     }
-    auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
-    append_group_to_distribution_plots(plots, first.name, first_values, aligned.source_rows);
-    append_group_to_distribution_plots(plots, second.name, second_values, aligned.source_rows);
-    push_distribution_plots(page, plots);
-    PlotSpec paired;
-    paired.kind = PlotKind::scatter;
-    paired.title = "配对测量散点图";
-    paired.x_axis_title = first.name;
-    paired.y_axis_title = second.name;
-    paired.x_values = first_values;
-    paired.values = second_values;
-    paired.source_rows = aligned.source_rows;
-    page.plots.push_back(std::move(paired));
+    page.tables.push_back(output);
+    if (one_sample && result.location_estimate.has_value()) {
+        StatisticTable location;
+        location.title = "位置估计（Walsh）";
+        location.headers = {"估计中位数", "CI 下限", "CI 上限"};
+        location.rows.push_back({
+            format_optional(result.location_estimate),
+            format_optional(result.ci_lower),
+            format_optional(result.ci_upper)});
+        page.tables.push_back(std::move(location));
+    }
+
     domain::NonparametricFacts facts;
-    facts.method = "wilcoxon_signed_rank";
+    facts.method = one_sample ? "wilcoxon_one_sample" : "wilcoxon_signed_rank";
     facts.statistic = result.z_statistic;
     facts.p_value = result.p_value;
     facts.tie_correction = result.tie_correction;
     facts.continuity_correction = result.continuity_correction;
     facts.approximation = result.approximation;
     facts.small_sample_warning = result.small_sample_warning;
-    facts.group_count = 2;
-    facts.plot_point_count = plots.point_count;
+    facts.group_count = one_sample ? 1 : 2;
+    facts.plot_point_count = plot_point_count;
     facts.missing_count = missing_count;
+    facts.location_estimate = result.location_estimate;
+    facts.ci_lower = result.ci_lower;
+    facts.ci_upper = result.ci_upper;
     page.facts.nonparametric = std::move(facts);
     return finalize_page(std::move(page));
 }
@@ -4620,6 +4686,271 @@ OutputPage AnalysisService::mcnemar(
     page.facts.mcnemar = std::move(facts);
     return finalize_page(std::move(page));
 }
+
+OutputPage AnalysisService::cochran_q(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.variable_columns.size() < 2) {
+        return error_page("Cochran Q 检验", "Cochran Q",
+                          "请选择至少两列配对二元结果（k≥3 才计算；k=2 请用 McNemar）。");
+    }
+    if (configuration.variable_columns.size() == 2) {
+        OutputPage page;
+        page.id = new_id("cochran_q");
+        page.title = "Cochran Q 检验";
+        page.method_name = "Cochran Q";
+        page.configuration = configuration;
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::error,
+            "cochran_use_mcnemar",
+            "Cochran Q 要求至少 3 个处理列；两列配对请用 McNemar。"});
+        domain::CochranQFacts facts;
+        facts.treatment_count = 2;
+        facts.computable = false;
+        page.facts.cochran_q = std::move(facts);
+        return finalize_page(std::move(page));
+    }
+
+    std::set<std::size_t> excluded(
+        configuration.excluded_rows.cbegin(), configuration.excluded_rows.cend());
+    std::vector<std::vector<std::string>> columns;
+    std::vector<std::string> labels;
+    columns.reserve(configuration.variable_columns.size());
+    for (const std::size_t column : configuration.variable_columns) {
+        columns.emplace_back();
+        labels.push_back(column < table.columns.size()
+                             ? table.columns[column]
+                             : std::to_string(column));
+    }
+    std::size_t missing_count = 0;
+    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
+        if (excluded.count(row_index) != 0) {
+            continue;
+        }
+        const auto& row = table.rows[row_index];
+        bool any_missing = false;
+        std::vector<std::string> cells;
+        cells.reserve(configuration.variable_columns.size());
+        for (const std::size_t column : configuration.variable_columns) {
+            const std::string cell = column < row.size() ? row[column] : "";
+            if (is_missing_cell(cell)) {
+                any_missing = true;
+                break;
+            }
+            cells.push_back(cell);
+        }
+        if (any_missing) {
+            ++missing_count;
+            continue;
+        }
+        for (std::size_t index = 0; index < cells.size(); ++index) {
+            columns[index].push_back(cells[index]);
+        }
+    }
+
+    OutputPage page;
+    page.id = new_id("cochran_q");
+    page.title = "Cochran Q 检验";
+    page.method_name = "Cochran Q";
+    page.configuration = configuration;
+    page.parameter_summary = "处理列数 = "
+        + std::to_string(configuration.variable_columns.size());
+
+    std::map<std::string, bool> level_map;
+    std::vector<datalab::domain::DiagnosticMessage> encode_diagnostics;
+    if (!datalab::domain::statistics::encode_paired_binary_levels(
+            columns, level_map, encode_diagnostics)) {
+        page.diagnostics = std::move(encode_diagnostics);
+        domain::CochranQFacts facts;
+        facts.treatment_count = configuration.variable_columns.size();
+        facts.missing_count = missing_count;
+        facts.computable = false;
+        page.facts.cochran_q = std::move(facts);
+        return finalize_page(std::move(page));
+    }
+
+    const std::size_t n = columns.empty() ? 0 : columns.front().size();
+    std::vector<std::vector<int>> binary_rows(n);
+    for (std::size_t row = 0; row < n; ++row) {
+        binary_rows[row].resize(columns.size());
+        for (std::size_t col = 0; col < columns.size(); ++col) {
+            bool positive = false;
+            if (!datalab::domain::statistics::resolve_binary_label(
+                    columns[col][row], level_map, positive)) {
+                page.diagnostics.push_back({
+                    DiagnosticMessage::Severity::error,
+                    "cochran_not_binary",
+                    "存在无法识别为二元水平的标签。"});
+                domain::CochranQFacts facts;
+                facts.treatment_count = columns.size();
+                facts.missing_count = missing_count;
+                facts.computable = false;
+                page.facts.cochran_q = std::move(facts);
+                return finalize_page(std::move(page));
+            }
+            binary_rows[row][col] = positive ? 1 : 0;
+        }
+    }
+
+    const auto result = datalab::domain::statistics::cochran_q_test(binary_rows, labels);
+    page.diagnostics = result.diagnostics;
+    if (missing_count > 0) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning,
+            "missing_values",
+            "Cochran Q 按 complete-case 跳过 " + std::to_string(missing_count)
+                + " 行缺失（含 *）。"});
+    }
+
+    domain::CochranQFacts facts;
+    facts.treatment_count = result.treatment_count;
+    facts.subject_count = result.subject_count;
+    facts.missing_count = missing_count;
+    facts.degrees_of_freedom = result.degrees_of_freedom;
+    facts.approximation = result.approximation;
+    facts.computable = result.computable && result.p_value.has_value();
+    if (facts.computable) {
+        facts.q_statistic = result.q_statistic;
+        facts.p_value = result.p_value;
+        StatisticTable counts;
+        counts.title = "处理成功计数";
+        counts.headers = {"处理", "成功数", "成功率", "N"};
+        for (const auto& treatment : result.treatments) {
+            counts.rows.push_back({
+                treatment.label,
+                std::to_string(treatment.success_count),
+                format_number(treatment.success_rate),
+                std::to_string(result.subject_count)});
+        }
+        page.tables.push_back(std::move(counts));
+        StatisticTable test;
+        test.title = "Cochran Q 检验";
+        test.headers = {"Q", "DF", "P-Value", "近似方法"};
+        test.rows.push_back({
+            format_number(result.q_statistic),
+            format_number(result.degrees_of_freedom),
+            format_optional(result.p_value),
+            result.approximation});
+        page.tables.push_back(std::move(test));
+
+        PlotSpec bar;
+        bar.kind = PlotKind::pareto;
+        bar.title = "各处理阳性率";
+        bar.x_axis_title = "处理";
+        bar.y_axis_title = "阳性率";
+        for (const auto& treatment : result.treatments) {
+            bar.categories.push_back(treatment.label);
+            bar.values.push_back(treatment.success_rate);
+        }
+        page.plots.push_back(std::move(bar));
+    }
+    page.facts.cochran_q = std::move(facts);
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::mood_median(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.variable_columns.empty() || !configuration.by_column.has_value()) {
+        return error_page("Mood 中位数检验", "Mood median",
+                          "请选择测量列和分组列。");
+    }
+    const auto extracted = extract_numeric_column(
+        table, configuration.variable_columns.front(), configuration.excluded_rows);
+    const auto labels = extract_text_column(table, *configuration.by_column);
+    std::vector<std::string> order;
+    std::vector<std::vector<double>> grouped;
+    std::vector<std::vector<std::size_t>> grouped_rows;
+    for (std::size_t index = 0; index < extracted.values.size(); ++index) {
+        const std::size_t row = extracted.source_rows[index];
+        if (row >= labels.size() || is_missing_cell(labels[row])) {
+            continue;
+        }
+        const std::string label = labels[row];
+        const std::size_t group_index = datalab::domain::stable_group_index(order, label);
+        if (group_index >= grouped.size()) {
+            grouped.emplace_back();
+            grouped_rows.emplace_back();
+        }
+        grouped[group_index].push_back(extracted.values[index]);
+        grouped_rows[group_index].push_back(row);
+    }
+    std::vector<std::vector<double>> groups;
+    std::vector<std::string> group_labels;
+    for (std::size_t group = 0; group < order.size(); ++group) {
+        if (!grouped[group].empty()) {
+            group_labels.push_back(order[group]);
+            groups.push_back(grouped[group]);
+        }
+    }
+    const auto result = datalab::domain::statistics::mood_median_test(groups, group_labels);
+    OutputPage page;
+    page.id = new_id("mood_median");
+    page.title = "Mood 中位数检验";
+    page.method_name = "Mood median";
+    page.configuration = configuration;
+    page.parameter_summary = "测量值 = " + extracted.name
+        + "；总体中位数 M = " + format_number(result.overall_median);
+    page.diagnostics = result.diagnostics;
+    if (extracted.missing_count > 0) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning,
+            "missing_values",
+            "Mood 跳过 " + std::to_string(extracted.missing_count)
+                + " 个缺失或非法单元格（含 *）。"});
+    }
+
+    StatisticTable summary;
+    summary.title = "各组 Above/Below";
+    summary.headers = {"组别", "N", "组中位数", "N≤", "N>"};
+    for (const auto& group : result.groups) {
+        summary.rows.push_back({
+            group.label,
+            std::to_string(group.count),
+            format_number(group.median),
+            std::to_string(group.n_le),
+            std::to_string(group.n_gt)});
+    }
+    page.tables.push_back(std::move(summary));
+
+    if (result.p_value.has_value()) {
+        StatisticTable test;
+        test.title = "Mood 中位数检验";
+        test.headers = {"总体中位数 M", "χ²", "DF", "P-Value", "近似方法"};
+        test.rows.push_back({
+            format_number(result.overall_median),
+            format_number(result.chi_square),
+            format_number(result.degrees_of_freedom),
+            format_optional(result.p_value),
+            result.approximation});
+        page.tables.push_back(std::move(test));
+    }
+
+    auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
+    for (std::size_t group = 0; group < order.size(); ++group) {
+        if (grouped[group].empty()) {
+            continue;
+        }
+        append_group_to_distribution_plots(
+            plots, order[group], grouped[group], grouped_rows[group]);
+    }
+    push_distribution_plots(page, plots);
+
+    domain::NonparametricFacts facts;
+    facts.method = "mood_median";
+    facts.statistic = result.chi_square;
+    facts.p_value = result.p_value;
+    facts.approximation = result.approximation;
+    facts.small_sample_warning = result.small_sample_warning;
+    facts.group_count = result.groups.size();
+    facts.plot_point_count = plots.point_count;
+    facts.missing_count = extracted.missing_count;
+    page.facts.nonparametric = std::move(facts);
+    return finalize_page(std::move(page));
+}
+
 
 OutputPage AnalysisService::kruskal_wallis(
     const DataTable& table,

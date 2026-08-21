@@ -14,6 +14,7 @@
 #include <QPushButton>
 #include <QSplitter>
 #include <QStringList>
+#include <QTabWidget>
 #include <QTextBrowser>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -142,12 +143,21 @@ AlgorithmHelpDialog::AlgorithmHelpDialog(QWidget* parent)
     auto* splitter = new QSplitter(Qt::Horizontal, this);
     tree_ = new QTreeWidget(splitter);
     tree_->setHeaderHidden(true);
-    detail_browser_ = new QTextBrowser(splitter);
+    detail_tabs_ = new QTabWidget(splitter);
+    detail_tabs_->setObjectName(QStringLiteral("algorithmHelpDetailTabs"));
+    detail_browser_ = new QTextBrowser(detail_tabs_);
     detail_browser_->setOpenExternalLinks(true);
     detail_browser_->setStyleSheet(
         QStringLiteral("QTextBrowser { font-family: 'Segoe UI','Microsoft YaHei',sans-serif; }"));
+    formula_browser_ = new QTextBrowser(detail_tabs_);
+    formula_browser_->setObjectName(QStringLiteral("algorithmHelpFormulaBrowser"));
+    formula_browser_->setOpenExternalLinks(true);
+    formula_browser_->setStyleSheet(
+        QStringLiteral("QTextBrowser { font-family: 'Segoe UI','Microsoft YaHei',sans-serif; }"));
+    detail_tabs_->addTab(detail_browser_, QStringLiteral("方法说明"));
+    detail_tabs_->addTab(formula_browser_, QStringLiteral("公式与来源"));
     splitter->addWidget(tree_);
-    splitter->addWidget(detail_browser_);
+    splitter->addWidget(detail_tabs_);
     splitter->setStretchFactor(0, 0);
     splitter->setStretchFactor(1, 1);
     splitter->setSizes({280, 860});
@@ -169,11 +179,13 @@ AlgorithmHelpDialog::AlgorithmHelpDialog(QWidget* parent)
             }
         }
     } else {
-        detail_browser_->setHtml(QStringLiteral(
+        const QString error_html = QStringLiteral(
             "<h2>帮助目录加载失败</h2><p>%1</p>")
-                                     .arg(FormulaRenderer::escape_html(load_error_.isEmpty()
-                                                                           ? QStringLiteral("资源缺失或格式错误。")
-                                                                           : load_error_)));
+                                       .arg(FormulaRenderer::escape_html(load_error_.isEmpty()
+                                                                             ? QStringLiteral("资源缺失或格式错误。")
+                                                                             : load_error_));
+        detail_browser_->setHtml(error_html);
+        formula_browser_->setHtml(error_html);
     }
 }
 
@@ -211,6 +223,7 @@ void AlgorithmHelpDialog::rebuild_tree(const QString& filter)
     tree_->expandAll();
     if (tree_->topLevelItemCount() == 0) {
         detail_browser_->setHtml(QStringLiteral("<p>没有匹配的算法条目。</p>"));
+        formula_browser_->setHtml(QStringLiteral("<p>没有匹配的算法条目。</p>"));
         current_formula_plain_text_.clear();
         current_reference_url_.clear();
     }
@@ -237,6 +250,7 @@ void AlgorithmHelpDialog::on_tree_selection_changed()
 void AlgorithmHelpDialog::show_entry(const AlgorithmHelpEntry& entry)
 {
     detail_browser_->setHtml(build_entry_html(entry));
+    formula_browser_->setHtml(build_formula_sources_html(entry));
     QStringList formula_texts;
     for (const FormulaBlock& block : entry.formula_blocks) {
         if (!block.plain_text.isEmpty()) {
@@ -377,6 +391,53 @@ QString AlgorithmHelpDialog::build_entry_html(const AlgorithmHelpEntry& entry) c
                  FormulaRenderer::escape_html(entry.wiring.service_method),
                  FormulaRenderer::escape_html(entry.wiring.facts_type),
                  FormulaRenderer::escape_html(entry.wiring.primary_test)));
+    return html;
+}
+
+QString AlgorithmHelpDialog::build_formula_sources_html(const AlgorithmHelpEntry& entry) const
+{
+    QString html;
+    html += QStringLiteral("<h2>%1</h2>")
+                .arg(FormulaRenderer::escape_html(entry.title));
+    html += QStringLiteral("<p><code>%1</code> · %2</p>")
+                .arg(FormulaRenderer::escape_html(entry.id),
+                     FormulaRenderer::escape_html(status_label(entry.implemented_status)));
+    html += section_html(QStringLiteral("核心公式"), QString());
+    for (const FormulaBlock& block : entry.formula_blocks) {
+        html += QStringLiteral("<h4 style=\"margin-top:12px;\">%1</h4>")
+                    .arg(FormulaRenderer::escape_html(block.title));
+        if (!block.nodes.isEmpty()) {
+            html += FormulaRenderer::to_html(block.nodes);
+        } else if (!block.plain_text.isEmpty()) {
+            html += FormulaRenderer::plain_text_to_html(block.plain_text);
+        }
+        if (!block.explanation.isEmpty()) {
+            html += QStringLiteral("<p>%1</p>")
+                        .arg(FormulaRenderer::escape_html(block.explanation)
+                                 .replace('\n', QStringLiteral("<br/>")));
+        }
+        if (!block.conditions.isEmpty()) {
+            html += QStringLiteral("<p><em>条件：%1</em></p>")
+                        .arg(FormulaRenderer::escape_html(block.conditions)
+                                 .replace('\n', QStringLiteral("<br/>")));
+        }
+        if (!block.note.isEmpty()) {
+            html += QStringLiteral("<p style=\"color:#666;\">%1</p>")
+                        .arg(FormulaRenderer::escape_html(block.note));
+        }
+    }
+    QString references;
+    for (const HelpReferenceLink& link : entry.reference_links) {
+        references += QStringLiteral(
+                          "<li><a href=\"%1\">%2</a> <span style=\"color:#666;\">访问日期 %3</span></li>")
+                          .arg(FormulaRenderer::escape_html(link.url),
+                               FormulaRenderer::escape_html(link.label),
+                               FormulaRenderer::escape_html(link.accessed));
+    }
+    html += section_html(QStringLiteral("官方链接与来源"),
+                         references.isEmpty()
+                             ? QStringLiteral("<p>本条目暂无外链。</p>")
+                             : QStringLiteral("<ul>%1</ul>").arg(references));
     return html;
 }
 

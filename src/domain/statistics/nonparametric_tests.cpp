@@ -260,25 +260,27 @@ RankSumResult mann_whitney(
     return result;
 }
 
-SignedRankResult wilcoxon_signed_rank(
-    const std::vector<double>& first,
-    const std::vector<double>& second,
-    TestAlternative alternative)
+namespace {
+
+SignedRankResult wilcoxon_signed_rank_from_differences(
+    const std::vector<double>& differences,
+    TestAlternative alternative,
+    double hypothesized_median,
+    bool compute_location,
+    double confidence_level)
 {
     SignedRankResult result;
-    if (first.size() != second.size()) {
-        error(result.diagnostics, "unequal_pair_count",
-              "Wilcoxon signed-rank 检验要求两列行数相同。");
-        return result;
-    }
+    result.hypothesized_median = hypothesized_median;
     std::vector<std::vector<double>> absolute_differences(2);
     std::vector<int> signs;
-    for (std::size_t index = 0; index < first.size(); ++index) {
-        const double difference = first[index] - second[index];
-        if (difference != 0.0 && std::isfinite(difference)) {
-            absolute_differences[0].push_back(std::abs(difference));
-            signs.push_back(difference > 0.0 ? 1 : -1);
+    std::vector<double> nonzero_originals;
+    for (const double difference : differences) {
+        if (!std::isfinite(difference) || difference == 0.0) {
+            continue;
         }
+        absolute_differences[0].push_back(std::abs(difference));
+        signs.push_back(difference > 0.0 ? 1 : -1);
+        nonzero_originals.push_back(difference + hypothesized_median);
     }
     result.count = signs.size();
     if (result.count < 2) {
@@ -328,7 +330,87 @@ SignedRankResult wilcoxon_signed_rank(
             ? 1.0 - cdf
             : std::clamp(2.0 * (1.0 - standard_normal_cdf(
                 std::abs(result.z_statistic))), 0.0, 1.0);
+
+    if (compute_location && !nonzero_originals.empty()) {
+        std::vector<double> walsh;
+        const std::size_t n = nonzero_originals.size();
+        walsh.reserve(n * (n + 1) / 2);
+        for (std::size_t i = 0; i < n; ++i) {
+            for (std::size_t j = i; j < n; ++j) {
+                walsh.push_back(0.5 * (nonzero_originals[i] + nonzero_originals[j]));
+            }
+        }
+        std::sort(walsh.begin(), walsh.end());
+        if (!walsh.empty()) {
+            const std::size_t mid = walsh.size() / 2;
+            result.location_estimate = (walsh.size() % 2 == 1)
+                ? walsh[mid]
+                : 0.5 * (walsh[mid - 1] + walsh[mid]);
+        }
+        const double m = static_cast<double>(walsh.size());
+        const double alpha = std::clamp(1.0 - confidence_level, 1e-12, 1.0 - 1e-12);
+        const double z = standard_normal_quantile(1.0 - alpha / 2.0);
+        const double d = n * (n + 1.0) / 4.0 - 0.5
+            - z * std::sqrt(n * (n + 1.0) * (2.0 * n + 1.0) / 24.0);
+        long long d_star = static_cast<long long>(std::floor(d));
+        if (d_star < 0) {
+            d_star = 0;
+        }
+        const long long max_d = static_cast<long long>(walsh.size()) - 1;
+        if (d_star > max_d) {
+            d_star = max_d;
+        }
+        const std::size_t lower_index = static_cast<std::size_t>(d_star);
+        const std::size_t upper_index =
+            static_cast<std::size_t>(static_cast<long long>(walsh.size()) - 1 - d_star);
+        if (lower_index < walsh.size() && upper_index < walsh.size()
+            && lower_index <= upper_index) {
+            result.ci_lower = walsh[lower_index];
+            result.ci_upper = walsh[upper_index];
+        }
+    }
     return result;
+}
+
+}  // namespace
+
+SignedRankResult wilcoxon_signed_rank(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    TestAlternative alternative)
+{
+    SignedRankResult result;
+    if (first.size() != second.size()) {
+        error(result.diagnostics, "unequal_pair_count",
+              "Wilcoxon signed-rank 检验要求两列行数相同。");
+        return result;
+    }
+    std::vector<double> differences;
+    differences.reserve(first.size());
+    for (std::size_t index = 0; index < first.size(); ++index) {
+        if (std::isfinite(first[index]) && std::isfinite(second[index])) {
+            differences.push_back(first[index] - second[index]);
+        }
+    }
+    return wilcoxon_signed_rank_from_differences(
+        differences, alternative, 0.0, false, 0.95);
+}
+
+SignedRankResult wilcoxon_signed_rank_one_sample(
+    const std::vector<double>& values,
+    const double hypothesized_median,
+    const TestAlternative alternative,
+    const double confidence_level)
+{
+    std::vector<double> differences;
+    differences.reserve(values.size());
+    for (const double value : values) {
+        if (std::isfinite(value)) {
+            differences.push_back(value - hypothesized_median);
+        }
+    }
+    return wilcoxon_signed_rank_from_differences(
+        differences, alternative, hypothesized_median, true, confidence_level);
 }
 
 KruskalWallisResult kruskal_wallis(
@@ -780,41 +862,66 @@ std::optional<bool> parse_known_binary(const std::string& raw)
     return std::nullopt;
 }
 
+bool encode_binary_columns(
+    const std::vector<std::vector<std::string>>& columns,
+    std::map<std::string, bool>& level_to_positive,
+    std::vector<DiagnosticMessage>& diagnostics)
+{
+    level_to_positive.clear();
+    if (columns.size() < 2) {
+        error(diagnostics, "binary_encode_need_columns",
+              "二元编码至少需要两列配对标签。");
+        return false;
+    }
+    const std::size_t row_count = columns.front().size();
+    for (const auto& column : columns) {
+        if (column.size() != row_count) {
+            error(diagnostics, "binary_encode_length_mismatch",
+                  "配对二元列必须等长。");
+            return false;
+        }
+    }
+    if (row_count == 0) {
+        error(diagnostics, "binary_encode_empty",
+              "配对二元输入为空。");
+        return false;
+    }
+    bool all_known = true;
+    std::vector<std::string> unique_order;
+    for (std::size_t row = 0; row < row_count; ++row) {
+        for (const auto& column : columns) {
+            const std::string cell = trim_ascii(column[row]);
+            if (cell.empty()) {
+                error(diagnostics, "binary_encode_empty_label",
+                      "配对二元要求标签非空。");
+                return false;
+            }
+            if (!parse_known_binary(cell).has_value()) {
+                all_known = false;
+            }
+            local_group_index(unique_order, cell);
+        }
+    }
+    if (all_known) {
+        return true;
+    }
+    if (unique_order.size() != 2) {
+        error(diagnostics, "binary_encode_not_binary",
+              "要求合计恰为两个水平，或可识别的二元编码（0/1、pass/fail 等）。");
+        return false;
+    }
+    level_to_positive[unique_order[0]] = false;
+    level_to_positive[unique_order[1]] = true;
+    return true;
+}
+
 bool build_binary_map(
     const std::vector<std::string>& first,
     const std::vector<std::string>& second,
     std::map<std::string, bool>& level_to_positive,
     std::vector<DiagnosticMessage>& diagnostics)
 {
-    level_to_positive.clear();
-    bool all_known = true;
-    std::vector<std::string> unique_order;
-    for (std::size_t index = 0; index < first.size(); ++index) {
-        const std::string a = trim_ascii(first[index]);
-        const std::string b = trim_ascii(second[index]);
-        if (a.empty() || b.empty()) {
-            error(diagnostics, "mcnemar_empty_label",
-                  "McNemar 要求配对标签非空。");
-            return false;
-        }
-        if (!parse_known_binary(a).has_value() || !parse_known_binary(b).has_value()) {
-            all_known = false;
-        }
-        local_group_index(unique_order, a);
-        local_group_index(unique_order, b);
-    }
-    if (all_known) {
-        return true;
-    }
-    if (unique_order.size() != 2) {
-        error(diagnostics, "mcnemar_not_binary",
-              "McNemar 要求两列合计恰为两个水平，或可识别的二元编码（0/1、pass/fail 等）。");
-        return false;
-    }
-    // First-seen level = negative (false), second = positive (true).
-    level_to_positive[unique_order[0]] = false;
-    level_to_positive[unique_order[1]] = true;
-    return true;
+    return encode_binary_columns({first, second}, level_to_positive, diagnostics);
 }
 
 bool resolve_binary(
@@ -1016,6 +1123,217 @@ SignTestResult sign_test_paired(
         }
     }
     return sign_test_core(diffs, 0.0, alternative);
+}
+
+bool encode_paired_binary_levels(
+    const std::vector<std::vector<std::string>>& columns,
+    std::map<std::string, bool>& level_to_positive,
+    std::vector<DiagnosticMessage>& diagnostics)
+{
+    return encode_binary_columns(columns, level_to_positive, diagnostics);
+}
+
+bool resolve_binary_label(
+    const std::string& raw,
+    const std::map<std::string, bool>& level_to_positive,
+    bool& out)
+{
+    return resolve_binary(raw, level_to_positive, out);
+}
+
+MoodMedianResult mood_median_test(
+    const std::vector<std::vector<double>>& groups,
+    const std::vector<std::string>& labels)
+{
+    MoodMedianResult result;
+    if (groups.size() < 2 || (!labels.empty() && labels.size() != groups.size())) {
+        error(result.diagnostics, "mood_invalid_groups",
+              "Mood 中位数检验至少需要两个且标签匹配的组。");
+        return result;
+    }
+    std::vector<std::vector<double>> kept_groups;
+    std::vector<std::string> kept_labels;
+    for (std::size_t group = 0; group < groups.size(); ++group) {
+        if (groups[group].size() < 2) {
+            warning(result.diagnostics, "mood_group_dropped",
+                    "观测数少于 2 的组已从 Mood 检验中排除。");
+            continue;
+        }
+        kept_groups.push_back(groups[group]);
+        kept_labels.push_back(
+            labels.empty() ? std::to_string(group + 1) : labels[group]);
+    }
+    if (kept_groups.size() < 2) {
+        error(result.diagnostics, "mood_insufficient_groups",
+              "排除小组后不足两个组，无法计算 Mood 中位数检验。");
+        return result;
+    }
+    std::vector<double> pooled;
+    for (const auto& group : kept_groups) {
+        for (const double value : group) {
+            if (std::isfinite(value)) {
+                pooled.push_back(value);
+            }
+        }
+    }
+    if (pooled.size() < 4) {
+        error(result.diagnostics, "mood_insufficient_observations",
+              "Mood 中位数检验有效观测不足。");
+        return result;
+    }
+    result.overall_median = median_of(pooled);
+    if (!std::isfinite(result.overall_median)) {
+        error(result.diagnostics, "mood_median_undefined",
+              "无法计算总体中位数。");
+        return result;
+    }
+    std::size_t total_le = 0;
+    std::size_t total_gt = 0;
+    for (std::size_t group = 0; group < kept_groups.size(); ++group) {
+        MoodMedianGroup row;
+        row.label = kept_labels[group];
+        std::vector<double> finite;
+        for (const double value : kept_groups[group]) {
+            if (!std::isfinite(value)) {
+                continue;
+            }
+            finite.push_back(value);
+            if (value <= result.overall_median) {
+                ++row.n_le;
+            } else {
+                ++row.n_gt;
+            }
+        }
+        row.count = finite.size();
+        row.median = median_of(finite);
+        total_le += row.n_le;
+        total_gt += row.n_gt;
+        result.groups.push_back(row);
+        if (row.count < 10) {
+            result.small_sample_warning = true;
+        }
+    }
+    const double n = static_cast<double>(total_le + total_gt);
+    if (n <= 0.0 || total_le == 0 || total_gt == 0) {
+        error(result.diagnostics, "mood_degenerate_table",
+              "N≤ 或 N> 一侧为 0，Mood χ² 不可计算。");
+        return result;
+    }
+    const double k = static_cast<double>(result.groups.size());
+    result.degrees_of_freedom = k - 1.0;
+    double chi = 0.0;
+    for (const auto& group : result.groups) {
+        const double col = static_cast<double>(group.n_le + group.n_gt);
+        const double e_le = static_cast<double>(total_le) * col / n;
+        const double e_gt = static_cast<double>(total_gt) * col / n;
+        if (e_le < 5.0 || e_gt < 5.0) {
+            result.expected_count_warning = true;
+        }
+        if (e_le > 0.0) {
+            const double d = static_cast<double>(group.n_le) - e_le;
+            chi += d * d / e_le;
+        }
+        if (e_gt > 0.0) {
+            const double d = static_cast<double>(group.n_gt) - e_gt;
+            chi += d * d / e_gt;
+        }
+    }
+    result.chi_square = chi;
+    result.p_value = chi_square_right_tail(chi, result.degrees_of_freedom);
+    if (result.expected_count_warning) {
+        warning(result.diagnostics, "expected_count_warning",
+                "存在期望频数 < 5 的单元格，χ² 近似需谨慎解读。");
+    }
+    if (result.small_sample_warning) {
+        warning(result.diagnostics, "small_sample_warning",
+                "存在样本量较小的组，Mood χ² 近似只作提示。");
+    }
+    return result;
+}
+
+CochranQResult cochran_q_test(
+    const std::vector<std::vector<int>>& binary_rows,
+    const std::vector<std::string>& treatment_labels)
+{
+    CochranQResult result;
+    if (binary_rows.empty()) {
+        error(result.diagnostics, "cochran_empty",
+              "Cochran Q 输入为空。");
+        return result;
+    }
+    const std::size_t k = binary_rows.front().size();
+    if (k < 3) {
+        error(result.diagnostics, "cochran_use_mcnemar",
+              "Cochran Q 要求至少 3 个处理列；两列配对请用 McNemar。");
+        return result;
+    }
+    if (!treatment_labels.empty() && treatment_labels.size() != k) {
+        error(result.diagnostics, "cochran_label_mismatch",
+              "处理标签个数必须与列数一致。");
+        return result;
+    }
+    for (const auto& row : binary_rows) {
+        if (row.size() != k) {
+            error(result.diagnostics, "cochran_ragged",
+                  "Cochran Q 宽表每行处理数必须一致。");
+            return result;
+        }
+        for (const int cell : row) {
+            if (cell != 0 && cell != 1) {
+                error(result.diagnostics, "cochran_not_binary",
+                      "Cochran Q 仅接受已编码的 0/1 值。");
+                return result;
+            }
+        }
+    }
+    const std::size_t n = binary_rows.size();
+    result.subject_count = n;
+    result.treatment_count = k;
+    std::vector<double> column_sums(k, 0.0);
+    double sum_r2 = 0.0;
+    double t = 0.0;
+    for (const auto& row : binary_rows) {
+        double row_sum = 0.0;
+        for (std::size_t j = 0; j < k; ++j) {
+            const double x = static_cast<double>(row[j]);
+            column_sums[j] += x;
+            row_sum += x;
+            t += x;
+        }
+        sum_r2 += row_sum * row_sum;
+    }
+    for (std::size_t j = 0; j < k; ++j) {
+        CochranQTreatment treatment;
+        treatment.label = treatment_labels.empty()
+            ? std::to_string(j + 1) : treatment_labels[j];
+        treatment.success_count = static_cast<std::size_t>(column_sums[j] + 0.5);
+        treatment.success_rate = n > 0 ? column_sums[j] / static_cast<double>(n) : 0.0;
+        result.treatments.push_back(treatment);
+        if (column_sums[j] <= 0.0 || column_sums[j] >= static_cast<double>(n)) {
+            warning(result.diagnostics, "cochran_sparse_column",
+                    "存在全失败或全成功的处理列，解读需谨慎。");
+        }
+    }
+    if (n < 4) {
+        warning(result.diagnostics, "cochran_small_n",
+                "受试者数 < 4，χ² 近似只作提示。");
+    }
+    const double sum_c2 = std::accumulate(
+        column_sums.begin(), column_sums.end(), 0.0,
+        [](double acc, double c) { return acc + c * c; });
+    const double denom = static_cast<double>(k) * t - sum_r2;
+    if (denom <= 0.0) {
+        error(result.diagnostics, "cochran_degenerate",
+              "Cochran Q 分母为 0（行和无变异），统计量不可计算。");
+        return result;
+    }
+    result.q_statistic = (static_cast<double>(k) - 1.0)
+        * (static_cast<double>(k) * sum_c2 - t * t) / denom;
+    result.degrees_of_freedom = static_cast<double>(k) - 1.0;
+    result.p_value = chi_square_right_tail(
+        result.q_statistic, result.degrees_of_freedom);
+    result.computable = true;
+    return result;
 }
 
 }  // namespace datalab::domain::statistics

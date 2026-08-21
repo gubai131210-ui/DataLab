@@ -536,6 +536,25 @@ void write_interpretation_facts(
         mcnemar.insert(QStringLiteral("computable"), facts.mcnemar->computable);
         serialized.insert(QStringLiteral("mcnemar"), mcnemar);
     }
+    if (facts.cochran_q.has_value()) {
+        QJsonObject cochran;
+        cochran.insert(QStringLiteral("treatment_count"),
+                       static_cast<int>(facts.cochran_q->treatment_count));
+        cochran.insert(QStringLiteral("subject_count"),
+                       static_cast<int>(facts.cochran_q->subject_count));
+        cochran.insert(QStringLiteral("missing_count"),
+                       static_cast<int>(facts.cochran_q->missing_count));
+        cochran.insert(QStringLiteral("q_statistic"),
+                       optional_number(facts.cochran_q->q_statistic));
+        cochran.insert(QStringLiteral("p_value"),
+                       optional_number(facts.cochran_q->p_value));
+        cochran.insert(QStringLiteral("degrees_of_freedom"),
+                       facts.cochran_q->degrees_of_freedom);
+        cochran.insert(QStringLiteral("computable"), facts.cochran_q->computable);
+        cochran.insert(QStringLiteral("approximation"),
+                       QString::fromStdString(facts.cochran_q->approximation));
+        serialized.insert(QStringLiteral("cochran_q"), cochran);
+    }
     if (facts.nonparametric.has_value()) {
         QJsonObject nonparametric;
         nonparametric.insert(QStringLiteral("method"),
@@ -1272,6 +1291,25 @@ void read_interpretation_facts(
                            .toStdString();
         value.computable = mcnemar.value(QStringLiteral("computable")).toBool(false);
         facts.mcnemar = std::move(value);
+    }
+    const QJsonObject cochran = serialized.value(QStringLiteral("cochran_q")).toObject();
+    if (!cochran.isEmpty()) {
+        domain::CochranQFacts value;
+        value.treatment_count = static_cast<std::size_t>(
+            cochran.value(QStringLiteral("treatment_count")).toInt(0));
+        value.subject_count = static_cast<std::size_t>(
+            cochran.value(QStringLiteral("subject_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            cochran.value(QStringLiteral("missing_count")).toInt(0));
+        value.q_statistic = read_optional(cochran.value(QStringLiteral("q_statistic")));
+        value.p_value = read_optional(cochran.value(QStringLiteral("p_value")));
+        value.degrees_of_freedom =
+            cochran.value(QStringLiteral("degrees_of_freedom")).toDouble(0.0);
+        value.computable = cochran.value(QStringLiteral("computable")).toBool(false);
+        value.approximation = cochran.value(QStringLiteral("approximation"))
+                                  .toString(QStringLiteral("chi_square"))
+                                  .toStdString();
+        facts.cochran_q = std::move(value);
     }
     const QJsonObject nonparametric = serialized.value(QStringLiteral("nonparametric")).toObject();
     if (!nonparametric.isEmpty()) {

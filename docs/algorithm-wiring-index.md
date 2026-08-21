@@ -53,6 +53,10 @@
 | P1 McNemar | [`research/p1_mcnemar_test.md`](research/p1_mcnemar_test.md) |
 | P1 Sign test | [`research/p1_sign_test.md`](research/p1_sign_test.md) |
 | P1 Durbin–Watson 临界 | [`research/p1_durbin_watson_critical.md`](research/p1_durbin_watson_critical.md) |
+| P1 Mood 中位数 | [`research/p1_mood_median_test.md`](research/p1_mood_median_test.md) |
+| P1 Cochran Q | [`research/p1_cochran_q.md`](research/p1_cochran_q.md) |
+| P1 单样本 Wilcoxon | [`research/p1_wilcoxon_one_sample.md`](research/p1_wilcoxon_one_sample.md) |
+| P1 帮助公式与来源页签 | [`research/p1_help_formula_sources_tab.md`](research/p1_help_formula_sources_tab.md) |
 | P1 Multi-Vari 第 4 因子 | [`research/p1_multi_vari_fourth_factor.md`](research/p1_multi_vari_fourth_factor.md) |
 
 ## 2. 命令 id → 服务 → Facts
@@ -70,8 +74,8 @@
 | one_sample_equivalence / two_sample_equivalence / two_sample_equivalence_ratio / paired_equivalence | 同名 | equivalence（比值 kind=two_sample_ratio；可选 log） | equivalence_test |
 | one_way_anova / two_factor_anova | one_way_anova / two_factor_anova | anova（含 tukey_grouping_*） | quality_statistics_test / two_factor_anova_output_test |
 | regression | regression | regression | regression_output_test |
-| mann_whitney / wilcoxon_signed_rank / sign_test / kruskal_wallis / friedman | 同名 | nonparametric（含 dunn/steel_dwass/nemenyi/sign_test/friedman） | quality_statistics_test |
-| mcnemar | mcnemar | mcnemar | quality_statistics_test |
+| mann_whitney / wilcoxon_signed_rank / sign_test / mood_median / kruskal_wallis / friedman | 同名 | nonparametric（含 dunn/steel_dwass/nemenyi/sign_test/friedman/mood/wilcoxon_one_sample） | quality_statistics_test |
+| mcnemar / cochran_q | mcnemar / cochran_q | mcnemar / cochran_q | quality_statistics_test |
 | chi_square | chi_square | chi_square（含 plot_available） | quality_statistics_test |
 | chi_square_gof | chi_square_gof | chi_square_gof（含 validity_status、minimum_expected_count、recommendation） | capability_ci_gof_rare_event_power_test |
 | variance_test | variance_test | variance（含 bartlett） | quality_statistics_test |
@@ -113,6 +117,7 @@ complete-case 行主序 `align_complete_rows`；`parse_numeric_cell` / `is_missi
 ## 4. 算法与公式帮助中心
 
 - 菜单：**帮助 → 算法、公式与参考资料**（`AlgorithmHelpDialog`）。
+- 详情区分页签：**方法说明** | **公式与来源**（后者仅公式块 + 官方链接，不含仓库 md / wiring）。
 - 内置资源：`resources/help/algorithm_help.json`（`:/help/algorithm_help.json`）。**最终用户不需要仓库或 Markdown 文件**：每条命令都内置用途、输入、缺失值规则、计算步骤、公式、符号、判定条件、不可计算边界和解释限制。
 - 官方网页仅作延伸阅读；核心方法说明在程序内离线可读。
 - 仓库 `docs/research/*.md` 只出现在详情页底部的维护信息中，供开发者追溯，不是用户说明书。

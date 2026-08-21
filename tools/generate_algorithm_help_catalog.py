@@ -52,6 +52,10 @@ MINITAB = {
     "gchart": ("官方 G 图方法", "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/rare-event-charts/g-chart/methods-and-formulas/methods-and-formulas/"),
     "tchart": ("官方 T 图方法", "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/rare-event-charts/t-chart/methods-and-formulas/methods-and-formulas/"),
     "power": ("官方单样本 t 功效", "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/power-and-sample-size/how-to/hypothesis-tests/power-and-sample-size-for-1-sample-t/methods-and-formulas/methods-and-formulas/"),
+    "mood": ("官方 Mood 中位数检验计算", "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/mood-s-median-test/methods-and-formulas/calculation-method/"),
+    "wilcoxon1": ("官方 1-Sample Wilcoxon 方法", "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/1-sample-wilcoxon/methods-and-formulas/methods-and-formulas/"),
+    "mcnemar": ("官方 McNemar 说明", "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/supporting-topics/other-statistics-and-tests/why-should-i-use-mcnemar-s-test/"),
+    "nist_np": ("NIST 非参数入口", "https://www.itl.nist.gov/div898/handbook/prd/section4/prd4.htm"),
 }
 
 

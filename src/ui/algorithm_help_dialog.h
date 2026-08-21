@@ -8,6 +8,7 @@ class QLineEdit;
 class QTreeWidget;
 class QTextBrowser;
 class QPushButton;
+class QTabWidget;
 
 class AlgorithmHelpDialog final : public QDialog {
     Q_OBJECT
@@ -28,13 +29,16 @@ private:
     void rebuild_tree(const QString& filter);
     void show_entry(const AlgorithmHelpEntry& entry);
     QString build_entry_html(const AlgorithmHelpEntry& entry) const;
+    QString build_formula_sources_html(const AlgorithmHelpEntry& entry) const;
     QString status_label(const QString& status) const;
 
     AlgorithmHelpCatalog catalog_;
     QString load_error_;
     QLineEdit* search_edit_ = nullptr;
     QTreeWidget* tree_ = nullptr;
+    QTabWidget* detail_tabs_ = nullptr;
     QTextBrowser* detail_browser_ = nullptr;
+    QTextBrowser* formula_browser_ = nullptr;
     QPushButton* copy_formula_button_ = nullptr;
     QPushButton* copy_summary_button_ = nullptr;
     QPushButton* open_reference_button_ = nullptr;

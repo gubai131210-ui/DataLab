@@ -129,6 +129,14 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage cochran_q(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage mood_median(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage kruskal_wallis(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);

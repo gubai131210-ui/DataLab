@@ -2302,13 +2302,14 @@
       ],
       "implemented_status": "implemented",
       "purpose": "对配对差或单样本中位数做符号秩检验。",
-      "method_overview": "去掉差值为 0 的对，对绝对值赋秩再带上符号。",
-      "input_description": "配对两列，或一列相对假设中位数。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "去掉差值为 0 的观测，对绝对值赋秩再带上符号。单样本相对 η0；配对两列差分。单样本另报 Walsh 估计中位数与正态近似 CI（公式参考）。",
+      "input_description": "一列+η0（默认 0），或两列配对；可选置信水平（单样本 CI）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
+        "complete-case 对齐。",
         "算差值并去掉 0。",
         "绝对值赋秩，加回符号。",
-        "近似 p 与位置估计。"
+        "近似 p；单样本 Walsh 点估计与 CI。"
       ],
       "symbol_definitions": [
         {
@@ -2316,32 +2317,50 @@
           "meaning": "正秩和"
         },
         {
-          "symbol": "d_i",
-          "meaning": "配对差"
+          "symbol": "η0",
+          "meaning": "假设中位数"
+        },
+        {
+          "symbol": "Walsh",
+          "meaning": "两两平均的中位数"
         }
       ],
       "decision_rules": [
         "零差不进秩。",
-        "不得写已证明中位数等于假设值。"
+        "不得写已证明中位数等于假设值。",
+        "不改配对路径的秩公式。"
       ],
       "invalid_input_conditions": "非零差个数过少时诊断。",
-      "output_description": "符号秩表、箱线/个体值、配对散点。",
-      "output_interpretation": "结合图形看差的方向。",
-      "assumptions_and_boundaries": "大样本正态近似。",
+      "output_description": "符号秩表；单样本另有位置估计表；箱线/个体值；配对另有散点。",
+      "output_interpretation": "结合图形看差的方向；单样本先看 η̂ 与区间是否含 η0。",
+      "assumptions_and_boundaries": "分布明显不对称时优先符号检验。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
           "title": "符号秩",
-          "plain_text": "对 |d_i|>0 赋秩，W 为带符号秩和。零差不进入秩。",
+          "plain_text": "对 |d_i|>0 赋秩，W 为带符号秩和；结修正方差。零差不进入秩。",
           "explanation": "",
           "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "Walsh 估计",
+          "plain_text": "对非结观测构造 (Yi+Yj)/2（i≤j），取中位数为 η̂；CI 用正态近似秩序统计。",
+          "explanation": "",
+          "conditions": "单样本模式；formula_reference。",
           "note": ""
         }
       ],
       "reference_links": [
         {
-          "label": "官方 t 检验方法",
-          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "label": "官方 1-Sample Wilcoxon 方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/1-sample-wilcoxon/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "NIST 非参数入口",
+          "url": "https://www.itl.nist.gov/div898/handbook/prd/section4/prd4.htm",
           "accessed": "2026-08-20",
           "kind": "minitab"
         }
@@ -2357,6 +2376,172 @@
         "command_id": "wilcoxon_signed_rank",
         "service_method": "wilcoxon_signed_rank",
         "facts_type": "nonparametric",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "mood_median",
+      "title": "Mood 中位数检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "mood_median",
+        "Mood 中位数检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "不假设正态，比较 k 组中位数（基于总体中位数的 2×k 表）。",
+      "method_overview": "全体求总体中位数 M；各组计 N≤ / N>（等于 M 计入 N≤）；对 2×k 表做 Pearson χ²。独立于 Kruskal–Wallis。",
+      "input_description": "测量列+分组列；complete-case；N<2 的水平排除。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case。",
+        "计算总体中位数 M。",
+        "各组计 N≤、N>。",
+        "Pearson χ² 与 p。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "M",
+          "meaning": "总体中位数"
+        },
+        {
+          "symbol": "N≤",
+          "meaning": "≤M 的个数"
+        },
+        {
+          "symbol": "N>",
+          "meaning": ">M 的个数"
+        },
+        {
+          "symbol": "χ²",
+          "meaning": "Pearson 统计量"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明各组中位数相同。",
+        "不做 Mood 后比较。",
+        "不改 Kruskal Dunn/Steel–Dwass。"
+      ],
+      "invalid_input_conditions": "有效组不足、N≤ 或 N> 一侧为 0 时诊断；期望频数 <5 警告。",
+      "output_description": "各组 Above/Below 表、Mood 检验表、箱线/个体值。",
+      "output_interpretation": "先看 χ²/p，再看各组 N≤/N> 与箱线。",
+      "assumptions_and_boundaries": "需要秩检验时用 Kruskal-Wallis。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Mood",
+          "plain_text": "χ²=Σ(O−E)²/E，DF=k−1；期望 E=行合计×列合计/N。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 Mood 中位数检验计算",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/nonparametrics/how-to/mood-s-median-test/methods-and-formulas/calculation-method/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "NIST 非参数入口",
+          "url": "https://www.itl.nist.gov/div898/handbook/prd/section4/prd4.htm",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "mood_median",
+        "service_method": "mood_median",
+        "facts_type": "nonparametric",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "cochran_q",
+      "title": "Cochran Q 检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "cochran_q",
+        "Cochran Q 检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "配对二元、k≥3 处理的边际阳性率检验。",
+      "method_overview": "宽表 complete-case；二元编码与 McNemar 相同。Q=(k−1)(kΣC²−T²)/(kT−ΣR²)，DF=k−1。k=2 只诊断并引导 McNemar。",
+      "input_description": "≥3 列配对二元（0/1、pass/fail 等）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "多列 complete-case。",
+        "二元编码。",
+        "计算列和/行和。",
+        "Q 与 χ² 近似 p。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Q",
+          "meaning": "Cochran 统计量"
+        },
+        {
+          "symbol": "C_j",
+          "meaning": "处理 j 成功数"
+        },
+        {
+          "symbol": "R_i",
+          "meaning": "受试者 i 成功数"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明各处理阳性率相同。",
+        "不修改 chi_square / chi_square_gof。",
+        "k=2 请用 McNemar。"
+      ],
+      "invalid_input_conditions": "列数<3、非二元、分母退化时诊断。",
+      "output_description": "处理成功计数表、Cochran Q 检验表、阳性率条图。",
+      "output_interpretation": "先确认 k≥3 与二元编码，再看 Q/p。",
+      "assumptions_and_boundaries": "两列配对用 McNemar。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Cochran Q",
+          "plain_text": "Q=(k−1)(kΣ_j C_j²−T²)/(kT−Σ_i R_i²)，近似 χ²_{k−1}。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 McNemar 说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/supporting-topics/other-statistics-and-tests/why-should-i-use-mcnemar-s-test/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "NIST 非参数入口",
+          "url": "https://www.itl.nist.gov/div898/handbook/prd/section4/prd4.htm",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "cochran_q",
+        "service_method": "cochran_q",
+        "facts_type": "cochran_q",
         "primary_test": "quality_statistics_test"
       }
     },

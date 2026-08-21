@@ -69,6 +69,10 @@
 | McNemar | **已落地** — 命令 `mcnemar`；Edwards；见 [`p1_mcnemar_test.md`](p1_mcnemar_test.md) |
 | Sign test | **已落地** — 命令 `sign_test`；见 [`p1_sign_test.md`](p1_sign_test.md) |
 | 回归 DW 临界 | **已落地（近似）** — dL/dU + 判定区；见 [`p1_durbin_watson_critical.md`](p1_durbin_watson_critical.md) |
+| Mood 中位数 | **已落地** — 命令 `mood_median`；见 [`p1_mood_median_test.md`](p1_mood_median_test.md) |
+| Cochran Q | **已落地** — 命令 `cochran_q`；见 [`p1_cochran_q.md`](p1_cochran_q.md) |
+| 单样本 Wilcoxon | **已落地** — 加深 `wilcoxon_signed_rank`；见 [`p1_wilcoxon_one_sample.md`](p1_wilcoxon_one_sample.md) |
+| 帮助公式与来源页签 | **已落地** — 见 [`p1_help_formula_sources_tab.md`](p1_help_formula_sources_tab.md) |
 
 ## 5. 仍延后
 
@@ -80,10 +84,10 @@
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 数值对齐
 - 图表注释、拖拽布局、多图拼版
 - Nemenyi **独立**命令（**Friedman 后比较 Nemenyi 已挂在 `friedman` posthoc**）
-- Mood 中位数检验
+- Sign CI（符号检验主 P 已落地）
+- Ryan–Joiner 正态性（AD 已落地）
 - 精确 studentized-range
 - 重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住接线
-
 ## 6. 下一批接入条件
 
 Johnson / 非正态 / 三参数 Weibull / 两参数指数 / 三参数对数正态 / Fleiss / Kendall：公式已实现，只需从 Minitab 导出对照后写入 golden，禁止猜测数值。

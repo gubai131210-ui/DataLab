@@ -4,6 +4,7 @@
 #include "domain/statistics/hypothesis_tests.h"
 
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -39,6 +40,10 @@ struct SignedRankResult {
     std::string approximation = "normal";
     bool tie_correction = false;
     bool small_sample_warning = false;
+    double hypothesized_median = 0.0;
+    std::optional<double> location_estimate;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -87,6 +92,14 @@ SignedRankResult wilcoxon_signed_rank(
     const std::vector<double>& first,
     const std::vector<double>& second,
     TestAlternative alternative = TestAlternative::two_sided);
+
+// One-sample signed-rank vs hypothesized_median (ties at η0 dropped).
+// Optional Walsh location estimate + normal-approx CI (formula_reference).
+SignedRankResult wilcoxon_signed_rank_one_sample(
+    const std::vector<double>& values,
+    double hypothesized_median = 0.0,
+    TestAlternative alternative = TestAlternative::two_sided,
+    double confidence_level = 0.95);
 
 KruskalWallisResult kruskal_wallis(
     const std::vector<std::vector<double>>& groups,
@@ -177,5 +190,68 @@ SignTestResult sign_test_paired(
     const std::vector<double>& first,
     const std::vector<double>& second,
     TestAlternative alternative = TestAlternative::two_sided);
+
+struct MoodMedianGroup {
+    std::string label;
+    std::size_t count = 0;
+    double median = 0.0;
+    std::size_t n_le = 0;  // ≤ overall median
+    std::size_t n_gt = 0;  // > overall median
+};
+
+struct MoodMedianResult {
+    std::vector<MoodMedianGroup> groups;
+    double overall_median = 0.0;
+    double chi_square = 0.0;
+    double degrees_of_freedom = 0.0;
+    std::optional<double> p_value;
+    bool expected_count_warning = false;
+    bool small_sample_warning = false;
+    std::string approximation = "chi_square";
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Independent groups; levels with N<2 dropped (Minitab-aligned). Ties at overall
+// median count in N≤. Pearson χ² on 2×k table. formula_reference ≠ golden.
+MoodMedianResult mood_median_test(
+    const std::vector<std::vector<double>>& groups,
+    const std::vector<std::string>& labels = {});
+
+struct CochranQTreatment {
+    std::string label;
+    std::size_t success_count = 0;
+    double success_rate = 0.0;
+};
+
+struct CochranQResult {
+    std::vector<CochranQTreatment> treatments;
+    std::size_t subject_count = 0;
+    std::size_t treatment_count = 0;
+    double q_statistic = 0.0;
+    double degrees_of_freedom = 0.0;
+    std::optional<double> p_value;
+    bool computable = false;
+    std::string approximation = "chi_square";
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Wide binary matrix: rows=subjects, columns=treatments (k≥3). Values already
+// encoded 0/1. k<3 → diagnostic only (use McNemar for k=2).
+CochranQResult cochran_q_test(
+    const std::vector<std::vector<int>>& binary_rows,
+    const std::vector<std::string>& treatment_labels = {});
+
+// Shared binary encoding for McNemar / Cochran (trim + 0/1/pass-fail or 2 levels).
+// Returns false and writes diagnostics on failure. level_to_positive may be empty
+// when all cells parse as known binary tokens.
+bool encode_paired_binary_levels(
+    const std::vector<std::vector<std::string>>& columns,
+    std::map<std::string, bool>& level_to_positive,
+    std::vector<DiagnosticMessage>& diagnostics);
+
+bool resolve_binary_label(
+    const std::string& raw,
+    const std::map<std::string, bool>& level_to_positive,
+    bool& out);
 
 }  // namespace datalab::domain::statistics

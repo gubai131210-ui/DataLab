@@ -471,9 +471,26 @@ ui → application / infrastructure / reporting → domain
 
 公式：[`p1_friedman_nemenyi_posthoc.md`](research/p1_friedman_nemenyi_posthoc.md)、[`p1_mcnemar_test.md`](research/p1_mcnemar_test.md)、[`p1_sign_test.md`](research/p1_sign_test.md)、[`p1_durbin_watson_critical.md`](research/p1_durbin_watson_critical.md)
 
+## 5i. 2026-08-21 算法深化（本轮四项竖切）✅
+
+1. **Mood 中位数检验**
+   - 命令 `mood_median`；测量+分组；总体中位数 M；N≤/N>（结计入 N≤）；Pearson χ²
+   - `NonparametricFacts.method=mood_median`；箱线/个体值；不做后比较
+2. **Cochran’s Q**
+   - 命令 `cochran_q`；宽表 k≥3 配对二元；复用二元编码 helper；`CochranQFacts`
+   - k=2 只诊断引导 McNemar；不碰 `chi_square` / `chi_square_gof`
+3. **单样本 Wilcoxon**
+   - 加深 `wilcoxon_signed_rank`：1 列+η0 或 2 列配对；`wilcoxon_signed_rank_one_sample`
+   - Walsh 估计中位数 + 正态近似 CI（公式参考）；配对路径不变
+4. **帮助「公式与来源」页签**
+   - `AlgorithmHelpDialog` 详情区：方法说明 | 公式与来源；复用 `algorithm_help.json`
+   - 不重做帮助中心壳；不做 Ryan–Joiner / Sign CI
+
+公式：[`p1_mood_median_test.md`](research/p1_mood_median_test.md)、[`p1_cochran_q.md`](research/p1_cochran_q.md)、[`p1_wilcoxon_one_sample.md`](research/p1_wilcoxon_one_sample.md)、[`p1_help_formula_sources_tab.md`](research/p1_help_formula_sources_tab.md)
+
 ## 5b. 以后再计划的项（不要从本节当成本轮任务）
 
-不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h 已完成项。帮助中心已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Mood 中位数、Jackson–Mudholkar 解析限、重构阶段 5/6）。
+不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h、§5i 已完成项。帮助中心壳已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、Sign CI、Ryan–Joiner、重构阶段 5/6）。
 
 ## 6. 硬约束
 
@@ -485,7 +502,7 @@ ui → application / infrastructure / reporting → domain
 - 源码 UTF-8 无 BOM。
 - 回复格式：切入点理解、任务、影响文件、测试策略、实现说明；改完列 Qt Creator 手工验收项。
 
-本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi **独立**命令；Mood 中位数；精确 studentized-range；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman 主检验 / Friedman Nemenyi / McNemar / Sign test / 回归 DW 临界。
+本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi **独立**命令；精确 studentized-range；Sign CI；Ryan–Joiner；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman 主检验 / Friedman Nemenyi / McNemar / Sign test / 回归 DW 临界 / Mood 中位数 / Cochran Q / 单样本 Wilcoxon / 帮助公式与来源页签。
 
 ## 7. 可贴给新对话的短提示词
 

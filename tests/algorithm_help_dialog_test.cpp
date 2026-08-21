@@ -4,6 +4,7 @@
 #include <QClipboard>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QTabWidget>
 #include <QTextBrowser>
 #include <QTreeWidget>
 #include <QtTest/QtTest>
@@ -18,6 +19,7 @@ private slots:
     void formulaCopyProvidesPlainText();
     void summaryCopyContainsMethodNotRepoPath();
     void invalidReferenceUrlIsRejected();
+    void formulaSourcesTabShowsFormulasAndLinks();
     void cleanupTestCase();
 
 private:
@@ -45,8 +47,13 @@ void AlgorithmHelpDialogTest::dialogBuildsTreeAndShowsDetail()
     QVERIFY(QTest::qWaitForWindowExposed(&dialog));
 
     auto* tree = dialog.findChild<QTreeWidget*>();
-    auto* browser = dialog.findChild<QTextBrowser*>();
+    auto* tabs = dialog.findChild<QTabWidget*>(QStringLiteral("algorithmHelpDetailTabs"));
     QVERIFY(tree != nullptr);
+    QVERIFY(tabs != nullptr);
+    QCOMPARE(tabs->count(), 2);
+    QCOMPARE(tabs->tabText(0), QStringLiteral("方法说明"));
+    QCOMPARE(tabs->tabText(1), QStringLiteral("公式与来源"));
+    auto* browser = qobject_cast<QTextBrowser*>(tabs->widget(0));
     QVERIFY(browser != nullptr);
     QVERIFY(tree->topLevelItemCount() > 0);
 
@@ -66,9 +73,11 @@ void AlgorithmHelpDialogTest::searchFiltersEntries()
     AlgorithmHelpDialog dialog;
     auto* search = dialog.findChild<QLineEdit*>();
     auto* tree = dialog.findChild<QTreeWidget*>();
-    auto* browser = dialog.findChild<QTextBrowser*>();
+    auto* tabs = dialog.findChild<QTabWidget*>(QStringLiteral("algorithmHelpDetailTabs"));
     QVERIFY(search != nullptr);
     QVERIFY(tree != nullptr);
+    QVERIFY(tabs != nullptr);
+    auto* browser = qobject_cast<QTextBrowser*>(tabs->widget(0));
     QVERIFY(browser != nullptr);
 
     const int full_count = tree->topLevelItemCount();
@@ -147,6 +156,24 @@ void AlgorithmHelpDialogTest::invalidReferenceUrlIsRejected()
             break;
         }
     }
+}
+
+void AlgorithmHelpDialogTest::formulaSourcesTabShowsFormulasAndLinks()
+{
+    AlgorithmHelpDialog dialog;
+    dialog.select_entry(QStringLiteral("mood_median"));
+    auto* tabs = dialog.findChild<QTabWidget*>(QStringLiteral("algorithmHelpDetailTabs"));
+    QVERIFY(tabs != nullptr);
+    QCOMPARE(tabs->count(), 2);
+    tabs->setCurrentIndex(1);
+    auto* formula = dialog.findChild<QTextBrowser*>(QStringLiteral("algorithmHelpFormulaBrowser"));
+    QVERIFY(formula != nullptr);
+    const QString html = formula->toHtml();
+    QVERIFY(html.contains(QStringLiteral("核心公式")) || html.contains(QStringLiteral("Mood")));
+    QVERIFY(html.contains(QStringLiteral("https://"))
+            || html.contains(QStringLiteral("官方链接")));
+    QVERIFY(!html.contains(QStringLiteral("仓库公式文档")));
+    QVERIFY(!html.contains(QStringLiteral("接线与测试")));
 }
 
 QTEST_MAIN(AlgorithmHelpDialogTest)

@@ -469,13 +469,13 @@ Var_ties = n1 n2 / 12 · [N+1 − Σ(t³−t)/(N(N−1))]
 Z = (W − E(W) − c) / √Var     c = ±0.5 连续性修正
 ```
 
-存在 ties 时同时输出调整 P 与未调整 P。Wilcoxon signed-rank 对非零配对差值的绝对值排序并分别累计正负秩；结用 midrank，方差减去 `Σ(t³−t)/48`。统计量保持 W+/W-，不改写成 Walsh 显示。Kruskal–Wallis 对所有组联合排序，输出 `H` 和 ties 修正后的 `H(adj)`，组 Z 为
+存在 ties 时同时输出调整 P 与未调整 P。Wilcoxon signed-rank 对非零配对差值的绝对值排序并分别累计正负秩；结用 midrank，方差减去 `Σ(t³−t)/48`。统计量保持 W+/W-，不改写成 Walsh 显示。单样本 Wilcoxon 对 \(x_i-\eta_0\) 使用同一符号秩核，并报告 Walsh 估计中位数与正态近似 CI（公式参考）。Kruskal–Wallis 对所有组联合排序，输出 `H` 和 ties 修正后的 `H(adj)`，组 Z 为
 
 ```text
 Z_j = (R̄_j − (N+1)/2) / sqrt( (N+1)(N−n_j)/(12 n_j) )
 ```
 
-Mann–Whitney / Wilcoxon / Kruskal–Wallis / Friedman / Sign / McNemar 服务层输出相应表与（适用时）箱线/个体值图，`source_row` 可追溯。Friedman 可选 `posthoc=nemenyi`（默认无后比较）。Sign 主 P 为二项精确。McNemar 使用 Edwards 连续性校正，且不改列联表卡方命令。
+Mann–Whitney / Wilcoxon / Sign / Mood / Kruskal–Wallis / Friedman / McNemar / Cochran Q 服务层输出相应表与（适用时）箱线/个体值图，`source_row` 可追溯。Friedman 可选 `posthoc=nemenyi`（默认无后比较）。Sign 主 P 为二项精确。Mood 用总体中位数 2×k Pearson χ²（N≤ 含等于 M）。McNemar 使用 Edwards 连续性校正；Cochran Q 用于 k≥3 配对二元宽表，且不改列联表卡方命令。
 
 ## EWMA 与 CUSUM
 

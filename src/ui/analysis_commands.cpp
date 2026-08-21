@@ -1171,20 +1171,29 @@ const std::vector<AnalysisCommand>& all()
             QStringLiteral("统计"),
             QStringLiteral("wilcoxon_signed_rank"),
             false, true,
-            {{QStringLiteral("variables"), QStringLiteral("两列配对样本"), true, false}},
-            {{QStringLiteral("alternative"), QStringLiteral("备择方向"),
-              QStringLiteral("two_sided / less / greater")}},
+            {{QStringLiteral("variables"), QStringLiteral("一列或两列配对"), true, false}},
+            {{QStringLiteral("hypothesized_median"), QStringLiteral("假设中位数 η0"),
+              QStringLiteral("单样本默认 0；配对忽略")},
+             {QStringLiteral("alternative"), QStringLiteral("备择方向"),
+              QStringLiteral("two_sided / less / greater")},
+             {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"),
+              QStringLiteral("单样本 Walsh CI，默认 95")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const std::vector<int> columns = d.role_indices("variables");
-                if (columns.size() != 2) {
+                if (columns.empty() || columns.size() > 2) {
                     return apply_error(QStringLiteral("变量数量错误"),
-                                       QStringLiteral("请选择正好两列配对样本。"));
+                                       QStringLiteral("请选择一列（相对 η0）或两列配对样本。"));
                 }
                 c.analysis_name = "Wilcoxon 符号秩检验";
                 c.chart_type = "wilcoxon_signed_rank";
-                c.variable_columns = {
-                    static_cast<std::size_t>(columns[0]), static_cast<std::size_t>(columns[1])};
+                c.variable_columns.clear();
+                for (const int column : columns) {
+                    c.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
                 c.inference.alternative = normalize(d.line_text("alternative"));
+                c.inference.hypothesis_mean =
+                    d.line_number("hypothesized_median").value_or(0.0);
+                c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 return {};
             },
             AnalysisService::wilcoxon_signed_rank},
@@ -1241,6 +1250,54 @@ const std::vector<AnalysisCommand>& all()
                 return {};
             },
             AnalysisService::mcnemar},
+        {
+            QStringLiteral("cochran_q"),
+            QStringLiteral("Cochran Q 检验"),
+            QStringLiteral("Cochran Q 检验"),
+            QStringLiteral("统计"),
+            QStringLiteral("cochran_q"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("≥3 列配对二元"), true, false}},
+            {},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
+                if (columns.size() < 2) {
+                    return apply_error(QStringLiteral("变量数量错误"),
+                                       QStringLiteral("请选择至少两列配对二元结果（计算需 k≥3）。"));
+                }
+                c.analysis_name = "Cochran Q 检验";
+                c.chart_type = "cochran_q";
+                c.variable_columns.clear();
+                for (const int column : columns) {
+                    c.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
+                return {};
+            },
+            AnalysisService::cochran_q},
+        {
+            QStringLiteral("mood_median"),
+            QStringLiteral("Mood 中位数检验"),
+            QStringLiteral("Mood 中位数检验"),
+            QStringLiteral("统计"),
+            QStringLiteral("mood_median"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("测量值"), false, false},
+             {QStringLiteral("factor"), QStringLiteral("分组列"), false, false}},
+            {},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                const int factor = d.first_role_index("factor");
+                if (response < 0 || factor < 0) {
+                    return apply_error(QStringLiteral("参数不足"),
+                                       QStringLiteral("请选择测量值和分组列。"));
+                }
+                c.analysis_name = "Mood 中位数检验";
+                c.chart_type = "mood_median";
+                c.variable_columns = {static_cast<std::size_t>(response)};
+                c.by_column = static_cast<std::size_t>(factor);
+                return {};
+            },
+            AnalysisService::mood_median},
         {
             QStringLiteral("kruskal_wallis"),
             QStringLiteral("Kruskal-Wallis 检验"),

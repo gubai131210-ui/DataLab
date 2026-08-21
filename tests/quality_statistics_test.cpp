@@ -1140,6 +1140,111 @@ void QualityStatisticsTest::buildsNonparametricServiceOutputContract()
     QCOMPARE(sign_page.facts.nonparametric->method, std::string{"sign_test"});
     QVERIFY(sign_page.facts.nonparametric->p_value.has_value());
     QVERIFY(std::abs(*sign_page.facts.nonparametric->p_value - 0.125) < 1.0e-12);
+
+    // # source: formula_reference — Mood / Cochran / one-sample Wilcoxon
+    {
+        const auto mood = datalab::domain::statistics::mood_median_test(
+            {{1.0, 2.0, 3.0, 4.0}, {20.0, 21.0, 22.0, 23.0}},
+            {"A", "B"});
+        QVERIFY(mood.p_value.has_value());
+        QCOMPARE(mood.groups.size(), std::size_t{2});
+        QVERIFY(mood.chi_square > 0.0);
+        QVERIFY(*mood.p_value < 0.05);
+
+        datalab::domain::DataTable mood_table;
+        mood_table.columns = {"Y", "G"};
+        mood_table.rows = {
+            {"1", "A"}, {"2", "A"}, {"3", "A"}, {"4", "A"},
+            {"20", "B"}, {"21", "B"}, {"22", "B"}, {"23", "B"}};
+        datalab::domain::AnalysisConfiguration mood_config;
+        mood_config.variable_columns = {0};
+        mood_config.by_column = 1;
+        auto mood_page = datalab::application::AnalysisService::mood_median(
+            mood_table, mood_config);
+        QVERIFY(mood_page.facts.nonparametric.has_value());
+        QCOMPARE(mood_page.facts.nonparametric->method, std::string{"mood_median"});
+        QVERIFY(mood_page.facts.nonparametric->p_value.has_value());
+        QVERIFY(std::any_of(
+            mood_page.tables.cbegin(), mood_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "Mood 中位数检验";
+            }));
+        QCOMPARE(mood_page.plots.size(), std::size_t{2});
+    }
+    {
+        const auto cochran = datalab::domain::statistics::cochran_q_test(
+            {{1, 1, 0}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}, {0, 0, 1}, {1, 0, 0}},
+            {"T1", "T2", "T3"});
+        QVERIFY(cochran.computable);
+        QVERIFY(cochran.p_value.has_value());
+        QCOMPARE(cochran.treatment_count, std::size_t{3});
+        QCOMPARE(cochran.subject_count, std::size_t{6});
+
+        datalab::domain::DataTable cq_table;
+        cq_table.columns = {"T1", "T2", "T3"};
+        cq_table.rows = {
+            {"1", "1", "0"}, {"1", "0", "1"}, {"0", "1", "1"},
+            {"1", "1", "1"}, {"0", "0", "1"}, {"1", "0", "0"}, {"*", "1", "0"}};
+        datalab::domain::AnalysisConfiguration cq_config;
+        cq_config.variable_columns = {0, 1, 2};
+        auto cq_page = datalab::application::AnalysisService::cochran_q(
+            cq_table, cq_config);
+        QVERIFY(cq_page.facts.cochran_q.has_value());
+        QVERIFY(cq_page.facts.cochran_q->computable);
+        QCOMPARE(cq_page.facts.cochran_q->missing_count, std::size_t{1});
+        QVERIFY(std::any_of(
+            cq_page.tables.cbegin(), cq_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "Cochran Q 检验";
+            }));
+
+        datalab::domain::AnalysisConfiguration cq2;
+        cq2.variable_columns = {0, 1};
+        auto cq2_page = datalab::application::AnalysisService::cochran_q(
+            cq_table, cq2);
+        QVERIFY(cq2_page.facts.cochran_q.has_value());
+        QVERIFY(!cq2_page.facts.cochran_q->computable);
+        QVERIFY(std::any_of(
+            cq2_page.diagnostics.cbegin(), cq2_page.diagnostics.cend(),
+            [](const datalab::domain::DiagnosticMessage& d) {
+                return d.code == "cochran_use_mcnemar";
+            }));
+    }
+    {
+        const auto one = datalab::domain::statistics::wilcoxon_signed_rank_one_sample(
+            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}, 0.0);
+        QVERIFY(one.p_value.has_value());
+        QVERIFY(one.location_estimate.has_value());
+        QVERIFY(one.ci_lower.has_value());
+        QVERIFY(one.ci_upper.has_value());
+        QVERIFY(*one.p_value < 0.05);
+
+        datalab::domain::DataTable w_table;
+        w_table.columns = {"X"};
+        for (int value = 1; value <= 8; ++value) {
+            w_table.rows.push_back({std::to_string(value)});
+        }
+        datalab::domain::AnalysisConfiguration w_config;
+        w_config.variable_columns = {0};
+        w_config.inference.hypothesis_mean = 0.0;
+        auto w_page = datalab::application::AnalysisService::wilcoxon_signed_rank(
+            w_table, w_config);
+        QVERIFY(w_page.facts.nonparametric.has_value());
+        QCOMPARE(w_page.facts.nonparametric->method, std::string{"wilcoxon_one_sample"});
+        QVERIFY(w_page.facts.nonparametric->location_estimate.has_value());
+        QVERIFY(std::any_of(
+            w_page.tables.cbegin(), w_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "位置估计（Walsh）";
+            }));
+        // paired path still requires two columns and keeps scatter
+        datalab::domain::DataTable paired = wilcoxon_table;
+        datalab::domain::AnalysisConfiguration paired_config = wilcoxon_config;
+        const auto paired_page = datalab::application::AnalysisService::wilcoxon_signed_rank(
+            paired, paired_config);
+        QCOMPARE(paired_page.facts.nonparametric->method, std::string{"wilcoxon_signed_rank"});
+        QVERIFY(paired_page.plots.size() >= std::size_t{3});
+    }
 }
 
 void QualityStatisticsTest::calculatesMckeanRyanConfidenceInterval()

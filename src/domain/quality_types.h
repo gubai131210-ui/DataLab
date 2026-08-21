@@ -726,6 +726,17 @@ struct McNemarFacts {
     bool computable = false;
 };
 
+struct CochranQFacts {
+    std::size_t treatment_count = 0;
+    std::size_t subject_count = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> q_statistic;
+    std::optional<double> p_value;
+    double degrees_of_freedom = 0.0;
+    bool computable = false;
+    std::string approximation = "chi_square";
+};
+
 struct NonparametricFacts {
     std::string method;
     std::optional<double> statistic;
@@ -963,6 +974,7 @@ struct InterpretationFacts {
     std::optional<ChiSquareFacts> chi_square;
     std::optional<ChiSquareGofFacts> chi_square_gof;
     std::optional<McNemarFacts> mcnemar;
+    std::optional<CochranQFacts> cochran_q;
     std::optional<NonparametricFacts> nonparametric;
     std::optional<LogisticFacts> logistic;
     std::optional<DistributionIdentificationFacts> distribution_identification;
