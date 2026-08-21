@@ -510,17 +510,22 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 - 计划里必须写「禁止偷懒做 XXX」清单
 
 ## 本轮目标（一次性多做，但每项竖切闭环）
-从 gap-matrix / deferred 里选 3～4 项「深化已有 + 高杠杆新缺口」，对照 Minitab 输出表形与优势学习点。
+从 gap-matrix / deferred / Minitab 表形优势里选 3～4 项「深化已有 + 高杠杆新缺口」。
 实现前每项先写 docs/research/p1_*.md。
-上一轮（§5h）已完成：Friedman Nemenyi / McNemar / Sign test / 回归 DW 临界；Mood 与 Nemenyi 独立命令仍延后。
+默认候选（计划里锁定二选一/明确不做）：
+- Mood 中位数检验（KW 族；勿重做 Kruskal Dunn/SD / Friedman）
+- Cochran’s Q（k≥3 配对二元；接 McNemar 缝；勿改 chi_square）
+- 单样本 Wilcoxon（相对 η0；现有多为配对；勿重做配对 Wilcoxon 本体）或 Sign 置信区间（二选一）
+- 帮助中心「公式与来源」页（按算法展示公式块+官方链接，复用 algorithm_help.json；勿重做帮助中心壳）或 正态 Ryan–Joiner（接 AD 缝；二选一作第 4 项）
 你研究后可调整优先级，但必须在计划里锁定选型与「明确不做」。
+对照 Minitab：输出表名/列/诊断；学习其「方法选项可切换、小样本警告、表+图同页」优势，禁止假 golden。
 
 ## 硬约束
 - complete-case / align_complete_rows / parse_numeric_cell / source_row / dataset_id；导入 A→B 旧输出失效
 - 解释只读 Facts，不写合格/已证明等价或一致/已证明等方差/样本量足够
 - 禁止假 Minitab golden；禁止碰 chi_square 与 chi_square_gof 边界除非本轮明确包含
-- 禁止重做：§5a–§5h 已完成项
-- 待修改.md 是给人看的旧笔记，不当任务
+- 禁止重做：§5a–§5h（含 Nemenyi 挂 friedman、McNemar、Sign、DW 临界、Kruskal Dunn/SD、Friedman 主检验、各类比例/TOST/等方差等）
+- 待修改.md 是给人看的旧笔记，不当任务（除非用户本轮明确点名其中某条）
 - 中文路径：agent 不跑 cmake/ctest；改完列 Qt Creator 手工验收项
 - 帮助：改 generate_algorithm_help_catalog.py + help_catalog_families.py 再生成 JSON，正文禁止「见 md」
 
