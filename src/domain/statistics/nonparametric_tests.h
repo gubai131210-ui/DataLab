@@ -91,7 +91,8 @@ RankSumResult mann_whitney(
 SignedRankResult wilcoxon_signed_rank(
     const std::vector<double>& first,
     const std::vector<double>& second,
-    TestAlternative alternative = TestAlternative::two_sided);
+    TestAlternative alternative = TestAlternative::two_sided,
+    double confidence_level = 0.95);
 
 // One-sample signed-rank vs hypothesized_median (ties at η0 dropped).
 // Optional Walsh location estimate + normal-approx CI (formula_reference).
@@ -166,14 +167,34 @@ McNemarResult mcnemar_test(
     const std::vector<std::string>& first,
     const std::vector<std::string>& second);
 
+struct SignMedianCiResult {
+    std::size_t n = 0;
+    double confidence_level = 0.95;
+    std::optional<double> estimate;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::optional<double> achieved_confidence;
+    std::string method = "sign_order_statistic";
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Exact order-statistic median CI (closest achieved to target γ). Shared by Sign/Mood.
+SignMedianCiResult sign_median_ci(
+    const std::vector<double>& values,
+    double confidence_level = 0.95);
+
 struct SignTestResult {
     std::size_t n_nonzero = 0;
     std::size_t n_positive = 0;
     std::size_t n_negative = 0;
     std::size_t n_ties = 0;
     double hypothesized_median = 0.0;
+    double confidence_level = 0.95;
     std::optional<double> sample_median;
     std::optional<double> p_value;
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::optional<double> achieved_confidence;
     std::string approximation = "binomial_exact";
     bool small_sample_warning = false;
     std::vector<DiagnosticMessage> diagnostics;
@@ -183,13 +204,15 @@ struct SignTestResult {
 SignTestResult sign_test(
     const std::vector<double>& values,
     double hypothesized_median = 0.0,
-    TestAlternative alternative = TestAlternative::two_sided);
+    TestAlternative alternative = TestAlternative::two_sided,
+    double confidence_level = 0.95);
 
 // Paired: first - second vs 0 (complete-case pairs already aligned by caller).
 SignTestResult sign_test_paired(
     const std::vector<double>& first,
     const std::vector<double>& second,
-    TestAlternative alternative = TestAlternative::two_sided);
+    TestAlternative alternative = TestAlternative::two_sided,
+    double confidence_level = 0.95);
 
 struct MoodMedianGroup {
     std::string label;
@@ -197,11 +220,15 @@ struct MoodMedianGroup {
     double median = 0.0;
     std::size_t n_le = 0;  // ≤ overall median
     std::size_t n_gt = 0;  // > overall median
+    std::optional<double> ci_lower;
+    std::optional<double> ci_upper;
+    std::optional<double> achieved_confidence;
 };
 
 struct MoodMedianResult {
     std::vector<MoodMedianGroup> groups;
     double overall_median = 0.0;
+    double confidence_level = 0.95;
     double chi_square = 0.0;
     double degrees_of_freedom = 0.0;
     std::optional<double> p_value;
@@ -212,10 +239,12 @@ struct MoodMedianResult {
 };
 
 // Independent groups; levels with N<2 dropped (Minitab-aligned). Ties at overall
-// median count in N≤. Pearson χ² on 2×k table. formula_reference ≠ golden.
+// median count in N≤. Pearson χ² on 2×k table. Per-group Sign CI optional.
+// formula_reference ≠ golden.
 MoodMedianResult mood_median_test(
     const std::vector<std::vector<double>>& groups,
-    const std::vector<std::string>& labels = {});
+    const std::vector<std::string>& labels = {},
+    double confidence_level = 0.95);
 
 struct CochranQTreatment {
     std::string label;

@@ -75,10 +75,11 @@
 - [x] Friedman：命令 `friedman`；响应+处理+区组 complete-case；结修正 χ²。
 - [x] Friedman Nemenyi（近似）：`posthoc=nemenyi`；成对表 + Grouping；默认无后比较。
 - [x] McNemar：命令 `mcnemar`；配对二元 Edwards χ²；不碰列联卡方。
-- [x] 符号检验：命令 `sign_test`；单样本/配对；二项精确；不改 Wilcoxon。
-- [x] Mood 中位数检验：命令 `mood_median`；N≤/N> + Pearson χ²；箱线/个体值。
+- [x] 符号检验：命令 `sign_test`；单样本/配对；二项精确；**Sign 中位数序统计 CI**；不改 Wilcoxon 主 P。
+- [x] Mood 中位数检验：命令 `mood_median`；N≤/N> + Pearson χ²；**各组 Sign CI**；箱线/个体值。
 - [x] Cochran Q：命令 `cochran_q`；k≥3 配对二元；k=2 诊断引导 McNemar；`CochranQFacts`。
-- [x] 单样本 Wilcoxon：`wilcoxon_signed_rank` 支持一列+η0；Walsh 估计+CI；配对路径不变。
+- [x] 单样本 Wilcoxon：`wilcoxon_signed_rank` 支持一列+η0；Walsh 估计+CI；**配对路径亦启用 Walsh/CI**。
+- [x] Ryan–Joiner：`normality_test` method=`anderson_darling`（默认）|`ryan_joiner`；不重做 AD 本体。
 - [x] 帮助「公式与来源」页签：方法说明 | 公式与来源；复用 `algorithm_help.json`；不重做壳。
 - [x] 回归 DW 临界：α=0.05 dL/dU + 判定区；替换 1.5/2.5 启发式。
 - [x] DOE 每响应独立 goal/权重：`intent.inputs["objectives"]` JSON 覆盖 `optimization_objectives`；单响应无 JSON 时旧字段写入 `[0]`。
@@ -282,13 +283,14 @@
 - [ ] 统计 > 假设检验 > Kruskal-Wallis：默认 Dunn 表与 Grouping (Dunn)；`posthoc=steel_dwass` 见 SD 表与 Grouping (Steel-Dwass)；箱线悬停原始行。
 - [ ] 统计 > 假设检验 > Friedman：响应+处理+区组；平衡设计出 S/P 与箱线；`posthoc=nemenyi` 出成对+Grouping；缺处理区组诊断；悬停原始行；解读无「已证明一致」。
 - [ ] 统计 > 假设检验 > McNemar：两二元列 → 2×2 + Edwards χ²；非二元/无不一致对诊断；解读无「已证明相同」。
-- [ ] 统计 > 假设检验 > 符号检验：单列+η0 与两列配对均可；Wilcoxon 旧行为不变。
+- [ ] 统计 > 假设检验 > 符号检验：单列+η0 与两列配对均可；见中位数 CI 表；主 P 与改前一致。
 - [ ] 统计 > 回归：DW 表含 dL/dU/判定；n 过小则 not_computed；解读无「已证明无自相关」。
 - [ ] 质量工具 > Multi-Vari：4 因子 complete-case 出图；3 因子仍可用；覆盖不足无图；悬停 `source_row`。
-- [ ] 统计 > 假设检验 > Mood 中位数：测量+分组 → Above/Below + χ²；箱线悬停 `source_row`；解读无「已证明中位数相同」。
+- [ ] 统计 > 假设检验 > Mood 中位数：测量+分组 → Above/Below（含组 CI）+ χ²；箱线悬停 `source_row`；解读无「已证明中位数相同」。
 - [ ] 统计 > 假设检验 > Cochran Q：≥3 二元列 → Q/DF/P；2 列仅诊断；解读无「已证明相同」。
-- [ ] 统计 > 假设检验 > Wilcoxon：单列+η0 出符号秩与 Walsh 估计；两列配对行为与改前一致。
-- [ ] **帮助 → 算法、公式与参考资料**：详情页签「公式与来源」仅公式块+官方链接；无仓库 md / wiring；搜索 mood/cochran。
+- [ ] 统计 > 假设检验 > Wilcoxon：单列+η0 与两列配对均出 Walsh 估计+CI；P 与改前一致。
+- [ ] 统计 > 基础统计 > 正态性：默认 AD 与改前一致；`ryan_joiner` 出 R/P；解读无「已正态」。
+- [ ] **帮助 → 算法、公式与参考资料**：详情页签「公式与来源」仅公式块+官方链接；无仓库 md / wiring；搜索 mood/sign/ryan。
 - [ ] 本地运行 `tools/check_layering.ps1`，确认 `ui → application/infrastructure/reporting → domain` 分层未破。
 
 ## 明确后续缺口（本轮不实现）
@@ -303,7 +305,6 @@
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 的数值对齐。
 - Jackson–Mudholkar T²/Q 解析限（**Bonett / Bartlett / Tukey 表形与字母已接入**）。
 - Nemenyi **独立**命令（Friedman `posthoc=nemenyi` 已接入）。
-- Sign CI；Ryan–Joiner 正态性。
 - 可旋转 3D 曲面。
 - 将公式参考测试覆盖为真实 Minitab 导出 golden（…）。
 

@@ -1,12 +1,14 @@
 # 延后算法：Minitab golden / 未锁定项
 
-> 研究日期：2026-08-18（2026-08-20 更新状态）
+> 研究日期：2026-08-18（2026-08-21 更新状态）
+> **市场全量对照与完成标记**见 [`minitab-market-algorithm-backlog.md`](minitab-market-algorithm-backlog.md)（含 ✅/🟡/⚪/❌/⏸ 与 §12 优先队列）。
 > 状态：Kendall W/τ、两参数指数、三参数对数正态、**Weighted Kappa（Cohen linear/quadratic）**、
 > **配对 TOST**、**泊松率比**、**Wilson 比例 CI**、**Bonett 等方差**、**泊松功效**、
 > **Tukey 区间表形**、**Agresti–Coull**、**Bartlett**、**DOE 实际单位 hold**、
 > **Tukey Grouping 字母**、**双样本均值比 TOST**、**两比例 Newcombe–Wilson**、
 > **Kruskal Dunn**、**Multi-Vari 第 4 因子**、**TOST 对数变换**、**两比例 Agresti–Coull**、
-> **Steel–Dwass（近似）**、**Friedman** 公式已实现（非 Minitab golden，除非另有导出）。Blaker /
+> **Steel–Dwass（近似）**、**Friedman**、**Sign CI / Mood 组 CI / Ryan–Joiner / 配对 Walsh CI**
+> 公式已实现（非 Minitab golden，除非另有导出）。Blaker /
 > 可旋转 3D / Jackson–Mudholkar 解析限等仍延后。
 
 ## 1. Johnson / 非正态能力
@@ -73,6 +75,10 @@
 | Cochran Q | **已落地** — 命令 `cochran_q`；见 [`p1_cochran_q.md`](p1_cochran_q.md) |
 | 单样本 Wilcoxon | **已落地** — 加深 `wilcoxon_signed_rank`；见 [`p1_wilcoxon_one_sample.md`](p1_wilcoxon_one_sample.md) |
 | 帮助公式与来源页签 | **已落地** — 见 [`p1_help_formula_sources_tab.md`](p1_help_formula_sources_tab.md) |
+| Sign CI | **已落地** — 加深 `sign_test`；见 [`p1_sign_confidence_interval.md`](p1_sign_confidence_interval.md) |
+| Mood 各组 Sign CI | **已落地** — 加深 `mood_median`；见 [`p1_mood_group_sign_ci.md`](p1_mood_group_sign_ci.md) |
+| Ryan–Joiner | **已落地** — `normality_test` method 切换；见 [`p1_ryan_joiner_normality.md`](p1_ryan_joiner_normality.md) |
+| 配对 Wilcoxon Walsh CI | **已落地** — 见 [`p1_paired_wilcoxon_walsh_ci.md`](p1_paired_wilcoxon_walsh_ci.md) |
 
 ## 5. 仍延后
 
@@ -84,8 +90,6 @@
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 数值对齐
 - 图表注释、拖拽布局、多图拼版
 - Nemenyi **独立**命令（**Friedman 后比较 Nemenyi 已挂在 `friedman` posthoc**）
-- Sign CI（符号检验主 P 已落地）
-- Ryan–Joiner 正态性（AD 已落地）
 - 精确 studentized-range
 - 重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住接线
 ## 6. 下一批接入条件

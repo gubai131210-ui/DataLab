@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numeric>
 #include <string>
 
 using datalab::domain::SpecificationLimits;
@@ -1140,6 +1141,129 @@ void QualityStatisticsTest::buildsNonparametricServiceOutputContract()
     QCOMPARE(sign_page.facts.nonparametric->method, std::string{"sign_test"});
     QVERIFY(sign_page.facts.nonparametric->p_value.has_value());
     QVERIFY(std::abs(*sign_page.facts.nonparametric->p_value - 0.125) < 1.0e-12);
+    QVERIFY(sign_page.facts.nonparametric->ci_lower.has_value());
+    QVERIFY(sign_page.facts.nonparametric->ci_upper.has_value());
+    QVERIFY(std::any_of(
+        sign_page.tables.cbegin(), sign_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "中位数置信区间";
+        }));
+    {
+        const auto sign_interp =
+            datalab::application::InterpretationService::enrich(sign_page);
+        for (const auto& section : sign_interp.sections) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("位置差异估计") == std::string::npos);
+                QVERIFY(bullet.find("已证明") == std::string::npos
+                        || bullet.find("不能写成已证明") != std::string::npos
+                        || bullet.find("不能证明") != std::string::npos);
+            }
+        }
+    }
+
+    // # source: formula_reference — Sign CI / Mood group CI / RJ / paired Walsh
+    {
+        const auto ci = datalab::domain::statistics::sign_median_ci(
+            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0}, 0.95);
+        QVERIFY(ci.estimate.has_value());
+        QCOMPARE(*ci.estimate, 5.5);
+        QVERIFY(ci.ci_lower.has_value());
+        QVERIFY(ci.ci_upper.has_value());
+        QVERIFY(*ci.ci_lower <= *ci.estimate);
+        QVERIFY(*ci.ci_upper >= *ci.estimate);
+        QVERIFY(ci.achieved_confidence.has_value());
+
+        const auto sign_one = datalab::domain::statistics::sign_test(
+            {1.0, 2.0, 3.0, 4.0}, 0.0);
+        QVERIFY(sign_one.p_value.has_value());
+        QVERIFY(std::abs(*sign_one.p_value - 0.125) < 1.0e-12);
+        QVERIFY(sign_one.ci_lower.has_value());
+
+        const auto single = datalab::domain::statistics::sign_median_ci({1.0}, 0.95);
+        QVERIFY(!single.ci_lower.has_value());
+    }
+    {
+        const auto mood = datalab::domain::statistics::mood_median_test(
+            {{1.0, 2.0, 3.0, 4.0}, {20.0, 21.0, 22.0, 23.0}},
+            {"A", "B"}, 0.95);
+        QVERIFY(mood.p_value.has_value());
+        QCOMPARE(mood.groups.size(), std::size_t{2});
+        QVERIFY(mood.groups[0].ci_lower.has_value());
+        QVERIFY(mood.groups[1].ci_lower.has_value());
+        const auto a_ci = datalab::domain::statistics::sign_median_ci(
+            {1.0, 2.0, 3.0, 4.0}, 0.95);
+        QCOMPARE(*mood.groups[0].ci_lower, *a_ci.ci_lower);
+        QCOMPARE(*mood.groups[0].ci_upper, *a_ci.ci_upper);
+    }
+    {
+        // Near-symmetric sample: RJ should not strongly reject.
+        const std::vector<double> approx_normal = {
+            -1.2, -0.8, -0.3, 0.0, 0.2, 0.5, 0.9, 1.1, 1.4, 1.8};
+        std::vector<std::size_t> rows(approx_normal.size());
+        std::iota(rows.begin(), rows.end(), 0);
+        const auto rj = datalab::domain::statistics::normality_test(
+            approx_normal, rows, "ryan_joiner");
+        QVERIFY(rj.ryan_joiner_r.has_value());
+        QVERIFY(*rj.ryan_joiner_r > 0.9);
+        QVERIFY(rj.p_value.has_value());
+        QVERIFY(*rj.p_value >= 0.05 || rj.decision == "fail_to_reject");
+
+        const std::vector<double> skewed = {
+            1, 1, 1, 1, 2, 2, 3, 10, 20, 50};
+        std::vector<std::size_t> skew_rows(skewed.size());
+        std::iota(skew_rows.begin(), skew_rows.end(), 0);
+        const auto rj_skew = datalab::domain::statistics::normality_test(
+            skewed, skew_rows, "ryan_joiner");
+        QVERIFY(rj_skew.ryan_joiner_r.has_value());
+        QVERIFY(rj_skew.p_value.has_value());
+        QVERIFY(*rj_skew.p_value <= 0.10);
+
+        const auto ad_default = datalab::domain::statistics::normality_test(approx_normal);
+        QCOMPARE(ad_default.method, std::string{"anderson_darling"});
+        QVERIFY(ad_default.anderson_darling.has_value());
+    }
+    {
+        const std::vector<double> first = {10, 12, 14, 16, 18, 20};
+        const std::vector<double> second = {9, 11, 13, 15, 17, 19};
+        const auto paired = datalab::domain::statistics::wilcoxon_signed_rank(
+            first, second, datalab::domain::statistics::TestAlternative::two_sided, 0.95);
+        QVERIFY(paired.location_estimate.has_value());
+        QVERIFY(paired.ci_lower.has_value());
+        QVERIFY(paired.ci_upper.has_value());
+        std::vector<double> diffs;
+        for (std::size_t i = 0; i < first.size(); ++i) {
+            diffs.push_back(first[i] - second[i]);
+        }
+        const auto one = datalab::domain::statistics::wilcoxon_signed_rank_one_sample(
+            diffs, 0.0, datalab::domain::statistics::TestAlternative::two_sided, 0.95);
+        QCOMPARE(*paired.location_estimate, *one.location_estimate);
+        QCOMPARE(*paired.ci_lower, *one.ci_lower);
+        QCOMPARE(*paired.ci_upper, *one.ci_upper);
+        QVERIFY(paired.p_value.has_value());
+        QCOMPARE(*paired.p_value, *one.p_value);
+
+        datalab::domain::DataTable paired_table;
+        paired_table.columns = {"A", "B"};
+        for (std::size_t i = 0; i < first.size(); ++i) {
+            paired_table.rows.push_back({
+                std::to_string(first[i]), std::to_string(second[i])});
+        }
+        datalab::domain::AnalysisConfiguration paired_config;
+        paired_config.variable_columns = {0, 1};
+        paired_config.inference.confidence_level = 0.95;
+        auto paired_page = datalab::application::AnalysisService::wilcoxon_signed_rank(
+            paired_table, paired_config);
+        QVERIFY(paired_page.facts.nonparametric.has_value());
+        QCOMPARE(paired_page.facts.nonparametric->method,
+                 std::string{"wilcoxon_signed_rank"});
+        QVERIFY(paired_page.facts.nonparametric->location_estimate.has_value());
+        QVERIFY(paired_page.facts.nonparametric->ci_lower.has_value());
+        QVERIFY(std::any_of(
+            paired_page.tables.cbegin(), paired_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "位置估计（Walsh）";
+            }));
+    }
 
     // # source: formula_reference — Mood / Cochran / one-sample Wilcoxon
     {
@@ -1169,7 +1293,25 @@ void QualityStatisticsTest::buildsNonparametricServiceOutputContract()
             [](const datalab::domain::StatisticTable& table_out) {
                 return table_out.title == "Mood 中位数检验";
             }));
+        QVERIFY(std::any_of(
+            mood_page.tables.cbegin(), mood_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "各组 Above/Below"
+                    && table_out.headers.size() >= 7
+                    && table_out.headers[5] == "CI 下限"
+                    && table_out.headers[6] == "CI 上限";
+            }));
         QCOMPARE(mood_page.plots.size(), std::size_t{2});
+        const auto mood_interp =
+            datalab::application::InterpretationService::enrich(mood_page);
+        for (const auto& section : mood_interp.sections) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("已证明") == std::string::npos
+                        || bullet.find("不能写成已证明") != std::string::npos
+                        || bullet.find("不能证明") != std::string::npos);
+                QVERIFY(bullet.find("位置差异估计") == std::string::npos);
+            }
+        }
     }
     {
         const auto cochran = datalab::domain::statistics::cochran_q_test(

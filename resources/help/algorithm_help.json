@@ -135,14 +135,14 @@
         "正态性检验"
       ],
       "implemented_status": "implemented",
-      "purpose": "用 Anderson–Darling 检验一列数据是否与正态分布一致。",
-      "method_overview": "对标准化后的排序观测计算 A² 与 Stephens 修正 A²*，再分段近似 p 值。未拒绝不等于已证明正态。",
-      "input_description": "选择一个数值列。默认 α=0.05。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "purpose": "用 Anderson–Darling 或 Ryan–Joiner 检验一列数据是否与正态分布一致。",
+      "method_overview": "默认 Anderson–Darling：对标准化后的排序观测计算 A² 与 Stephens 修正 A²*，再分段近似 p。可选 Ryan–Joiner：有序样本与正态得分相关 R，再用临界近似与线性插值得到 p。未拒绝不等于已证明正态。",
+      "input_description": "选择一个数值列。方法 anderson_darling（默认）或 ryan_joiner。默认 α=0.05。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
-        "取有限值，排序 x_(1)≤…≤x_(n)。",
-        "标准化 z_i=(x_(i)−x̄)/s，F_i=Φ(z_i)，对 F_i 做极小裁剪避免 ln(0)。",
-        "计算 A² 与 A²*，查分段近似得到 p。",
+        "取有限值，排序。",
+        "AD：标准化并计算 A²/A²*/p。",
+        "RJ：平均秩→Blom 正态得分，计算 R 并插值 p。",
         "比较 p 与 α，输出 reject / fail_to_reject / not_computed。"
       ],
       "symbol_definitions": [
@@ -153,6 +153,10 @@
         {
           "symbol": "A²*",
           "meaning": "Stephens 样本量修正"
+        },
+        {
+          "symbol": "R",
+          "meaning": "Ryan–Joiner 相关统计量"
         },
         {
           "symbol": "Φ",
@@ -169,9 +173,9 @@
         "n<3 或 s=0：not_computed。"
       ],
       "invalid_input_conditions": "未选择测量列、有效观测不足 3、或样本标准差为 0 时不计算。",
-      "output_description": "AD 表（A²、A²*、p、判定）+ 正态概率图 + 直方图。悬停点对应原始行。",
+      "output_description": "AD 或 RJ 表 + 正态概率图 + 直方图。悬停点对应原始行。",
       "output_interpretation": "先看判定状态和 p，再看概率图是否大致直线。",
-      "assumptions_and_boundaries": "默认 α=0.05。p 限制在 [0,1]。",
+      "assumptions_and_boundaries": "默认 α=0.05、方法 AD。p 限制在 [0,1]。RJ 边界可能报告 p>0.10 或 p<0.01。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
@@ -186,6 +190,13 @@
               "value": "A² = −n − (1/n) Σ [(2i−1) ln Fᵢ + (2n+1−2i) ln(1−Fᵢ)]"
             }
           ]
+        },
+        {
+          "title": "Ryan–Joiner",
+          "plain_text": "R=Σ Y_{(i)} b_i / √[s²(n−1)Σ b_i²]，b_i=Φ⁻¹((r_i−0.375)/(n+0.25))；p 由 cor₀.₁₀/₀.₀₅/₀.₀₁ 临界线性插值。",
+          "explanation": "",
+          "conditions": "method=ryan_joiner；formula_reference ≠ Minitab golden。",
+          "note": ""
         },
         {
           "title": "正态概率图位置",
@@ -2302,14 +2313,14 @@
       ],
       "implemented_status": "implemented",
       "purpose": "对配对差或单样本中位数做符号秩检验。",
-      "method_overview": "去掉差值为 0 的观测，对绝对值赋秩再带上符号。单样本相对 η0；配对两列差分。单样本另报 Walsh 估计中位数与正态近似 CI（公式参考）。",
-      "input_description": "一列+η0（默认 0），或两列配对；可选置信水平（单样本 CI）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "去掉差值为 0 的观测，对绝对值赋秩再带上符号。单样本相对 η0；配对两列差分。单样本与配对均报 Walsh 估计中位数与正态近似 CI（公式参考）。",
+      "input_description": "一列+η0（默认 0），或两列配对；可选置信水平（Walsh CI）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "complete-case 对齐。",
         "算差值并去掉 0。",
         "绝对值赋秩，加回符号。",
-        "近似 p；单样本 Walsh 点估计与 CI。"
+        "近似 p；Walsh 点估计与 CI。"
       ],
       "symbol_definitions": [
         {
@@ -2328,11 +2339,11 @@
       "decision_rules": [
         "零差不进秩。",
         "不得写已证明中位数等于假设值。",
-        "不改配对路径的秩公式。"
+        "不改秩和/结修正公式。"
       ],
       "invalid_input_conditions": "非零差个数过少时诊断。",
-      "output_description": "符号秩表；单样本另有位置估计表；箱线/个体值；配对另有散点。",
-      "output_interpretation": "结合图形看差的方向；单样本先看 η̂ 与区间是否含 η0。",
+      "output_description": "符号秩表；位置估计（Walsh）表；箱线/个体值；配对另有散点。",
+      "output_interpretation": "结合图形看差的方向；先看 η̂ 与区间是否含 0（或 η0）。",
       "assumptions_and_boundaries": "分布明显不对称时优先符号检验。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
@@ -2347,7 +2358,7 @@
           "title": "Walsh 估计",
           "plain_text": "对非结观测构造 (Yi+Yj)/2（i≤j），取中位数为 η̂；CI 用正态近似秩序统计。",
           "explanation": "",
-          "conditions": "单样本模式；formula_reference。",
+          "conditions": "单样本与配对；formula_reference。",
           "note": ""
         }
       ],
@@ -2390,13 +2401,13 @@
       ],
       "implemented_status": "implemented",
       "purpose": "不假设正态，比较 k 组中位数（基于总体中位数的 2×k 表）。",
-      "method_overview": "全体求总体中位数 M；各组计 N≤ / N>（等于 M 计入 N≤）；对 2×k 表做 Pearson χ²。独立于 Kruskal–Wallis。",
-      "input_description": "测量列+分组列；complete-case；N<2 的水平排除。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "全体求总体中位数 M；各组计 N≤ / N>（等于 M 计入 N≤）；对 2×k 表做 Pearson χ²。各组另报 Sign 中位数 CI（复用序统计 helper）。",
+      "input_description": "测量列+分组列；complete-case；N<2 的水平排除；可选置信水平。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "complete-case。",
         "计算总体中位数 M。",
-        "各组计 N≤、N>。",
+        "各组计 N≤、N> 与 Sign CI。",
         "Pearson χ² 与 p。"
       ],
       "symbol_definitions": [
@@ -2422,9 +2433,9 @@
         "不做 Mood 后比较。",
         "不改 Kruskal Dunn/Steel–Dwass。"
       ],
-      "invalid_input_conditions": "有效组不足、N≤ 或 N> 一侧为 0 时诊断；期望频数 <5 警告。",
-      "output_description": "各组 Above/Below 表、Mood 检验表、箱线/个体值。",
-      "output_interpretation": "先看 χ²/p，再看各组 N≤/N> 与箱线。",
+      "invalid_input_conditions": "有效组不足、N≤ 或 N> 一侧为 0 时诊断；期望频数 <5 警告；组 CI 不可算时诊断。",
+      "output_description": "各组 Above/Below（含 CI）、Mood 检验表、箱线/个体值。",
+      "output_interpretation": "先看 χ²/p，再看各组 N≤/N>、CI 与箱线。",
       "assumptions_and_boundaries": "需要秩检验时用 Kruskal-Wallis。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
@@ -2433,6 +2444,13 @@
           "plain_text": "χ²=Σ(O−E)²/E，DF=k−1；期望 E=行合计×列合计/N。",
           "explanation": "",
           "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "各组 Sign CI",
+          "plain_text": "对组内有限观测做精确序统计中位数区间；达到水平最接近名义 γ。",
+          "explanation": "",
+          "conditions": "formula_reference；与 Mood χ² 独立。",
           "note": ""
         }
       ],
@@ -2743,15 +2761,15 @@
         "符号检验"
       ],
       "implemented_status": "implemented",
-      "purpose": "对单样本中位数或配对差做符号检验（二项精确）。",
-      "method_overview": "丢弃等于假设中位数的结后，对 n+/n− 做 Bin(n,1/2) 精确双侧（或单侧）p。主 p 不做正态切换。",
-      "input_description": "一列+η0（默认 0），或两列配对差分对 0。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "purpose": "对单样本中位数或配对差做符号检验（二项精确），并报告中位数置信区间。",
+      "method_overview": "丢弃等于假设中位数的结后，对 n+/n− 做 Bin(n,1/2) 精确双侧（或单侧）p。中位数 CI 基于全部有限观测的精确序统计区间（达到水平最接近名义 γ）。",
+      "input_description": "一列+η0（默认 0），或两列配对差分对 0；可选置信水平。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "complete-case 对齐。",
-        "丢弃结。",
-        "计数 n+/n−。",
-        "计算二项精确 p。"
+        "丢弃结并计数 n+/n−。",
+        "计算二项精确 p。",
+        "序统计中位数 CI。"
       ],
       "symbol_definitions": [
         {
@@ -2771,17 +2789,24 @@
         "不得写已证明中位数等于假设值。",
         "不改 Wilcoxon 符号秩本体。"
       ],
-      "invalid_input_conditions": "全结或无有效符号时诊断。",
-      "output_description": "符号摘要、符号检验表、箱线/个体值；配对另有散点。",
-      "output_interpretation": "先看有效符号数与方向，再看精确 p。",
+      "invalid_input_conditions": "全结或无有效符号时诊断；n<2 时无 CI。",
+      "output_description": "符号摘要、符号检验表、中位数置信区间表、箱线/个体值；配对另有散点。",
+      "output_interpretation": "先看有效符号数与精确 p，再看中位数区间。",
       "assumptions_and_boundaries": "需要秩信息时用 Wilcoxon 符号秩。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
-          "title": "Sign",
+          "title": "Sign 主检验",
           "plain_text": "双侧 p=2·min{P(X≤n+),P(X≥n+)}，X~Bin(n,1/2)，截断到 [0,1]。",
           "explanation": "",
           "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "Sign CI",
+          "plain_text": "对有序样本取最大 d 使 P(B<d)<α/2；在窄/宽精确区间中选达到水平最接近 γ 者。",
+          "explanation": "",
+          "conditions": "formula_reference；不做 NLI 三区间。",
           "note": ""
         }
       ],

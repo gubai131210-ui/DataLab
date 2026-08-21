@@ -913,12 +913,16 @@ void write_interpretation_facts(
         normality.insert(QStringLiteral("n"), static_cast<int>(facts.normality->n));
         normality.insert(QStringLiteral("missing_count"),
                          static_cast<int>(facts.normality->missing_count));
+        normality.insert(QStringLiteral("method"),
+                         QString::fromStdString(facts.normality->method));
         normality.insert(QStringLiteral("decision"),
                          QString::fromStdString(facts.normality->decision));
         normality.insert(QStringLiteral("p_value"),
                          optional_number(facts.normality->p_value));
         normality.insert(QStringLiteral("anderson_darling"),
                          optional_number(facts.normality->anderson_darling));
+        normality.insert(QStringLiteral("ryan_joiner_r"),
+                         optional_number(facts.normality->ryan_joiner_r));
         normality.insert(QStringLiteral("alpha"), facts.normality->alpha);
         normality.insert(QStringLiteral("assumption_status"),
                          QString::fromStdString(facts.normality->assumption_status));
@@ -1647,11 +1651,15 @@ void read_interpretation_facts(
         value.n = static_cast<std::size_t>(normality.value(QStringLiteral("n")).toInt(0));
         value.missing_count = static_cast<std::size_t>(
             normality.value(QStringLiteral("missing_count")).toInt(0));
+        value.method = normality.value(QStringLiteral("method"))
+                           .toString(QStringLiteral("anderson_darling")).toStdString();
         value.decision = normality.value(QStringLiteral("decision"))
                              .toString(QStringLiteral("not_computed")).toStdString();
         value.p_value = read_optional(normality.value(QStringLiteral("p_value")));
         value.anderson_darling =
             read_optional(normality.value(QStringLiteral("anderson_darling")));
+        value.ryan_joiner_r =
+            read_optional(normality.value(QStringLiteral("ryan_joiner_r")));
         value.alpha = normality.value(QStringLiteral("alpha")).toDouble(0.05);
         value.assumption_status = normality.value(QStringLiteral("assumption_status"))
                                       .toString(QStringLiteral("not_verified")).toStdString();
@@ -1873,6 +1881,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
                   QString::fromStdString(page.configuration.inference.variance_method));
     object.insert(QStringLiteral("proportion_method"),
                   QString::fromStdString(page.configuration.inference.proportion_method));
+    object.insert(QStringLiteral("normality_method"),
+                  QString::fromStdString(page.configuration.inference.normality_method));
     object.insert(QStringLiteral("equivalence_lower"),
                   optional_number(page.configuration.inference.equivalence_lower));
     object.insert(QStringLiteral("equivalence_upper"),
@@ -2464,6 +2474,12 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         object.value(QStringLiteral("variance_method")).toString("welch").toStdString();
     page.configuration.inference.proportion_method =
         object.value(QStringLiteral("proportion_method")).toString("exact").toStdString();
+    page.configuration.inference.normality_method =
+        object.value(QStringLiteral("normality_method"))
+            .toString(QStringLiteral("anderson_darling")).toStdString();
+    if (page.configuration.inference.normality_method != "ryan_joiner") {
+        page.configuration.inference.normality_method = "anderson_darling";
+    }
     page.configuration.inference.equivalence_lower =
         read_optional(object.value(QStringLiteral("equivalence_lower")));
     page.configuration.inference.equivalence_upper =

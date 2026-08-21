@@ -1,8 +1,9 @@
 # DataLab 算法与图表缺口对照矩阵
 
-> 研究日期：2026-08-18  
-> 访问日期：2026-08-18（UTC+8）  
-> 本文只整理现状、官方公式来源和分批验收口径，不填写任何未从 Minitab 导出的对照数值。
+> 研究日期：2026-08-18（2026-08-21 增补市场对照入口）  
+> 访问日期：2026-08-18（UTC+8）；市场清单访问 2026-08-21  
+> 本文只整理现状、官方公式来源和分批验收口径，不填写任何未从 Minitab 导出的对照数值。  
+> **市场有哪些、完成与否、优先队列**：见 [`minitab-market-algorithm-backlog.md`](minitab-market-algorithm-backlog.md)。
 
 ## 1. 官方公式与输出口径来源
 
@@ -56,13 +57,13 @@
 | 正态能力 / Sixpack | 已接入且需手工验收 | 测量、LSL/USL/Target | N/N* | Cp/Cpk 用 σwithin，Pp/Ppk 用 σoverall；CI：χ² 尺度 + Bissell | Process Data 含 AD；PPM 三列；能力表估计/下限/上限；Sixpack 六图标题；直方图 LSL/USL/Target + Within/Overall；解释不写合格 |
 | 线性回归 | 已有且需核对 | 响应 + 预测变量 | complete-case | QR、VIF、Cook、DFITS、内部/删除学生化残差；DW + α=0.05 dL/dU 判定区 | Unusual 表仅列 R/X/I 打标行；单预测变量 Fitted Line 含 CI/PI 带；残差图含 y=0；多预测变量每 X 一张「残差与预测变量」+ `source_row`；`RegressionFacts` 含残差 AD、DW 判定与 plot 计数 |
 | 单/双因素 ANOVA | 已有且需核对 | 响应 + 因子 | 不可估计项不输出 F/P | RSS 差值、Tukey；单因素组均值个体 CI 用 pooled MSE；Grouping CLD | 单因素含区间图、残差 4 图、Tukey 下限/上限 + 差值区间图 + Grouping Information；双因素含残差 4 图与交互均值连线 |
-| 描述统计 / 卡方 / 非参数 | 已有且需核对 | 变量或分类列 | 跳过缺失 | 正态近似、ties 修正；Kruskal+Dunn 或 Steel–Dwass；Friedman±Nemenyi；Sign；Mood；McNemar；Cochran Q；单样本 Wilcoxon | 描述页含箱线+个体值图；卡方三表 + 观察频数热图；非参数含 Mann-Whitney/Wilcoxon/Sign/Mood/Kruskal/Friedman；Kruskal 默认 Dunn，可选 Steel–Dwass；Friedman 可选 Nemenyi；Mann-Whitney McKean–Ryan CI；Wilcoxon 支持一列+η0；McNemar / Cochran Q 独立命令 |
+| 描述统计 / 卡方 / 非参数 | 已有且需核对 | 变量或分类列 | 跳过缺失 | 正态近似、ties 修正；Kruskal+Dunn 或 Steel–Dwass；Friedman±Nemenyi；Sign±CI；Mood±组 Sign CI；McNemar；Cochran Q；Wilcoxon 单样本/配对 Walsh CI | 描述页含箱线+个体值图；卡方三表 + 观察频数热图；非参数含 Mann-Whitney/Wilcoxon/Sign/Mood/Kruskal/Friedman；Kruskal 默认 Dunn，可选 Steel–Dwass；Friedman 可选 Nemenyi；Mann-Whitney McKean–Ryan CI；Wilcoxon 一列+η0 与配对均 Walsh；McNemar / Cochran Q 独立命令 |
 | 卡方拟合优度 | 已接入且需手工验收 | 一个分类列；可选期望比例 | complete-case；`*` 计 N* | Pearson χ²；E=pN；DF=k−1 | 命令 `chi_square_gof`；条图；不改关联热图；比例个数错只诊断 |
 | G 图 / T 图 | 已接入且需手工验收 | 数值间隔列 | complete-case；`source_row` | 几何 INVCDF−1 / Weibull 分位；默认 Test 1 | 逐点表；不解析事件日期；0 间隔 T 图诊断 `zero_interval_regression_used` |
 | t/方差/泊松 功效与样本量 | 已接入且需手工验收 | 不读工作表 | — | 非中心 t / F / 比例；单方差 χ²；双方差 F；泊松率正态近似；表含 Actual Power | `PowerFacts`；功效曲线；`one_poisson_*`/`two_poisson_*`；解释不写样本量足够 |
 | Grubbs 异常值检验 | 已接入且需手工验收 | 单列测量 | complete-case；`*` 计入 N* | G=max\|y−ȳ\|/s；P 由 t_{n−2} 反解 | 命令 `outlier_test`；个体值图 `source_row`；不做 Dixon |
 | 单/双样本 / 配对 t | 已有且需核对 | 一列或两列 | 双样本按组独立抽列；配对 complete-case | Welch/pooled/配对公式不改；区间图为展示 | 单样本均值区间（须=μ0+差值CI）；双样本组均值个体 CI；配对散点 `source_rows` + 差值区间；`TTestFacts` |
-| 正态性检验 | 已有且需核对 | 单列 | N/N*；`*` 计入 N* | AD A²/A²*；未拒绝≠已正态 | 概率图+直方图悬停原始行；`NormalityFacts` |
+| 正态性检验 | 已有且需核对 | 单列 | N/N*；`*` 计入 N* | 默认 AD A²/A²*；可选 Ryan–Joiner R；未拒绝≠已正态 | 概率图+直方图悬停原始行；`NormalityFacts.method`；method=`anderson_darling`\|`ryan_joiner` |
 | 相关 | 已有且需核对 | ≥2 数值列 | complete-case 行主序 | Pearson/Spearman 公式不改 | 矩阵散点 + 两列散点 `source_row`；禁止按索引 zip |
 | 单比例检验 | 已接入且需手工验收 | 事件 + 试验 | complete-case 多行求和；`*` 计入 N* | exact=Clopper–Pearson；normal=Wald CI + score z；wilson=Wilson score；agresti_coull=Agresti–Coull | 命令 `one_proportion`；不做 Blaker |
 | 两比例检验 | 已接入且需手工验收 | 两组事件 + 试验 | 每组独立 complete-case 多行求和；`*` 计入 N* | 检验 unpooled Wald Z；CI=`wald`（默认）或 `newcombe_wilson`（method=wilson）或 `agresti_coull_diff`（method=agresti_coull）；Fisher | 命令 `two_proportions`；差值区间图；`ProportionFacts.kind=two_sample`；不做 Blaker |

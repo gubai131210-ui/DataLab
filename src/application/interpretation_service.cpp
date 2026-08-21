@@ -887,13 +887,15 @@ void InterpretationService::enrich(domain::OutputPage& page)
             + "。未拒绝原假设不能证明两组或各组分布相同。");
         if (facts.location_estimate.has_value()
             && facts.ci_lower.has_value() && facts.ci_upper.has_value()) {
-            if (facts.method == "wilcoxon_one_sample") {
+            if (facts.method == "wilcoxon_one_sample"
+                || facts.method == "wilcoxon_signed_rank") {
                 conclusion.bullets.push_back(
                     "Walsh 估计中位数为 " + std::to_string(*facts.location_estimate)
                     + "，置信区间 [" + std::to_string(*facts.ci_lower) + ", "
                     + std::to_string(*facts.ci_upper)
                     + "]。区间只描述中位数的可能范围，不能写成已证明等于假设值。");
-            } else {
+            } else if (facts.method != "sign_test"
+                       && facts.method != "sign_test_paired") {
                 conclusion.bullets.push_back(
                     "位置差异估计为 " + std::to_string(*facts.location_estimate)
                     + "，置信区间 [" + std::to_string(*facts.ci_lower) + ", "
@@ -901,28 +903,33 @@ void InterpretationService::enrich(domain::OutputPage& page)
             }
         } else if (facts.location_estimate.has_value()
                    && facts.ci_lower.has_value()) {
-            if (facts.method == "wilcoxon_one_sample") {
+            if (facts.method == "wilcoxon_one_sample"
+                || facts.method == "wilcoxon_signed_rank") {
                 conclusion.bullets.push_back(
                     "Walsh 估计中位数为 " + std::to_string(*facts.location_estimate)
                     + "，置信下界 " + std::to_string(*facts.ci_lower) + "。");
-            } else {
+            } else if (facts.method != "sign_test"
+                       && facts.method != "sign_test_paired") {
                 conclusion.bullets.push_back(
                     "位置差异估计为 " + std::to_string(*facts.location_estimate)
                     + "，置信下界 " + std::to_string(*facts.ci_lower) + "。");
             }
         } else if (facts.location_estimate.has_value()
                    && facts.ci_upper.has_value()) {
-            if (facts.method == "wilcoxon_one_sample") {
+            if (facts.method == "wilcoxon_one_sample"
+                || facts.method == "wilcoxon_signed_rank") {
                 conclusion.bullets.push_back(
                     "Walsh 估计中位数为 " + std::to_string(*facts.location_estimate)
                     + "，置信上界 " + std::to_string(*facts.ci_upper) + "。");
-            } else {
+            } else if (facts.method != "sign_test"
+                       && facts.method != "sign_test_paired") {
                 conclusion.bullets.push_back(
                     "位置差异估计为 " + std::to_string(*facts.location_estimate)
                     + "，置信上界 " + std::to_string(*facts.ci_upper) + "。");
             }
         } else if (facts.location_estimate.has_value()
-                   && facts.method == "wilcoxon_one_sample") {
+                   && (facts.method == "wilcoxon_one_sample"
+                       || facts.method == "wilcoxon_signed_rank")) {
             conclusion.bullets.push_back(
                 "Walsh 估计中位数为 " + std::to_string(*facts.location_estimate)
                 + "。点估计不能写成已证明等于假设值。");
@@ -962,18 +969,30 @@ void InterpretationService::enrich(domain::OutputPage& page)
             conclusion.bullets.push_back(
                 "符号检验（二项精确）P = " + std::to_string(*facts.p_value)
                 + "。未拒绝原假设不能证明中位数等于假设值。");
+            if (facts.ci_lower.has_value() && facts.ci_upper.has_value()) {
+                conclusion.bullets.push_back(
+                    "Sign 中位数置信区间为 ["
+                    + std::to_string(*facts.ci_lower) + ", "
+                    + std::to_string(*facts.ci_upper)
+                    + "]，只描述位置不确定性，不能写成已证明等于假设值。");
+            }
         }
         if (facts.method == "wilcoxon_one_sample" && facts.p_value.has_value()) {
             conclusion.bullets.push_back(
                 "单样本 Wilcoxon 符号秩 P = " + std::to_string(*facts.p_value)
                 + "。未拒绝原假设不能证明中位数等于假设值；Walsh 估计与区间只描述位置。");
         }
+        if (facts.method == "wilcoxon_signed_rank" && facts.p_value.has_value()) {
+            conclusion.bullets.push_back(
+                "配对 Wilcoxon 符号秩 P = " + std::to_string(*facts.p_value)
+                + "。未拒绝原假设不能证明配对差分中位数为 0。");
+        }
         if (facts.method == "mood_median" && facts.p_value.has_value()) {
             conclusion.bullets.push_back(
                 "Mood 中位数检验 χ² = "
                 + (facts.statistic.has_value() ? std::to_string(*facts.statistic) : "*")
                 + "，P = " + std::to_string(*facts.p_value)
-                + "。未拒绝原假设不能证明各组中位数相同。");
+                + "。未拒绝原假设不能证明各组中位数相同；各组 Sign CI 只描述组内位置。");
         }
         if (facts.small_sample_warning) {
             raise_severity(limitations.severity, Severity::warning);
@@ -1453,7 +1472,12 @@ void InterpretationService::enrich(domain::OutputPage& page)
     if (page.facts.normality.has_value()) {
         const auto& facts = *page.facts.normality;
         std::ostringstream text;
-        text << "Anderson-Darling 正态性检验判定为 " << facts.decision;
+        const bool ryan = facts.method == "ryan_joiner";
+        text << (ryan ? "Ryan–Joiner" : "Anderson-Darling")
+             << " 正态性检验判定为 " << facts.decision;
+        if (ryan && facts.ryan_joiner_r.has_value()) {
+            text << "，R = " << *facts.ryan_joiner_r;
+        }
         if (facts.p_value.has_value()) {
             text << "，P = " << *facts.p_value;
         }

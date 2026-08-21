@@ -377,7 +377,8 @@ SignedRankResult wilcoxon_signed_rank_from_differences(
 SignedRankResult wilcoxon_signed_rank(
     const std::vector<double>& first,
     const std::vector<double>& second,
-    TestAlternative alternative)
+    TestAlternative alternative,
+    const double confidence_level)
 {
     SignedRankResult result;
     if (first.size() != second.size()) {
@@ -393,7 +394,7 @@ SignedRankResult wilcoxon_signed_rank(
         }
     }
     return wilcoxon_signed_rank_from_differences(
-        differences, alternative, 0.0, false, 0.95);
+        differences, alternative, 0.0, true, confidence_level);
 }
 
 SignedRankResult wilcoxon_signed_rank_one_sample(
@@ -981,15 +982,19 @@ double binomial_cdf_ge_half(std::size_t x, std::size_t n)
 SignTestResult sign_test_core(
     const std::vector<double>& values,
     const double hypothesized_median,
-    const TestAlternative alternative)
+    const TestAlternative alternative,
+    const double confidence_level)
 {
     SignTestResult result;
     result.hypothesized_median = hypothesized_median;
+    result.confidence_level = confidence_level;
     std::vector<double> nonzero;
+    std::vector<double> finite_all;
     for (const double value : values) {
         if (!std::isfinite(value)) {
             continue;
         }
+        finite_all.push_back(value);
         if (value > hypothesized_median) {
             ++result.n_positive;
             nonzero.push_back(value);
@@ -1001,42 +1006,141 @@ SignTestResult sign_test_core(
         }
     }
     result.n_nonzero = result.n_positive + result.n_negative;
-    if (!nonzero.empty()) {
-        result.sample_median = median_of(nonzero);
-    } else if (!values.empty()) {
-        std::vector<double> finite;
-        for (const double value : values) {
-            if (std::isfinite(value)) {
-                finite.push_back(value);
-            }
-        }
-        if (!finite.empty()) {
-            result.sample_median = median_of(finite);
-        }
+    if (!finite_all.empty()) {
+        result.sample_median = median_of(finite_all);
     }
     if (result.n_nonzero == 0) {
         error(result.diagnostics, "sign_test_no_nonzero",
               "符号检验在丢弃等于假设中位数的观测后无有效符号。");
+    } else {
+        result.small_sample_warning = result.n_nonzero < 10;
+        if (result.n_nonzero >= 25) {
+            warning(result.diagnostics, "sign_test_large_n_note",
+                    "有效符号数 ≥ 25；主 P 仍为二项精确，正态近似仅作参考。");
+        }
+        const std::size_t n = result.n_nonzero;
+        const std::size_t n_pos = result.n_positive;
+        if (alternative == TestAlternative::greater) {
+            result.p_value = binomial_cdf_ge_half(n_pos, n);
+        } else if (alternative == TestAlternative::less) {
+            result.p_value = binomial_cdf_le_half(n_pos, n);
+        } else {
+            const double lower = binomial_cdf_le_half(n_pos, n);
+            const double upper = binomial_cdf_ge_half(n_pos, n);
+            result.p_value = std::clamp(2.0 * std::min(lower, upper), 0.0, 1.0);
+        }
+        result.approximation = "binomial_exact";
+    }
+    return result;
+}
+
+}  // namespace
+
+SignMedianCiResult sign_median_ci(
+    const std::vector<double>& values,
+    double confidence_level)
+{
+    SignMedianCiResult result;
+    if (!(confidence_level > 0.0 && confidence_level < 1.0)) {
+        confidence_level = 0.95;
+    }
+    result.confidence_level = confidence_level;
+    std::vector<double> ordered;
+    ordered.reserve(values.size());
+    for (const double value : values) {
+        if (std::isfinite(value)) {
+            ordered.push_back(value);
+        }
+    }
+    result.n = ordered.size();
+    if (ordered.empty()) {
+        error(result.diagnostics, "sign_ci_no_data",
+              "中位数置信区间需要至少一个有限观测。");
         return result;
     }
-    result.small_sample_warning = result.n_nonzero < 10;
-    if (result.n_nonzero >= 25) {
-        warning(result.diagnostics, "sign_test_large_n_note",
-                "有效符号数 ≥ 25；主 P 仍为二项精确，正态近似仅作参考。");
+    std::sort(ordered.begin(), ordered.end());
+    result.estimate = median_of(ordered);
+    if (ordered.size() < 2) {
+        warning(result.diagnostics, "sign_ci_insufficient_n",
+                "n<2 时无法计算符号检验中位数置信区间。");
+        return result;
     }
-    const std::size_t n = result.n_nonzero;
-    const std::size_t n_pos = result.n_positive;
-    if (alternative == TestAlternative::greater) {
-        result.p_value = binomial_cdf_ge_half(n_pos, n);
-    } else if (alternative == TestAlternative::less) {
-        result.p_value = binomial_cdf_le_half(n_pos, n);
+
+    const std::size_t n = ordered.size();
+    const double alpha = 1.0 - confidence_level;
+    const double half_alpha = alpha / 2.0;
+    std::size_t d = 0;
+    for (std::size_t candidate = 0; candidate <= n; ++candidate) {
+        const double p_lt = candidate == 0
+            ? 0.0
+            : binomial_cdf_le_half(candidate - 1, n);
+        if (p_lt < half_alpha) {
+            d = candidate;
+        } else {
+            break;
+        }
+    }
+
+    struct CandidateInterval {
+        double lower = 0.0;
+        double upper = 0.0;
+        double achieved = 0.0;
+        bool valid = false;
+    };
+    CandidateInterval narrow;
+    CandidateInterval wide;
+    if (d + 1 <= n - d) {
+        narrow.lower = ordered[d];
+        narrow.upper = ordered[n - d - 1];
+        narrow.achieved = 1.0 - 2.0 * binomial_cdf_le_half(d, n);
+        narrow.valid = narrow.lower <= narrow.upper && narrow.achieved > 0.0;
+    }
+    if (d >= 1) {
+        wide.lower = ordered[d - 1];
+        wide.upper = ordered[n - d];
+        wide.achieved = 1.0 - 2.0 * binomial_cdf_le_half(d - 1, n);
+        wide.valid = wide.lower <= wide.upper && wide.achieved > 0.0;
+    }
+
+    CandidateInterval chosen;
+    if (narrow.valid && wide.valid) {
+        const double dn = std::abs(narrow.achieved - confidence_level);
+        const double dw = std::abs(wide.achieved - confidence_level);
+        if (dw < dn || (std::abs(dw - dn) <= 1.0e-15
+                        && wide.achieved >= confidence_level)) {
+            chosen = wide;
+        } else {
+            chosen = narrow;
+        }
+    } else if (wide.valid) {
+        chosen = wide;
+    } else if (narrow.valid) {
+        chosen = narrow;
     } else {
-        const double lower = binomial_cdf_le_half(n_pos, n);
-        const double upper = binomial_cdf_ge_half(n_pos, n);
-        result.p_value = std::clamp(2.0 * std::min(lower, upper), 0.0, 1.0);
+        warning(result.diagnostics, "sign_ci_unavailable",
+                "无法构造合法的符号检验中位数置信区间。");
+        return result;
     }
-    result.approximation = "binomial_exact";
+    result.ci_lower = chosen.lower;
+    result.ci_upper = chosen.upper;
+    result.achieved_confidence = std::clamp(chosen.achieved, 0.0, 1.0);
     return result;
+}
+
+namespace {
+
+void attach_sign_ci(SignTestResult& result, const std::vector<double>& values)
+{
+    const auto ci = sign_median_ci(values, result.confidence_level);
+    for (const auto& message : ci.diagnostics) {
+        result.diagnostics.push_back(message);
+    }
+    if (ci.estimate.has_value() && !result.sample_median.has_value()) {
+        result.sample_median = ci.estimate;
+    }
+    result.ci_lower = ci.ci_lower;
+    result.ci_upper = ci.ci_upper;
+    result.achieved_confidence = ci.achieved_confidence;
 }
 
 }  // namespace
@@ -1099,15 +1203,20 @@ McNemarResult mcnemar_test(
 SignTestResult sign_test(
     const std::vector<double>& values,
     const double hypothesized_median,
-    const TestAlternative alternative)
+    const TestAlternative alternative,
+    const double confidence_level)
 {
-    return sign_test_core(values, hypothesized_median, alternative);
+    auto result = sign_test_core(
+        values, hypothesized_median, alternative, confidence_level);
+    attach_sign_ci(result, values);
+    return result;
 }
 
 SignTestResult sign_test_paired(
     const std::vector<double>& first,
     const std::vector<double>& second,
-    const TestAlternative alternative)
+    const TestAlternative alternative,
+    const double confidence_level)
 {
     SignTestResult result;
     if (first.size() != second.size()) {
@@ -1122,7 +1231,9 @@ SignTestResult sign_test_paired(
             diffs.push_back(first[index] - second[index]);
         }
     }
-    return sign_test_core(diffs, 0.0, alternative);
+    result = sign_test_core(diffs, 0.0, alternative, confidence_level);
+    attach_sign_ci(result, diffs);
+    return result;
 }
 
 bool encode_paired_binary_levels(
@@ -1143,9 +1254,12 @@ bool resolve_binary_label(
 
 MoodMedianResult mood_median_test(
     const std::vector<std::vector<double>>& groups,
-    const std::vector<std::string>& labels)
+    const std::vector<std::string>& labels,
+    const double confidence_level)
 {
     MoodMedianResult result;
+    result.confidence_level =
+        (confidence_level > 0.0 && confidence_level < 1.0) ? confidence_level : 0.95;
     if (groups.size() < 2 || (!labels.empty() && labels.size() != groups.size())) {
         error(result.diagnostics, "mood_invalid_groups",
               "Mood 中位数检验至少需要两个且标签匹配的组。");
@@ -1206,6 +1320,16 @@ MoodMedianResult mood_median_test(
         }
         row.count = finite.size();
         row.median = median_of(finite);
+        const auto group_ci = sign_median_ci(finite, result.confidence_level);
+        row.ci_lower = group_ci.ci_lower;
+        row.ci_upper = group_ci.ci_upper;
+        row.achieved_confidence = group_ci.achieved_confidence;
+        if (!group_ci.ci_lower.has_value()) {
+            result.diagnostics.push_back({
+                DiagnosticMessage::Severity::warning,
+                "mood_group_ci_unavailable",
+                "组别 " + row.label + " 无法计算 Sign 中位数置信区间。"});
+        }
         total_le += row.n_le;
         total_gt += row.n_gt;
         result.groups.push_back(row);

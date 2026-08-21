@@ -98,6 +98,7 @@ struct InferenceConfiguration {
     std::string variance_alternative = "two_sided";
     std::optional<double> coverage_proportion;
     std::string proportion_method = "exact";
+    std::string normality_method = "anderson_darling";
     std::string expected_proportions;
     std::optional<std::size_t> gof_category_column;
     std::optional<double> equivalence_lower;
@@ -877,9 +878,11 @@ struct TTestFacts {
 struct NormalityFacts {
     std::size_t n = 0;
     std::size_t missing_count = 0;
+    std::string method = "anderson_darling";
     std::string decision = "not_computed";
     std::optional<double> p_value;
     std::optional<double> anderson_darling;
+    std::optional<double> ryan_joiner_r;
     double alpha = 0.05;
     std::string assumption_status = "not_verified";
 };

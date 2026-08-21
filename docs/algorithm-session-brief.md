@@ -488,9 +488,28 @@ ui → application / infrastructure / reporting → domain
 
 公式：[`p1_mood_median_test.md`](research/p1_mood_median_test.md)、[`p1_cochran_q.md`](research/p1_cochran_q.md)、[`p1_wilcoxon_one_sample.md`](research/p1_wilcoxon_one_sample.md)、[`p1_help_formula_sources_tab.md`](research/p1_help_formula_sources_tab.md)
 
+## 5j. 2026-08-21 算法深化（本轮四项竖切）✅
+
+1. **Ryan–Joiner 正态性**
+   - `normality_test` method=`anderson_darling`（默认）|`ryan_joiner`；`NormalityFacts.method` / `ryan_joiner_r`
+   - 不重做 AD 本体；能力页仍默认 AD
+2. **Sign 置信区间**
+   - 加深 `sign_test`；共享 `sign_median_ci` 序统计 CI；主 P 不变
+   - 表「中位数置信区间」；不做 NLI 三区间 / 假 golden
+3. **Mood 各组 Sign CI**
+   - 加深 `mood_median`；复用 Sign CI helper；χ² 本体不变
+4. **配对 Wilcoxon Walsh/HL CI**
+   - 配对路径 `compute_location=true`；与单样本同核；秩/P 不变
+
+公式：[`p1_ryan_joiner_normality.md`](research/p1_ryan_joiner_normality.md)、[`p1_sign_confidence_interval.md`](research/p1_sign_confidence_interval.md)、[`p1_mood_group_sign_ci.md`](research/p1_mood_group_sign_ci.md)、[`p1_paired_wilcoxon_walsh_ci.md`](research/p1_paired_wilcoxon_walsh_ci.md)
+
+本轮明确不做：Fisher 深化、Runs、Dixon；AD/Sign 主 P/Mood χ²/单样本 Wilcoxon/帮助页签重做；`chi_square`/`chi_square_gof`；假 golden。
+
 ## 5b. 以后再计划的项（不要从本节当成本轮任务）
 
-不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h、§5i 已完成项。帮助中心壳已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、Sign CI、Ryan–Joiner、重构阶段 5/6）。
+不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h、§5i、§5j 已完成项。帮助中心壳已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、重构阶段 5/6）。
+
+**市场算法完成状态与未实现优先队列（权威）**：`docs/research/minitab-market-algorithm-backlog.md`（对照 Minitab Feature List；§12 为 /goal 消耗队列；§13 延后不算失败）。下一批默认从该文件 P0 起选：Runs test、Fisher 表形深化、Dixon（可选）、独立 Run Chart、Pareto 等。
 
 ## 6. 硬约束
 
@@ -502,7 +521,7 @@ ui → application / infrastructure / reporting → domain
 - 源码 UTF-8 无 BOM。
 - 回复格式：切入点理解、任务、影响文件、测试策略、实现说明；改完列 Qt Creator 手工验收项。
 
-本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi **独立**命令；精确 studentized-range；Sign CI；Ryan–Joiner；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman 主检验 / Friedman Nemenyi / McNemar / Sign test / 回归 DW 临界 / Mood 中位数 / Cochran Q / 单样本 Wilcoxon / 帮助公式与来源页签。
+本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi **独立**命令；精确 studentized-range；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman 主检验 / Friedman Nemenyi / McNemar / Sign test（含 Sign CI） / 回归 DW 临界 / Mood 中位数（含组 Sign CI） / Cochran Q / 单样本与配对 Wilcoxon Walsh / Ryan–Joiner / 帮助公式与来源页签。
 
 ## 7. 可贴给新对话的短提示词
 
@@ -513,12 +532,13 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 新/深化算法必须闭环：research md → domain → *Facts → AnalysisService → analysis_commands → interpretation → output_serialization → tests（# source: formula_reference）→ algorithm_help.json → acceptance。
 
 ## 必读（按序）
-1. docs/algorithm-session-brief.md（尤其 §5i 已完成、§5b/§6 硬约束；禁止重做 §4–§5i）
-2. docs/research/deferred-capability-agreement.md
-3. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
-4. docs/quality-algorithms-acceptance.md
-5. docs/algorithm-wiring-index.md、docs/statistical-methodology.md、CONTEXT.md
-6. ADR 0001 / 0003 / 0004；session-handoff 只读踩坑，不当任务
+1. docs/algorithm-session-brief.md（尤其 §5j 已完成、§5b/§6 硬约束；禁止重做 §4–§5j）
+2. docs/research/minitab-market-algorithm-backlog.md（市场对照+完成标记+§12 队列）
+3. docs/research/deferred-capability-agreement.md
+4. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
+5. docs/quality-algorithms-acceptance.md
+6. docs/algorithm-wiring-index.md、docs/statistical-methodology.md、CONTEXT.md
+7. ADR 0001 / 0003 / 0004；session-handoff 只读踩坑，不当任务
 
 ## Skills
 - research（公式：Minitab methods + NIST/教材，URL+访问日期；对照表形不填未导出数）
@@ -527,14 +547,8 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 - 计划里必须写「禁止偷懒做 XXX」清单
 
 ## 本轮目标（一次性多做，但每项竖切闭环）
-从 gap-matrix / deferred / Minitab 表形优势里选 3～4 项「深化已有 + 高杠杆新缺口」。
-实现前每项先写 docs/research/p1_*.md。
-默认候选（计划里锁定二选一/明确不做）：
-- 正态 Ryan–Joiner（接 AD / normality_test 缝；方法可切换 AD|RJ；勿重做 AD 本体）
-- Sign 置信区间（加深 sign_test；Minitab 1-Sample Sign 表形；勿重做 Sign 主 P / Wilcoxon）
-- Mood 各组中位数 Sign CI（加深 mood_median；Minitab 可有；勿重做 Mood χ² 本体）
-- 配对 Wilcoxon / 单样本 Walsh 已有：可选「配对 Wilcoxon HL/Walsh CI」或「正态性方法选项 UI 统一」作第 4 项二选一
-  （备选高杠杆：Fisher exact 深化表形；Runs test；Dixon 异常值——仅当研究后判定缝更浅再替换）
+从 docs/research/minitab-market-algorithm-backlog.md §12（及 gap-matrix / deferred）选 3～4 项「深化已有 + 高杠杆新缺口」。
+实现前每项先写 docs/research/p1_*.md；做完把 backlog 对应行改为 ✅/⚪ 并更新 acceptance。
 你研究后可调整优先级，但必须在计划里锁定选型与「明确不做」。
 对照 Minitab：输出表名/列/诊断；学习其「方法选项可切换、小样本警告、表+图同页」优势，禁止假 golden。
 
@@ -542,13 +556,12 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 - complete-case / align_complete_rows / parse_numeric_cell / source_row / dataset_id；导入 A→B 旧输出失效
 - 解释只读 Facts，不写合格/已证明等价或一致/已证明等方差/样本量足够
 - 禁止假 Minitab golden；禁止碰 chi_square 与 chi_square_gof 边界除非本轮明确包含
-- 禁止重做：§5a–§5i（含 Mood、Cochran Q、单样本 Wilcoxon、帮助公式页签、Nemenyi、McNemar、Sign 主检验、DW 临界、Kruskal Dunn/SD、Friedman 等）
+- 禁止重做：§5a–§5j（含 Mood、Sign CI、RJ、配对 Walsh、Cochran Q、Wilcoxon、帮助公式页签等）
 - 待修改.md 是给人看的旧笔记，不当任务（除非用户本轮明确点名其中某条）
 - 中文路径：agent 不跑 cmake/ctest；改完列 Qt Creator 手工验收项
 - 帮助：改 generate_algorithm_help_catalog.py + help_catalog_families.py 再生成 JSON，正文禁止「见 md」
 
 请先 SwitchMode 到 plan，输出详细计划（含文件级清单、风险、手工验收、禁止偷懒），等我确认后再实现。
-上一轮四项（Mood / Cochran Q / 单样本 Wilcoxon / 帮助公式页签）我都验证完了。
 ```
 
 仓库内权威范围以本节之上第 5、6 节为准。新对话应先 SwitchMode 到 **plan**，研究完成后再 agent 实现。

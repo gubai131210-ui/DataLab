@@ -1671,16 +1671,21 @@ OutputPage AnalysisService::normality_test(
     const std::size_t column = first_variable(configuration);
     const ExtractedNumericColumn extracted =
         extract_numeric_column(table, column, configuration.excluded_rows);
+    const std::string method =
+        configuration.inference.normality_method == "ryan_joiner"
+            ? "ryan_joiner" : "anderson_darling";
     const auto result = datalab::domain::statistics::normality_test(
-        extracted.values, extracted.source_rows);
+        extracted.values, extracted.source_rows, method);
 
     OutputPage page;
     page.id = new_id("normality");
     page.title = "正态性检验";
     page.method_name = "Normality Test";
     page.configuration = configuration;
+    const std::string method_label =
+        method == "ryan_joiner" ? "Ryan-Joiner" : "Anderson-Darling";
     page.parameter_summary = "变量: " + extracted.name
-        + "    方法: Anderson-Darling    缺失值 N* = "
+        + "    方法: " + method_label + "    缺失值 N* = "
         + std::to_string(extracted.missing_count);
     if (!result.messages.empty()) {
         page.diagnostics = result.messages;
@@ -1692,27 +1697,43 @@ OutputPage AnalysisService::normality_test(
     }
     StatisticTable table_out;
     table_out.title = "正态性检验";
-    table_out.headers = {"变量", "N", "N*", "Mean", "StDev", "AD", "A²*", "Alpha",
-                         "P-Value", "判定"};
     std::string conclusion = "无法计算";
     if (result.decision == "reject") {
         conclusion = "在 alpha 下拒绝正态假设";
     } else if (result.decision == "fail_to_reject") {
         conclusion = "在 alpha 下未拒绝正态假设";
     }
-    table_out.rows.push_back({
-        extracted.name,
-        std::to_string(result.count),
-        std::to_string(extracted.missing_count),
-        format_number(result.mean),
-        result.sample_standard_deviation > 0.0
-            ? format_number(result.sample_standard_deviation) : "*",
-        result.anderson_darling.has_value() ? format_number(*result.anderson_darling) : "*",
-        result.adjusted_anderson_darling.has_value()
-            ? format_number(*result.adjusted_anderson_darling) : "*",
-        format_number(result.alpha),
-        result.p_value.has_value() ? format_number(*result.p_value) : "*",
-        conclusion});
+    if (method == "ryan_joiner") {
+        table_out.headers = {"变量", "N", "N*", "Mean", "StDev", "RJ(R)", "Alpha",
+                             "P-Value", "判定"};
+        table_out.rows.push_back({
+            extracted.name,
+            std::to_string(result.count),
+            std::to_string(extracted.missing_count),
+            format_number(result.mean),
+            result.sample_standard_deviation > 0.0
+                ? format_number(result.sample_standard_deviation) : "*",
+            result.ryan_joiner_r.has_value() ? format_number(*result.ryan_joiner_r) : "*",
+            format_number(result.alpha),
+            result.p_value.has_value() ? format_number(*result.p_value) : "*",
+            conclusion});
+    } else {
+        table_out.headers = {"变量", "N", "N*", "Mean", "StDev", "AD", "A²*", "Alpha",
+                             "P-Value", "判定"};
+        table_out.rows.push_back({
+            extracted.name,
+            std::to_string(result.count),
+            std::to_string(extracted.missing_count),
+            format_number(result.mean),
+            result.sample_standard_deviation > 0.0
+                ? format_number(result.sample_standard_deviation) : "*",
+            result.anderson_darling.has_value() ? format_number(*result.anderson_darling) : "*",
+            result.adjusted_anderson_darling.has_value()
+                ? format_number(*result.adjusted_anderson_darling) : "*",
+            format_number(result.alpha),
+            result.p_value.has_value() ? format_number(*result.p_value) : "*",
+            conclusion});
+    }
     page.tables.push_back(table_out);
 
     PlotSpec plot;
@@ -1740,9 +1761,11 @@ OutputPage AnalysisService::normality_test(
     domain::NormalityFacts facts;
     facts.n = result.count;
     facts.missing_count = extracted.missing_count;
+    facts.method = result.method;
     facts.decision = result.decision;
     facts.p_value = result.p_value;
     facts.anderson_darling = result.anderson_darling;
+    facts.ryan_joiner_r = result.ryan_joiner_r;
     facts.alpha = result.alpha;
     facts.assumption_status = result.evidence.assumption_status.empty()
         ? "not_verified" : result.evidence.assumption_status;
@@ -4398,7 +4421,8 @@ OutputPage AnalysisService::wilcoxon_signed_rank(
         }
         result = datalab::domain::statistics::wilcoxon_signed_rank(
             first_values, second_values,
-            parse_alternative(configuration.inference.alternative));
+            parse_alternative(configuration.inference.alternative),
+            confidence);
         page.parameter_summary = first.name + " vs " + second.name;
         page.diagnostics = result.diagnostics;
         missing_count = first.total_count > aligned.source_rows.size()
@@ -4451,7 +4475,7 @@ OutputPage AnalysisService::wilcoxon_signed_rank(
             result.small_sample_warning ? "是" : "否"});
     }
     page.tables.push_back(output);
-    if (one_sample && result.location_estimate.has_value()) {
+    if (result.location_estimate.has_value()) {
         StatisticTable location;
         location.title = "位置估计（Walsh）";
         location.headers = {"估计中位数", "CI 下限", "CI 上限"};
@@ -4491,6 +4515,13 @@ OutputPage AnalysisService::sign_test(
     }
     const double hypothesized =
         configuration.inference.hypothesis_mean.value_or(0.0);
+    double confidence = 0.95;
+    if (configuration.inference.confidence_level > 0.0) {
+        confidence = configuration.inference.confidence_level;
+        if (confidence > 1.0) {
+            confidence /= 100.0;
+        }
+    }
     OutputPage page;
     page.id = new_id("sign_test");
     page.title = "符号检验";
@@ -4508,7 +4539,8 @@ OutputPage AnalysisService::sign_test(
             + format_number(hypothesized);
         result = datalab::domain::statistics::sign_test(
             extracted.values, hypothesized,
-            parse_alternative(configuration.inference.alternative));
+            parse_alternative(configuration.inference.alternative),
+            confidence);
         auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
         append_group_to_distribution_plots(
             plots, extracted.name, extracted.values, extracted.source_rows);
@@ -4531,7 +4563,8 @@ OutputPage AnalysisService::sign_test(
         }
         result = datalab::domain::statistics::sign_test_paired(
             first_values, second_values,
-            parse_alternative(configuration.inference.alternative));
+            parse_alternative(configuration.inference.alternative),
+            confidence);
         auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
         append_group_to_distribution_plots(
             plots, first.name, first_values, aligned.source_rows);
@@ -4577,6 +4610,20 @@ OutputPage AnalysisService::sign_test(
         result.approximation,
         result.small_sample_warning ? "是" : "否"});
     page.tables.push_back(std::move(test));
+    if (result.ci_lower.has_value() || result.ci_upper.has_value()) {
+        StatisticTable ci_table;
+        ci_table.title = "中位数置信区间";
+        ci_table.headers = {
+            "估计中位数", "CI 下限", "CI 上限", "名义置信水平", "达到水平", "方法"};
+        ci_table.rows.push_back({
+            format_optional(result.sample_median),
+            format_optional(result.ci_lower),
+            format_optional(result.ci_upper),
+            format_number(result.confidence_level),
+            format_optional(result.achieved_confidence),
+            "sign_order_statistic"});
+        page.tables.push_back(std::move(ci_table));
+    }
 
     domain::NonparametricFacts facts;
     facts.method = configuration.variable_columns.size() == 2
@@ -4591,6 +4638,8 @@ OutputPage AnalysisService::sign_test(
     facts.plot_point_count = plot_point_count;
     facts.missing_count = missing_count;
     facts.location_estimate = result.sample_median;
+    facts.ci_lower = result.ci_lower;
+    facts.ci_upper = result.ci_upper;
     page.facts.nonparametric = std::move(facts);
     return finalize_page(std::move(page));
 }
@@ -4885,7 +4934,15 @@ OutputPage AnalysisService::mood_median(
             groups.push_back(grouped[group]);
         }
     }
-    const auto result = datalab::domain::statistics::mood_median_test(groups, group_labels);
+    double confidence = 0.95;
+    if (configuration.inference.confidence_level > 0.0) {
+        confidence = configuration.inference.confidence_level;
+        if (confidence > 1.0) {
+            confidence /= 100.0;
+        }
+    }
+    const auto result = datalab::domain::statistics::mood_median_test(
+        groups, group_labels, confidence);
     OutputPage page;
     page.id = new_id("mood_median");
     page.title = "Mood 中位数检验";
@@ -4904,14 +4961,16 @@ OutputPage AnalysisService::mood_median(
 
     StatisticTable summary;
     summary.title = "各组 Above/Below";
-    summary.headers = {"组别", "N", "组中位数", "N≤", "N>"};
+    summary.headers = {"组别", "N", "组中位数", "N≤", "N>", "CI 下限", "CI 上限"};
     for (const auto& group : result.groups) {
         summary.rows.push_back({
             group.label,
             std::to_string(group.count),
             format_number(group.median),
             std::to_string(group.n_le),
-            std::to_string(group.n_gt)});
+            std::to_string(group.n_gt),
+            format_optional(group.ci_lower),
+            format_optional(group.ci_upper)});
     }
     page.tables.push_back(std::move(summary));
 

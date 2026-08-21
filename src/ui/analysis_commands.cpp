@@ -425,7 +425,8 @@ const std::vector<AnalysisCommand>& all()
             QStringLiteral("normality_test"),
             false, true,
             {{QStringLiteral("variables"), QStringLiteral("变量"), false, false}},
-            {},
+            {{QStringLiteral("method"), QStringLiteral("方法"),
+              QStringLiteral("anderson_darling 或 ryan_joiner")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const int column = d.first_role_index("variables");
                 if (column < 0) {
@@ -436,6 +437,10 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "normality_test";
                 c.variable_columns.push_back(static_cast<std::size_t>(column));
                 c.selection.measurement_column = static_cast<std::size_t>(column);
+                c.inference.normality_method = normalize(d.line_text("method"));
+                if (c.inference.normality_method != "ryan_joiner") {
+                    c.inference.normality_method = "anderson_darling";
+                }
                 return {};
             },
             AnalysisService::normality_test},
@@ -1177,7 +1182,7 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
               QStringLiteral("two_sided / less / greater")},
              {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"),
-              QStringLiteral("单样本 Walsh CI，默认 95")}},
+              QStringLiteral("Walsh CI，默认 95")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const std::vector<int> columns = d.role_indices("variables");
                 if (columns.empty() || columns.size() > 2) {
@@ -1208,7 +1213,9 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("hypothesized_median"), QStringLiteral("假设中位数 η0"),
               QStringLiteral("单样本默认 0；配对忽略")},
              {QStringLiteral("alternative"), QStringLiteral("备择方向"),
-              QStringLiteral("two_sided / less / greater")}},
+              QStringLiteral("two_sided / less / greater")},
+             {QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"),
+              QStringLiteral("中位数 CI，默认 95")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const std::vector<int> columns = d.role_indices("variables");
                 if (columns.empty() || columns.size() > 2) {
@@ -1224,6 +1231,7 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 c.inference.hypothesis_mean =
                     d.line_number("hypothesized_median").value_or(0.0);
+                c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 return {};
             },
             AnalysisService::sign_test},
@@ -1283,7 +1291,8 @@ const std::vector<AnalysisCommand>& all()
             false, true,
             {{QStringLiteral("response"), QStringLiteral("测量值"), false, false},
              {QStringLiteral("factor"), QStringLiteral("分组列"), false, false}},
-            {},
+            {{QStringLiteral("confidence"), QStringLiteral("置信水平 (%)"),
+              QStringLiteral("各组 Sign CI，默认 95")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const int response = d.first_role_index("response");
                 const int factor = d.first_role_index("factor");
@@ -1295,6 +1304,7 @@ const std::vector<AnalysisCommand>& all()
                 c.chart_type = "mood_median";
                 c.variable_columns = {static_cast<std::size_t>(response)};
                 c.by_column = static_cast<std::size_t>(factor);
+                c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 return {};
             },
             AnalysisService::mood_median},

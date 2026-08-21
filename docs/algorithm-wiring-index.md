@@ -57,6 +57,10 @@
 | P1 Cochran Q | [`research/p1_cochran_q.md`](research/p1_cochran_q.md) |
 | P1 单样本 Wilcoxon | [`research/p1_wilcoxon_one_sample.md`](research/p1_wilcoxon_one_sample.md) |
 | P1 帮助公式与来源页签 | [`research/p1_help_formula_sources_tab.md`](research/p1_help_formula_sources_tab.md) |
+| P1 Sign CI | [`research/p1_sign_confidence_interval.md`](research/p1_sign_confidence_interval.md) |
+| P1 Mood 组 Sign CI | [`research/p1_mood_group_sign_ci.md`](research/p1_mood_group_sign_ci.md) |
+| P1 配对 Wilcoxon Walsh CI | [`research/p1_paired_wilcoxon_walsh_ci.md`](research/p1_paired_wilcoxon_walsh_ci.md) |
+| P1 Ryan–Joiner | [`research/p1_ryan_joiner_normality.md`](research/p1_ryan_joiner_normality.md) |
 | P1 Multi-Vari 第 4 因子 | [`research/p1_multi_vari_fourth_factor.md`](research/p1_multi_vari_fourth_factor.md) |
 
 ## 2. 命令 id → 服务 → Facts
