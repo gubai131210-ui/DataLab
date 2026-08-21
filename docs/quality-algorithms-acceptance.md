@@ -72,7 +72,11 @@
 - [x] 两比例 Agresti–Coull 差值 CI：method=`agresti_coull`；CI=`agresti_coull_diff`；Z 仍 Wald。
 - [x] Kruskal Dunn–Bonferroni 成对表 + Grouping Information；`NonparametricFacts.dunn_available`。
 - [x] Kruskal Steel–Dwass（近似）：`posthoc=steel_dwass`；Grouping (Steel-Dwass)；默认 Dunn 不变。
-- [x] Friedman：命令 `friedman`；响应+处理+区组 complete-case；结修正 χ²；不做后比较。
+- [x] Friedman：命令 `friedman`；响应+处理+区组 complete-case；结修正 χ²。
+- [x] Friedman Nemenyi（近似）：`posthoc=nemenyi`；成对表 + Grouping；默认无后比较。
+- [x] McNemar：命令 `mcnemar`；配对二元 Edwards χ²；不碰列联卡方。
+- [x] 符号检验：命令 `sign_test`；单样本/配对；二项精确；不改 Wilcoxon。
+- [x] 回归 DW 临界：α=0.05 dL/dU + 判定区；替换 1.5/2.5 启发式。
 - [x] DOE 每响应独立 goal/权重：`intent.inputs["objectives"]` JSON 覆盖 `optimization_objectives`；单响应无 JSON 时旧字段写入 `[0]`。
 - [x] 图表属性：预览在 Tabs 右侧；`GraphPropertiesPanel::set_selected_path` 联动系列列表；浏览模式不遮挡画布；复制仍走 `ChartRenderer`。
 - [x] 单预测变量回归 Fitted Line（观测/拟合线/CI/PI 带）+ 残差图 y=0；多预测变量为每个 X 一张「残差与预测变量」（无 Fitted Line）；Unusual/`RegressionFacts` 计数语义不变。
@@ -272,7 +276,10 @@
 - [ ] 统计 > 基础统计 > 双样本均值比等价：检验+参考列；界限 0.8/1.25；`transform=none` 与改前一致；`log` 全正值见几何比 CI；含 ≤0 诊断；解读无「已证明等价」。
 - [ ] 统计 > 基础统计 > 两比例：同数据 `normal` / `wilson` / `agresti_coull`；Z/P 相同、CI 不同；默认仍 Wald。
 - [ ] 统计 > 假设检验 > Kruskal-Wallis：默认 Dunn 表与 Grouping (Dunn)；`posthoc=steel_dwass` 见 SD 表与 Grouping (Steel-Dwass)；箱线悬停原始行。
-- [ ] 统计 > 假设检验 > Friedman：响应+处理+区组；平衡设计出 S/P 与箱线；缺处理区组诊断；悬停原始行；解读无「已证明一致」。
+- [ ] 统计 > 假设检验 > Friedman：响应+处理+区组；平衡设计出 S/P 与箱线；`posthoc=nemenyi` 出成对+Grouping；缺处理区组诊断；悬停原始行；解读无「已证明一致」。
+- [ ] 统计 > 假设检验 > McNemar：两二元列 → 2×2 + Edwards χ²；非二元/无不一致对诊断；解读无「已证明相同」。
+- [ ] 统计 > 假设检验 > 符号检验：单列+η0 与两列配对均可；Wilcoxon 旧行为不变。
+- [ ] 统计 > 回归：DW 表含 dL/dU/判定；n 过小则 not_computed；解读无「已证明无自相关」。
 - [ ] 质量工具 > Multi-Vari：4 因子 complete-case 出图；3 因子仍可用；覆盖不足无图；悬停 `source_row`。
 - [ ] 本地运行 `tools/check_layering.ps1`，确认 `ui → application/infrastructure/reporting → domain` 分层未破。
 
@@ -287,7 +294,8 @@
 - 图表拖拽布局、注释系统和多图拼版。
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 的数值对齐。
 - Jackson–Mudholkar T²/Q 解析限（**Bonett / Bartlett / Tukey 表形与字母已接入**）。
-- Nemenyi 独立命令 / Friedman 后比较（**Steel–Dwass 近似与 Friedman 主检验已接入**）。
+- Nemenyi **独立**命令（Friedman `posthoc=nemenyi` 已接入）。
+- Mood 中位数检验。
 - 可旋转 3D 曲面。
 - 将公式参考测试覆盖为真实 Minitab 导出 golden（…）。
 

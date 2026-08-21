@@ -842,6 +842,25 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 "缺失 N* = " + std::to_string(facts.missing_count) + "，未进入类别计数。");
         }
     }
+    if (page.facts.mcnemar.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.mcnemar;
+        if (!facts.computable) {
+            raise_severity(conclusion.severity, Severity::warning);
+            conclusion.bullets.push_back(
+                "McNemar 未计算出统计量（非二元、无不一致对或输入不足）。"
+                "这只说明当前配对表不支持该检验，不能写成前后比例已证明相同或不同。");
+        } else {
+            conclusion.bullets.push_back(
+                "McNemar（Edwards 连续性校正）χ² = "
+                + (facts.chi_square.has_value()
+                       ? std::to_string(*facts.chi_square) : "*")
+                + "，配对有效 N = " + std::to_string(facts.pair_count)
+                + "，不一致对数 b+c = " + std::to_string(facts.discordant)
+                + (facts.p_value.has_value()
+                       ? "，P = " + std::to_string(*facts.p_value) : "")
+                + "。结果只陈述边际比例差异证据，不能写成已证明相同或不同。");
+        }
+    }
     if (page.facts.nonparametric.has_value() && conclusion.bullets.empty()) {
         const auto& facts = *page.facts.nonparametric;
         conclusion.bullets.push_back(
@@ -884,12 +903,24 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 + std::to_string(facts.posthoc_pair_count)
                 + " 对；Grouping 字母只反映该规则下的显著矩阵，不能写成组间已证明相同或不同。");
         }
+        if (facts.nemenyi_available) {
+            conclusion.bullets.push_back(
+                "Nemenyi（近似）成对比较共 "
+                + std::to_string(facts.posthoc_pair_count)
+                + " 对；Grouping 字母只反映该规则下的显著矩阵，不能写成处理间已证明相同或不同。");
+        }
         if (facts.method == "friedman" && facts.statistic.has_value()
             && facts.p_value.has_value()) {
             conclusion.bullets.push_back(
                 "Friedman S（调整后）= " + std::to_string(*facts.statistic)
                 + "，P = " + std::to_string(*facts.p_value)
                 + "。这只陈述区组设计下处理间秩差异证据，不能写成已证明相同或不同。");
+        }
+        if ((facts.method == "sign_test" || facts.method == "sign_test_paired")
+            && facts.p_value.has_value()) {
+            conclusion.bullets.push_back(
+                "符号检验（二项精确）P = " + std::to_string(*facts.p_value)
+                + "。未拒绝原假设不能证明中位数等于假设值。");
         }
         if (facts.small_sample_warning) {
             raise_severity(limitations.severity, Severity::warning);
@@ -1435,6 +1466,13 @@ void InterpretationService::enrich(domain::OutputPage& page)
             conclusion.bullets.push_back(
                 "R² = " + std::to_string(*regression.r_squared)
                 + " 只描述当前样本拟合程度，不能单独判定模型合格。");
+        }
+        if (regression.durbin_watson.has_value()) {
+            conclusion.bullets.push_back(
+                "Durbin-Watson = " + std::to_string(*regression.durbin_watson)
+                + "，判定区 = " + regression.durbin_watson_decision
+                + "（按输入顺序与 α=0.05 近似 dL/dU）。"
+                "不能写成已证明无自相关或存在自相关。");
         }
     }
     std::optional<double> sigma_z;

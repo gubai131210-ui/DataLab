@@ -19,7 +19,7 @@
 - 输入：**响应 + 处理 + 区组** 三列；complete-case；`source_row`
 - 每区组内每个处理恰 1 个观测；否则诊断、不出统计量
 - `NonparametricFacts.method=friedman`
-- 本轮 **不做** 后多重比较（Steel–Dwass/Nemenyi）
+- 后多重比较（Nemenyi）见扩展笔记 [`p1_friedman_nemenyi_posthoc.md`](p1_friedman_nemenyi_posthoc.md)（默认无 posthoc；仅 `posthoc=nemenyi`）
 
 ## 3. 公式
 
@@ -54,7 +54,7 @@ S'=\frac{S}{1-C/\bigl(bk(k^2-1)\bigr)}
 
 ## 5. 明确不做
 
-后比较；宽表 zip；假 golden；改 Kruskal/Dunn。
+宽表 zip；假 golden；改 Kruskal/Dunn。后比较不在本文件实现，见 [`p1_friedman_nemenyi_posthoc.md`](p1_friedman_nemenyi_posthoc.md)。
 
 ## 6. 测试
 

@@ -528,6 +528,9 @@ struct RegressionFacts {
     std::size_t high_leverage_count = 0;
     std::optional<double> max_vif;
     std::optional<double> durbin_watson;
+    std::optional<double> durbin_watson_dl;
+    std::optional<double> durbin_watson_du;
+    std::string durbin_watson_decision = "not_computed";
     std::optional<double> error_degrees_of_freedom;
     bool rank_deficient = false;
     std::vector<AssumptionCheck> assumptions;
@@ -707,6 +710,22 @@ struct ChiSquareGofFacts {
     std::string proportion_source = "equal";
 };
 
+struct McNemarFacts {
+    std::size_t a = 0;
+    std::size_t b = 0;
+    std::size_t c = 0;
+    std::size_t d = 0;
+    std::size_t discordant = 0;
+    std::size_t pair_count = 0;
+    std::size_t missing_count = 0;
+    std::optional<double> chi_square;
+    std::optional<double> p_value;
+    double degrees_of_freedom = 1.0;
+    bool continuity_correction = true;
+    std::string method = "edwards";
+    bool computable = false;
+};
+
 struct NonparametricFacts {
     std::string method;
     std::optional<double> statistic;
@@ -725,6 +744,7 @@ struct NonparametricFacts {
     std::optional<double> ci_upper;
     bool dunn_available = false;
     bool steel_dwass_available = false;
+    bool nemenyi_available = false;
     std::string posthoc_method = "dunn";
     std::size_t posthoc_pair_count = 0;
     std::size_t grouping_letter_count = 0;
@@ -942,6 +962,7 @@ struct InterpretationFacts {
     std::optional<DescriptiveFacts> descriptive;
     std::optional<ChiSquareFacts> chi_square;
     std::optional<ChiSquareGofFacts> chi_square_gof;
+    std::optional<McNemarFacts> mcnemar;
     std::optional<NonparametricFacts> nonparametric;
     std::optional<LogisticFacts> logistic;
     std::optional<DistributionIdentificationFacts> distribution_identification;

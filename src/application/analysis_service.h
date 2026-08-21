@@ -121,6 +121,14 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage sign_test(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage mcnemar(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage kruskal_wallis(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);

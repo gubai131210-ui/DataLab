@@ -124,7 +124,8 @@ std::vector<AnalysisRuleSpec> regression_rule_catalog()
         {"error_df", "误差自由度", "N-p-1 必须为正才能输出 t、F 与 P。"},
         {"rank_deficiency", "秩亏/共线", "设计矩阵秩亏时拒绝拟合，不输出伪造推断。"},
         {"residual_normality", "残差正态性", "Anderson-Darling 只能拒绝或未拒绝正态假设。"},
-        {"residual_independence", "残差独立性", "Durbin-Watson 远离 2 时提示序列相关调查。"},
+        {"residual_independence", "残差独立性",
+         "Durbin-Watson 对照 α=0.05 近似 dL/dU 判定区；不能写成已证明无自相关。"},
         {"homoscedasticity", "方差齐性", "残差对拟合值图是主要证据，不单独宣称已验证。"},
         {"leverage", "高杠杆", "杠杆值 > 2p/n 时标记为需要调查的高杠杆点。"},
         {"outlier", "异常残差", "|删除学生化残差| > 3 时标记为异常点调查。"},
@@ -184,6 +185,9 @@ RegressionFacts regression_facts_from(const RegressionResult& result)
     facts.outlier_count = result.diagnostics_summary.outlier_count;
     facts.high_leverage_count = result.diagnostics_summary.high_leverage_count;
     facts.durbin_watson = result.durbin_watson;
+    facts.durbin_watson_dl = result.diagnostics_summary.durbin_watson_dl;
+    facts.durbin_watson_du = result.diagnostics_summary.durbin_watson_du;
+    facts.durbin_watson_decision = result.diagnostics_summary.durbin_watson_decision;
     facts.error_degrees_of_freedom = result.evidence.degrees_of_freedom;
     facts.rank_deficient = has_diagnostic_code(
         result.diagnostics, "rank_deficient_design");

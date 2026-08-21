@@ -65,6 +65,10 @@
 | 两比例 Agresti–Coull | **已落地** — method=`agresti_coull`；见 [`p1_two_proportion_agresti_coull_ci.md`](p1_two_proportion_agresti_coull_ci.md) |
 | Kruskal Steel–Dwass | **已落地（近似）** — `posthoc=steel_dwass`；见 [`p1_kruskal_steel_dwass.md`](p1_kruskal_steel_dwass.md) |
 | Friedman | **已落地** — 命令 `friedman`；见 [`p1_friedman_test.md`](p1_friedman_test.md) |
+| Friedman Nemenyi | **已落地（近似）** — `posthoc=nemenyi`；见 [`p1_friedman_nemenyi_posthoc.md`](p1_friedman_nemenyi_posthoc.md) |
+| McNemar | **已落地** — 命令 `mcnemar`；Edwards；见 [`p1_mcnemar_test.md`](p1_mcnemar_test.md) |
+| Sign test | **已落地** — 命令 `sign_test`；见 [`p1_sign_test.md`](p1_sign_test.md) |
+| 回归 DW 临界 | **已落地（近似）** — dL/dU + 判定区；见 [`p1_durbin_watson_critical.md`](p1_durbin_watson_critical.md) |
 
 ## 5. 仍延后
 
@@ -75,7 +79,9 @@
 - Minitab 无界似然 bias-correction 数值对齐
 - Kalman 状态空间 MLE；Minitab TSERIES 迭代最小二乘 + back forecast 数值对齐
 - 图表注释、拖拽布局、多图拼版
-- Nemenyi 独立命令 / Friedman 后比较（**Steel–Dwass 近似与 Friedman 主检验已落地**）
+- Nemenyi **独立**命令（**Friedman 后比较 Nemenyi 已挂在 `friedman` posthoc**）
+- Mood 中位数检验
+- 精确 studentized-range
 - 重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住接线
 
 ## 6. 下一批接入条件

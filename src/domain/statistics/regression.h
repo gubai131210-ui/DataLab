@@ -53,6 +53,9 @@ struct RegressionDiagnosticsSummary {
     std::vector<double> residual_vs_order_x;
     std::vector<double> residual_vs_order_y;
     std::string durbin_watson_order = "input_order";
+    std::optional<double> durbin_watson_dl;
+    std::optional<double> durbin_watson_du;
+    std::string durbin_watson_decision = "not_computed";
     std::vector<AssumptionCheck> assumptions;
     std::vector<RuleEvidence> rules;
 };

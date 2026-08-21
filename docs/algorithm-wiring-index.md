@@ -49,6 +49,10 @@
 | P1 两比例 AC | [`research/p1_two_proportion_agresti_coull_ci.md`](research/p1_two_proportion_agresti_coull_ci.md) |
 | P1 Steel–Dwass | [`research/p1_kruskal_steel_dwass.md`](research/p1_kruskal_steel_dwass.md) |
 | P1 Friedman | [`research/p1_friedman_test.md`](research/p1_friedman_test.md) |
+| P1 Friedman Nemenyi | [`research/p1_friedman_nemenyi_posthoc.md`](research/p1_friedman_nemenyi_posthoc.md) |
+| P1 McNemar | [`research/p1_mcnemar_test.md`](research/p1_mcnemar_test.md) |
+| P1 Sign test | [`research/p1_sign_test.md`](research/p1_sign_test.md) |
+| P1 Durbin–Watson 临界 | [`research/p1_durbin_watson_critical.md`](research/p1_durbin_watson_critical.md) |
 | P1 Multi-Vari 第 4 因子 | [`research/p1_multi_vari_fourth_factor.md`](research/p1_multi_vari_fourth_factor.md) |
 
 ## 2. 命令 id → 服务 → Facts
@@ -66,7 +70,8 @@
 | one_sample_equivalence / two_sample_equivalence / two_sample_equivalence_ratio / paired_equivalence | 同名 | equivalence（比值 kind=two_sample_ratio；可选 log） | equivalence_test |
 | one_way_anova / two_factor_anova | one_way_anova / two_factor_anova | anova（含 tukey_grouping_*） | quality_statistics_test / two_factor_anova_output_test |
 | regression | regression | regression | regression_output_test |
-| mann_whitney / wilcoxon_signed_rank / kruskal_wallis / friedman | 同名 | nonparametric（含 dunn/steel_dwass/friedman） | quality_statistics_test |
+| mann_whitney / wilcoxon_signed_rank / sign_test / kruskal_wallis / friedman | 同名 | nonparametric（含 dunn/steel_dwass/nemenyi/sign_test/friedman） | quality_statistics_test |
+| mcnemar | mcnemar | mcnemar | quality_statistics_test |
 | chi_square | chi_square | chi_square（含 plot_available） | quality_statistics_test |
 | chi_square_gof | chi_square_gof | chi_square_gof（含 validity_status、minimum_expected_count、recommendation） | capability_ci_gof_rare_event_power_test |
 | variance_test | variance_test | variance（含 bartlett） | quality_statistics_test |

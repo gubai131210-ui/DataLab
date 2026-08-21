@@ -169,6 +169,8 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
         || id == QStringLiteral("variance_test")
         || id == QStringLiteral("mann_whitney")
         || id == QStringLiteral("wilcoxon_signed_rank")
+        || id == QStringLiteral("sign_test")
+        || id == QStringLiteral("mcnemar")
         || id == QStringLiteral("kruskal_wallis")
         || id == QStringLiteral("friedman")) {
         return QStringLiteral("假设检验");

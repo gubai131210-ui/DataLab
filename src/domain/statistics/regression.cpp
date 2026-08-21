@@ -33,6 +33,118 @@ void add_warning(
     diagnostics.push_back({DiagnosticMessage::Severity::warning, code, message});
 }
 
+// Savin–White style α=0.05 bounds (with intercept); k' = regressors excluding intercept.
+// # source: formula_reference — published-table style grid, not Minitab golden.
+struct DwTablePoint {
+    int n = 0;
+    double dl[5] = {};
+    double du[5] = {};
+};
+
+constexpr DwTablePoint k_dw_table[] = {
+    {15, {1.08, 0.95, 0.82, 0.69, 0.56}, {1.36, 1.54, 1.75, 1.97, 2.21}},
+    {20, {1.20, 1.10, 1.00, 0.90, 0.79}, {1.41, 1.54, 1.68, 1.83, 1.99}},
+    {25, {1.29, 1.21, 1.12, 1.04, 0.95}, {1.45, 1.55, 1.66, 1.77, 1.89}},
+    {30, {1.35, 1.28, 1.21, 1.14, 1.07}, {1.49, 1.57, 1.65, 1.74, 1.83}},
+    {40, {1.44, 1.39, 1.34, 1.29, 1.23}, {1.54, 1.60, 1.66, 1.72, 1.79}},
+    {50, {1.50, 1.46, 1.42, 1.38, 1.34}, {1.59, 1.63, 1.67, 1.72, 1.77}},
+    {60, {1.55, 1.51, 1.48, 1.44, 1.41}, {1.62, 1.65, 1.69, 1.73, 1.77}},
+    {80, {1.61, 1.59, 1.56, 1.53, 1.51}, {1.66, 1.69, 1.72, 1.74, 1.77}},
+    {100, {1.65, 1.63, 1.61, 1.59, 1.57}, {1.69, 1.72, 1.74, 1.76, 1.78}},
+};
+
+bool lookup_dw_bounds(
+    const std::size_t n,
+    const std::size_t k_prime,
+    double& dl,
+    double& du)
+{
+    if (n < 15 || n > 100 || k_prime < 1 || k_prime > 5) {
+        return false;
+    }
+    const std::size_t k_index = k_prime - 1;
+    const DwTablePoint* lower = nullptr;
+    const DwTablePoint* upper = nullptr;
+    for (const DwTablePoint& point : k_dw_table) {
+        if (static_cast<std::size_t>(point.n) == n) {
+            dl = point.dl[k_index];
+            du = point.du[k_index];
+            return true;
+        }
+        if (static_cast<std::size_t>(point.n) < n) {
+            lower = &point;
+        } else if (upper == nullptr) {
+            upper = &point;
+            break;
+        }
+    }
+    if (lower == nullptr || upper == nullptr) {
+        return false;
+    }
+    const double t = (static_cast<double>(n) - static_cast<double>(lower->n))
+        / (static_cast<double>(upper->n) - static_cast<double>(lower->n));
+    dl = lower->dl[k_index] + t * (upper->dl[k_index] - lower->dl[k_index]);
+    du = lower->du[k_index] + t * (upper->du[k_index] - lower->du[k_index]);
+    return true;
+}
+
+std::string classify_durbin_watson(
+    const double dw,
+    const double dl,
+    const double du)
+{
+    if (dw < dl) {
+        return "positive_autocorr";
+    }
+    if (dw <= du) {
+        return "inconclusive";
+    }
+    if (dw < 4.0 - du) {
+        return "no_evidence";
+    }
+    if (dw <= 4.0 - dl) {
+        return "inconclusive_neg";
+    }
+    return "negative_autocorr";
+}
+
+void apply_durbin_watson_critical(
+    RegressionResult& result,
+    const std::size_t k_prime)
+{
+    auto& summary = result.diagnostics_summary;
+    double dl = 0.0;
+    double du = 0.0;
+    if (!lookup_dw_bounds(result.observation_count, k_prime, dl, du)) {
+        summary.durbin_watson_dl = std::nullopt;
+        summary.durbin_watson_du = std::nullopt;
+        summary.durbin_watson_decision = "not_computed";
+        summary.assumptions.push_back({
+            "residual_independence", "not_computed", result.durbin_watson,
+            std::nullopt,
+            "Durbin-Watson 按输入顺序计算；n 或回归元数超出 α=0.05 界表范围，未给 dL/dU。"});
+        add_warning(result.diagnostics, "durbin_watson_bounds_unavailable",
+                    "Durbin-Watson 临界界不可用（需要 15≤n≤100 且 1≤k'≤5）。");
+        return;
+    }
+    summary.durbin_watson_dl = dl;
+    summary.durbin_watson_du = du;
+    summary.durbin_watson_decision =
+        classify_durbin_watson(result.durbin_watson, dl, du);
+    std::string status = "not_computed";
+    if (summary.durbin_watson_decision == "positive_autocorr"
+        || summary.durbin_watson_decision == "negative_autocorr") {
+        status = "evidence_against";
+    } else if (summary.durbin_watson_decision == "no_evidence") {
+        status = "no_evidence_against";
+    } else {
+        status = "not_computed";
+    }
+    summary.assumptions.push_back({
+        "residual_independence", status, result.durbin_watson, std::nullopt,
+        "Durbin-Watson 按输入顺序；判定区对照 α=0.05 近似 dL/dU，不能写成已证明无自相关。"});
+}
+
 bool invert_matrix(const Matrix& input, Matrix& inverse)
 {
     const std::size_t size = input.size();
@@ -576,13 +688,7 @@ RegressionResult fit_linear_regression(
             "residual_normality", "not_computed", std::nullopt, std::nullopt,
             "残差正态性未计算。"});
     }
-    const std::string independence_status =
-        result.durbin_watson < 1.5 || result.durbin_watson > 2.5
-            ? "evidence_against" : "no_evidence_against";
-    result.diagnostics_summary.assumptions.push_back({
-        "residual_independence", independence_status, result.durbin_watson,
-        std::nullopt,
-        "Durbin-Watson 按输入顺序计算；远离 2 时提示序列相关调查。"});
+    apply_durbin_watson_critical(result, result.predictor_count);
     result.diagnostics_summary.assumptions.push_back({
         "homoscedasticity", "not_verified", std::nullopt, std::nullopt,
         "方差齐性主要依据残差对拟合值图，当前不单独给出数值判定。"});

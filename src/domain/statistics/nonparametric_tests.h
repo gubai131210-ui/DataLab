@@ -125,4 +125,57 @@ FriedmanResult friedman_test(
     const std::vector<std::string>& treatments,
     const std::vector<std::string>& blocks);
 
+// Approximate Nemenyi on Friedman mean ranks: SE=√(k(k+1)/(6b)),
+// significant ⇔ |Z| ≥ q_{α,k,∞}/√2 (same asymptotic family as Steel–Dwass).
+std::vector<DunnComparison> nemenyi_pairwise(
+    const FriedmanResult& friedman,
+    double family_alpha = 0.05);
+
+struct McNemarResult {
+    std::size_t a = 0;  // +/+
+    std::size_t b = 0;  // +/-
+    std::size_t c = 0;  // -/+
+    std::size_t d = 0;  // -/-
+    std::size_t discordant = 0;
+    std::size_t pair_count = 0;
+    double chi_square = 0.0;
+    double degrees_of_freedom = 1.0;
+    std::optional<double> p_value;
+    bool continuity_correction = true;
+    std::string method = "edwards";
+    std::string first_positive_label;
+    std::string second_positive_label;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Paired binary labels (same length). Edwards continuity correction when b+c>0.
+McNemarResult mcnemar_test(
+    const std::vector<std::string>& first,
+    const std::vector<std::string>& second);
+
+struct SignTestResult {
+    std::size_t n_nonzero = 0;
+    std::size_t n_positive = 0;
+    std::size_t n_negative = 0;
+    std::size_t n_ties = 0;
+    double hypothesized_median = 0.0;
+    std::optional<double> sample_median;
+    std::optional<double> p_value;
+    std::string approximation = "binomial_exact";
+    bool small_sample_warning = false;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// One-sample sign test vs hypothesized_median (ties dropped).
+SignTestResult sign_test(
+    const std::vector<double>& values,
+    double hypothesized_median = 0.0,
+    TestAlternative alternative = TestAlternative::two_sided);
+
+// Paired: first - second vs 0 (complete-case pairs already aligned by caller).
+SignTestResult sign_test_paired(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    TestAlternative alternative = TestAlternative::two_sided);
+
 }  // namespace datalab::domain::statistics

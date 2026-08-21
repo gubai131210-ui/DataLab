@@ -54,9 +54,9 @@
 | EWMA / CUSUM | 已接入且需手工验收 | 单列测量 | complete-case；`source_row` | EWMA 仅 Test 1；CUSUM 累计和 hσ 信号 | 「EWMA/CUSUM 参数」+ 逐点表；CUSUM 全部信号表；`SpcFacts` round-trip |
 | DOE 析因响应 | 已有且需核对 | 编码因子 + 响应 | 跳过非法水平 | 二水平主效应与交互；标准化效应 \|t\|；df=0 走 Lenth PSE；编码网格等值线（可选 X/Y，其余 hold 0 或实际单位 hold） | 响应页含 Pareto、2/3 因子立方图、主效应、等值线/静态曲面、残差 4 图；≥4 因子 info 诊断 + `DoeFacts.cube_plot_available=false` |
 | 正态能力 / Sixpack | 已接入且需手工验收 | 测量、LSL/USL/Target | N/N* | Cp/Cpk 用 σwithin，Pp/Ppk 用 σoverall；CI：χ² 尺度 + Bissell | Process Data 含 AD；PPM 三列；能力表估计/下限/上限；Sixpack 六图标题；直方图 LSL/USL/Target + Within/Overall；解释不写合格 |
-| 线性回归 | 已有且需核对 | 响应 + 预测变量 | complete-case | QR、VIF、Cook、DFITS、内部/删除学生化残差 | Unusual 表仅列 R/X/I 打标行；单预测变量 Fitted Line 含 CI/PI 带；残差图含 y=0；多预测变量每 X 一张「残差与预测变量」+ `source_row`；`RegressionFacts` 含残差 AD 与 plot 计数 |
+| 线性回归 | 已有且需核对 | 响应 + 预测变量 | complete-case | QR、VIF、Cook、DFITS、内部/删除学生化残差；DW + α=0.05 dL/dU 判定区 | Unusual 表仅列 R/X/I 打标行；单预测变量 Fitted Line 含 CI/PI 带；残差图含 y=0；多预测变量每 X 一张「残差与预测变量」+ `source_row`；`RegressionFacts` 含残差 AD、DW 判定与 plot 计数 |
 | 单/双因素 ANOVA | 已有且需核对 | 响应 + 因子 | 不可估计项不输出 F/P | RSS 差值、Tukey；单因素组均值个体 CI 用 pooled MSE；Grouping CLD | 单因素含区间图、残差 4 图、Tukey 下限/上限 + 差值区间图 + Grouping Information；双因素含残差 4 图与交互均值连线 |
-| 描述统计 / 卡方 / 非参数 | 已有且需核对 | 变量或分类列 | 跳过缺失 | 正态近似、ties 修正；Kruskal+Dunn 或 Steel–Dwass；Friedman | 描述页含箱线+个体值图；卡方三表 + 观察频数热图；非参数含 Mann-Whitney/Wilcoxon/Kruskal/Friedman；Kruskal 默认 Dunn，可选 Steel–Dwass；Mann-Whitney McKean–Ryan CI |
+| 描述统计 / 卡方 / 非参数 | 已有且需核对 | 变量或分类列 | 跳过缺失 | 正态近似、ties 修正；Kruskal+Dunn 或 Steel–Dwass；Friedman±Nemenyi；Sign；McNemar | 描述页含箱线+个体值图；卡方三表 + 观察频数热图；非参数含 Mann-Whitney/Wilcoxon/Sign/Kruskal/Friedman；Kruskal 默认 Dunn，可选 Steel–Dwass；Friedman 可选 Nemenyi；Mann-Whitney McKean–Ryan CI；McNemar 独立命令 |
 | 卡方拟合优度 | 已接入且需手工验收 | 一个分类列；可选期望比例 | complete-case；`*` 计 N* | Pearson χ²；E=pN；DF=k−1 | 命令 `chi_square_gof`；条图；不改关联热图；比例个数错只诊断 |
 | G 图 / T 图 | 已接入且需手工验收 | 数值间隔列 | complete-case；`source_row` | 几何 INVCDF−1 / Weibull 分位；默认 Test 1 | 逐点表；不解析事件日期；0 间隔 T 图诊断 `zero_interval_regression_used` |
 | t/方差/泊松 功效与样本量 | 已接入且需手工验收 | 不读工作表 | — | 非中心 t / F / 比例；单方差 χ²；双方差 F；泊松率正态近似；表含 Actual Power | `PowerFacts`；功效曲线；`one_poisson_*`/`two_poisson_*`；解释不写样本量足够 |

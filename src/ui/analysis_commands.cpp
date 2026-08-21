@@ -1189,6 +1189,59 @@ const std::vector<AnalysisCommand>& all()
             },
             AnalysisService::wilcoxon_signed_rank},
         {
+            QStringLiteral("sign_test"),
+            QStringLiteral("符号检验"),
+            QStringLiteral("符号检验"),
+            QStringLiteral("统计"),
+            QStringLiteral("sign_test"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("一列或两列配对"), true, false}},
+            {{QStringLiteral("hypothesized_median"), QStringLiteral("假设中位数 η0"),
+              QStringLiteral("单样本默认 0；配对忽略")},
+             {QStringLiteral("alternative"), QStringLiteral("备择方向"),
+              QStringLiteral("two_sided / less / greater")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
+                if (columns.empty() || columns.size() > 2) {
+                    return apply_error(QStringLiteral("变量数量错误"),
+                                       QStringLiteral("请选择一列（单样本）或两列（配对）。"));
+                }
+                c.analysis_name = "符号检验";
+                c.chart_type = "sign_test";
+                c.variable_columns.clear();
+                for (const int column : columns) {
+                    c.variable_columns.push_back(static_cast<std::size_t>(column));
+                }
+                c.inference.alternative = normalize(d.line_text("alternative"));
+                c.inference.hypothesis_mean =
+                    d.line_number("hypothesized_median").value_or(0.0);
+                return {};
+            },
+            AnalysisService::sign_test},
+        {
+            QStringLiteral("mcnemar"),
+            QStringLiteral("McNemar 检验"),
+            QStringLiteral("McNemar 检验"),
+            QStringLiteral("统计"),
+            QStringLiteral("mcnemar"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("两列配对二元结果"), true, false}},
+            {},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const std::vector<int> columns = d.role_indices("variables");
+                if (columns.size() != 2) {
+                    return apply_error(QStringLiteral("变量数量错误"),
+                                       QStringLiteral("请选择正好两列配对二元结果。"));
+                }
+                c.analysis_name = "McNemar 检验";
+                c.chart_type = "mcnemar";
+                c.variable_columns = {
+                    static_cast<std::size_t>(columns[0]),
+                    static_cast<std::size_t>(columns[1])};
+                return {};
+            },
+            AnalysisService::mcnemar},
+        {
             QStringLiteral("kruskal_wallis"),
             QStringLiteral("Kruskal-Wallis 检验"),
             QStringLiteral("Kruskal-Wallis 检验"),
@@ -1227,7 +1280,8 @@ const std::vector<AnalysisCommand>& all()
             {{QStringLiteral("response"), QStringLiteral("响应"), false, false},
              {QStringLiteral("treatment"), QStringLiteral("处理"), false, false},
              {QStringLiteral("block"), QStringLiteral("区组"), false, false}},
-            {},
+            {{QStringLiteral("posthoc"), QStringLiteral("多重比较"),
+              QStringLiteral("留空或 nemenyi")}},
             [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
                 const int response = d.first_role_index("response");
                 const int treatment = d.first_role_index("treatment");
@@ -1241,6 +1295,10 @@ const std::vector<AnalysisCommand>& all()
                 c.variable_columns = {static_cast<std::size_t>(response)};
                 c.by_column = static_cast<std::size_t>(treatment);
                 c.inference.anova_factor_b_column = static_cast<std::size_t>(block);
+                c.inference.nonparametric_posthoc = normalize(d.line_text("posthoc"));
+                if (c.inference.nonparametric_posthoc != "nemenyi") {
+                    c.inference.nonparametric_posthoc.clear();
+                }
                 return {};
             },
             AnalysisService::friedman},

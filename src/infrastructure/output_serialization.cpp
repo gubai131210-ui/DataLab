@@ -293,6 +293,12 @@ void write_interpretation_facts(
                           optional_number(facts.regression->max_vif));
         regression.insert(QStringLiteral("durbin_watson"),
                           optional_number(facts.regression->durbin_watson));
+        regression.insert(QStringLiteral("durbin_watson_dl"),
+                          optional_number(facts.regression->durbin_watson_dl));
+        regression.insert(QStringLiteral("durbin_watson_du"),
+                          optional_number(facts.regression->durbin_watson_du));
+        regression.insert(QStringLiteral("durbin_watson_decision"),
+                          QString::fromStdString(facts.regression->durbin_watson_decision));
         regression.insert(QStringLiteral("error_degrees_of_freedom"),
                           optional_number(facts.regression->error_degrees_of_freedom));
         regression.insert(QStringLiteral("rank_deficient"),
@@ -505,6 +511,31 @@ void write_interpretation_facts(
                    QString::fromStdString(facts.chi_square_gof->proportion_source));
         serialized.insert(QStringLiteral("chi_square_gof"), gof);
     }
+    if (facts.mcnemar.has_value()) {
+        QJsonObject mcnemar;
+        mcnemar.insert(QStringLiteral("a"), static_cast<int>(facts.mcnemar->a));
+        mcnemar.insert(QStringLiteral("b"), static_cast<int>(facts.mcnemar->b));
+        mcnemar.insert(QStringLiteral("c"), static_cast<int>(facts.mcnemar->c));
+        mcnemar.insert(QStringLiteral("d"), static_cast<int>(facts.mcnemar->d));
+        mcnemar.insert(QStringLiteral("discordant"),
+                       static_cast<int>(facts.mcnemar->discordant));
+        mcnemar.insert(QStringLiteral("pair_count"),
+                       static_cast<int>(facts.mcnemar->pair_count));
+        mcnemar.insert(QStringLiteral("missing_count"),
+                       static_cast<int>(facts.mcnemar->missing_count));
+        mcnemar.insert(QStringLiteral("chi_square"),
+                       optional_number(facts.mcnemar->chi_square));
+        mcnemar.insert(QStringLiteral("p_value"),
+                       optional_number(facts.mcnemar->p_value));
+        mcnemar.insert(QStringLiteral("degrees_of_freedom"),
+                       facts.mcnemar->degrees_of_freedom);
+        mcnemar.insert(QStringLiteral("continuity_correction"),
+                       facts.mcnemar->continuity_correction);
+        mcnemar.insert(QStringLiteral("method"),
+                       QString::fromStdString(facts.mcnemar->method));
+        mcnemar.insert(QStringLiteral("computable"), facts.mcnemar->computable);
+        serialized.insert(QStringLiteral("mcnemar"), mcnemar);
+    }
     if (facts.nonparametric.has_value()) {
         QJsonObject nonparametric;
         nonparametric.insert(QStringLiteral("method"),
@@ -541,6 +572,8 @@ void write_interpretation_facts(
                              facts.nonparametric->dunn_available);
         nonparametric.insert(QStringLiteral("steel_dwass_available"),
                              facts.nonparametric->steel_dwass_available);
+        nonparametric.insert(QStringLiteral("nemenyi_available"),
+                             facts.nonparametric->nemenyi_available);
         nonparametric.insert(QStringLiteral("posthoc_method"),
                              QString::fromStdString(facts.nonparametric->posthoc_method));
         nonparametric.insert(QStringLiteral("posthoc_pair_count"),
@@ -999,6 +1032,14 @@ void read_interpretation_facts(
             regression.value(QStringLiteral("high_leverage_count")).toInt(0));
         value.max_vif = read_optional(regression.value(QStringLiteral("max_vif")));
         value.durbin_watson = read_optional(regression.value(QStringLiteral("durbin_watson")));
+        value.durbin_watson_dl =
+            read_optional(regression.value(QStringLiteral("durbin_watson_dl")));
+        value.durbin_watson_du =
+            read_optional(regression.value(QStringLiteral("durbin_watson_du")));
+        value.durbin_watson_decision =
+            regression.value(QStringLiteral("durbin_watson_decision"))
+                .toString(QStringLiteral("not_computed"))
+                .toStdString();
         value.error_degrees_of_freedom =
             read_optional(regression.value(QStringLiteral("error_degrees_of_freedom")));
         value.rank_deficient = regression.value(QStringLiteral("rank_deficient")).toBool(false);
@@ -1207,6 +1248,31 @@ void read_interpretation_facts(
                                       .toString(QStringLiteral("equal")).toStdString();
         facts.chi_square_gof = std::move(value);
     }
+    const QJsonObject mcnemar = serialized.value(QStringLiteral("mcnemar")).toObject();
+    if (!mcnemar.isEmpty()) {
+        domain::McNemarFacts value;
+        value.a = static_cast<std::size_t>(mcnemar.value(QStringLiteral("a")).toInt(0));
+        value.b = static_cast<std::size_t>(mcnemar.value(QStringLiteral("b")).toInt(0));
+        value.c = static_cast<std::size_t>(mcnemar.value(QStringLiteral("c")).toInt(0));
+        value.d = static_cast<std::size_t>(mcnemar.value(QStringLiteral("d")).toInt(0));
+        value.discordant = static_cast<std::size_t>(
+            mcnemar.value(QStringLiteral("discordant")).toInt(0));
+        value.pair_count = static_cast<std::size_t>(
+            mcnemar.value(QStringLiteral("pair_count")).toInt(0));
+        value.missing_count = static_cast<std::size_t>(
+            mcnemar.value(QStringLiteral("missing_count")).toInt(0));
+        value.chi_square = read_optional(mcnemar.value(QStringLiteral("chi_square")));
+        value.p_value = read_optional(mcnemar.value(QStringLiteral("p_value")));
+        value.degrees_of_freedom =
+            mcnemar.value(QStringLiteral("degrees_of_freedom")).toDouble(1.0);
+        value.continuity_correction =
+            mcnemar.value(QStringLiteral("continuity_correction")).toBool(true);
+        value.method = mcnemar.value(QStringLiteral("method"))
+                           .toString(QStringLiteral("edwards"))
+                           .toStdString();
+        value.computable = mcnemar.value(QStringLiteral("computable")).toBool(false);
+        facts.mcnemar = std::move(value);
+    }
     const QJsonObject nonparametric = serialized.value(QStringLiteral("nonparametric")).toObject();
     if (!nonparametric.isEmpty()) {
         domain::NonparametricFacts value;
@@ -1237,6 +1303,8 @@ void read_interpretation_facts(
             nonparametric.value(QStringLiteral("dunn_available")).toBool(false);
         value.steel_dwass_available =
             nonparametric.value(QStringLiteral("steel_dwass_available")).toBool(false);
+        value.nemenyi_available =
+            nonparametric.value(QStringLiteral("nemenyi_available")).toBool(false);
         value.posthoc_method = nonparametric.value(QStringLiteral("posthoc_method"))
                                    .toString(QStringLiteral("dunn")).toStdString();
         value.posthoc_pair_count = static_cast<std::size_t>(
@@ -2370,9 +2438,15 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
     }
     page.configuration.inference.nonparametric_posthoc =
         object.value(QStringLiteral("nonparametric_posthoc"))
-            .toString(QStringLiteral("dunn")).toStdString();
-    if (page.configuration.inference.nonparametric_posthoc != "steel_dwass") {
-        page.configuration.inference.nonparametric_posthoc = "dunn";
+            .toString()
+            .toStdString();
+    {
+        const std::string& posthoc =
+            page.configuration.inference.nonparametric_posthoc;
+        if (posthoc != "steel_dwass" && posthoc != "nemenyi" && posthoc != "none"
+            && !posthoc.empty()) {
+            page.configuration.inference.nonparametric_posthoc = "dunn";
+        }
     }
     page.configuration.inference.rate_comparison =
         object.value(QStringLiteral("rate_comparison"))

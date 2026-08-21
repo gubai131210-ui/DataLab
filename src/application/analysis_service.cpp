@@ -3003,6 +3003,16 @@ OutputPage AnalysisService::regression(
         std::to_string(result.diagnostics_summary.high_leverage_count),
         std::to_string(result.diagnostics_summary.influential_count)});
     page.tables.push_back(summary_table);
+    StatisticTable dw_table;
+    dw_table.title = "Durbin-Watson";
+    dw_table.headers = {"DW", "dL (α=0.05)", "dU (α=0.05)", "判定区", "顺序"};
+    dw_table.rows.push_back({
+        format_number(result.diagnostics_summary.durbin_watson),
+        format_optional(result.diagnostics_summary.durbin_watson_dl),
+        format_optional(result.diagnostics_summary.durbin_watson_du),
+        result.diagnostics_summary.durbin_watson_decision,
+        result.diagnostics_summary.durbin_watson_order});
+    page.tables.push_back(std::move(dw_table));
     StatisticTable coefficient_table;
     coefficient_table.title = "系数";
     coefficient_table.headers = {"项", "Coef", "SE Coef", "T", "P-Value", "置信区间", "VIF"};
@@ -4404,6 +4414,213 @@ OutputPage AnalysisService::wilcoxon_signed_rank(
     return finalize_page(std::move(page));
 }
 
+OutputPage AnalysisService::sign_test(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.variable_columns.empty()
+        || configuration.variable_columns.size() > 2) {
+        return error_page("符号检验", "Sign test",
+                          "请选择一列（单样本）或两列（配对）。");
+    }
+    const double hypothesized =
+        configuration.inference.hypothesis_mean.value_or(0.0);
+    OutputPage page;
+    page.id = new_id("sign_test");
+    page.title = "符号检验";
+    page.method_name = "Sign test";
+    page.configuration = configuration;
+
+    datalab::domain::statistics::SignTestResult result;
+    std::size_t missing_count = 0;
+    std::size_t plot_point_count = 0;
+    if (configuration.variable_columns.size() == 1) {
+        const auto extracted = extract_numeric_column(
+            table, configuration.variable_columns.front(), configuration.excluded_rows);
+        missing_count = extracted.missing_count;
+        page.parameter_summary = extracted.name + "  vs η0 = "
+            + format_number(hypothesized);
+        result = datalab::domain::statistics::sign_test(
+            extracted.values, hypothesized,
+            parse_alternative(configuration.inference.alternative));
+        auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
+        append_group_to_distribution_plots(
+            plots, extracted.name, extracted.values, extracted.source_rows);
+        push_distribution_plots(page, plots);
+        plot_point_count = plots.point_count;
+    } else {
+        const auto first = extract_numeric_column(
+            table, configuration.variable_columns[0], configuration.excluded_rows);
+        const auto second = extract_numeric_column(
+            table, configuration.variable_columns[1], configuration.excluded_rows);
+        const auto aligned = align_complete_rows_with_source({first, second});
+        missing_count = first.total_count > aligned.source_rows.size()
+            ? first.total_count - aligned.source_rows.size() : 0;
+        page.parameter_summary = first.name + " - " + second.name + "  vs 0";
+        std::vector<double> first_values;
+        std::vector<double> second_values;
+        for (const auto& row : aligned.values) {
+            first_values.push_back(row[0]);
+            second_values.push_back(row[1]);
+        }
+        result = datalab::domain::statistics::sign_test_paired(
+            first_values, second_values,
+            parse_alternative(configuration.inference.alternative));
+        auto plots = make_grouped_distribution_plots("箱线图", "个体值图");
+        append_group_to_distribution_plots(
+            plots, first.name, first_values, aligned.source_rows);
+        append_group_to_distribution_plots(
+            plots, second.name, second_values, aligned.source_rows);
+        push_distribution_plots(page, plots);
+        plot_point_count = plots.point_count;
+        PlotSpec paired;
+        paired.kind = PlotKind::scatter;
+        paired.title = "配对测量散点图";
+        paired.x_axis_title = first.name;
+        paired.y_axis_title = second.name;
+        paired.x_values = first_values;
+        paired.values = second_values;
+        paired.source_rows = aligned.source_rows;
+        page.plots.push_back(std::move(paired));
+    }
+    page.diagnostics = result.diagnostics;
+    if (missing_count > 0) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning,
+            "missing_values",
+            "符号检验跳过 " + std::to_string(missing_count)
+                + " 个缺失或非法单元格（含 *）。"});
+    }
+    StatisticTable summary;
+    summary.title = "符号摘要";
+    summary.headers = {
+        "有效符号 N", "结数", "n+", "n-", "样本中位数", "假设中位数 η0"};
+    summary.rows.push_back({
+        std::to_string(result.n_nonzero),
+        std::to_string(result.n_ties),
+        std::to_string(result.n_positive),
+        std::to_string(result.n_negative),
+        format_optional(result.sample_median),
+        format_number(result.hypothesized_median)});
+    page.tables.push_back(std::move(summary));
+    StatisticTable test;
+    test.title = "符号检验";
+    test.headers = {"P-Value", "近似方法", "小样本警告"};
+    test.rows.push_back({
+        format_optional(result.p_value),
+        result.approximation,
+        result.small_sample_warning ? "是" : "否"});
+    page.tables.push_back(std::move(test));
+
+    domain::NonparametricFacts facts;
+    facts.method = configuration.variable_columns.size() == 2
+        ? "sign_test_paired" : "sign_test";
+    facts.statistic = static_cast<double>(result.n_positive);
+    facts.p_value = result.p_value;
+    facts.tie_correction = false;
+    facts.continuity_correction = false;
+    facts.approximation = result.approximation;
+    facts.small_sample_warning = result.small_sample_warning;
+    facts.group_count = configuration.variable_columns.size();
+    facts.plot_point_count = plot_point_count;
+    facts.missing_count = missing_count;
+    facts.location_estimate = result.sample_median;
+    page.facts.nonparametric = std::move(facts);
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::mcnemar(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.variable_columns.size() != 2) {
+        return error_page("McNemar 检验", "McNemar",
+                          "请选择正好两列配对二元结果。");
+    }
+    const std::size_t first_col = configuration.variable_columns[0];
+    const std::size_t second_col = configuration.variable_columns[1];
+    std::set<std::size_t> excluded(
+        configuration.excluded_rows.cbegin(), configuration.excluded_rows.cend());
+    std::vector<std::string> first_labels;
+    std::vector<std::string> second_labels;
+    std::size_t missing_count = 0;
+    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
+        if (excluded.count(row_index) != 0) {
+            continue;
+        }
+        const auto& row = table.rows[row_index];
+        const std::string left =
+            first_col < row.size() ? row[first_col] : "";
+        const std::string right =
+            second_col < row.size() ? row[second_col] : "";
+        if (is_missing_cell(left) || is_missing_cell(right)) {
+            ++missing_count;
+            continue;
+        }
+        first_labels.push_back(left);
+        second_labels.push_back(right);
+    }
+    const auto result = datalab::domain::statistics::mcnemar_test(
+        first_labels, second_labels);
+    OutputPage page;
+    page.id = new_id("mcnemar");
+    page.title = "McNemar 检验";
+    page.method_name = "McNemar";
+    page.configuration = configuration;
+    page.parameter_summary =
+        (first_col < table.columns.size() ? table.columns[first_col]
+                                          : std::to_string(first_col))
+        + " vs "
+        + (second_col < table.columns.size() ? table.columns[second_col]
+                                             : std::to_string(second_col));
+    page.diagnostics = result.diagnostics;
+    if (missing_count > 0) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning,
+            "missing_values",
+            "McNemar 按 complete-case 跳过 " + std::to_string(missing_count)
+                + " 个缺失或非法单元格（含 *）。"});
+    }
+    domain::McNemarFacts facts;
+    facts.a = result.a;
+    facts.b = result.b;
+    facts.c = result.c;
+    facts.d = result.d;
+    facts.discordant = result.discordant;
+    facts.pair_count = result.pair_count;
+    facts.missing_count = missing_count;
+    facts.degrees_of_freedom = result.degrees_of_freedom;
+    facts.continuity_correction = result.continuity_correction;
+    facts.method = result.method;
+    facts.computable = result.diagnostics.empty() && result.p_value.has_value();
+    if (facts.computable) {
+        facts.chi_square = result.chi_square;
+        facts.p_value = result.p_value;
+        StatisticTable cross;
+        cross.title = "2×2 交叉表";
+        cross.headers = {"单元格", "计数"};
+        cross.rows.push_back({"+ / + (a)", std::to_string(result.a)});
+        cross.rows.push_back({"+ / − (b)", std::to_string(result.b)});
+        cross.rows.push_back({"− / + (c)", std::to_string(result.c)});
+        cross.rows.push_back({"− / − (d)", std::to_string(result.d)});
+        cross.rows.push_back({"不一致对数 b+c", std::to_string(result.discordant)});
+        cross.rows.push_back({"有效配对数", std::to_string(result.pair_count)});
+        page.tables.push_back(std::move(cross));
+        StatisticTable test;
+        test.title = "McNemar 检验";
+        test.headers = {"χ² (Edwards)", "DF", "P-Value", "连续性校正", "方法"};
+        test.rows.push_back({
+            format_number(result.chi_square),
+            format_number(result.degrees_of_freedom),
+            format_optional(result.p_value),
+            result.continuity_correction ? "是" : "否",
+            result.method});
+        page.tables.push_back(std::move(test));
+    }
+    page.facts.mcnemar = std::move(facts);
+    return finalize_page(std::move(page));
+}
+
 OutputPage AnalysisService::kruskal_wallis(
     const DataTable& table,
     const AnalysisConfiguration& configuration)
@@ -4674,6 +4891,62 @@ OutputPage AnalysisService::friedman(
         std::to_string(result.treatment_count)});
     page.tables.push_back(std::move(test));
 
+    const bool use_nemenyi =
+        configuration.inference.nonparametric_posthoc == "nemenyi";
+    std::vector<datalab::domain::statistics::DunnComparison> nemenyi;
+    if (use_nemenyi) {
+        nemenyi = datalab::domain::statistics::nemenyi_pairwise(result, 0.05);
+        if (!nemenyi.empty()) {
+            StatisticTable pairs;
+            pairs.title = "Nemenyi 成对比较";
+            pairs.headers = {
+                "对比", "平均秩差", "SE", "Z", "未调整 P", "Bonferroni P", "显著"};
+            for (const auto& comparison : nemenyi) {
+                pairs.rows.push_back({
+                    comparison.first_label + " - " + comparison.second_label,
+                    format_number(comparison.mean_rank_difference),
+                    format_number(comparison.standard_error),
+                    format_number(comparison.z_statistic),
+                    format_optional(comparison.p_value),
+                    format_optional(comparison.adjusted_p_value),
+                    comparison.significant ? "是" : "否"});
+            }
+            page.tables.push_back(std::move(pairs));
+
+            std::vector<datalab::domain::statistics::TukeyComparison> tukey_like;
+            for (const auto& comparison : nemenyi) {
+                datalab::domain::statistics::TukeyComparison row;
+                row.first_label = comparison.first_label;
+                row.second_label = comparison.second_label;
+                row.mean_difference = comparison.mean_rank_difference;
+                row.standard_error = comparison.standard_error;
+                row.significant = comparison.significant;
+                tukey_like.push_back(std::move(row));
+            }
+            std::vector<std::string> grouping_labels;
+            std::vector<double> grouping_means;
+            std::vector<std::size_t> grouping_counts;
+            for (const auto& treatment : result.treatments) {
+                grouping_labels.push_back(treatment.label);
+                grouping_means.push_back(treatment.median);
+                grouping_counts.push_back(treatment.count);
+            }
+            const auto letters = datalab::domain::statistics::tukey_grouping_letters(
+                grouping_labels, grouping_means, grouping_counts, tukey_like);
+            if (!letters.empty()) {
+                StatisticTable grouping;
+                grouping.title = "Grouping Information (Nemenyi)";
+                grouping.headers = {"水平", "N", "中位数", "Grouping"};
+                for (const auto& row : letters) {
+                    grouping.rows.push_back({
+                        row.label, std::to_string(row.count),
+                        format_number(row.mean), row.grouping});
+                }
+                page.tables.push_back(std::move(grouping));
+            }
+        }
+    }
+
     std::vector<std::string> order;
     std::vector<std::vector<double>> grouped;
     std::vector<std::vector<std::size_t>> grouped_rows;
@@ -4704,6 +4977,16 @@ OutputPage AnalysisService::friedman(
     facts.group_count = result.treatment_count;
     facts.plot_point_count = plots.point_count;
     facts.missing_count = missing_count;
+    facts.posthoc_method = use_nemenyi ? "nemenyi" : "";
+    facts.nemenyi_available = use_nemenyi && !nemenyi.empty();
+    facts.posthoc_pair_count = nemenyi.size();
+    facts.grouping_letter_count = 0;
+    for (const auto& table_out : page.tables) {
+        if (table_out.title.find("Grouping Information") != std::string::npos) {
+            facts.grouping_letter_count = table_out.rows.size();
+            break;
+        }
+    }
     page.facts.nonparametric = std::move(facts);
     return finalize_page(std::move(page));
 }

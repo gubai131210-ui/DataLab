@@ -454,9 +454,26 @@ ui → application / infrastructure / reporting → domain
 
 公式：[`p1_tost_ratio_log_transform.md`](research/p1_tost_ratio_log_transform.md)、[`p1_two_proportion_agresti_coull_ci.md`](research/p1_two_proportion_agresti_coull_ci.md)、[`p1_kruskal_steel_dwass.md`](research/p1_kruskal_steel_dwass.md)、[`p1_friedman_test.md`](research/p1_friedman_test.md)
 
+## 5h. 2026-08-21 算法深化（本轮四项竖切）✅
+
+1. **Friedman 后 Nemenyi（近似）**
+   - `friedman` + `posthoc=nemenyi`；平均秩差 + 渐近 TK 临界；Grouping (Nemenyi)
+   - 默认无后比较；不做独立 Nemenyi 命令
+2. **McNemar**
+   - 命令 `mcnemar`；配对二元 complete-case；Edwards χ²；`McNemarFacts`
+   - 不碰 `chi_square` / `chi_square_gof`
+3. **符号检验 Sign test**
+   - 命令 `sign_test`；单样本 η0 或配对差分；二项精确 P
+   - 不改 Wilcoxon 本体
+4. **回归 Durbin–Watson 临界/判定**
+   - α=0.05 近似 dL/dU（15≤n≤100，1≤k'≤5）；五区判定；替换 1.5/2.5 启发式
+   - Mood 中位数本轮明确不做
+
+公式：[`p1_friedman_nemenyi_posthoc.md`](research/p1_friedman_nemenyi_posthoc.md)、[`p1_mcnemar_test.md`](research/p1_mcnemar_test.md)、[`p1_sign_test.md`](research/p1_sign_test.md)、[`p1_durbin_watson_critical.md`](research/p1_durbin_watson_critical.md)
+
 ## 5b. 以后再计划的项（不要从本节当成本轮任务）
 
-不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g 已完成项。帮助中心已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、重构阶段 5/6）。
+不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h 已完成项。帮助中心已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Mood 中位数、Jackson–Mudholkar 解析限、重构阶段 5/6）。
 
 ## 6. 硬约束
 
@@ -468,7 +485,7 @@ ui → application / infrastructure / reporting → domain
 - 源码 UTF-8 无 BOM。
 - 回复格式：切入点理解、任务、影响文件、测试策略、实现说明；改完列 Qt Creator 手工验收项。
 
-本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi 独立命令 / Friedman 后比较；精确 studentized-range；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman。
+本轮不做（见 `deferred-capability-agreement.md`）：Blaker；无界似然 bias-correction 数值对齐；Kalman / TSERIES 对齐；Jackson–Mudholkar 解析限；图表注释、拖拽布局、多图拼版；可旋转 3D；Nemenyi **独立**命令；Mood 中位数；精确 studentized-range；重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住本轮接线。不要重做已完成的配对 TOST / 方差功效 / DOE 精确 PI / Gage %Tol+Bias / 图表复制清除 / Wilson / Bonett / 泊松功效 / Tukey 表形 / Agresti–Coull 单比例 / Bartlett / DOE 实际 hold / Tukey Grouping / 均值比 TOST（含对数） / 两比例 Newcombe–Wilson / 两比例 Agresti–Coull / Kruskal Dunn / Steel–Dwass / Multi-Vari 第 4 因子 / Friedman 主检验 / Friedman Nemenyi / McNemar / Sign test / 回归 DW 临界。
 
 ## 7. 可贴给新对话的短提示词
 
@@ -479,7 +496,7 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 新/深化算法必须闭环：research md → domain → *Facts → AnalysisService → analysis_commands → interpretation → output_serialization → tests（# source: formula_reference）→ algorithm_help.json → acceptance。
 
 ## 必读（按序）
-1. docs/algorithm-session-brief.md（尤其 §5g 已完成、§5b/§6 硬约束；禁止重做 §4–§5g）
+1. docs/algorithm-session-brief.md（尤其 §5h 已完成、§5b/§6 硬约束；禁止重做 §4–§5h）
 2. docs/research/deferred-capability-agreement.md
 3. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
 4. docs/quality-algorithms-acceptance.md
@@ -495,24 +512,20 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 ## 本轮目标（一次性多做，但每项竖切闭环）
 从 gap-matrix / deferred 里选 3～4 项「深化已有 + 高杠杆新缺口」，对照 Minitab 输出表形与优势学习点。
 实现前每项先写 docs/research/p1_*.md。
-默认候选（计划里锁定二选一/明确不做）：
-- Friedman 后多重比较（Nemenyi 或复用 Steel–Dwass 近似接 friedman；勿重做 Kruskal Dunn/SD）
-- McNemar（配对 2×2 属性；complete-case 两二元列；勿碰 chi_square / chi_square_gof 边界除非明确包含）
-- 符号检验 Sign test（单样本/配对；接 Wilcoxon 缝；勿重做 Wilcoxon 本体）
-- Mood 中位数检验 或 回归 Durbin–Watson 临界/判定（二选一作第 4 项；深化已有 AD/残差或 KW 族）
+上一轮（§5h）已完成：Friedman Nemenyi / McNemar / Sign test / 回归 DW 临界；Mood 与 Nemenyi 独立命令仍延后。
 你研究后可调整优先级，但必须在计划里锁定选型与「明确不做」。
 
 ## 硬约束
 - complete-case / align_complete_rows / parse_numeric_cell / source_row / dataset_id；导入 A→B 旧输出失效
 - 解释只读 Facts，不写合格/已证明等价或一致/已证明等方差/样本量足够
 - 禁止假 Minitab golden；禁止碰 chi_square 与 chi_square_gof 边界除非本轮明确包含
-- 禁止重做：§5a–§5g 已完成项（含 Wilson、Agresti–Coull 单/两比例、Bonett、Bartlett、DOE hold、Tukey 表形/Grouping、比例 z-TOST、配对 TOST、泊松率比/功效、Weighted Kappa、均值比 TOST±对数、Newcombe–Wilson、Kruskal Dunn/Steel–Dwass、Multi-Vari 4 因子、Friedman 主检验、帮助中心 UI、图表复制清除等）
+- 禁止重做：§5a–§5h 已完成项
 - 待修改.md 是给人看的旧笔记，不当任务
 - 中文路径：agent 不跑 cmake/ctest；改完列 Qt Creator 手工验收项
 - 帮助：改 generate_algorithm_help_catalog.py + help_catalog_families.py 再生成 JSON，正文禁止「见 md」
 
 请先 SwitchMode 到 plan，输出详细计划（含文件级清单、风险、手工验收、禁止偷懒），等我确认后再实现。
-上一轮四项（log TOST / 两比例 AC / Steel–Dwass / Friedman）我都验证完了。
+上一轮四项（Nemenyi / McNemar / Sign / DW 临界）我都验证完了。
 ```
 
 仓库内权威范围以本节之上第 5、6 节为准。新对话应先 SwitchMode 到 **plan**，研究完成后再 agent 实现。

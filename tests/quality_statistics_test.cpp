@@ -1080,6 +1080,66 @@ void QualityStatisticsTest::buildsNonparametricServiceOutputContract()
             QVERIFY(bullet.find("已证明") == std::string::npos);
         }
     }
+    QVERIFY(!friedman_page.facts.nonparametric->nemenyi_available);
+
+    // # source: formula_reference — Friedman + Nemenyi posthoc
+    friedman_config.inference.nonparametric_posthoc = "nemenyi";
+    auto nemenyi_page = datalab::application::AnalysisService::friedman(
+        friedman_table, friedman_config);
+    QVERIFY(nemenyi_page.facts.nonparametric.has_value());
+    QVERIFY(nemenyi_page.facts.nonparametric->nemenyi_available);
+    QCOMPARE(nemenyi_page.facts.nonparametric->posthoc_method, std::string{"nemenyi"});
+    QVERIFY(nemenyi_page.facts.nonparametric->posthoc_pair_count >= std::size_t{1});
+    QVERIFY(std::any_of(
+        nemenyi_page.tables.cbegin(), nemenyi_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Nemenyi 成对比较";
+        }));
+    QVERIFY(std::any_of(
+        nemenyi_page.tables.cbegin(), nemenyi_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "Grouping Information (Nemenyi)";
+        }));
+
+    // # source: formula_reference — McNemar / Sign service wiring
+    datalab::domain::DataTable mcnemar_table;
+    mcnemar_table.columns = {"Before", "After"};
+    mcnemar_table.rows = {
+        {"1", "1"}, {"1", "0"}, {"1", "0"}, {"1", "0"}, {"1", "0"}, {"1", "0"},
+        {"0", "1"}, {"0", "0"}, {"*", "1"}};
+    datalab::domain::AnalysisConfiguration mcnemar_config;
+    mcnemar_config.variable_columns = {0, 1};
+    auto mcnemar_page = datalab::application::AnalysisService::mcnemar(
+        mcnemar_table, mcnemar_config);
+    QVERIFY(mcnemar_page.facts.mcnemar.has_value());
+    QVERIFY(mcnemar_page.facts.mcnemar->computable);
+    QCOMPARE(mcnemar_page.facts.mcnemar->b, std::size_t{5});
+    QCOMPARE(mcnemar_page.facts.mcnemar->c, std::size_t{1});
+    QVERIFY(std::any_of(
+        mcnemar_page.tables.cbegin(), mcnemar_page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "McNemar 检验";
+        }));
+    datalab::application::InterpretationService::enrich(mcnemar_page);
+    for (const auto& section : mcnemar_page.interpretation) {
+        for (const auto& bullet : section.bullets) {
+            QVERIFY(bullet.find("已证明") == std::string::npos
+                    || bullet.find("不能写成已证明") != std::string::npos);
+        }
+    }
+
+    datalab::domain::DataTable sign_table;
+    sign_table.columns = {"X"};
+    sign_table.rows = {{"1"}, {"2"}, {"3"}, {"4"}, {"*"}};
+    datalab::domain::AnalysisConfiguration sign_config;
+    sign_config.variable_columns = {0};
+    sign_config.inference.hypothesis_mean = 0.0;
+    auto sign_page = datalab::application::AnalysisService::sign_test(
+        sign_table, sign_config);
+    QVERIFY(sign_page.facts.nonparametric.has_value());
+    QCOMPARE(sign_page.facts.nonparametric->method, std::string{"sign_test"});
+    QVERIFY(sign_page.facts.nonparametric->p_value.has_value());
+    QVERIFY(std::abs(*sign_page.facts.nonparametric->p_value - 0.125) < 1.0e-12);
 }
 
 void QualityStatisticsTest::calculatesMckeanRyanConfidenceInterval()
@@ -1282,6 +1342,14 @@ void QualityStatisticsTest::calculatesGageRrAndNonparametric()
     QCOMPARE(friedman.degrees_of_freedom, 1.0);
     QVERIFY(friedman.p_value.has_value());
 
+    // # source: formula_reference — Nemenyi on Friedman mean ranks
+    // mean ranks 1 and 2, SE=√(2*3/(6*3))=√(1/3), |Z|=√3 ≈ 1.732
+    const auto nemenyi = datalab::domain::statistics::nemenyi_pairwise(friedman, 0.05);
+    QCOMPARE(nemenyi.size(), std::size_t{1});
+    QVERIFY(std::abs(nemenyi.front().standard_error - std::sqrt(1.0 / 3.0)) < 1.0e-12);
+    QVERIFY(std::abs(nemenyi.front().z_statistic - std::sqrt(3.0)) < 1.0e-12);
+    QVERIFY(nemenyi.front().p_value.has_value());
+
     const auto friedman_unbalanced = datalab::domain::statistics::friedman_test(
         {1.0, 2.0, 1.0},
         {"A", "B", "A"},
@@ -1291,6 +1359,58 @@ void QualityStatisticsTest::calculatesGageRrAndNonparametric()
         friedman_unbalanced.diagnostics.cend(),
         [](const datalab::domain::DiagnosticMessage& diagnostic) {
             return diagnostic.code == "friedman_unbalanced";
+        }));
+
+    // # source: formula_reference — McNemar Edwards
+    // a=1,b=5,c=1,d=1 → χ²=(|5-1|-1)²/6 = 9/6 = 1.5
+    const auto mcnemar = datalab::domain::statistics::mcnemar_test(
+        {"1", "1", "1", "1", "1", "1", "0", "0"},
+        {"1", "0", "0", "0", "0", "0", "1", "0"});
+    QVERIFY(mcnemar.diagnostics.empty());
+    QCOMPARE(mcnemar.a, std::size_t{1});
+    QCOMPARE(mcnemar.b, std::size_t{5});
+    QCOMPARE(mcnemar.c, std::size_t{1});
+    QCOMPARE(mcnemar.d, std::size_t{1});
+    QVERIFY(std::abs(mcnemar.chi_square - 1.5) < 1.0e-12);
+    QVERIFY(mcnemar.p_value.has_value());
+
+    const auto mcnemar_tie = datalab::domain::statistics::mcnemar_test(
+        {"pass", "pass", "fail", "fail"},
+        {"fail", "fail", "pass", "pass"});
+    QVERIFY(mcnemar_tie.diagnostics.empty());
+    QCOMPARE(mcnemar_tie.b, std::size_t{2});
+    QCOMPARE(mcnemar_tie.c, std::size_t{2});
+    QVERIFY(std::abs(mcnemar_tie.chi_square - 0.0) < 1.0e-12);
+
+    const auto mcnemar_none = datalab::domain::statistics::mcnemar_test(
+        {"1", "0"}, {"1", "0"});
+    QVERIFY(std::any_of(
+        mcnemar_none.diagnostics.cbegin(), mcnemar_none.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "mcnemar_no_discordant";
+        }));
+
+    // # source: formula_reference — Sign test binomial exact
+    // values all > 0 except ties: n+=4,n-=0 → two-sided p = 2*(1/16)=0.125
+    const auto sign_one = datalab::domain::statistics::sign_test(
+        {1.0, 2.0, 3.0, 4.0}, 0.0);
+    QCOMPARE(sign_one.n_positive, std::size_t{4});
+    QCOMPARE(sign_one.n_negative, std::size_t{0});
+    QVERIFY(sign_one.p_value.has_value());
+    QVERIFY(std::abs(*sign_one.p_value - 0.125) < 1.0e-12);
+
+    const auto sign_paired = datalab::domain::statistics::sign_test_paired(
+        {5.0, 6.0, 7.0, 8.0}, {1.0, 2.0, 3.0, 4.0});
+    QCOMPARE(sign_paired.n_positive, std::size_t{4});
+    QVERIFY(sign_paired.p_value.has_value());
+    QVERIFY(std::abs(*sign_paired.p_value - 0.125) < 1.0e-12);
+
+    const auto sign_all_ties = datalab::domain::statistics::sign_test(
+        {2.0, 2.0, 2.0}, 2.0);
+    QVERIFY(std::any_of(
+        sign_all_ties.diagnostics.cbegin(), sign_all_ties.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "sign_test_no_nonzero";
         }));
 }
 

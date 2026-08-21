@@ -11,6 +11,7 @@ class RegressionOutputTest final : public QObject {
 
 private slots:
     void buildsStructuredRegressionContract();
+    void classifiesDurbinWatsonZones();
     void buildsResidualPlotPerPredictor();
     void omitsUnusualObservationsWhenNoneFlagged();
     void buildsUnusualObservationsTableForLargeResidual();
@@ -38,17 +39,19 @@ void RegressionOutputTest::buildsStructuredRegressionContract()
         datalab::application::AnalysisService::regression(table, configuration);
 
     QCOMPARE(page.method_name, std::string{"Linear Regression"});
-    QCOMPARE(page.tables.size(), std::size_t{6});
+    QCOMPARE(page.tables.size(), std::size_t{7});
     QCOMPARE(page.tables[0].title, std::string{"模型摘要"});
-    QCOMPARE(page.tables[2].title, std::string{"回归方差分析"});
-    QCOMPARE(page.tables[3].title, std::string{"假设检查"});
-    QCOMPARE(page.tables[4].title, std::string{"拟合与诊断"});
-    QCOMPARE(page.tables[5].title, std::string{"规则证据"});
+    QCOMPARE(page.tables[1].title, std::string{"Durbin-Watson"});
+    QCOMPARE(page.tables[3].title, std::string{"回归方差分析"});
+    QCOMPARE(page.tables[4].title, std::string{"假设检查"});
+    QCOMPARE(page.tables[5].title, std::string{"拟合与诊断"});
+    QCOMPARE(page.tables[6].title, std::string{"规则证据"});
     QVERIFY(page.parameter_summary.find("响应 = Response") != std::string::npos);
     QVERIFY(page.parameter_summary.find("预测变量 = Temperature, Pressure") != std::string::npos);
     QVERIFY(page.parameter_summary.find("有效观测 = 5") != std::string::npos);
     QVERIFY(page.facts.regression.has_value());
     QVERIFY(page.facts.regression->durbin_watson.has_value());
+    QCOMPARE(page.facts.regression->durbin_watson_decision, std::string{"not_computed"});
     QCOMPARE(page.facts.regression->assumptions.size(), std::size_t{3});
     QVERIFY(page.method_metadata.parameters.find("Response") != std::string::npos);
     QCOMPARE(page.method_metadata.source_rows,
@@ -59,18 +62,58 @@ void RegressionOutputTest::buildsStructuredRegressionContract()
         [](const datalab::domain::DiagnosticMessage& diagnostic) {
             return diagnostic.code == "missing_values";
         }));
-    QCOMPARE(page.tables[3].headers,
+    QVERIFY(std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "durbin_watson_bounds_unavailable";
+        }));
+    QCOMPARE(page.tables[4].headers,
              (std::vector<std::string>{"检查项", "状态", "统计量", "P-Value", "说明"}));
-    QCOMPARE(page.tables[3].rows[0][0], std::string{"residual_normality"});
-    QCOMPARE(page.tables[4].headers[2], std::string{"响应"});
-    QCOMPARE(page.tables[4].headers[7], std::string{"学生化残差"});
-    QCOMPARE(page.tables[4].rows.size(), std::size_t{5});
-    QCOMPARE(page.tables[4].rows.front()[1], std::string{"1"});
-    QCOMPARE(page.tables[4].rows.front()[2], std::string{"12.1"});
+    QCOMPARE(page.tables[4].rows[0][0], std::string{"residual_normality"});
+    QCOMPARE(page.tables[5].headers[2], std::string{"响应"});
+    QCOMPARE(page.tables[5].headers[7], std::string{"学生化残差"});
+    QCOMPARE(page.tables[5].rows.size(), std::size_t{5});
+    QCOMPARE(page.tables[5].rows.front()[1], std::string{"1"});
+    QCOMPARE(page.tables[5].rows.front()[2], std::string{"12.1"});
     QVERIFY(std::none_of(
         page.tables.cbegin(), page.tables.cend(),
         [](const datalab::domain::StatisticTable& table) {
             return table.title == "异常观测";
+        }));
+}
+
+void RegressionOutputTest::classifiesDurbinWatsonZones()
+{
+    // # source: formula_reference — n=20, k'=1 → dL=1.20, dU=1.41
+    // Slight independent noise so SSE>0 and DW stays near 2.
+    datalab::domain::DataTable table;
+    table.columns = {"X", "Y"};
+    const double noise[20] = {
+        0.2, -0.1, 0.15, -0.05, 0.1, -0.2, 0.05, 0.12, -0.08, 0.03,
+        -0.15, 0.07, 0.11, -0.09, 0.04, -0.12, 0.08, -0.06, 0.09, -0.03};
+    for (int index = 0; index < 20; ++index) {
+        const double x = static_cast<double>(index + 1);
+        table.rows.push_back({
+            std::to_string(x),
+            std::to_string(2.0 * x + 1.0 + noise[index])});
+    }
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {1, 0};
+    auto page = datalab::application::AnalysisService::regression(table, configuration);
+    QVERIFY(page.facts.regression.has_value());
+    QVERIFY(page.facts.regression->durbin_watson_dl.has_value());
+    QVERIFY(page.facts.regression->durbin_watson_du.has_value());
+    QVERIFY(std::abs(*page.facts.regression->durbin_watson_dl - 1.20) < 1.0e-9);
+    QVERIFY(std::abs(*page.facts.regression->durbin_watson_du - 1.41) < 1.0e-9);
+    QCOMPARE(page.facts.regression->durbin_watson_decision, std::string{"no_evidence"});
+    QVERIFY(page.facts.regression->durbin_watson.has_value());
+    QVERIFY(*page.facts.regression->durbin_watson > 1.41);
+    QVERIFY(*page.facts.regression->durbin_watson < 4.0 - 1.41);
+    QVERIFY(std::none_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.message.find("1.5") != std::string::npos
+                || diagnostic.message.find("2.5") != std::string::npos;
         }));
 }
 

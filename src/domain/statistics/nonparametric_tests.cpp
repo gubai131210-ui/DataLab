@@ -686,4 +686,336 @@ FriedmanResult friedman_test(
     return result;
 }
 
+std::vector<DunnComparison> nemenyi_pairwise(
+    const FriedmanResult& friedman,
+    const double family_alpha)
+{
+    std::vector<DunnComparison> comparisons;
+    const std::size_t k = friedman.treatments.size();
+    const std::size_t b = friedman.block_count;
+    if (k < 2 || b < 2 || !friedman.diagnostics.empty()) {
+        return comparisons;
+    }
+    const double pair_count = static_cast<double>(k * (k - 1) / 2);
+    const double se = std::sqrt(
+        static_cast<double>(k) * (static_cast<double>(k) + 1.0)
+        / (6.0 * static_cast<double>(b)));
+    // Same asymptotic Tukey–Kramer critical as steel_dwass_pairwise.
+    const double z_critical = pair_count > 0.0
+        ? standard_normal_quantile(1.0 - family_alpha / (2.0 * pair_count))
+        : standard_normal_quantile(1.0 - family_alpha / 2.0);
+    for (std::size_t i = 0; i < k; ++i) {
+        for (std::size_t j = i + 1; j < k; ++j) {
+            DunnComparison comparison;
+            comparison.first_label = friedman.treatments[i].label;
+            comparison.second_label = friedman.treatments[j].label;
+            comparison.mean_rank_difference =
+                friedman.treatments[i].mean_rank
+                - friedman.treatments[j].mean_rank;
+            comparison.standard_error = se;
+            if (!(se > 0.0)) {
+                comparison.z_statistic = 0.0;
+                comparison.p_value = 1.0;
+                comparison.adjusted_p_value = 1.0;
+                comparison.significant = false;
+                comparisons.push_back(comparison);
+                continue;
+            }
+            comparison.z_statistic =
+                std::abs(comparison.mean_rank_difference) / se;
+            const double p_raw = std::clamp(
+                2.0 * (1.0 - standard_normal_cdf(comparison.z_statistic)),
+                0.0, 1.0);
+            comparison.p_value = p_raw;
+            comparison.adjusted_p_value =
+                std::clamp(pair_count * p_raw, 0.0, 1.0);
+            comparison.significant = comparison.z_statistic >= z_critical;
+            comparisons.push_back(comparison);
+        }
+    }
+    return comparisons;
+}
+
+namespace {
+
+std::string trim_ascii(std::string value)
+{
+    while (!value.empty()
+           && (value.front() == ' ' || value.front() == '\t'
+               || value.front() == '\r' || value.front() == '\n')) {
+        value.erase(value.begin());
+    }
+    while (!value.empty()
+           && (value.back() == ' ' || value.back() == '\t'
+               || value.back() == '\r' || value.back() == '\n')) {
+        value.pop_back();
+    }
+    return value;
+}
+
+std::string to_lower_ascii(std::string value)
+{
+    for (char& ch : value) {
+        if (ch >= 'A' && ch <= 'Z') {
+            ch = static_cast<char>(ch - 'A' + 'a');
+        }
+    }
+    return value;
+}
+
+std::optional<bool> parse_known_binary(const std::string& raw)
+{
+    const std::string value = to_lower_ascii(trim_ascii(raw));
+    if (value.empty()) {
+        return std::nullopt;
+    }
+    if (value == "0" || value == "fail" || value == "no" || value == "false"
+        || value == "n" || value == "-" || value == "neg" || value == "negative") {
+        return false;
+    }
+    if (value == "1" || value == "pass" || value == "yes" || value == "true"
+        || value == "y" || value == "+" || value == "pos" || value == "positive") {
+        return true;
+    }
+    return std::nullopt;
+}
+
+bool build_binary_map(
+    const std::vector<std::string>& first,
+    const std::vector<std::string>& second,
+    std::map<std::string, bool>& level_to_positive,
+    std::vector<DiagnosticMessage>& diagnostics)
+{
+    level_to_positive.clear();
+    bool all_known = true;
+    std::vector<std::string> unique_order;
+    for (std::size_t index = 0; index < first.size(); ++index) {
+        const std::string a = trim_ascii(first[index]);
+        const std::string b = trim_ascii(second[index]);
+        if (a.empty() || b.empty()) {
+            error(diagnostics, "mcnemar_empty_label",
+                  "McNemar 要求配对标签非空。");
+            return false;
+        }
+        if (!parse_known_binary(a).has_value() || !parse_known_binary(b).has_value()) {
+            all_known = false;
+        }
+        local_group_index(unique_order, a);
+        local_group_index(unique_order, b);
+    }
+    if (all_known) {
+        return true;
+    }
+    if (unique_order.size() != 2) {
+        error(diagnostics, "mcnemar_not_binary",
+              "McNemar 要求两列合计恰为两个水平，或可识别的二元编码（0/1、pass/fail 等）。");
+        return false;
+    }
+    // First-seen level = negative (false), second = positive (true).
+    level_to_positive[unique_order[0]] = false;
+    level_to_positive[unique_order[1]] = true;
+    return true;
+}
+
+bool resolve_binary(
+    const std::string& raw,
+    const std::map<std::string, bool>& level_to_positive,
+    bool& out)
+{
+    if (const auto known = parse_known_binary(raw); known.has_value()) {
+        out = *known;
+        return true;
+    }
+    const std::string key = trim_ascii(raw);
+    const auto found = level_to_positive.find(key);
+    if (found == level_to_positive.end()) {
+        return false;
+    }
+    out = found->second;
+    return true;
+}
+
+double binomial_pmf_half(std::size_t x, std::size_t n)
+{
+    if (x > n) {
+        return 0.0;
+    }
+    // C(n,x) / 2^n
+    double log_c = 0.0;
+    for (std::size_t i = 1; i <= x; ++i) {
+        log_c += std::log(static_cast<double>(n - x + i)) - std::log(static_cast<double>(i));
+    }
+    return std::exp(log_c - static_cast<double>(n) * std::log(2.0));
+}
+
+double binomial_cdf_le_half(std::size_t x, std::size_t n)
+{
+    if (x >= n) {
+        return 1.0;
+    }
+    double sum = 0.0;
+    for (std::size_t index = 0; index <= x; ++index) {
+        sum += binomial_pmf_half(index, n);
+    }
+    return std::clamp(sum, 0.0, 1.0);
+}
+
+double binomial_cdf_ge_half(std::size_t x, std::size_t n)
+{
+    if (x == 0) {
+        return 1.0;
+    }
+    if (x > n) {
+        return 0.0;
+    }
+    return std::clamp(1.0 - binomial_cdf_le_half(x - 1, n), 0.0, 1.0);
+}
+
+SignTestResult sign_test_core(
+    const std::vector<double>& values,
+    const double hypothesized_median,
+    const TestAlternative alternative)
+{
+    SignTestResult result;
+    result.hypothesized_median = hypothesized_median;
+    std::vector<double> nonzero;
+    for (const double value : values) {
+        if (!std::isfinite(value)) {
+            continue;
+        }
+        if (value > hypothesized_median) {
+            ++result.n_positive;
+            nonzero.push_back(value);
+        } else if (value < hypothesized_median) {
+            ++result.n_negative;
+            nonzero.push_back(value);
+        } else {
+            ++result.n_ties;
+        }
+    }
+    result.n_nonzero = result.n_positive + result.n_negative;
+    if (!nonzero.empty()) {
+        result.sample_median = median_of(nonzero);
+    } else if (!values.empty()) {
+        std::vector<double> finite;
+        for (const double value : values) {
+            if (std::isfinite(value)) {
+                finite.push_back(value);
+            }
+        }
+        if (!finite.empty()) {
+            result.sample_median = median_of(finite);
+        }
+    }
+    if (result.n_nonzero == 0) {
+        error(result.diagnostics, "sign_test_no_nonzero",
+              "符号检验在丢弃等于假设中位数的观测后无有效符号。");
+        return result;
+    }
+    result.small_sample_warning = result.n_nonzero < 10;
+    if (result.n_nonzero >= 25) {
+        warning(result.diagnostics, "sign_test_large_n_note",
+                "有效符号数 ≥ 25；主 P 仍为二项精确，正态近似仅作参考。");
+    }
+    const std::size_t n = result.n_nonzero;
+    const std::size_t n_pos = result.n_positive;
+    if (alternative == TestAlternative::greater) {
+        result.p_value = binomial_cdf_ge_half(n_pos, n);
+    } else if (alternative == TestAlternative::less) {
+        result.p_value = binomial_cdf_le_half(n_pos, n);
+    } else {
+        const double lower = binomial_cdf_le_half(n_pos, n);
+        const double upper = binomial_cdf_ge_half(n_pos, n);
+        result.p_value = std::clamp(2.0 * std::min(lower, upper), 0.0, 1.0);
+    }
+    result.approximation = "binomial_exact";
+    return result;
+}
+
+}  // namespace
+
+McNemarResult mcnemar_test(
+    const std::vector<std::string>& first,
+    const std::vector<std::string>& second)
+{
+    McNemarResult result;
+    if (first.size() != second.size() || first.empty()) {
+        error(result.diagnostics, "mcnemar_input_mismatch",
+              "McNemar 要求两列配对标签等长且非空。");
+        return result;
+    }
+    std::map<std::string, bool> level_map;
+    if (!build_binary_map(first, second, level_map, result.diagnostics)) {
+        return result;
+    }
+    for (std::size_t index = 0; index < first.size(); ++index) {
+        bool left = false;
+        bool right = false;
+        if (!resolve_binary(first[index], level_map, left)
+            || !resolve_binary(second[index], level_map, right)) {
+            error(result.diagnostics, "mcnemar_not_binary",
+                  "存在无法识别为二元水平的标签。");
+            return result;
+        }
+        if (left && right) {
+            ++result.a;
+        } else if (left && !right) {
+            ++result.b;
+        } else if (!left && right) {
+            ++result.c;
+        } else {
+            ++result.d;
+        }
+    }
+    result.pair_count = first.size();
+    result.discordant = result.b + result.c;
+    result.first_positive_label = "positive";
+    result.second_positive_label = "positive";
+    if (result.discordant == 0) {
+        error(result.diagnostics, "mcnemar_no_discordant",
+              "无不一致对（b+c=0），McNemar 统计量不可计算。");
+        return result;
+    }
+    const double bc = static_cast<double>(result.discordant);
+    const double adj = std::abs(static_cast<double>(result.b)
+                                - static_cast<double>(result.c))
+        - 1.0;
+    const double numerator = adj < 0.0 ? 0.0 : adj * adj;
+    result.chi_square = numerator / bc;
+    result.degrees_of_freedom = 1.0;
+    result.continuity_correction = true;
+    result.method = "edwards";
+    result.p_value = chi_square_right_tail(result.chi_square, 1.0);
+    return result;
+}
+
+SignTestResult sign_test(
+    const std::vector<double>& values,
+    const double hypothesized_median,
+    const TestAlternative alternative)
+{
+    return sign_test_core(values, hypothesized_median, alternative);
+}
+
+SignTestResult sign_test_paired(
+    const std::vector<double>& first,
+    const std::vector<double>& second,
+    const TestAlternative alternative)
+{
+    SignTestResult result;
+    if (first.size() != second.size()) {
+        error(result.diagnostics, "sign_test_pair_mismatch",
+              "配对符号检验要求两列等长。");
+        return result;
+    }
+    std::vector<double> diffs;
+    diffs.reserve(first.size());
+    for (std::size_t index = 0; index < first.size(); ++index) {
+        if (std::isfinite(first[index]) && std::isfinite(second[index])) {
+            diffs.push_back(first[index] - second[index]);
+        }
+    }
+    return sign_test_core(diffs, 0.0, alternative);
+}
+
 }  // namespace datalab::domain::statistics

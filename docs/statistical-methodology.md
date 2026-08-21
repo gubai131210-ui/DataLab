@@ -410,7 +410,7 @@ R²(adj) = 1 - [SSE/(n-p-1)]/[SST/(n-1)]
 `error_df ≤ 0` 时仍可给出系数点估计，但不输出 t/F/P。内部标准化残差为
 `e_i / (s√(1-h_ii))`；学生化残差为 `e_i / (s_(i)√(1-h_ii))`，其中 `s_(i)` 为
 删除第 i 个观测后的残差标准差；删除学生化残差为 `(e_i/(1-h_ii)) / s_(i)`。
-Durbin-Watson 只按用户输入顺序计算，不静默按时间重排。VIF>5 只作为共线性调查提示，不自动删列。
+Durbin-Watson 只按用户输入顺序计算，不静默按时间重排。α=0.05 近似 dL/dU（15≤n≤100，1≤k'≤5）给出判定区；范围外标 `not_computed`。VIF>5 只作为共线性调查提示，不自动删列。
 解释层不得只看 R² 或残差 AD p 值判定模型合格。
 
 ## Box-Cox 变换
@@ -475,7 +475,7 @@ Z = (W − E(W) − c) / √Var     c = ±0.5 连续性修正
 Z_j = (R̄_j − (N+1)/2) / sqrt( (N+1)(N−n_j)/(12 n_j) )
 ```
 
-有 ties 时分母乘以 H(adj) 的结修正平方根。P 值使用 `χ²(k-1)` 近似；小组样本量小于 5（Mann–Whitney / Wilcoxon 小于 10）时报告近似风险。未拒绝原假设不得写成已证明分布相同。Mann–Whitney 位置差异采用 Hodges–Lehmann 点估计与 McKean–Ryan 风格序统计置信区间（`formula_reference`，不是 Minitab golden）。Mann-Whitney / Wilcoxon / Kruskal-Wallis 服务层输出箱线图与个体值图，`source_row` 可追溯。
+Mann–Whitney / Wilcoxon / Kruskal–Wallis / Friedman / Sign / McNemar 服务层输出相应表与（适用时）箱线/个体值图，`source_row` 可追溯。Friedman 可选 `posthoc=nemenyi`（默认无后比较）。Sign 主 P 为二项精确。McNemar 使用 Edwards 连续性校正，且不改列联表卡方命令。
 
 ## EWMA 与 CUSUM
 

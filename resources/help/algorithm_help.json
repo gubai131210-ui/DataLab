@@ -1850,11 +1850,11 @@
       "decision_rules": [
         "VIF>5 只是共线性调查提示，不自动删列。",
         "R² 高不等于模型合格。",
-        "Durbin–Watson 按输入行序。"
+        "Durbin–Watson 按输入行序；α=0.05 近似 dL/dU 判定区，不能写成已证明无自相关。"
       ],
       "invalid_input_conditions": "秩亏、有效行不足或无法对齐时诊断。",
-      "output_description": "系数表、ANOVA（Seq SS/Adj SS）、拟合优度、异常观测、残差图/拟合线图。",
-      "output_interpretation": "同时看系数区间、残差形态和异常点原始行。",
+      "output_description": "系数表、ANOVA（Seq SS/Adj SS）、Durbin-Watson 表、拟合优度、异常观测、残差图/拟合线图。",
+      "output_interpretation": "同时看系数区间、残差形态、DW 判定区和异常点原始行。",
       "assumptions_and_boundaries": "不自动做变量选择。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
@@ -2468,14 +2468,15 @@
       ],
       "implemented_status": "implemented",
       "purpose": "区组设计下比较多个处理的位置（非参数重复测量）。",
-      "method_overview": "每个区组内对处理赋秩，汇总处理秩和后计算 Friedman S（可结修正），近似 χ²_{k−1}。要求每区组×处理恰 1 个观测。",
-      "input_description": "响应列、处理列、区组列；complete-case。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "每个区组内对处理赋秩，汇总处理秩和后计算 Friedman S（可结修正），近似 χ²_{k−1}。要求每区组×处理恰 1 个观测。可选 posthoc=nemenyi：平均秩差 Nemenyi（近似）成对比较与 Grouping。",
+      "input_description": "响应列、处理列、区组列；complete-case；可选 posthoc=nemenyi。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "三列 complete-case 对齐并保留 source_row。",
         "检查平衡设计。",
         "区组内赋秩并汇总。",
-        "计算 S / 调整 S 与 p。"
+        "计算 S / 调整 S 与 p。",
+        "若 posthoc=nemenyi，输出成对表与 Grouping。"
       ],
       "symbol_definitions": [
         {
@@ -2489,15 +2490,24 @@
         {
           "symbol": "R̄_j",
           "meaning": "处理 j 平均秩"
+        },
+        {
+          "symbol": "Nemenyi Z",
+          "meaning": "|R̄_i−R̄_j|/SE"
+        },
+        {
+          "symbol": "Grouping",
+          "meaning": "多重比较字母"
         }
       ],
       "decision_rules": [
         "不得写已证明相同或不同。",
-        "本命令不做后多重比较。"
+        "不做独立 Nemenyi 命令。",
+        "不做精确 studentized-range 表。"
       ],
       "invalid_input_conditions": "不平衡区组、重复单元格、处理/区组不足或输入错位时诊断。",
-      "output_description": "处理摘要、Friedman 检验表、按处理箱线/个体值。",
-      "output_interpretation": "先确认区组完整，再看 S/p 与处理平均秩。",
+      "output_description": "处理摘要、Friedman 检验表、可选 Nemenyi 成对/Grouping、按处理箱线/个体值。",
+      "output_interpretation": "先确认区组完整，再看 S/p；需要成对比较时显式选 nemenyi。",
       "assumptions_and_boundaries": "独立样本多组比较请用 Kruskal-Wallis。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
@@ -2506,6 +2516,13 @@
           "plain_text": "S=12/(bk(k+1))Σ R_.j² − 3b(k+1)；结修正 S′=S/(1−C/(bk(k²−1)))。",
           "explanation": "",
           "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "Nemenyi（近似）",
+          "plain_text": "SE=√(k(k+1)/(6b))；显著当 |Z|≥q_{α,k,∞}/√2（与 Steel–Dwass 同族渐近临界）。",
+          "explanation": "",
+          "conditions": "posthoc=nemenyi；默认无后比较；formula_reference。",
           "note": ""
         }
       ],
@@ -2528,6 +2545,150 @@
         "command_id": "friedman",
         "service_method": "friedman",
         "facts_type": "nonparametric",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "sign_test",
+      "title": "符号检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "sign_test",
+        "符号检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "对单样本中位数或配对差做符号检验（二项精确）。",
+      "method_overview": "丢弃等于假设中位数的结后，对 n+/n− 做 Bin(n,1/2) 精确双侧（或单侧）p。主 p 不做正态切换。",
+      "input_description": "一列+η0（默认 0），或两列配对差分对 0。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case 对齐。",
+        "丢弃结。",
+        "计数 n+/n−。",
+        "计算二项精确 p。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "n+",
+          "meaning": "大于 η0 的个数"
+        },
+        {
+          "symbol": "n−",
+          "meaning": "小于 η0 的个数"
+        },
+        {
+          "symbol": "η0",
+          "meaning": "假设中位数"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明中位数等于假设值。",
+        "不改 Wilcoxon 符号秩本体。"
+      ],
+      "invalid_input_conditions": "全结或无有效符号时诊断。",
+      "output_description": "符号摘要、符号检验表、箱线/个体值；配对另有散点。",
+      "output_interpretation": "先看有效符号数与方向，再看精确 p。",
+      "assumptions_and_boundaries": "需要秩信息时用 Wilcoxon 符号秩。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Sign",
+          "plain_text": "双侧 p=2·min{P(X≤n+),P(X≥n+)}，X~Bin(n,1/2)，截断到 [0,1]。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 t 检验方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "sign_test",
+        "service_method": "sign_test",
+        "facts_type": "nonparametric",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "mcnemar",
+      "title": "McNemar 检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "mcnemar",
+        "McNemar 检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "配对二元结果的边际比例检验（2×2 不一致对）。",
+      "method_overview": "complete-case 两列二元标签；Edwards 连续性校正 χ²=(|b−c|−1)²/(b+c)。不改列联表卡方命令。",
+      "input_description": "两列配对二元（0/1、pass/fail、yes/no，或恰两水平）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "配对 complete-case。",
+        "识别二元水平。",
+        "统计 a,b,c,d。",
+        "计算 Edwards χ² 与 p。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "b,c",
+          "meaning": "不一致对计数"
+        },
+        {
+          "symbol": "χ²",
+          "meaning": "Edwards 统计量"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明前后比例相同或不同。",
+        "不修改 chi_square / chi_square_gof。"
+      ],
+      "invalid_input_conditions": "非二元、水平不对齐或 b+c=0 时诊断。",
+      "output_description": "2×2 交叉表、McNemar 检验表。",
+      "output_interpretation": "先看不一致对是否足够，再看 χ²/p。",
+      "assumptions_and_boundaries": "无配对结构时用列联表卡方。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "McNemar–Edwards",
+          "plain_text": "当 b+c>0：χ²=(|b−c|−1)²/(b+c)，DF=1；|b−c|<1 时分子置 0。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 t 检验方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "mcnemar",
+        "service_method": "mcnemar",
+        "facts_type": "mcnemar",
         "primary_test": "quality_statistics_test"
       }
     },
