@@ -513,7 +513,7 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 新/深化算法必须闭环：research md → domain → *Facts → AnalysisService → analysis_commands → interpretation → output_serialization → tests（# source: formula_reference）→ algorithm_help.json → acceptance。
 
 ## 必读（按序）
-1. docs/algorithm-session-brief.md（尤其 §5h 已完成、§5b/§6 硬约束；禁止重做 §4–§5h）
+1. docs/algorithm-session-brief.md（尤其 §5i 已完成、§5b/§6 硬约束；禁止重做 §4–§5i）
 2. docs/research/deferred-capability-agreement.md
 3. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
 4. docs/quality-algorithms-acceptance.md
@@ -530,10 +530,11 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 从 gap-matrix / deferred / Minitab 表形优势里选 3～4 项「深化已有 + 高杠杆新缺口」。
 实现前每项先写 docs/research/p1_*.md。
 默认候选（计划里锁定二选一/明确不做）：
-- Mood 中位数检验（KW 族；勿重做 Kruskal Dunn/SD / Friedman）
-- Cochran’s Q（k≥3 配对二元；接 McNemar 缝；勿改 chi_square）
-- 单样本 Wilcoxon（相对 η0；现有多为配对；勿重做配对 Wilcoxon 本体）或 Sign 置信区间（二选一）
-- 帮助中心「公式与来源」页（按算法展示公式块+官方链接，复用 algorithm_help.json；勿重做帮助中心壳）或 正态 Ryan–Joiner（接 AD 缝；二选一作第 4 项）
+- 正态 Ryan–Joiner（接 AD / normality_test 缝；方法可切换 AD|RJ；勿重做 AD 本体）
+- Sign 置信区间（加深 sign_test；Minitab 1-Sample Sign 表形；勿重做 Sign 主 P / Wilcoxon）
+- Mood 各组中位数 Sign CI（加深 mood_median；Minitab 可有；勿重做 Mood χ² 本体）
+- 配对 Wilcoxon / 单样本 Walsh 已有：可选「配对 Wilcoxon HL/Walsh CI」或「正态性方法选项 UI 统一」作第 4 项二选一
+  （备选高杠杆：Fisher exact 深化表形；Runs test；Dixon 异常值——仅当研究后判定缝更浅再替换）
 你研究后可调整优先级，但必须在计划里锁定选型与「明确不做」。
 对照 Minitab：输出表名/列/诊断；学习其「方法选项可切换、小样本警告、表+图同页」优势，禁止假 golden。
 
@@ -541,13 +542,13 @@ DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
 - complete-case / align_complete_rows / parse_numeric_cell / source_row / dataset_id；导入 A→B 旧输出失效
 - 解释只读 Facts，不写合格/已证明等价或一致/已证明等方差/样本量足够
 - 禁止假 Minitab golden；禁止碰 chi_square 与 chi_square_gof 边界除非本轮明确包含
-- 禁止重做：§5a–§5h（含 Nemenyi 挂 friedman、McNemar、Sign、DW 临界、Kruskal Dunn/SD、Friedman 主检验、各类比例/TOST/等方差等）
+- 禁止重做：§5a–§5i（含 Mood、Cochran Q、单样本 Wilcoxon、帮助公式页签、Nemenyi、McNemar、Sign 主检验、DW 临界、Kruskal Dunn/SD、Friedman 等）
 - 待修改.md 是给人看的旧笔记，不当任务（除非用户本轮明确点名其中某条）
 - 中文路径：agent 不跑 cmake/ctest；改完列 Qt Creator 手工验收项
 - 帮助：改 generate_algorithm_help_catalog.py + help_catalog_families.py 再生成 JSON，正文禁止「见 md」
 
 请先 SwitchMode 到 plan，输出详细计划（含文件级清单、风险、手工验收、禁止偷懒），等我确认后再实现。
-上一轮四项（Nemenyi / McNemar / Sign / DW 临界）我都验证完了。
+上一轮四项（Mood / Cochran Q / 单样本 Wilcoxon / 帮助公式页签）我都验证完了。
 ```
 
 仓库内权威范围以本节之上第 5、6 节为准。新对话应先 SwitchMode 到 **plan**，研究完成后再 agent 实现。
