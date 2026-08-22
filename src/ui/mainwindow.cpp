@@ -24,6 +24,7 @@
 #include "ui/algorithm_help_dialog.h"
 #include "ui/formula_registry_dialog.h"
 #include "ui/database_import_wizard.h"
+#include "ui/command_wizard_dialog.h"
 #include "ui/app_ui_tr.h"
 
 #include <QAction>
@@ -47,6 +48,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -151,117 +153,6 @@ bool data_tables_equal(
         && left.row_ids == right.row_ids
         && left.column_types == right.column_types
         && left.cell_states == right.cell_states;
-}
-
-QString primary_analysis_menu(const analysis_commands::AnalysisCommand& command)
-{
-    if (command.id == QStringLiteral("pareto")) {
-        return QStringLiteral("质量工具");
-    }
-    if (command.id == QStringLiteral("doe_factorial")
-        || command.id == QStringLiteral("doe_response")
-        || command.id == QStringLiteral("response_optimization")
-        || command.menu_path == QStringLiteral("控制图")) {
-        return QStringLiteral("统计");
-    }
-    return command.menu_path;
-}
-
-QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
-{
-    const QString id = command.id;
-    if (command.menu_path == QStringLiteral("控制图")) {
-        return QStringLiteral("控制图");
-    }
-    if (id == QStringLiteral("doe_factorial")
-        || id == QStringLiteral("doe_response")
-        || id == QStringLiteral("response_optimization")) {
-        return QStringLiteral("DOE");
-    }
-    if (id == QStringLiteral("descriptive")
-        || id == QStringLiteral("normality_test")
-        || id == QStringLiteral("outlier_test")
-        || id == QStringLiteral("one_sample_t")
-        || id == QStringLiteral("one_sample_z")
-        || id == QStringLiteral("two_sample_t")
-        || id == QStringLiteral("paired_t")
-        || id == QStringLiteral("correlation")
-        || id == QStringLiteral("one_proportion")
-        || id == QStringLiteral("one_poisson_rate")
-        || id == QStringLiteral("two_poisson_rate")
-        || id == QStringLiteral("one_sample_equivalence")
-        || id == QStringLiteral("paired_equivalence")
-        || id == QStringLiteral("two_sample_equivalence")
-        || id == QStringLiteral("two_sample_equivalence_ratio")
-        || id == QStringLiteral("one_proportion_equivalence")
-        || id == QStringLiteral("two_proportion_equivalence")) {
-        return QStringLiteral("基础统计");
-    }
-    if (id == QStringLiteral("one_way_anova")
-        || id == QStringLiteral("two_factor_anova")
-        || id == QStringLiteral("anom")) {
-        return QStringLiteral("ANOVA");
-    }
-    if (id == QStringLiteral("regression")
-        || id == QStringLiteral("logistic_regression")) {
-        return QStringLiteral("回归");
-    }
-    if (id == QStringLiteral("time_series_smoothing")
-        || id == QStringLiteral("time_series_decomposition")
-        || id == QStringLiteral("seasonal_forecasting")
-        || id == QStringLiteral("arima")) {
-        return QStringLiteral("时间序列");
-    }
-    if (id == QStringLiteral("pca")) {
-        return QStringLiteral("多变量");
-    }
-    if (id == QStringLiteral("reliability")) {
-        return QStringLiteral("可靠性");
-    }
-    if (id == QStringLiteral("t_power")) {
-        return QStringLiteral("功效与样本量");
-    }
-    if (id == QStringLiteral("two_proportions")
-        || id == QStringLiteral("chi_square")
-        || id == QStringLiteral("chi_square_gof")
-        || id == QStringLiteral("poisson_gof")
-        || id == QStringLiteral("fisher_exact")
-        || id == QStringLiteral("variance_test")
-        || id == QStringLiteral("mann_whitney")
-        || id == QStringLiteral("wilcoxon_signed_rank")
-        || id == QStringLiteral("sign_test")
-        || id == QStringLiteral("runs_test")
-        || id == QStringLiteral("mcnemar")
-        || id == QStringLiteral("cochran_q")
-        || id == QStringLiteral("mood_median")
-        || id == QStringLiteral("kruskal_wallis")
-        || id == QStringLiteral("friedman")) {
-        return QStringLiteral("假设检验");
-    }
-    if (id == QStringLiteral("cross_tabulation")) {
-        return QStringLiteral("表格");
-    }
-    if (id == QStringLiteral("capability")
-        || id == QStringLiteral("nonnormal_capability")
-        || id == QStringLiteral("capability_sixpack")
-        || id == QStringLiteral("box_cox")
-        || id == QStringLiteral("gage_rr")
-        || id == QStringLiteral("msa_type1")
-        || id == QStringLiteral("nested_gage_rr")
-        || id == QStringLiteral("attribute_agreement")
-        || id == QStringLiteral("pareto")
-        || id == QStringLiteral("run_chart")
-        || id == QStringLiteral("cause_and_effect")
-        || id == QStringLiteral("multi_vari")
-        || id == QStringLiteral("variability_chart")
-        || id == QStringLiteral("acceptance_sampling")
-        || id == QStringLiteral("tolerance_intervals")) {
-        return QStringLiteral("质量工具");
-    }
-    if (command.menu_path == QStringLiteral("图形")) {
-        return QStringLiteral("探索性图形");
-    }
-    return {};
 }
 
 class TableChangeCommand final : public QUndoCommand {
@@ -492,18 +383,27 @@ void MainWindow::create_commands()
     commands_->add_to_menu(data_menu, QStringLiteral("hide_row"));
     commands_->add_to_menu(data_menu, QStringLiteral("clear_hide"));
 
-    // 分析菜单：按 Minitab 风格的顶层菜单和子菜单生成。
+    // 分析菜单：只读 command.menu_path / menu_group（级联深度硬上限=1）。
     // Hash keys stay zh_CN source strings so language does not split menus.
+    static const QStringList k_analysis_top_menus = {
+        QStringLiteral("统计"),
+        QStringLiteral("控制图"),
+        QStringLiteral("质量工具"),
+        QStringLiteral("图形"),
+    };
     QHash<QString, QMenu*> analysis_menus;
     QHash<QString, QMenu*> analysis_submenus;
+    for (const QString& top_src : k_analysis_top_menus) {
+        analysis_menus.insert(top_src, menuBar()->addMenu(datalab::ui::ui_tr(top_src)));
+    }
     for (const auto& command : analysis_commands::all()) {
-        const QString top_menu_src = primary_analysis_menu(command);
+        const QString top_menu_src = command.menu_path;
         QMenu* menu = analysis_menus.value(top_menu_src, nullptr);
         if (menu == nullptr) {
             menu = menuBar()->addMenu(datalab::ui::ui_tr(top_menu_src));
             analysis_menus.insert(top_menu_src, menu);
         }
-        const QString group_src = analysis_menu_group(command);
+        const QString group_src = command.menu_group.trimmed();
         QMenu* target = menu;
         if (!group_src.isEmpty()) {
             const QString submenu_key = top_menu_src + QStringLiteral("/") + group_src;
@@ -518,6 +418,19 @@ void MainWindow::create_commands()
         }
         commands_->add_to_menu(target, command.id);
     }
+
+    // G6 chrome：命令向导不进入 analysis_commands::all()，挂在「统计」顶层。
+    if (QMenu* stats_menu = analysis_menus.value(QStringLiteral("统计"))) {
+        QAction* wizard_action = commands_->add(
+            QStringLiteral("command_wizard"),
+            datalab::ui::ui_tr("命令向导…"));
+        connect(wizard_action, &QAction::triggered, this, &MainWindow::open_command_wizard);
+        const QList<QAction*> existing = stats_menu->actions();
+        QAction* anchor = existing.isEmpty() ? nullptr : existing.first();
+        stats_menu->insertAction(anchor, wizard_action);
+        stats_menu->insertSeparator(anchor);
+    }
+
     menuBar()->addMenu(datalab::ui::ui_tr("查看"));
 
     auto* help_menu = menuBar()->addMenu(datalab::ui::ui_tr("帮助"));
@@ -1145,6 +1058,26 @@ void MainWindow::open_project()
     }
     refresh_context_dock();
     statusBar()->showMessage(QStringLiteral("项目已打开。"));
+}
+
+void MainWindow::open_command_wizard()
+{
+    if (!ensure_data()) {
+        return;
+    }
+    QString pending_command_id;
+    {
+        datalab::ui::CommandWizardDialog wizard(column_labels(), table_.column_types, this);
+        connect(&wizard, &datalab::ui::CommandWizardDialog::openAnalysisRequested,
+                this, [&pending_command_id](const QString& command_id) {
+                    pending_command_id = command_id;
+                });
+        wizard.exec();
+    }
+    // 先关 Wizard 再 run_from_spec，避免双模态。
+    if (!pending_command_id.isEmpty()) {
+        run_from_spec(pending_command_id);
+    }
 }
 
 void MainWindow::import_database()

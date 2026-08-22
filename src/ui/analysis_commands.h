@@ -69,7 +69,7 @@ struct AnalysisCommand {
     QString id;               // 命令标识（菜单动作 id）
     QString menu_label;       // 菜单项文字
     QString dialog_title;     // 设置对话框标题（可能与菜单文字不同）
-    QString menu_path;        // 顶层菜单名（"统计"/"图形"/"控制图"/"质量工具"）
+    QString menu_path;        // 顶层菜单名（"统计"/"控制图"/"质量工具"/"图形"）
     QString icon_file;        // 资源图标文件名（不含 .svg，路径 :/icons/<file>.svg）
     bool separator_before = false;  // 在该菜单项前插入分隔线
     bool requires_data = true;      // 运行前是否需要 ensure_data()（t_power 为 false）
@@ -81,10 +81,10 @@ struct AnalysisCommand {
     std::function<datalab::domain::OutputPage(
         const datalab::domain::DataTable&,
         const datalab::domain::AnalysisConfiguration&)> run;
-    QString menu_group;
+    QString menu_group;       // 二级分组（级联子菜单名；空则扁平挂到 menu_path）
 };
 
-// 全量命令表（表顺序即菜单项顺序，按 menu_path 分组）。
+// 全量命令表（表顺序即菜单项顺序，按 menu_path / menu_group 分组）。
 // 返回指向静态存储的 const 引用，调用方不得修改。
 const std::vector<AnalysisCommand>& all();
 

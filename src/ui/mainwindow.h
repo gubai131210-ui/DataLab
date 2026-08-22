@@ -31,6 +31,7 @@ private:
     void open_project();
     void import_data();
     void import_database();
+    void open_command_wizard();
     void save_project();
     void export_pdf();
     void exclude_selected_row();

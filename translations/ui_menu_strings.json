@@ -104,10 +104,76 @@
       "en_us": "DOE"
     },
     {
+      "id": "menu.group.inference_simulation",
+      "zh_cn": "推断 / 仿真",
+      "en_us": "Resampling / Simulation"
+    },
+    {
+      "id": "menu.group.variables_charts",
+      "zh_cn": "计量图",
+      "en_us": "Variables Charts"
+    },
+    {
+      "id": "menu.group.attributes_charts",
+      "zh_cn": "计数图",
+      "en_us": "Attributes Charts"
+    },
+    {
+      "id": "menu.group.time_weighted",
+      "zh_cn": "时间加权",
+      "en_us": "Time-Weighted Charts"
+    },
+    {
+      "id": "menu.group.multivariate_rare_event",
+      "zh_cn": "多元 / 稀有事件",
+      "en_us": "Multivariate / Rare Event"
+    },
+    {
+      "id": "menu.group.capability",
+      "zh_cn": "过程能力",
+      "en_us": "Capability Analysis"
+    },
+    {
+      "id": "menu.group.transform_distribution",
+      "zh_cn": "变换 / 分布",
+      "en_us": "Transformations / Distributions"
+    },
+    {
+      "id": "menu.group.msa",
+      "zh_cn": "MSA",
+      "en_us": "MSA"
+    },
+    {
+      "id": "menu.group.quality_planning",
+      "zh_cn": "质量图 / 规划",
+      "en_us": "Quality Planning"
+    },
+    {
+      "id": "menu.group.tolerance_sampling",
+      "zh_cn": "容差 / 抽样",
+      "en_us": "Tolerance / Sampling"
+    },
+    {
+      "id": "menu.group.distribution_univariate",
+      "zh_cn": "分布与单变量",
+      "en_us": "Distribution / Univariate"
+    },
+    {
+      "id": "menu.group.relationship_multivariate",
+      "zh_cn": "关系与多元",
+      "en_us": "Relationship / Multivariate"
+    },
+    {
+      "id": "menu.group.time_bar_other",
+      "zh_cn": "时间 / 条形 / 其他",
+      "en_us": "Time Series / Bar / Other"
+    },
+    {
       "id": "menu.group.eda",
       "zh_cn": "探索性图形",
       "en_us": "Exploratory Graphs"
     },
+
     {
       "id": "action.new",
       "zh_cn": "新建项目",
@@ -2707,6 +2773,191 @@
       "id": "dlg.fine_gray_2_ipcw",
       "zh_cn": "协变量列（Fine-Gray 连续/多列，可选；≥2 列走多协变量 IPCW，优先于二分类）",
       "en_us": "协变量列（Fine-Gray 连续/多列，可选；≥2 列走多协变量 IPCW，优先于二分类）"
+    },
+    {
+      "id": "action.command_wizard",
+      "zh_cn": "命令向导…",
+      "en_us": "Command Wizard…"
+    },
+    {
+      "id": "wizard.command.title",
+      "zh_cn": "命令向导",
+      "en_us": "Command Wizard"
+    },
+    {
+      "id": "wizard.command.step_columns",
+      "zh_cn": "步骤 1：选择列",
+      "en_us": "Step 1: Select columns"
+    },
+    {
+      "id": "wizard.command.step_intent",
+      "zh_cn": "步骤 2：选择意图",
+      "en_us": "Step 2: Select intent"
+    },
+    {
+      "id": "wizard.command.step_recommend",
+      "zh_cn": "步骤 3：查看推荐",
+      "en_us": "Step 3: Recommendations"
+    },
+    {
+      "id": "wizard.command.select_columns_help",
+      "zh_cn": "勾选要分析的列（按列类型推荐）",
+      "en_us": "Select columns to analyze (recommendations use column types)"
+    },
+    {
+      "id": "wizard.command.select_intent_help",
+      "zh_cn": "选择分析意图（可选）",
+      "en_us": "Choose analysis intent (optional)"
+    },
+    {
+      "id": "wizard.command.recommend_help",
+      "zh_cn": "推荐命令（点选一项后打开设置）",
+      "en_us": "Recommended commands (select one to open setup)"
+    },
+    {
+      "id": "wizard.command.back",
+      "zh_cn": "上一步",
+      "en_us": "Back"
+    },
+    {
+      "id": "wizard.command.next",
+      "zh_cn": "下一步",
+      "en_us": "Next"
+    },
+    {
+      "id": "wizard.command.open",
+      "zh_cn": "打开分析设置",
+      "en_us": "Open analysis setup"
+    },
+    {
+      "id": "wizard.command.cancel",
+      "zh_cn": "取消",
+      "en_us": "Cancel"
+    },
+    {
+      "id": "wizard.command.select_recommendation",
+      "zh_cn": "请先选择一条推荐命令",
+      "en_us": "Please select a recommended command first"
+    },
+    {
+      "id": "intent.any",
+      "zh_cn": "不限（任意）",
+      "en_us": "Any"
+    },
+    {
+      "id": "intent.describe",
+      "zh_cn": "描述",
+      "en_us": "Describe"
+    },
+    {
+      "id": "intent.compare",
+      "zh_cn": "比较",
+      "en_us": "Compare"
+    },
+    {
+      "id": "intent.associate",
+      "zh_cn": "关联",
+      "en_us": "Associate"
+    },
+    {
+      "id": "intent.control_chart",
+      "zh_cn": "控制图",
+      "en_us": "Control chart"
+    },
+    {
+      "id": "intent.capability",
+      "zh_cn": "过程能力",
+      "en_us": "Capability"
+    },
+    {
+      "id": "intent.reliability",
+      "zh_cn": "可靠性",
+      "en_us": "Reliability"
+    },
+    {
+      "id": "intent.graph",
+      "zh_cn": "图形探索",
+      "en_us": "Graph explore"
+    },
+    {
+      "id": "reason.univariate_describe",
+      "zh_cn": "单变量描述与分布",
+      "en_us": "Univariate description and distribution"
+    },
+    {
+      "id": "reason.imr",
+      "zh_cn": "个体计量控制图",
+      "en_us": "Individuals / moving range chart"
+    },
+    {
+      "id": "reason.capability",
+      "zh_cn": "过程能力（规格在对话框中填写）",
+      "en_us": "Process capability (enter specs in the dialog)"
+    },
+    {
+      "id": "reason.two_sample_compare",
+      "zh_cn": "两组数值比较",
+      "en_us": "Two-sample numeric comparison"
+    },
+    {
+      "id": "reason.associate",
+      "zh_cn": "相关、回归或散点",
+      "en_us": "Correlation, regression, or scatter"
+    },
+    {
+      "id": "reason.factor_group",
+      "zh_cn": "因子分组比较",
+      "en_us": "Factor / group comparison"
+    },
+    {
+      "id": "reason.multivariate",
+      "zh_cn": "多变量关联",
+      "en_us": "Multivariate association"
+    },
+    {
+      "id": "reason.categorical",
+      "zh_cn": "属性/分类分析",
+      "en_us": "Attribute / categorical analysis"
+    },
+    {
+      "id": "reason.reliability",
+      "zh_cn": "生存/可靠性（请核对删失编码）",
+      "en_us": "Survival / reliability (verify censoring coding)"
+    },
+    {
+      "id": "reason.graph_explore",
+      "zh_cn": "探索图形",
+      "en_us": "Exploratory graph"
+    },
+    {
+      "id": "hint.select_columns",
+      "zh_cn": "请先选择至少一列",
+      "en_us": "Select at least one column first"
+    },
+    {
+      "id": "hint.check_column_types",
+      "zh_cn": "请核对列类型后再推荐",
+      "en_us": "Check column types before recommending"
+    },
+    {
+      "id": "wizard.column_type.numeric",
+      "zh_cn": "数值",
+      "en_us": "Numeric"
+    },
+    {
+      "id": "wizard.column_type.categorical",
+      "zh_cn": "分类",
+      "en_us": "Categorical"
+    },
+    {
+      "id": "wizard.column_type.time",
+      "zh_cn": "时间",
+      "en_us": "Time"
+    },
+    {
+      "id": "wizard.column_type.unknown",
+      "zh_cn": "未知",
+      "en_us": "Unknown"
     }
   ]
 }

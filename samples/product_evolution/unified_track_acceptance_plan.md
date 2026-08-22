@@ -28,9 +28,12 @@
 | **G3** | Graph 受控 Builder | ⏳ | ⏳ | ⏳ |
 | **G4** | 4-plot / Report Card | ⏳ | ⏳ | ⏳ |
 | **G5** | AnalysisService 拆分 | ⏳ | ⏳ | ⏳ |
-| **G6** | 命令 Wizard | ⏳ | ⏳ | ⏳ |
+| **G6** | 命令 Wizard | ✅ | ✅ | ⏳ |
 | **G7** | 离线监视摘要 | ⏳ | ⏳ | ⏳ |
 | **G8** | Worksheet 编辑 | ⏳ | ⏳ | ⏳ |
+
+> G6 竖切（Tester）：脚本预检 ✅；Track 交付 ✅（引擎 + Wizard + 入口 + i18n + QtTest t01–t15）；统一验收 ⏳。python tools/verify_g6_command_wizard_track.py PASS。
+> DoD：[`docs/research/goal-wave-2026-08-23-g6-command-wizard.md`](../../docs/research/goal-wave-2026-08-23-g6-command-wizard.md)
 
 ### 算法竖切批次（2026-08-22）
 
@@ -75,6 +78,17 @@
 
 > 脚本：`python tools/verify_algorithm_wave4_track.py`
 
+### UI 菜单 IA（2026-08-23）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **U1** | 声明式 `menu_path` + `menu_group`（137 命令） | ✅ | ✅ 2026-08-23 | ⏳ |
+| **U2** | MainWindow 按字段渲染；删除硬编码白名单；深度≤1 | ✅ | ✅ 2026-08-23 | ⏳ |
+| **U3** | help/wiring/acceptance + `verify_ui_menu_ia_track.py` + QtTest | ✅ | ✅ 2026-08-23 | ⏳ |
+
+> 脚本：`python tools/verify_ui_menu_ia_track.py`（回归仍要求 wave4 verify PASS）  
+> DoD：[`docs/research/goal-wave-2026-08-23-ui-menu-ia-layout.md`](../../docs/research/goal-wave-2026-08-23-ui-menu-ia-layout.md)
+
 ---
 
 ## 3. 统一验收 — 一次性构建（只做一次）
@@ -104,6 +118,8 @@ python tools/verify_algorithm_batch_2026_08.py   # 算法批 A1–A3（2026-08-2
 python tools/verify_algorithm_wave2_track.py       # 算法 Wave-2 W2-1–W2-4（2026-08-22）
 python tools/verify_algorithm_wave3_track.py       # 算法 Wave-2.5 + Wave-3（2026-08-22）
 python tools/verify_algorithm_wave4_track.py       # 算法 Wave-4 W4-0–W4-4（2026-08-22）
+python tools/verify_ui_menu_ia_track.py            # UI 菜单 IA U1–U3（2026-08-23）
+# 后续：python tools/verify_g6_command_wizard_track.py  # G6 命令 Wizard（Tester）
 # 后续：python tools/verify_g3_track.py 等（随 Track 增加）
 powershell -File tools/run_g1g2_tests.ps1        # 期望 5/5 PASS
 ```
@@ -127,10 +143,11 @@ python tools/print_qt_creator_signoff_batches.py
 
 | Track | 手工要点 | 详细清单文件 |
 |-------|----------|--------------|
+| **UI Menu IA** | 统计/控制图/质量工具/图形下均为一级子菜单；Cox→可靠性；逐步回归→回归；无超长扁平「统计」叶列表 | [goal-wave-2026-08-23-ui-menu-ia-layout.md](../../docs/research/goal-wave-2026-08-23-ui-menu-ia-layout.md) 人手门 |
 | G3 | Graph Builder 独立页；分面+geom | *待 G3 交付时创建 `g3_*_manual_acceptance.md`* |
 | G4 | 4-plot / 假设面板 | *待创建* |
 | G5 | 拆分后命令仍可用 | *待创建* |
-| G6 | Wizard 推荐命令 | *待创建* |
+| G6 | Wizard 推荐命令 | [goal-wave-2026-08-23-g6-command-wizard.md](../../docs/research/goal-wave-2026-08-23-g6-command-wizard.md) 人手门 |
 | G7 | 监视摘要表 | *待创建* |
 | G8 | 清除单元格 + 撤销 | *待创建* |
 

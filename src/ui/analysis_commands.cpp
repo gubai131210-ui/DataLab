@@ -446,7 +446,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::descriptive},
+            AnalysisService::descriptive,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("normality_test"),
             QStringLiteral("正态性检验"),
@@ -473,7 +474,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::normality_test},
+            AnalysisService::normality_test,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("outlier_test"),
             QStringLiteral("异常值检验"),
@@ -511,7 +513,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::outlier_test},
+            AnalysisService::outlier_test,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("correlation"),
             QStringLiteral("相关分析"),
@@ -547,7 +550,8 @@ const std::vector<AnalysisCommand>& all()
                     || partial == "partial";
                 return {};
             },
-            AnalysisService::correlation},
+            AnalysisService::correlation,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_sample_t"),
             QStringLiteral("单样本 t 检验"),
@@ -579,7 +583,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
-            AnalysisService::one_sample_t},
+            AnalysisService::one_sample_t,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_sample_z"),
             QStringLiteral("单样本 Z 检验"),
@@ -618,7 +623,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
-            AnalysisService::one_sample_z},
+            AnalysisService::one_sample_z,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_proportion"),
             QStringLiteral("单比例检验"),
@@ -664,7 +670,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::one_proportion},
+            AnalysisService::one_proportion,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_poisson_rate"),
             QStringLiteral("单样本泊松率"),
@@ -718,7 +725,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::one_poisson_rate},
+            AnalysisService::one_poisson_rate,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("two_poisson_rate"),
             QStringLiteral("双样本泊松率"),
@@ -765,7 +773,8 @@ const std::vector<AnalysisCommand>& all()
                     comparison == "ratio" ? "ratio" : "difference";
                 return {};
             },
-            AnalysisService::two_poisson_rate},
+            AnalysisService::two_poisson_rate,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("two_sample_t"),
             QStringLiteral("双样本 t 检验"),
@@ -799,7 +808,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
-            AnalysisService::two_sample_t},
+            AnalysisService::two_sample_t,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_sample_equivalence"),
             QStringLiteral("单样本等价性检验"),
@@ -837,7 +847,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::one_sample_equivalence},
+            AnalysisService::one_sample_equivalence,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("two_sample_equivalence"),
             QStringLiteral("双样本等价性检验"),
@@ -878,7 +889,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::two_sample_equivalence},
+            AnalysisService::two_sample_equivalence,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("two_sample_equivalence_ratio"),
             QStringLiteral("双样本均值比等价性检验"),
@@ -924,7 +936,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::two_sample_equivalence_ratio},
+            AnalysisService::two_sample_equivalence_ratio,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("paired_equivalence"),
             QStringLiteral("配对等价性检验"),
@@ -960,7 +973,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::paired_equivalence},
+            AnalysisService::paired_equivalence,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_proportion_equivalence"),
             QStringLiteral("单比例等价性检验"),
@@ -1006,7 +1020,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::one_proportion_equivalence},
+            AnalysisService::one_proportion_equivalence,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("two_proportion_equivalence"),
             QStringLiteral("两比例等价性检验"),
@@ -1051,7 +1066,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::two_proportion_equivalence},
+            AnalysisService::two_proportion_equivalence,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("one_way_anova"),
             QStringLiteral("单因素 ANOVA"),
@@ -1076,7 +1092,8 @@ const std::vector<AnalysisCommand>& all()
                 c.by_column = static_cast<std::size_t>(factor);
                 return {};
             },
-            AnalysisService::one_way_anova},
+            AnalysisService::one_way_anova,
+            QStringLiteral("ANOVA")},
         {
             QStringLiteral("paired_t"),
             QStringLiteral("配对 t 检验"),
@@ -1105,7 +1122,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
-            AnalysisService::paired_t},
+            AnalysisService::paired_t,
+            QStringLiteral("基础统计")},
         {
             QStringLiteral("regression"),
             QStringLiteral("线性回归"),
@@ -1133,7 +1151,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::regression},
+            AnalysisService::regression,
+            QStringLiteral("回归")},
         {
             QStringLiteral("two_proportions"),
             QStringLiteral("两比例检验"),
@@ -1177,7 +1196,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
-            AnalysisService::two_proportions},
+            AnalysisService::two_proportions,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("chi_square"),
             QStringLiteral("列联表卡方"),
@@ -1201,7 +1221,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.column_category_column = static_cast<std::size_t>(column);
                 return {};
             },
-            AnalysisService::chi_square},
+            AnalysisService::chi_square,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("cross_tabulation"),
             QStringLiteral("交叉表"),
@@ -1225,7 +1246,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.column_category_column = static_cast<std::size_t>(column);
                 return {};
             },
-            AnalysisService::cross_tabulation},
+            AnalysisService::cross_tabulation,
+            QStringLiteral("表格")},
         {
             QStringLiteral("chi_square_gof"),
             QStringLiteral("卡方拟合优度"),
@@ -1249,7 +1271,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.expected_proportions = normalize(d.line_text("expected_proportions"));
                 return {};
             },
-            AnalysisService::chi_square_gof},
+            AnalysisService::chi_square_gof,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("poisson_gof"),
             QStringLiteral("泊松拟合优度"),
@@ -1270,7 +1293,8 @@ const std::vector<AnalysisCommand>& all()
                 c.variable_columns = {static_cast<std::size_t>(column)};
                 return {};
             },
-            AnalysisService::poisson_gof},
+            AnalysisService::poisson_gof,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("anom"),
             QStringLiteral("均值分析 (ANOM)"),
@@ -1300,7 +1324,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::anom},
+            AnalysisService::anom,
+            QStringLiteral("ANOVA")},
         {
             QStringLiteral("mann_whitney"),
             QStringLiteral("Mann-Whitney 检验"),
@@ -1324,7 +1349,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.alternative = normalize(d.line_text("alternative"));
                 return {};
             },
-            AnalysisService::mann_whitney},
+            AnalysisService::mann_whitney,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("wilcoxon_signed_rank"),
             QStringLiteral("Wilcoxon 符号秩检验"),
@@ -1357,7 +1383,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 return {};
             },
-            AnalysisService::wilcoxon_signed_rank},
+            AnalysisService::wilcoxon_signed_rank,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("sign_test"),
             QStringLiteral("符号检验"),
@@ -1390,7 +1417,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 return {};
             },
-            AnalysisService::sign_test},
+            AnalysisService::sign_test,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("runs_test"),
             QStringLiteral("游程检验"),
@@ -1427,7 +1455,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::runs_test},
+            AnalysisService::runs_test,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("mcnemar"),
             QStringLiteral("McNemar 检验"),
@@ -1450,7 +1479,8 @@ const std::vector<AnalysisCommand>& all()
                     static_cast<std::size_t>(columns[1])};
                 return {};
             },
-            AnalysisService::mcnemar},
+            AnalysisService::mcnemar,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("fisher_exact"),
             QStringLiteral("Fisher 精确检验"),
@@ -1473,7 +1503,8 @@ const std::vector<AnalysisCommand>& all()
                     static_cast<std::size_t>(columns[1])};
                 return {};
             },
-            AnalysisService::fisher_exact},
+            AnalysisService::fisher_exact,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("cochran_q"),
             QStringLiteral("Cochran Q 检验"),
@@ -1497,7 +1528,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::cochran_q},
+            AnalysisService::cochran_q,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("mood_median"),
             QStringLiteral("Mood 中位数检验"),
@@ -1523,7 +1555,8 @@ const std::vector<AnalysisCommand>& all()
                 c.inference.confidence_level = d.line_number("confidence").value_or(95.0);
                 return {};
             },
-            AnalysisService::mood_median},
+            AnalysisService::mood_median,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("kruskal_wallis"),
             QStringLiteral("Kruskal-Wallis 检验"),
@@ -1552,7 +1585,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::kruskal_wallis},
+            AnalysisService::kruskal_wallis,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("friedman"),
             QStringLiteral("Friedman 检验"),
@@ -1584,7 +1618,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::friedman},
+            AnalysisService::friedman,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("time_series_smoothing"),
             QStringLiteral("时间序列平滑"),
@@ -1614,7 +1649,8 @@ const std::vector<AnalysisCommand>& all()
                 c.time_series.forecast_periods = d.line_int("periods").value_or(1);
                 return {};
             },
-            AnalysisService::time_series_smoothing},
+            AnalysisService::time_series_smoothing,
+            QStringLiteral("时间序列")},
         {
             QStringLiteral("arima"),
             QStringLiteral("ARIMA 基础预测"),
@@ -1648,7 +1684,8 @@ const std::vector<AnalysisCommand>& all()
                 c.time_series.forecast_periods = d.line_int("periods").value_or(3);
                 return {};
             },
-            AnalysisService::arima},
+            AnalysisService::arima,
+            QStringLiteral("时间序列")},
         {
             QStringLiteral("two_factor_anova"),
             QStringLiteral("双因素 ANOVA"),
@@ -1680,7 +1717,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::two_factor_anova},
+            AnalysisService::two_factor_anova,
+            QStringLiteral("ANOVA")},
         {
             QStringLiteral("logistic_regression"),
             QStringLiteral("二元 Logistic 回归"),
@@ -1733,7 +1771,8 @@ const std::vector<AnalysisCommand>& all()
                     d.line_number("stepwise_alpha_remove").value_or(0.15);
                 return {};
             },
-            AnalysisService::logistic_regression},
+            AnalysisService::logistic_regression,
+            QStringLiteral("回归")},
         {
             QStringLiteral("variance_test"),
             QStringLiteral("方差检验"),
@@ -1788,7 +1827,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::variance_test},
+            AnalysisService::variance_test,
+            QStringLiteral("假设检验")},
         {
             QStringLiteral("time_series_decomposition"),
             QStringLiteral("时间序列分解"),
@@ -1823,7 +1863,8 @@ const std::vector<AnalysisCommand>& all()
                 c.time_series.forecast_periods = d.line_int("periods").value_or(4);
                 return {};
             },
-            AnalysisService::time_series_decomposition},
+            AnalysisService::time_series_decomposition,
+            QStringLiteral("时间序列")},
         {
             QStringLiteral("seasonal_forecasting"),
             QStringLiteral("季节性预测"),
@@ -1867,7 +1908,8 @@ const std::vector<AnalysisCommand>& all()
                 c.time_series.forecast_periods = std::max(1, d.line_int("forecast").value_or(4));
                 return {};
             },
-            AnalysisService::seasonal_forecasting},
+            AnalysisService::seasonal_forecasting,
+            QStringLiteral("时间序列")},
         {
             QStringLiteral("pca"),
             QStringLiteral("主成分分析"),
@@ -1893,7 +1935,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("components").value_or(0)));
                 return {};
             },
-            AnalysisService::pca},
+            AnalysisService::pca,
+            QStringLiteral("多变量")},
         {
             QStringLiteral("kmeans"),
             QStringLiteral("K-Means 聚类"),
@@ -1926,7 +1969,8 @@ const std::vector<AnalysisCommand>& all()
                     standardize == "true" || standardize == "1" || standardize == "yes";
                 return {};
             },
-            AnalysisService::kmeans},
+            AnalysisService::kmeans,
+            QStringLiteral("多变量")},
         {
             QStringLiteral("cart_tree"),
             QStringLiteral("CART 单树"),
@@ -1966,7 +2010,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(1, d.line_int("min_leaf").value_or(5)));
                 return {};
             },
-            AnalysisService::cart_tree},
+            AnalysisService::cart_tree,
+            QStringLiteral("多变量")},
         {
             QStringLiteral("adf_test"),
             QStringLiteral("ADF 单位根检验"),
@@ -1998,7 +2043,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("lags").value_or(0)));
                 return {};
             },
-            AnalysisService::adf_test},
+            AnalysisService::adf_test,
+            QStringLiteral("时间序列")},
         {
             QStringLiteral("poisson_regression"),
             QStringLiteral("Poisson 回归"),
@@ -2034,7 +2080,8 @@ const std::vector<AnalysisCommand>& all()
                 c.poisson_regression.tolerance = d.line_number("tolerance").value_or(1.0e-8);
                 return {};
             },
-            AnalysisService::poisson_regression},
+            AnalysisService::poisson_regression,
+            QStringLiteral("回归")},
         {
             QStringLiteral("isolation_forest"),
             QStringLiteral("Isolation Forest"),
@@ -2070,7 +2117,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("seed").value_or(1)));
                 return {};
             },
-            AnalysisService::isolation_forest},
+            AnalysisService::isolation_forest,
+            QStringLiteral("多变量")},
         {
             QStringLiteral("bootstrap_mean"),
             QStringLiteral("Bootstrap 均值 CI"),
@@ -2100,7 +2148,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("seed").value_or(1)));
                 return {};
             },
-            AnalysisService::bootstrap_mean},
+            AnalysisService::bootstrap_mean,
+            QStringLiteral("推断 / 仿真")},
         {
             QStringLiteral("bootstrap_two_sample"),
             QStringLiteral("Bootstrap 双样本均值差 CI"),
@@ -2138,7 +2187,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("seed").value_or(1)));
                 return {};
             },
-            AnalysisService::bootstrap_two_sample},
+            AnalysisService::bootstrap_two_sample,
+            QStringLiteral("推断 / 仿真")},
         {
             QStringLiteral("probit_reliability"),
             QStringLiteral("Probit 可靠性"),
@@ -2169,7 +2219,8 @@ const std::vector<AnalysisCommand>& all()
                 c.probit_reliability.tolerance = d.line_number("tolerance").value_or(1.0e-8);
                 return {};
             },
-            AnalysisService::probit_reliability},
+            AnalysisService::probit_reliability,
+            QStringLiteral("可靠性")},
         {
             QStringLiteral("cluster_observations"),
             QStringLiteral("层次聚类（观测）"),
@@ -2200,7 +2251,8 @@ const std::vector<AnalysisCommand>& all()
                     standardize == "true" || standardize == "1" || standardize == "yes";
                 return {};
             },
-            AnalysisService::cluster_observations},
+            AnalysisService::cluster_observations,
+            QStringLiteral("多变量")},
         {
             QStringLiteral("ordinal_logistic"),
             QStringLiteral("有序 Logistic 回归"),
@@ -2234,7 +2286,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(1, d.line_int("iterations").value_or(50)));
                 return {};
             },
-            AnalysisService::ordinal_logistic},
+            AnalysisService::ordinal_logistic,
+            QStringLiteral("回归")},
         {
             QStringLiteral("nominal_logistic"),
             QStringLiteral("名义 Logistic 回归"),
@@ -2268,7 +2321,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(1, d.line_int("iterations").value_or(50)));
                 return {};
             },
-            AnalysisService::nominal_logistic},
+            AnalysisService::nominal_logistic,
+            QStringLiteral("回归")},
         {
             QStringLiteral("discriminant"),
             QStringLiteral("线性判别分析"),
@@ -2300,7 +2354,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::discriminant},
+            AnalysisService::discriminant,
+            QStringLiteral("多变量")},
         {
             QStringLiteral("ccf"),
             QStringLiteral("互相关（CCF）"),
@@ -2329,7 +2384,8 @@ const std::vector<AnalysisCommand>& all()
                     d.line_number("confidence").value_or(0.95);
                 return {};
             },
-            AnalysisService::ccf},
+            AnalysisService::ccf,
+            QStringLiteral("时间序列")},
         {
             QStringLiteral("correlogram"),
             QStringLiteral("Correlogram（相关热图）"),
@@ -2356,7 +2412,8 @@ const std::vector<AnalysisCommand>& all()
                 c.correlogram.method = (method == "spearman") ? "spearman" : "pearson";
                 return {};
             },
-            AnalysisService::correlogram},
+            AnalysisService::correlogram,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("stepwise_regression"),
             QStringLiteral("逐步回归"),
@@ -2402,7 +2459,8 @@ const std::vector<AnalysisCommand>& all()
                     d.line_number("alpha_remove").value_or(0.15);
                 return {};
             },
-            AnalysisService::stepwise_regression},
+            AnalysisService::stepwise_regression,
+            QStringLiteral("回归")},
         {
             QStringLiteral("best_subsets_regression"),
             QStringLiteral("Best Subsets 回归"),
@@ -2443,7 +2501,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_number("models_per_size").value_or(1.0), 1.0, 5.0));
                 return {};
             },
-            AnalysisService::best_subsets_regression},
+            AnalysisService::best_subsets_regression,
+            QStringLiteral("回归")},
         {
             QStringLiteral("km_interval"),
             QStringLiteral("区间删失 Kaplan–Meier"),
@@ -2467,7 +2526,8 @@ const std::vector<AnalysisCommand>& all()
                 c.km_interval.right_column = static_cast<std::size_t>(right);
                 return {};
             },
-            AnalysisService::km_interval},
+            AnalysisService::km_interval,
+            QStringLiteral("可靠性")},
         {
             QStringLiteral("doe_plackett_burman"),
             QStringLiteral("Plackett–Burman 设计生成"),
@@ -2518,7 +2578,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("seed").value_or(1)));
                 return {};
             },
-            AnalysisService::doe_plackett_burman},
+            AnalysisService::doe_plackett_burman,
+            QStringLiteral("DOE")},
         {
             QStringLiteral("doe_ccd"),
             QStringLiteral("中心复合设计 CCD"),
@@ -2620,7 +2681,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("seed").value_or(42)));
                 return {};
             },
-            AnalysisService::doe_response_surface_design},
+            AnalysisService::doe_response_surface_design,
+            QStringLiteral("DOE")},
         {
             QStringLiteral("doe_bbd"),
             QStringLiteral("Box–Behnken 设计"),
@@ -2712,7 +2774,8 @@ const std::vector<AnalysisCommand>& all()
                     std::max(0, d.line_int("seed").value_or(7)));
                 return {};
             },
-            AnalysisService::doe_response_surface_design},
+            AnalysisService::doe_response_surface_design,
+            QStringLiteral("DOE")},
         {
             QStringLiteral("reliability"),
             QStringLiteral("可靠性分析（Kaplan-Meier / Weibull）"),
@@ -2800,7 +2863,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::reliability},
+            AnalysisService::reliability,
+            QStringLiteral("可靠性")},
         {
             QStringLiteral("accelerated_life"),
             QStringLiteral("加速寿命分析"),
@@ -2829,7 +2893,8 @@ const std::vector<AnalysisCommand>& all()
                     d.line_number("use_stress").value_or(25.0);
                 return {};
             },
-            AnalysisService::accelerated_life},
+            AnalysisService::accelerated_life,
+            QStringLiteral("可靠性")},
         {
             QStringLiteral("reliability_warranty"),
             QStringLiteral("保修摘要"),
@@ -2875,7 +2940,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::reliability_warranty},
+            AnalysisService::reliability_warranty,
+            QStringLiteral("可靠性")},
         {
             QStringLiteral("t_power"),
             QStringLiteral("t 功效与样本量"),
@@ -2951,7 +3017,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::t_power},
+            AnalysisService::t_power,
+            QStringLiteral("功效与样本量")},
         {
             QStringLiteral("acf_pacf"),
             QStringLiteral("ACF/PACF"),
@@ -2976,7 +3043,8 @@ const std::vector<AnalysisCommand>& all()
                     d.line_number("confidence").value_or(0.95);
                 return {};
             },
-            AnalysisService::acf_pacf},
+            AnalysisService::acf_pacf,
+            QStringLiteral("时间序列")},
         // ------------------------------------------------------------ 图形
         {
             QStringLiteral("histogram"),
@@ -3003,7 +3071,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::histogram},
+            AnalysisService::histogram,
+            QStringLiteral("分布与单变量")},
         {
             QStringLiteral("eda_4plot"),
             QStringLiteral("EDA 四图"),
@@ -3025,7 +3094,8 @@ const std::vector<AnalysisCommand>& all()
                 c.graph.bin_count = d.line_int("bins").value_or(0);
                 return {};
             },
-            AnalysisService::eda_4plot},
+            AnalysisService::eda_4plot,
+            QStringLiteral("时间 / 条形 / 其他")},
         {
             QStringLiteral("boxplot"),
             QStringLiteral("箱线图"),
@@ -3050,12 +3120,13 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::boxplot},
+            AnalysisService::boxplot,
+            QStringLiteral("分布与单变量")},
         {
             QStringLiteral("pareto"),
             QStringLiteral("柏拉图"),
             QStringLiteral("柏拉图"),
-            QStringLiteral("图形"),
+            QStringLiteral("质量工具"),
             QStringLiteral("pareto"),
             false, true,
             {{QStringLiteral("category"), QStringLiteral("缺陷类别"), false, false},
@@ -3084,7 +3155,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::pareto},
+            AnalysisService::pareto,
+            QStringLiteral("质量图 / 规划")},
         {
             QStringLiteral("run_chart"),
             QStringLiteral("运行图"),
@@ -3105,7 +3177,8 @@ const std::vector<AnalysisCommand>& all()
                 c.variable_columns = {static_cast<std::size_t>(column)};
                 return {};
             },
-            AnalysisService::run_chart},
+            AnalysisService::run_chart,
+            QStringLiteral("质量图 / 规划")},
         {
             QStringLiteral("cause_and_effect"),
             QStringLiteral("因果图"),
@@ -3135,7 +3208,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::cause_and_effect},
+            AnalysisService::cause_and_effect,
+            QStringLiteral("质量图 / 规划")},
         {
             QStringLiteral("density_plot"),
             QStringLiteral("密度图"),
@@ -3166,7 +3240,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("分布与单变量")},
         {
             QStringLiteral("hexbin_plot"),
             QStringLiteral("Hexbin"),
@@ -3202,7 +3277,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("violin_plot"),
             QStringLiteral("小提琴图"),
@@ -3238,7 +3314,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("分布与单变量")},
         {
             QStringLiteral("bar_chart"),
             QStringLiteral("条形图"),
@@ -3274,7 +3351,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("时间 / 条形 / 其他")},
         {
             QStringLiteral("scatter_plot"),
             QStringLiteral("散点图"),
@@ -3318,7 +3396,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("interval_plot"),
             QStringLiteral("区间散点图"),
@@ -3358,7 +3437,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("时间 / 条形 / 其他")},
         {
             QStringLiteral("correlation_plot"),
             QStringLiteral("相关图"),
@@ -3402,7 +3482,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("bubble_plot"),
             QStringLiteral("气泡图"),
@@ -3449,7 +3530,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("probability_plot"),
             QStringLiteral("概率图"),
@@ -3480,7 +3562,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("分布与单变量")},
         {
             QStringLiteral("ecdf_plot"),
             QStringLiteral("经验累积分布图"),
@@ -3511,7 +3594,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("分布与单变量")},
         {
             QStringLiteral("matrix_plot"),
             QStringLiteral("矩阵图"),
@@ -3547,7 +3631,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("marginal_plot"),
             QStringLiteral("边际图"),
@@ -3581,7 +3666,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("时间 / 条形 / 其他")},
         {
             QStringLiteral("parallel_plot"),
             QStringLiteral("平行坐标图"),
@@ -3617,7 +3703,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("heatmap_plot"),
             QStringLiteral("热图"),
@@ -3668,7 +3755,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("time_series_plot"),
             QStringLiteral("时间序列图"),
@@ -3713,7 +3801,8 @@ const std::vector<AnalysisCommand>& all()
                     && connect != QStringLiteral("0");
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("时间 / 条形 / 其他")},
         {
             QStringLiteral("area_plot"),
             QStringLiteral("区域图"),
@@ -3748,7 +3837,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("时间 / 条形 / 其他")},
         {
             QStringLiteral("contour_plot"),
             QStringLiteral("等值线图"),
@@ -3791,7 +3881,8 @@ const std::vector<AnalysisCommand>& all()
                     std::clamp(d.line_int("facet_max_panels").value_or(6), 1, 12);
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("关系与多元")},
         {
             QStringLiteral("pie_plot"),
             QStringLiteral("饼图"),
@@ -3827,7 +3918,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            GraphService::run},
+            GraphService::run,
+            QStringLiteral("时间 / 条形 / 其他")},
         // ------------------------------------------------------------ 控制图
         {
             QStringLiteral("imr"),
@@ -3881,7 +3973,8 @@ const std::vector<AnalysisCommand>& all()
                 c.control.historical_sigma = d.line_number("historical_sigma");
                 return {};
             },
-            AnalysisService::individuals_moving_range},
+            AnalysisService::individuals_moving_range,
+            QStringLiteral("计量图")},
         {
             QStringLiteral("xbar_r"),
             QStringLiteral("Xbar-R 控制图"),
@@ -3917,7 +4010,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::xbar_range},
+            AnalysisService::xbar_range,
+            QStringLiteral("计量图")},
         {
             QStringLiteral("xbar_s"),
             QStringLiteral("Xbar-S 控制图"),
@@ -3952,7 +4046,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::xbar_s},
+            AnalysisService::xbar_s,
+            QStringLiteral("计量图")},
         {
             QStringLiteral("imr_rs"),
             QStringLiteral("I-MR-R/S 控制图"),
@@ -3988,7 +4083,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::imr_rs},
+            AnalysisService::imr_rs,
+            QStringLiteral("计量图")},
         {
             QStringLiteral("p_chart"),
             QStringLiteral("P 图"),
@@ -4027,7 +4123,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::p_chart},
+            AnalysisService::p_chart,
+            QStringLiteral("计数图")},
         {
             QStringLiteral("np_chart"),
             QStringLiteral("NP 图"),
@@ -4065,7 +4162,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::np_chart},
+            AnalysisService::np_chart,
+            QStringLiteral("计数图")},
         {
             QStringLiteral("c_chart"),
             QStringLiteral("C 图"),
@@ -4095,7 +4193,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::c_chart},
+            AnalysisService::c_chart,
+            QStringLiteral("计数图")},
         {
             QStringLiteral("u_chart"),
             QStringLiteral("U 图"),
@@ -4125,7 +4224,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::u_chart},
+            AnalysisService::u_chart,
+            QStringLiteral("计数图")},
         {
             QStringLiteral("laney_p_chart"),
             QStringLiteral("Laney P' 图"),
@@ -4170,7 +4270,8 @@ const std::vector<AnalysisCommand>& all()
                 c.control.historical_sigma_z = d.line_number("historical_sigma_z");
                 return {};
             },
-            AnalysisService::laney_p_chart},
+            AnalysisService::laney_p_chart,
+            QStringLiteral("计数图")},
         {
             QStringLiteral("laney_u_chart"),
             QStringLiteral("Laney U' 图"),
@@ -4207,7 +4308,8 @@ const std::vector<AnalysisCommand>& all()
                 c.control.historical_sigma_z = d.line_number("historical_sigma_z");
                 return {};
             },
-            AnalysisService::laney_u_chart},
+            AnalysisService::laney_u_chart,
+            QStringLiteral("计数图")},
         {
             QStringLiteral("ewma"),
             QStringLiteral("EWMA 控制图"),
@@ -4239,7 +4341,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::ewma},
+            AnalysisService::ewma,
+            QStringLiteral("时间加权")},
         {
             QStringLiteral("hotelling_t2"),
             QStringLiteral("Hotelling T²"),
@@ -4270,7 +4373,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::hotelling_t2},
+            AnalysisService::hotelling_t2,
+            QStringLiteral("多元 / 稀有事件")},
         {
             QStringLiteral("mewma"),
             QStringLiteral("MEWMA"),
@@ -4297,7 +4401,8 @@ const std::vector<AnalysisCommand>& all()
                 c.control.historical_sigma = d.line_number("ucl");
                 return {};
             },
-            AnalysisService::mewma},
+            AnalysisService::mewma,
+            QStringLiteral("多元 / 稀有事件")},
         {
             QStringLiteral("generalized_variance"),
             QStringLiteral("广义方差图"),
@@ -4327,7 +4432,8 @@ const std::vector<AnalysisCommand>& all()
                 c.control.subgroup_size = n;
                 return {};
             },
-            AnalysisService::generalized_variance},
+            AnalysisService::generalized_variance,
+            QStringLiteral("多元 / 稀有事件")},
         {
             QStringLiteral("cusum"),
             QStringLiteral("CUSUM 控制图"),
@@ -4357,7 +4463,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::cusum},
+            AnalysisService::cusum,
+            QStringLiteral("时间加权")},
         {
             QStringLiteral("zone_chart"),
             QStringLiteral("区域图"),
@@ -4384,7 +4491,8 @@ const std::vector<AnalysisCommand>& all()
                 c.control.historical_sigma = d.line_number("historical_sigma");
                 return {};
             },
-            AnalysisService::zone_chart},
+            AnalysisService::zone_chart,
+            QStringLiteral("计量图")},
         {
             QStringLiteral("z_mr"),
             QStringLiteral("Z-MR 控制图"),
@@ -4412,7 +4520,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::z_mr},
+            AnalysisService::z_mr,
+            QStringLiteral("计量图")},
         {
             QStringLiteral("moving_average"),
             QStringLiteral("移动平均控制图"),
@@ -4446,7 +4555,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::moving_average},
+            AnalysisService::moving_average,
+            QStringLiteral("时间加权")},
         {
             QStringLiteral("g_chart"),
             QStringLiteral("G 图"),
@@ -4469,7 +4579,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::g_chart},
+            AnalysisService::g_chart,
+            QStringLiteral("多元 / 稀有事件")},
         {
             QStringLiteral("t_chart"),
             QStringLiteral("T 图"),
@@ -4492,7 +4603,8 @@ const std::vector<AnalysisCommand>& all()
                 apply_special_cause_selection(c, d);
                 return {};
             },
-            AnalysisService::t_chart},
+            AnalysisService::t_chart,
+            QStringLiteral("多元 / 稀有事件")},
         // ------------------------------------------------------------ 质量工具
         {
             QStringLiteral("capability"),
@@ -4528,7 +4640,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::capability(table, configuration);
-            }},
+            },
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("multi_vari"),
             QStringLiteral("Multi-Vari 图"),
@@ -4563,7 +4676,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::multi_vari(table, configuration);
-            }},
+            },
+            QStringLiteral("质量图 / 规划")},
         {
             QStringLiteral("variability_chart"),
             QStringLiteral("变异性图"),
@@ -4598,7 +4712,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::variability_chart(table, configuration);
-            }},
+            },
+            QStringLiteral("质量图 / 规划")},
         {
             QStringLiteral("acceptance_sampling"),
             QStringLiteral("属性一次抽样"),
@@ -4650,7 +4765,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::acceptance_sampling},
+            AnalysisService::acceptance_sampling,
+            QStringLiteral("容差 / 抽样")},
         {
             QStringLiteral("tolerance_intervals"),
             QStringLiteral("容差区间"),
@@ -4699,7 +4815,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::tolerance_intervals(table, configuration);
-            }},
+            },
+            QStringLiteral("容差 / 抽样")},
         {
             QStringLiteral("distribution_identification"),
             QStringLiteral("个体分布识别"),
@@ -4723,7 +4840,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::distribution_identification(table, configuration);
-            }},
+            },
+            QStringLiteral("变换 / 分布")},
         {
             QStringLiteral("between_within_capability"),
             QStringLiteral("组间/组内过程能力"),
@@ -4760,7 +4878,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::between_within_capability(table, configuration);
-            }},
+            },
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("batch_capability"),
             QStringLiteral("批次过程能力"),
@@ -4794,7 +4913,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::batch_capability(table, configuration);
-            }},
+            },
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("nonparametric_capability"),
             QStringLiteral("非参数过程能力"),
@@ -4827,13 +4947,14 @@ const std::vector<AnalysisCommand>& all()
                     d.line_number("tolerance_k").value_or(6.0);
                 return {};
             },
-            AnalysisService::nonparametric_capability},
+            AnalysisService::nonparametric_capability,
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("cox_regression"),
             QStringLiteral("Cox 回归"),
             QStringLiteral("Cox Regression"),
-            QStringLiteral("可靠性"),
-            QStringLiteral("reliability"),
+            QStringLiteral("统计"),
+            QStringLiteral("report"),
             false, true,
             {{QStringLiteral("time"), QStringLiteral("时间"), false, false},
              {QStringLiteral("event"), QStringLiteral("事件/删失"), false, false},
@@ -4863,7 +4984,8 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::cox_regression},
+            AnalysisService::cox_regression,
+            QStringLiteral("可靠性")},
         {
             QStringLiteral("binomial_capability"),
             QStringLiteral("二项过程能力"),
@@ -4906,7 +5028,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::binomial_capability(table, configuration);
-            }},
+            },
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("poisson_capability"),
             QStringLiteral("泊松过程能力"),
@@ -4948,7 +5071,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::poisson_capability(table, configuration);
-            }},
+            },
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("nonnormal_capability"),
             QStringLiteral("非正态过程能力"),
@@ -4983,7 +5107,8 @@ const std::vector<AnalysisCommand>& all()
             },
             [](const DataTable& table, const AnalysisConfiguration& configuration) {
                 return AnalysisService::capability(table, configuration);
-            }},
+            },
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("capability_sixpack"),
             QStringLiteral("过程能力 Sixpack"),
@@ -5012,7 +5137,8 @@ const std::vector<AnalysisCommand>& all()
                 c.specifications.target = d.line_number("target");
                 return {};
             },
-            AnalysisService::capability_sixpack},
+            AnalysisService::capability_sixpack,
+            QStringLiteral("过程能力")},
         {
             QStringLiteral("box_cox"),
             QStringLiteral("Box-Cox 变换"),
@@ -5039,7 +5165,8 @@ const std::vector<AnalysisCommand>& all()
                 c.specifications.upper = d.line_number("usl");
                 return {};
             },
-            AnalysisService::box_cox},
+            AnalysisService::box_cox,
+            QStringLiteral("变换 / 分布")},
         {
             QStringLiteral("gage_rr"),
             QStringLiteral("Crossed Gage R&R"),
@@ -5069,7 +5196,8 @@ const std::vector<AnalysisCommand>& all()
                 c.specifications.upper = d.line_number("usl");
                 return {};
             },
-            AnalysisService::gage_rr},
+            AnalysisService::gage_rr,
+            QStringLiteral("MSA")},
         {
             QStringLiteral("emp_crossed"),
             QStringLiteral("EMP Crossed"),
@@ -5096,7 +5224,8 @@ const std::vector<AnalysisCommand>& all()
                 c.msa.gage_operator_column = static_cast<std::size_t>(oper);
                 return {};
             },
-            AnalysisService::emp_crossed},
+            AnalysisService::emp_crossed,
+            QStringLiteral("MSA")},
         {
             QStringLiteral("expanded_gage_rr"),
             QStringLiteral("Expanded Gage R&R"),
@@ -5127,7 +5256,8 @@ const std::vector<AnalysisCommand>& all()
                 c.msa.gage_tolerance = d.line_number("tolerance").value_or(0.0);
                 return {};
             },
-            AnalysisService::expanded_gage_rr},
+            AnalysisService::expanded_gage_rr,
+            QStringLiteral("MSA")},
         {
             QStringLiteral("msa_type1"),
             QStringLiteral("MSA Type 1 / Bias / Stability"),
@@ -5169,7 +5299,8 @@ const std::vector<AnalysisCommand>& all()
                 c.specifications.upper = d.line_number("usl");
                 return {};
             },
-            AnalysisService::msa_type1},
+            AnalysisService::msa_type1,
+            QStringLiteral("MSA")},
         {
             QStringLiteral("nested_gage_rr"),
             QStringLiteral("Nested Gage R&R"),
@@ -5193,7 +5324,8 @@ const std::vector<AnalysisCommand>& all()
                 c.msa.gage_tolerance = d.line_number("tolerance").value_or(0.0);
                 return {};
             },
-            AnalysisService::nested_gage_rr},
+            AnalysisService::nested_gage_rr,
+            QStringLiteral("MSA")},
         {
             QStringLiteral("attribute_agreement"),
             QStringLiteral("属性一致性分析"),
@@ -5234,12 +5366,13 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::attribute_agreement},
+            AnalysisService::attribute_agreement,
+            QStringLiteral("MSA")},
         {
             QStringLiteral("doe_factorial"),
             QStringLiteral("2 水平析因设计生成"),
             QStringLiteral("2 水平全因子 / 部分析因设计"),
-            QStringLiteral("质量工具"),
+            QStringLiteral("统计"),
             QStringLiteral("doe_factorial"),
             false, false,
             {{QStringLiteral("response"), QStringLiteral("响应列（可选，选择后进行响应分析）"),
@@ -5264,12 +5397,13 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("hold"), QStringLiteral("非轴因子实际 hold（名=值;…，可空=编码0）"),
               QStringLiteral("")}},
             doe_apply,
-            doe_run},
+            doe_run,
+            QStringLiteral("DOE")},
         {
             QStringLiteral("doe_response"),
             QStringLiteral("DOE 响应分析"),
             QStringLiteral("2 水平析因响应分析"),
-            QStringLiteral("质量工具"),
+            QStringLiteral("统计"),
             QStringLiteral("doe_factorial"),
             false, true,
             {{QStringLiteral("response"), QStringLiteral("响应列（可选，选择后进行响应分析）"),
@@ -5294,12 +5428,13 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("hold"), QStringLiteral("非轴因子实际 hold（名=值;…，可空=编码0）"),
               QStringLiteral("")}},
             doe_apply,
-            doe_run},
+            doe_run,
+            QStringLiteral("DOE")},
         {
             QStringLiteral("rsm_response"),
             QStringLiteral("响应曲面分析"),
             QStringLiteral("响应曲面分析（RSM）"),
-            QStringLiteral("质量工具"),
+            QStringLiteral("统计"),
             QStringLiteral("doe_factorial"),
             false, true,
             {{QStringLiteral("response"), QStringLiteral("响应"), false, false},
@@ -5377,12 +5512,13 @@ const std::vector<AnalysisCommand>& all()
                 }
                 return {};
             },
-            AnalysisService::rsm_response},
+            AnalysisService::rsm_response,
+            QStringLiteral("DOE")},
         {
             QStringLiteral("response_optimization"),
             QStringLiteral("DOE 响应优化"),
             QStringLiteral("DOE 响应优化"),
-            QStringLiteral("质量工具"),
+            QStringLiteral("统计"),
             QStringLiteral("doe_factorial"),
             false, true,
             {{QStringLiteral("response"), QStringLiteral("响应列（可多选）"), true, false},
@@ -5398,7 +5534,8 @@ const std::vector<AnalysisCommand>& all()
              {QStringLiteral("low"), QStringLiteral("低水平（逗号分隔，可选）"), QStringLiteral("-1,-1")},
              {QStringLiteral("high"), QStringLiteral("高水平（逗号分隔，可选）"), QStringLiteral("1,1")}},
             response_optimization_apply,
-            AnalysisService::response_optimization},
+            AnalysisService::response_optimization,
+            QStringLiteral("DOE")},
     };
     return commands;
 }

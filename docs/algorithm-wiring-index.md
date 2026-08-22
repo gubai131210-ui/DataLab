@@ -201,3 +201,29 @@ complete-case 行主序 `align_complete_rows`；`parse_numeric_cell` / `is_missi
 | **G2** 多图焦点与 Ctrl+C 路由 | `OutputWorkspace::chart_for_copy`、`QShortcut(Ctrl+C)` → `copy_chart_requested`；`MainWindow::copy_chart` / `copy_selection`（输出表优先 TSV） | 输出页 ScrollArea / 图表 surface 焦点追踪 | `output_workspace_test` |
 
 批量测试：`powershell -File tools/run_g1g2_tests.ps1`（Qt Creator 构建后）。
+
+## 6. UI 菜单信息架构（Menu IA · 2026-08-23）
+
+> 分类：[`research/ui-menu-ia-minitab-taxonomy-2026-08-23.md`](research/ui-menu-ia-minitab-taxonomy-2026-08-23.md)  
+> 全量映射：[`research/ui-menu-ia-command-taxonomy-map-2026-08-23.md`](research/ui-menu-ia-command-taxonomy-map-2026-08-23.md)  
+> DoD：[`research/goal-wave-2026-08-23-ui-menu-ia-layout.md`](research/goal-wave-2026-08-23-ui-menu-ia-layout.md)
+
+| 能力 | UI / 模块 | 数据 / 契约 | 测试 |
+|---|---|---|---|
+| **U1–U3** 声明式菜单 | `AnalysisCommand.menu_path` + `menu_group`；`MainWindow` 只渲染字段（深度≤1） | 顶层：统计 / 控制图 / 质量工具 / 图形；help `menu_path` = `{path} > {group}` | `ui_menu_ia_track_test`；`python tools/verify_ui_menu_ia_track.py` |
+
+**不改** AnalysisService / domain 统计公式。Graph Builder（G3）不在本 Track。
+
+## 7. Track G6：命令 Wizard（2026-08-23）
+
+> 调研：[`research/g6-command-wizard-ux-research-2026-08-23.md`](research/g6-command-wizard-ux-research-2026-08-23.md)  
+> DoD：[`research/goal-wave-2026-08-23-g6-command-wizard.md`](research/goal-wave-2026-08-23-g6-command-wizard.md)  
+> 计划：[`research/goal-wave-2026-08-23-g6-command-wizard-plan-and-mega-prompt.md`](research/goal-wave-2026-08-23-g6-command-wizard-plan-and-mega-prompt.md)
+
+| 能力 | UI / 模块 | 数据 / 契约 | 测试 |
+|---|---|---|---|
+| **W1** 推荐引擎 | `CommandRecommendationEngine`（`src/application/command_recommendation_engine.*`，无 Qt） | 列 `ColumnType` + `CommandWizardIntent` → Top-N≤8 `Recommendation`（`command_id`/`score`/`reason_key`）+ optional `hint_key` | `g6_command_wizard_track_test`（T01–T15） |
+| **W2** Wizard UI | `CommandWizardDialog`（独立 QDialog 三步：选列→意图→推荐） | 信号 `openAnalysisRequested(command_id)`；**不**调用 `AnalysisService::*` | UI smoke + `QSignalSpy` |
+| **W3** 接线 / i18n | MainWindow「统计 → 命令向导…」chrome；确认后 `run_from_spec` | `translations/ui_menu_strings.json`（`action.command_wizard` / `intent.*` / `reason.*` / `hint.*`） | `verify_g6_command_wizard_track.py`（Tester） |
+
+**禁止：** Wizard/引擎内跑分析；推荐幽灵 command_id；塞进 MainWindow 单页堆控件。

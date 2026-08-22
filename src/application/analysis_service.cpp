@@ -11071,8 +11071,8 @@ OutputPage AnalysisService::reliability(
                     gray_table.rows.push_back({
                         gray.chi_square.has_value()
                             ? format_number(*gray.chi_square) : "—",
-                        gray.degrees_of_freedom.has_value()
-                            ? format_number(*gray.degrees_of_freedom) : "—",
+                        gray.df.has_value()
+                            ? format_number(*gray.df) : "—",
                         gray.p_value.has_value()
                             ? format_number(*gray.p_value) : "—",
                         std::to_string(gray.group_count),

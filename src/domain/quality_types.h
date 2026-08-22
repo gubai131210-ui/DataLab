@@ -1332,16 +1332,16 @@ struct LogisticFacts {
     std::size_t true_negative = 0;
     std::size_t false_positive = 0;
     std::size_t false_negative = 0;
-    // Stepwise selection (Wave-4; empty = not run)
+    // Stepwise selection (Wave-4; empty method = not run)
     std::string stepwise_method;
     std::string stepwise_criterion;
-    std::size_t step_count = 0;
-    std::size_t best_step_index = 0;
-    std::vector<LogisticStepwiseStepFacts> steps;
-    std::size_t selected_predictor_count = 0;
-    std::optional<double> log_likelihood;
-    std::optional<double> aic;
-    std::optional<double> bic;
+    std::size_t stepwise_step_count = 0;
+    std::size_t stepwise_selected_count = 0;
+    std::size_t stepwise_best_step_index = 0;
+    std::vector<LogisticStepwiseStepFacts> stepwise_steps;
+    std::optional<double> stepwise_log_likelihood;
+    std::optional<double> stepwise_aic;
+    std::optional<double> stepwise_bic;
 };
 
 struct CoxRegressionCoefficientFacts {

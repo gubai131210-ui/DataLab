@@ -248,6 +248,8 @@ add_library(datalab_application STATIC
     src/application/report_export_service.h
     src/application/report_localization.cpp
     src/application/report_localization.h
+    src/application/command_recommendation_engine.cpp
+    src/application/command_recommendation_engine.h
 )
 
 target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -386,6 +388,8 @@ add_library(datalab_ui STATIC
     src/ui/algorithm_help_dialog.h
     src/ui/database_import_wizard.cpp
     src/ui/database_import_wizard.h
+    src/ui/command_wizard_dialog.cpp
+    src/ui/command_wizard_dialog.h
     src/ui/formula_renderer.cpp
     src/ui/formula_renderer.h
     src/ui/formula_registry_dialog.cpp
@@ -592,6 +596,17 @@ add_datalab_test(algorithm_wave2_track_test tests/algorithm_wave2_track_test.cpp
 add_datalab_test(algorithm_wave2_hardening_test tests/algorithm_wave2_hardening_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave3_track_test tests/algorithm_wave3_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave4_track_test tests/algorithm_wave4_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(ui_menu_ia_track_test tests/ui_menu_ia_track_test.cpp datalab_ui)
+add_datalab_test(
+    g6_command_wizard_track_test
+    tests/g6_command_wizard_track_test.cpp
+    datalab_application
+    datalab_ui
+)
+set_tests_properties(
+    g6_command_wizard_track_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
 add_datalab_test(p2_rsm_special_cause_test tests/p2_rsm_special_cause_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(p2_eda_plots_test tests/p2_eda_plots_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(p2_eda4_crosstab_chi_resid_test tests/p2_eda4_crosstab_chi_resid_test.cpp datalab_domain datalab_application datalab_infrastructure)

@@ -983,7 +983,7 @@
       "id": "two_proportions",
       "title": "两比例检验",
       "category": "基础统计",
-      "menu_path": "统计 > 基础统计",
+      "menu_path": "统计 > 假设检验",
       "aliases": [
         "two_proportions",
         "两比例检验"
@@ -3281,7 +3281,7 @@
       "id": "run_chart",
       "title": "运行图",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 质量图 / 规划",
       "aliases": [
         "run_chart",
         "运行图"
@@ -3362,7 +3362,7 @@
       "id": "cause_and_effect",
       "title": "因果图",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 质量图 / 规划",
       "aliases": [
         "cause_and_effect",
         "因果图"
@@ -3613,7 +3613,7 @@
       "id": "multi_vari",
       "title": "Multi-Vari 图",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 质量图 / 规划",
       "aliases": [
         "multi_vari",
         "Multi-Vari 图"
@@ -3682,7 +3682,7 @@
       "id": "variability_chart",
       "title": "变异性图",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 质量图 / 规划",
       "aliases": [
         "variability_chart",
         "变异性图"
@@ -3752,7 +3752,7 @@
       "id": "acceptance_sampling",
       "title": "属性一次抽样",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 容差 / 抽样",
       "aliases": [
         "acceptance_sampling",
         "属性一次抽样"
@@ -4653,7 +4653,7 @@
       "id": "imr",
       "title": "I-MR 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计量图",
       "aliases": [
         "imr",
         "I-MR 控制图"
@@ -5040,7 +5040,7 @@
       "id": "hotelling_t2",
       "title": "Hotelling T²",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 多元 / 稀有事件",
       "aliases": [
         "hotelling_t2",
         "Hotelling T²"
@@ -5127,7 +5127,7 @@
       "id": "mewma",
       "title": "MEWMA",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 多元 / 稀有事件",
       "aliases": [
         "mewma",
         "MEWMA"
@@ -5208,7 +5208,7 @@
       "id": "generalized_variance",
       "title": "广义方差图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 多元 / 稀有事件",
       "aliases": [
         "generalized_variance",
         "广义方差图"
@@ -5289,7 +5289,7 @@
       "id": "xbar_r",
       "title": "Xbar-R 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计量图",
       "aliases": [
         "xbar_r",
         "Xbar-R 控制图"
@@ -5856,7 +5856,7 @@
       "id": "xbar_s",
       "title": "Xbar-S 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计量图",
       "aliases": [
         "xbar_s",
         "Xbar-S 控制图"
@@ -6493,7 +6493,7 @@
       "id": "imr_rs",
       "title": "I-MR-R/S 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计量图",
       "aliases": [
         "imr_rs",
         "I-MR-R/S 控制图"
@@ -6709,7 +6709,7 @@
       "id": "p_chart",
       "title": "P 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计数图",
       "aliases": [
         "p_chart",
         "P 图"
@@ -7058,7 +7058,7 @@
       "id": "np_chart",
       "title": "NP 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计数图",
       "aliases": [
         "np_chart",
         "NP 图"
@@ -7308,7 +7308,7 @@
       "id": "c_chart",
       "title": "C 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计数图",
       "aliases": [
         "c_chart",
         "C 图"
@@ -7502,7 +7502,7 @@
       "id": "u_chart",
       "title": "U 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计数图",
       "aliases": [
         "u_chart",
         "U 图"
@@ -7813,7 +7813,7 @@
       "id": "laney_p_chart",
       "title": "Laney P' 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计数图",
       "aliases": [
         "laney_p_chart",
         "Laney P' 图"
@@ -8229,7 +8229,7 @@
       "id": "laney_u_chart",
       "title": "Laney U' 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计数图",
       "aliases": [
         "laney_u_chart",
         "Laney U' 图"
@@ -8590,7 +8590,7 @@
       "id": "ewma",
       "title": "EWMA 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 时间加权",
       "aliases": [
         "ewma",
         "EWMA 控制图"
@@ -8801,7 +8801,7 @@
       "id": "cusum",
       "title": "CUSUM 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 时间加权",
       "aliases": [
         "cusum",
         "CUSUM 控制图"
@@ -9056,7 +9056,7 @@
       "id": "zone_chart",
       "title": "区域图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计量图",
       "aliases": [
         "zone_chart",
         "区域图"
@@ -9202,7 +9202,7 @@
       "id": "z_mr",
       "title": "Z-MR 控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 计量图",
       "aliases": [
         "z_mr",
         "Z-MR 控制图"
@@ -9469,7 +9469,7 @@
       "id": "moving_average",
       "title": "移动平均控制图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 时间加权",
       "aliases": [
         "moving_average",
         "移动平均控制图"
@@ -9677,7 +9677,7 @@
       "id": "g_chart",
       "title": "G 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 多元 / 稀有事件",
       "aliases": [
         "g_chart",
         "G 图"
@@ -9819,7 +9819,7 @@
       "id": "t_chart",
       "title": "T 图",
       "category": "控制图",
-      "menu_path": "控制图",
+      "menu_path": "控制图 > 多元 / 稀有事件",
       "aliases": [
         "t_chart",
         "T 图"
@@ -9979,7 +9979,7 @@
       "id": "capability",
       "title": "正态过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "capability",
         "正态过程能力"
@@ -10235,7 +10235,7 @@
       "id": "nonnormal_capability",
       "title": "非正态过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "nonnormal_capability",
         "非正态过程能力"
@@ -10304,7 +10304,7 @@
       "id": "between_within_capability",
       "title": "组间/组内过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "between_within_capability",
         "组间/组内过程能力"
@@ -10393,7 +10393,7 @@
       "id": "binomial_capability",
       "title": "二项过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "binomial_capability",
         "二项过程能力"
@@ -10463,7 +10463,7 @@
       "id": "poisson_capability",
       "title": "泊松过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "poisson_capability",
         "泊松过程能力"
@@ -10533,7 +10533,7 @@
       "id": "capability_sixpack",
       "title": "过程能力 Sixpack",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "capability_sixpack",
         "过程能力 Sixpack"
@@ -10609,7 +10609,7 @@
       "id": "box_cox",
       "title": "Box-Cox 变换",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 变换 / 分布",
       "aliases": [
         "box_cox",
         "Box-Cox 变换"
@@ -10720,7 +10720,7 @@
       "id": "distribution_identification",
       "title": "个体分布识别",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 变换 / 分布",
       "aliases": [
         "distribution_identification",
         "个体分布识别"
@@ -10789,7 +10789,7 @@
       "id": "tolerance_intervals",
       "title": "容差区间",
       "category": "质量工具",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > 容差 / 抽样",
       "aliases": [
         "tolerance_intervals",
         "容差区间"
@@ -10881,7 +10881,7 @@
       "id": "gage_rr",
       "title": "Crossed Gage R&R",
       "category": "MSA",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > MSA",
       "aliases": [
         "gage_rr",
         "Crossed Gage R&R"
@@ -10987,7 +10987,7 @@
       "id": "emp_crossed",
       "title": "EMP Crossed",
       "category": "MSA",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > MSA",
       "aliases": [
         "emp_crossed",
         "EMP Crossed"
@@ -11082,7 +11082,7 @@
       "id": "expanded_gage_rr",
       "title": "Expanded Gage R&R",
       "category": "MSA",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > MSA",
       "aliases": [
         "expanded_gage_rr",
         "Expanded Gage R&R"
@@ -11156,7 +11156,7 @@
       "id": "nested_gage_rr",
       "title": "Nested Gage R&R",
       "category": "MSA",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > MSA",
       "aliases": [
         "nested_gage_rr",
         "Nested Gage R&R"
@@ -11225,7 +11225,7 @@
       "id": "msa_type1",
       "title": "MSA Type 1 / Bias / Stability",
       "category": "MSA",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > MSA",
       "aliases": [
         "msa_type1",
         "MSA Type 1 / Bias / Stability"
@@ -11334,7 +11334,7 @@
       "id": "attribute_agreement",
       "title": "属性一致性分析",
       "category": "MSA",
-      "menu_path": "质量工具",
+      "menu_path": "质量工具 > MSA",
       "aliases": [
         "attribute_agreement",
         "属性一致性分析"
@@ -11844,7 +11844,7 @@
       "id": "histogram",
       "title": "直方图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 分布与单变量",
       "aliases": [
         "histogram",
         "histogram",
@@ -11916,7 +11916,7 @@
       "id": "boxplot",
       "title": "箱线图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 分布与单变量",
       "aliases": [
         "boxplot",
         "boxplot",
@@ -11988,7 +11988,7 @@
       "id": "pareto",
       "title": "柏拉图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "质量工具 > 质量图 / 规划",
       "aliases": [
         "pareto",
         "pareto",
@@ -12060,7 +12060,7 @@
       "id": "scatter_plot",
       "title": "散点图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "scatter_plot",
         "scatter",
@@ -12132,7 +12132,7 @@
       "id": "interval_plot",
       "title": "区间图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "interval_plot",
         "interval",
@@ -12204,7 +12204,7 @@
       "id": "correlation_plot",
       "title": "相关图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "correlation_plot",
         "correlation",
@@ -12276,7 +12276,7 @@
       "id": "bubble_plot",
       "title": "气泡图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "bubble_plot",
         "bubble",
@@ -12348,7 +12348,7 @@
       "id": "probability_plot",
       "title": "正态概率图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 分布与单变量",
       "aliases": [
         "probability_plot",
         "probability",
@@ -12420,7 +12420,7 @@
       "id": "ecdf_plot",
       "title": "经验累积分布图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 分布与单变量",
       "aliases": [
         "ecdf_plot",
         "ecdf",
@@ -12492,7 +12492,7 @@
       "id": "matrix_plot",
       "title": "矩阵图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "matrix_plot",
         "matrix",
@@ -12564,7 +12564,7 @@
       "id": "marginal_plot",
       "title": "边际图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "marginal_plot",
         "marginal",
@@ -12636,7 +12636,7 @@
       "id": "parallel_plot",
       "title": "平行坐标图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "parallel_plot",
         "parallel",
@@ -12708,7 +12708,7 @@
       "id": "heatmap_plot",
       "title": "热图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "heatmap_plot",
         "heatmap",
@@ -12780,7 +12780,7 @@
       "id": "time_series_plot",
       "title": "时间序列图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "time_series_plot",
         "time_series",
@@ -12852,7 +12852,7 @@
       "id": "area_plot",
       "title": "面积图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "area_plot",
         "area",
@@ -12924,7 +12924,7 @@
       "id": "contour_plot",
       "title": "等值线图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "contour_plot",
         "contour",
@@ -12996,7 +12996,7 @@
       "id": "pie_plot",
       "title": "饼图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "pie_plot",
         "pie",
@@ -13068,7 +13068,7 @@
       "id": "density_plot",
       "title": "密度图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 分布与单变量",
       "aliases": [
         "density_plot",
         "density",
@@ -13140,7 +13140,7 @@
       "id": "hexbin_plot",
       "title": "Hexbin",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "hexbin_plot",
         "hexbin",
@@ -13212,7 +13212,7 @@
       "id": "violin_plot",
       "title": "小提琴图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 分布与单变量",
       "aliases": [
         "violin_plot",
         "violin",
@@ -13284,7 +13284,7 @@
       "id": "bar_chart",
       "title": "条形图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "bar_chart",
         "bar",
@@ -13356,7 +13356,7 @@
       "id": "eda_4plot",
       "title": "EDA 四图",
       "category": "探索性图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 时间 / 条形 / 其他",
       "aliases": [
         "eda_4plot",
         "4-plot",
@@ -13518,7 +13518,7 @@
       "id": "cart_tree",
       "title": "CART 单树",
       "category": "预测 / 经典 ML",
-      "menu_path": "统计 > 预测辅助",
+      "menu_path": "统计 > 多变量",
       "aliases": [
         "cart_tree",
         "CART",
@@ -13754,7 +13754,7 @@
       "id": "isolation_forest",
       "title": "Isolation Forest",
       "category": "预测 / 经典 ML",
-      "menu_path": "统计 > 预测辅助",
+      "menu_path": "统计 > 多变量",
       "aliases": [
         "isolation_forest",
         "孤立森林"
@@ -13823,7 +13823,7 @@
       "id": "bootstrap_mean",
       "title": "Bootstrap 均值 CI",
       "category": "推断 / 仿真",
-      "menu_path": "统计 > 基本统计",
+      "menu_path": "统计 > 推断 / 仿真",
       "aliases": [
         "bootstrap_mean",
         "Bootstrap"
@@ -13891,7 +13891,7 @@
       "id": "bootstrap_two_sample",
       "title": "Bootstrap 双样本均值差 CI",
       "category": "推断 / 仿真",
-      "menu_path": "统计 > 基本统计",
+      "menu_path": "统计 > 推断 / 仿真",
       "aliases": [
         "bootstrap_two_sample",
         "Bootstrap Two-Sample"
@@ -13959,7 +13959,7 @@
       "id": "probit_reliability",
       "title": "Probit 可靠性",
       "category": "可靠性",
-      "menu_path": "统计 > 可靠性/生存",
+      "menu_path": "统计 > 可靠性",
       "aliases": [
         "probit_reliability",
         "Probit Reliability"
@@ -14311,7 +14311,7 @@
       "id": "correlogram",
       "title": "Correlogram（相关热图）",
       "category": "图形",
-      "menu_path": "图形",
+      "menu_path": "图形 > 关系与多元",
       "aliases": [
         "correlogram",
         "相关热图"
@@ -14518,7 +14518,7 @@
       "id": "batch_capability",
       "title": "批次过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具 > 能力分析",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": [
         "batch_capability",
         "批次过程能力"
@@ -14574,7 +14574,7 @@
       "id": "nonparametric_capability",
       "title": "非参数过程能力",
       "category": "质量工具",
-      "menu_path": "质量工具 > 能力分析",
+      "menu_path": "质量工具 > 过程能力",
       "aliases": ["nonparametric_capability", "Cnp", "Cnpk"],
       "implemented_status": "formula_reference",
       "purpose": "用经验分位数估计 Cnp/Cnpk，不假设特定分布。",
@@ -14715,7 +14715,7 @@
       "id": "doe_plackett_burman",
       "title": "Plackett–Burman 设计生成",
       "category": "DOE",
-      "menu_path": "质量工具 > DOE",
+      "menu_path": "统计 > DOE",
       "aliases": [
         "doe_plackett_burman",
         "PB"
@@ -14783,7 +14783,7 @@
       "id": "doe_ccd",
       "title": "中心复合设计 CCD",
       "category": "DOE",
-      "menu_path": "质量工具 > DOE",
+      "menu_path": "统计 > DOE",
       "aliases": [
         "ccd",
         "ccc",
@@ -14855,7 +14855,7 @@
       "id": "doe_bbd",
       "title": "Box–Behnken 设计",
       "category": "DOE",
-      "menu_path": "质量工具 > DOE",
+      "menu_path": "统计 > DOE",
       "aliases": [
         "bbd",
         "box-behnken"
