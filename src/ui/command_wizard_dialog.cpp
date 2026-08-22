@@ -200,6 +200,9 @@ void CommandWizardDialog::build_pages()
     connect(cancel_button_, &QPushButton::clicked, this, &QDialog::reject);
     connect(recommendation_list_, &QListWidget::itemDoubleClicked, this,
             [this](QListWidgetItem*) { open_selected_command(); });
+    // UniqueConnection 不能用于 lambda（Debug ASSERT）；只连一次即可。
+    connect(recommendation_list_, &QListWidget::currentItemChanged, this,
+            [this](QListWidgetItem*, QListWidgetItem*) { update_navigation(); });
 }
 
 void CommandWizardDialog::update_navigation()
@@ -291,9 +294,6 @@ void CommandWizardDialog::refresh_recommendations()
     if (recommendation_list_->count() > 0) {
         recommendation_list_->setCurrentRow(0);
     }
-    connect(recommendation_list_, &QListWidget::currentItemChanged, this,
-            [this](QListWidgetItem*, QListWidgetItem*) { update_navigation(); },
-            Qt::UniqueConnection);
     update_navigation();
 }
 
