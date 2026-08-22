@@ -29,8 +29,11 @@ public:
         QWidget* parent = nullptr);
     ~CommandWizardDialog() override = default;
 
+    // Accept 后可读；MainWindow 应在 Wizard 销毁后再排队打开分析设置。
+    QString accepted_command_id() const { return accepted_command_id_; }
+
 signals:
-    // openAnalysisRequested：确认后发出；MainWindow 应先关本对话框再 run_from_spec。
+    // openAnalysisRequested：确认时发出；勿在槽内同步打开第二个模态框。
     void openAnalysisRequested(const QString& command_id);
 
 private slots:
@@ -47,6 +50,8 @@ private:
 
     QStringList column_names_;
     std::vector<datalab::domain::ColumnType> column_types_;
+    QString accepted_command_id_;
+    bool closing_with_command_ = false;
 
     QStackedWidget* stack_ = nullptr;
     QLabel* page_title_ = nullptr;

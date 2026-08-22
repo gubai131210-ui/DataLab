@@ -51,6 +51,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QTimer>
 #include <QRegularExpression>
 #include <QSplitter>
 #include <QStatusBar>
@@ -1072,12 +1073,20 @@ void MainWindow::open_command_wizard()
                 this, [&pending_command_id](const QString& command_id) {
                     pending_command_id = command_id;
                 });
-        wizard.exec();
+        if (wizard.exec() == QDialog::Accepted && pending_command_id.isEmpty()) {
+            pending_command_id = wizard.accepted_command_id();
+        }
     }
-    // 先关 Wizard 再 run_from_spec，避免双模态。
-    if (!pending_command_id.isEmpty()) {
-        run_from_spec(pending_command_id);
+    if (pending_command_id.isEmpty()) {
+        return;
     }
+    // 关键：Wizard.QDialog::exec 刚返回就同步再 exec AnalysisSetupDialog，
+    // 在 Windows/MinGW 上常卡死或闪退（前一模态销毁与菜单事件未收尾）。
+    // 排队到下一事件循环再打开既有设置对话框。
+    const QString command_id = pending_command_id;
+    QTimer::singleShot(0, this, [this, command_id]() {
+        run_from_spec(command_id);
+    });
 }
 
 void MainWindow::import_database()

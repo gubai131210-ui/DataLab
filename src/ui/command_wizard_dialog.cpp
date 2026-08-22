@@ -308,12 +308,17 @@ QString CommandWizardDialog::selected_command_id() const
 
 void CommandWizardDialog::open_selected_command()
 {
+    if (closing_with_command_) {
+        return;
+    }
     const QString command_id = selected_command_id();
     if (command_id.isEmpty()) {
         status_label_->setText(ui_tr(QStringLiteral("请先选择一条推荐命令")));
         return;
     }
-    // 先发信号再 accept，便于 MainWindow 在 exec 返回后 run_from_spec（避免双模态）。
+    closing_with_command_ = true;
+    accepted_command_id_ = command_id;
+    // 只记录选择并关闭；由 MainWindow 延后调用 run_from_spec（禁止此处同步开第二模态）。
     emit openAnalysisRequested(command_id);
     accept();
 }
