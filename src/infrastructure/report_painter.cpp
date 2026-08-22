@@ -77,4 +77,27 @@ QRectF ReportPainter::contain(const QRectF& bounds, double aspect_ratio)
         width, height);
 }
 
+void ReportPainter::paint_paginated_table(
+    std::size_t row_count,
+    double header_height,
+    const std::function<double(std::size_t row_index)>& row_height_at,
+    const std::function<bool(double needed_height)>& needs_page_break,
+    const std::function<void()>& begin_new_page,
+    const std::function<void()>& paint_header,
+    const std::function<void(std::size_t row_index)>& paint_row)
+{
+    if (!paint_header || !paint_row || !needs_page_break || !begin_new_page || !row_height_at) {
+        return;
+    }
+    paint_header();
+    for (std::size_t row_index = 0; row_index < row_count; ++row_index) {
+        const double row_height = row_height_at(row_index);
+        if (needs_page_break(row_height + header_height)) {
+            begin_new_page();
+            paint_header();
+        }
+        paint_row(row_index);
+    }
+}
+
 }  // namespace datalab::infrastructure

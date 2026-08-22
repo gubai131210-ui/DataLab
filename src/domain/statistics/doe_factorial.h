@@ -84,6 +84,10 @@ struct DoeDesignOptions {
     std::size_t block_count = 1;
     bool randomize = false;
     std::uint64_t random_seed = 0;
+    // 0 = full factorial 2^k. p > 0 → 2^(k-p) with default or custom generators.
+    std::size_t fraction_p = 0;
+    // Optional override, e.g. "D=ABC;E=ABD". Empty → built-in default table.
+    std::string generators_text;
 };
 
 struct DoeRun {
@@ -98,6 +102,12 @@ struct DoeFactorialDesign {
     std::vector<DoeFactor> factors;
     std::vector<DoeRun> runs;
     std::vector<DiagnosticMessage> diagnostics;
+    std::string design_kind = "full";
+    std::size_t fraction_p = 0;
+    int resolution = 0;
+    std::vector<std::string> generators;
+    std::vector<std::string> defining_relation;
+    std::vector<std::string> alias_lines;
 };
 
 struct DoeValidationResult {
@@ -120,7 +130,9 @@ struct DoeEffectSummaryResult {
     std::vector<DiagnosticMessage> diagnostics;
 };
 
-// Generates a complete 2-level factorial design with optional center points.
+// Generates a 2-level full (p=0) or fractional (p>0) factorial with optional
+// center points. Fractional designs use default highest-resolution generators
+// for supported (k,p), or options.generators_text when provided.
 DoeFactorialDesign generate_2_level_factorial(const DoeDesignOptions& options);
 
 // Shuffles run order using a reproducible seed and updates run_order.

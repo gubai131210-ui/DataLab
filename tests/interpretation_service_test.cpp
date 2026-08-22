@@ -22,6 +22,9 @@ private slots:
     void usesBinomialCapabilityFactsWithoutPassClaim();
     void usesProportionFactsWithoutPassClaim();
     void usesBoxCoxFactsWithoutNormalityClaim();
+    void usesBoxCoxSpecLimitGateInterpretationBullet();
+    void usesJohnsonSpecLimitGateInterpretationBullet();
+    void usesWarrantyExposureGateInterpretationBullet();
     void usesPoissonRateFactsWithoutPassClaim();
     void usesEquivalenceFactsWithoutPassClaim();
     void usesDoeResidualFactsWithoutNormalityClaim();
@@ -415,6 +418,89 @@ void InterpretationServiceTest::usesBoxCoxFactsWithoutNormalityClaim()
             QVERIFY(bullet.find("过程合格") == std::string::npos);
         }
     }
+}
+
+void InterpretationServiceTest::usesBoxCoxSpecLimitGateInterpretationBullet()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Box-Cox Transformation";
+    datalab::domain::BoxCoxFacts facts;
+    facts.lambda = 0.5;
+    facts.n = 4;
+    facts.transformed_standard_deviation = 0.5;
+    facts.assumption_status = "not_verified";
+    page.facts.box_cox = facts;
+    page.diagnostics.push_back({
+        datalab::domain::DiagnosticMessage::Severity::warning,
+        "box_cox_invalid_spec_limit",
+        "规格下限无法变换（须为正有限数）。"});
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    const auto limitations = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) {
+            return section.heading == "限制与数据质量";
+        });
+    QVERIFY(limitations != page.interpretation.cend());
+    QVERIFY(std::any_of(
+        limitations->bullets.cbegin(), limitations->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("已跳过变换后过程能力表") != std::string::npos;
+        }));
+}
+
+void InterpretationServiceTest::usesJohnsonSpecLimitGateInterpretationBullet()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Johnson Capability Analysis";
+    datalab::domain::CapabilityFacts facts;
+    facts.method = "johnson";
+    facts.assumption_status = "not_verified";
+    facts.research_preview = true;
+    facts.gate_status = "gated_research";
+    facts.pass_fail_judgment_allowed = false;
+    page.facts.capability = facts;
+    page.diagnostics.push_back({
+        datalab::domain::DiagnosticMessage::Severity::error,
+        "johnson_spec_outside_support",
+        "规格限落在 Johnson 变换定义域外，无法计算 Pp/Ppk。"});
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    const auto limitations = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) {
+            return section.heading == "限制与数据质量";
+        });
+    QVERIFY(limitations != page.interpretation.cend());
+    QVERIFY(std::any_of(
+        limitations->bullets.cbegin(), limitations->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("已跳过 overall 能力指数表") != std::string::npos;
+        }));
+}
+
+void InterpretationServiceTest::usesWarrantyExposureGateInterpretationBullet()
+{
+    datalab::domain::OutputPage page;
+    page.method_name = "Warranty Summary";
+    page.title = "保修摘要";
+    page.diagnostics.push_back({
+        datalab::domain::DiagnosticMessage::Severity::error,
+        "invalid_exposure_value",
+        "暴露量列必须为有限非负数；缺失或非法值不会被静默补齐。"});
+    datalab::application::InterpretationService::enrich(page);
+    QVERIFY(!page.interpretation.empty());
+    const auto limitations = std::find_if(
+        page.interpretation.cbegin(), page.interpretation.cend(),
+        [](const auto& section) {
+            return section.heading == "限制与数据质量";
+        });
+    QVERIFY(limitations != page.interpretation.cend());
+    QVERIFY(std::any_of(
+        limitations->bullets.cbegin(), limitations->bullets.cend(),
+        [](const std::string& bullet) {
+            return bullet.find("已跳过保修摘要指标") != std::string::npos;
+        }));
 }
 
 void InterpretationServiceTest::usesPoissonRateFactsWithoutPassClaim()

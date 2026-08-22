@@ -1,14 +1,17 @@
 #include "domain/statistics/control_charts.h"
 
 #include "domain/statistics/reliability.h"
+#include "domain/statistics/special_cause_rule_catalog.h"
 #include "domain/statistics/spc_constants.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <numeric>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 
 namespace datalab::domain::statistics {
@@ -25,6 +28,14 @@ void add_warning(
     const std::string& message)
 {
     diagnostics.push_back({DiagnosticMessage::Severity::warning, code, message});
+}
+
+void add_info(
+    std::vector<DiagnosticMessage>& diagnostics,
+    const std::string& code,
+    const std::string& message)
+{
+    diagnostics.push_back({DiagnosticMessage::Severity::info, code, message});
 }
 
 double mean(const std::vector<double>& values)
@@ -507,19 +518,98 @@ DualControlChartResult ControlCharts::individuals_moving_range_dual(
         return result;
     }
 
-    const double range_center = options.method == SigmaEstimateMethod::median_moving_range
-        ? median_of(moving_ranges)
-        : mean(moving_ranges);
-    result.average_moving_range = range_center;
-    const std::optional<double> unbias = options.method == SigmaEstimateMethod::median_moving_range
-        ? SpcConstants::median_moving_range_constant(static_cast<std::size_t>(length))
-        : SpcConstants::d2(static_cast<std::size_t>(length));
-    if (!unbias.has_value()) {
-        add_error(result.diagnostics, "unsupported_length", "Moving range length is outside the supported constant table.");
-        result.primary.diagnostics = result.diagnostics;
-        return result;
+    // MSSD path: sigma from successive differences; MR chart still uses ranges for display.
+    if (options.method == SigmaEstimateMethod::mssd) {
+        result.sigma_method_label = "mssd";
+        std::vector<double> successive;
+        for (std::size_t index = 1; index < observations.size(); ++index) {
+            if (omitted(options.omit_from_estimate, index)
+                || omitted(options.omit_from_estimate, index - 1)) {
+                continue;
+            }
+            if (!options.phase_labels.empty()
+                && options.phase_labels.size() == observations.size()
+                && options.phase_labels[index] != options.phase_labels[index - 1]) {
+                continue;
+            }
+            const double diff = observations[index] - observations[index - 1];
+            successive.push_back(diff * diff);
+        }
+        if (successive.size() < 1) {
+            add_error(result.diagnostics, "insufficient_mssd", "MSSD 需要至少一对相继差分。");
+            result.primary.diagnostics = result.diagnostics;
+            return result;
+        }
+        double sum_sq = 0.0;
+        for (const double value : successive) {
+            sum_sq += value;
+        }
+        const double n_obs = static_cast<double>(successive.size() + 1);
+        const double srmssd = std::sqrt(sum_sq / (2.0 * static_cast<double>(successive.size())));
+        // c4'(N) ≈ 1 - 3/(4*(N-1)) for N>=2 (large-N approx; disclosed).
+        const double c4_prime = n_obs <= 2.0
+            ? 0.797850
+            : std::max(0.5, 1.0 - 3.0 / (4.0 * (n_obs - 1.0)));
+        result.sigma = options.historical_sigma.value_or(srmssd / c4_prime);
+        result.average_moving_range = mean(moving_ranges);
+        add_warning(result.diagnostics, "mssd_c4_prime_approx",
+                    "MSSD 无偏常数 c4' 使用近似式，不是完整 Minitab 表查表。");
+        if (options.use_nelson_estimate) {
+            add_warning(result.diagnostics, "nelson_estimate_ignored",
+                        "Nelson estimate 仅适用于平均移动极差法；当前 MSSD 方法已忽略该选项。");
+        }
+    } else {
+        double range_center = options.method == SigmaEstimateMethod::median_moving_range
+            ? median_of(moving_ranges)
+            : mean(moving_ranges);
+        result.sigma_method_label = options.method == SigmaEstimateMethod::median_moving_range
+            ? "median_moving_range"
+            : "average_moving_range";
+
+        if (options.use_nelson_estimate
+            && options.method == SigmaEstimateMethod::average_moving_range) {
+            const std::optional<double> d4 = SpcConstants::d4(static_cast<std::size_t>(length));
+            if (d4.has_value() && range_center > 0.0) {
+                const double threshold = (*d4) * range_center;
+                std::vector<double> filtered;
+                for (const double range : moving_ranges) {
+                    if (range > threshold) {
+                        ++result.nelson_excluded_ranges;
+                    } else {
+                        filtered.push_back(range);
+                    }
+                }
+                if (!filtered.empty()) {
+                    range_center = mean(filtered);
+                    add_info(result.diagnostics, "nelson_estimate_applied",
+                             "Nelson estimate 剔除了 "
+                                 + std::to_string(result.nelson_excluded_ranges)
+                                 + " 个过大移动极差后重估 σ。");
+                } else {
+                    add_warning(result.diagnostics, "nelson_estimate_empty",
+                                "Nelson estimate 剔除后无剩余移动极差，回退到未剔除估计。");
+                    result.nelson_excluded_ranges = 0;
+                }
+            }
+            result.sigma_method_label = "average_moving_range_nelson";
+        } else if (options.use_nelson_estimate) {
+            add_warning(result.diagnostics, "nelson_estimate_ignored",
+                        "Nelson estimate 仅适用于平均移动极差法；当前方法已忽略该选项。");
+        }
+
+        result.average_moving_range = range_center;
+        const std::optional<double> unbias = options.method == SigmaEstimateMethod::median_moving_range
+            ? SpcConstants::median_moving_range_constant(static_cast<std::size_t>(length))
+            : SpcConstants::d2(static_cast<std::size_t>(length));
+        if (!unbias.has_value()) {
+            add_error(result.diagnostics, "unsupported_length", "Moving range length is outside the supported constant table.");
+            result.primary.diagnostics = result.diagnostics;
+            return result;
+        }
+        result.sigma = options.historical_sigma.value_or(range_center / *unbias);
     }
-    result.sigma = options.historical_sigma.value_or(range_center / *unbias);
+
+    const double range_center = result.average_moving_range;
     const double lower = center - 3.0 * result.sigma;
     const double upper = center + 3.0 * result.sigma;
     result.primary.center_line.assign(observations.size(), center);
@@ -1023,6 +1113,300 @@ TimeWeightedControlChartResult ControlCharts::cusum_chart(
     return result;
 }
 
+namespace {
+
+std::optional<double> estimate_sigma_from_mr(
+    const std::vector<double>& observations,
+    int moving_range_length,
+    std::vector<DiagnosticMessage>* diagnostics)
+{
+    const int length = std::max(2, moving_range_length);
+    if (observations.size() < static_cast<std::size_t>(length)) {
+        if (diagnostics != nullptr) {
+            add_error(*diagnostics, "insufficient_data",
+                      "需要足够观测以估计移动极差 σ。");
+        }
+        return std::nullopt;
+    }
+    std::vector<double> ranges;
+    for (std::size_t index = static_cast<std::size_t>(length - 1);
+         index < observations.size(); ++index) {
+        const std::size_t start = index - static_cast<std::size_t>(length - 1);
+        double minimum = observations[start];
+        double maximum = observations[start];
+        for (std::size_t inner = start; inner <= index; ++inner) {
+            minimum = std::min(minimum, observations[inner]);
+            maximum = std::max(maximum, observations[inner]);
+        }
+        ranges.push_back(maximum - minimum);
+    }
+    if (ranges.empty()) {
+        return std::nullopt;
+    }
+    const double avg_mr = mean(ranges);
+    const auto d2 = SpcConstants::d2(static_cast<std::size_t>(length));
+    if (!d2.has_value() || !(*d2 > 0.0) || !(avg_mr >= 0.0)) {
+        if (diagnostics != nullptr) {
+            add_error(*diagnostics, "unsupported_mr_length",
+                      "移动极差长度超出常数表或不合法。");
+        }
+        return std::nullopt;
+    }
+    return avg_mr / *d2;
+}
+
+}  // namespace
+
+ZoneChartResult ControlCharts::zone_chart(
+    const std::vector<double>& observations,
+    const ZoneChartOptions& options)
+{
+    ZoneChartResult result;
+    if (observations.size() < 2) {
+        add_error(result.diagnostics, "zone_insufficient_n",
+                  "区域图至少需要 2 个观测。");
+        return result;
+    }
+    if (!std::all_of(observations.begin(), observations.end(),
+                     [](double v) { return std::isfinite(v); })) {
+        add_error(result.diagnostics, "zone_non_finite",
+                  "区域图不允许非有限观测。");
+        return result;
+    }
+    result.center = options.historical_mean.value_or(mean(observations));
+    result.sigma = options.historical_sigma.value_or(0.0);
+    if (!options.historical_sigma.has_value()) {
+        const auto sigma = estimate_sigma_from_mr(
+            observations, options.moving_range_length, &result.diagnostics);
+        if (!sigma.has_value() || !(*sigma > 0.0)) {
+            add_error(result.diagnostics, "zone_sigma",
+                      "无法估计过程 σ（移动极差）。");
+            return result;
+        }
+        result.sigma = *sigma;
+    }
+    if (!(result.sigma > 0.0)) {
+        add_error(result.diagnostics, "zone_zero_sigma", "过程 σ 必须大于 0。");
+        return result;
+    }
+
+    const std::size_t n = observations.size();
+    result.individuals.plotted_values = observations;
+    result.individuals.center_line.assign(n, result.center);
+    result.individuals.lower_control_limit.assign(n, result.center - 3.0 * result.sigma);
+    result.individuals.upper_control_limit.assign(n, result.center + 3.0 * result.sigma);
+    result.individuals.point_sigma.assign(n, result.sigma);
+    result.zone_scores.assign(n, 0.0);
+    result.zone_band.assign(n, 0);
+
+    double cumulative = 0.0;
+    int side = 0;  // -1 lower, +1 upper, 0 reset
+    const double threshold = options.signal_threshold > 0.0 ? options.signal_threshold : 8.0;
+    for (std::size_t index = 0; index < n; ++index) {
+        const double z = (observations[index] - result.center) / result.sigma;
+        const double abs_z = std::abs(z);
+        int band = 0;
+        int weight = 0;
+        if (abs_z >= 3.0) {
+            band = 3;
+            weight = 4;
+        } else if (abs_z >= 2.0) {
+            band = 2;
+            weight = 2;
+        } else if (abs_z >= 1.0) {
+            band = 1;
+            weight = 1;
+        }
+        result.zone_band[index] = band;
+        const int point_side = (z > 0.0) ? 1 : ((z < 0.0) ? -1 : 0);
+        if (weight == 0 || point_side == 0) {
+            cumulative = 0.0;
+            side = 0;
+        } else if (side != 0 && point_side != side) {
+            cumulative = static_cast<double>(weight);
+            side = point_side;
+        } else {
+            cumulative += static_cast<double>(weight);
+            side = point_side;
+        }
+        result.zone_scores[index] = cumulative;
+        if (cumulative >= threshold) {
+            result.signal_points.push_back(index);
+        }
+    }
+    add_warning(result.diagnostics, "zone_jaehn_scoring",
+                "区域得分采用 Jaehn 1/2/4 权重、累计阈值 8（formula_reference），"
+                "不是 Minitab 自定义权重 golden。");
+    result.individuals.diagnostics = result.diagnostics;
+    return result;
+}
+
+ZmrChartResult ControlCharts::z_mr_chart(
+    const std::vector<double>& observations,
+    const ZmrOptions& options)
+{
+    ZmrChartResult result;
+    if (observations.size() < 2) {
+        add_error(result.diagnostics, "zmr_insufficient_n",
+                  "Z-MR 至少需要 2 个观测。");
+        return result;
+    }
+    if (!std::all_of(observations.begin(), observations.end(),
+                     [](double v) { return std::isfinite(v); })) {
+        add_error(result.diagnostics, "zmr_non_finite",
+                  "Z-MR 不允许非有限观测。");
+        return result;
+    }
+
+    std::vector<std::string> labels = options.group_labels;
+    if (labels.size() != observations.size()) {
+        labels.assign(observations.size(), "1");
+    }
+
+    // Map label -> (sum, count) for sample means; collect per-group values for sigma.
+    std::vector<std::string> order;
+    std::unordered_map<std::string, std::vector<double>> by_group;
+    for (std::size_t i = 0; i < observations.size(); ++i) {
+        if (by_group.find(labels[i]) == by_group.end()) {
+            order.push_back(labels[i]);
+        }
+        by_group[labels[i]].push_back(observations[i]);
+    }
+
+    std::unordered_map<std::string, double> mu;
+    std::unordered_map<std::string, double> sigma;
+    const bool use_historical = !options.historical_means.empty()
+        && options.historical_means.size() == order.size()
+        && options.historical_sigmas.size() == order.size();
+    if (use_historical) {
+        for (std::size_t g = 0; g < order.size(); ++g) {
+            mu[order[g]] = options.historical_means[g];
+            sigma[order[g]] = options.historical_sigmas[g];
+        }
+    } else {
+        add_warning(result.diagnostics, "zmr_sample_parameters",
+                    "未提供完整历史 μ/σ；本轮用各组样本均值与全序列 MR/d2 估计 σ。");
+        for (const auto& label : order) {
+            mu[label] = mean(by_group[label]);
+        }
+        const auto sigma_hat = estimate_sigma_from_mr(
+            observations, options.moving_range_length, &result.diagnostics);
+        if (!sigma_hat.has_value() || !(*sigma_hat > 0.0)) {
+            add_error(result.diagnostics, "zmr_sigma", "无法估计 σ。");
+            return result;
+        }
+        for (const auto& label : order) {
+            sigma[label] = *sigma_hat;
+        }
+    }
+
+    const std::size_t n = observations.size();
+    result.z_values.resize(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        const double s = sigma[labels[i]];
+        if (!(s > 0.0)) {
+            add_error(result.diagnostics, "zmr_group_sigma",
+                      "存在组 σ ≤ 0。");
+            return result;
+        }
+        result.z_values[i] = (observations[i] - mu[labels[i]]) / s;
+    }
+
+    result.z_chart.plotted_values = result.z_values;
+    result.z_chart.center_line.assign(n, 0.0);
+    result.z_chart.lower_control_limit.assign(n, -3.0);
+    result.z_chart.upper_control_limit.assign(n, 3.0);
+    result.z_chart.point_sigma.assign(n, 1.0);
+
+    // MR of Z with length 2 default
+    const int length = std::max(2, options.moving_range_length);
+    std::vector<double> mrs(n, std::numeric_limits<double>::quiet_NaN());
+    std::vector<double> mr_for_avg;
+    for (std::size_t index = static_cast<std::size_t>(length - 1); index < n; ++index) {
+        const std::size_t start = index - static_cast<std::size_t>(length - 1);
+        double minimum = result.z_values[start];
+        double maximum = result.z_values[start];
+        for (std::size_t inner = start; inner <= index; ++inner) {
+            minimum = std::min(minimum, result.z_values[inner]);
+            maximum = std::max(maximum, result.z_values[inner]);
+        }
+        mrs[index] = maximum - minimum;
+        mr_for_avg.push_back(mrs[index]);
+    }
+    result.average_mr = mr_for_avg.empty() ? 0.0 : mean(mr_for_avg);
+    const auto d4 = SpcConstants::d4(static_cast<std::size_t>(length));
+    const auto d3_limit = SpcConstants::d3_limit(static_cast<std::size_t>(length));
+    result.mr_chart.plotted_values = mrs;
+    result.mr_chart.center_line.assign(n, result.average_mr);
+    result.mr_chart.upper_control_limit.assign(
+        n, d4.has_value() ? result.average_mr * *d4 : result.average_mr * 3.267);
+    result.mr_chart.lower_control_limit.assign(
+        n, d3_limit.has_value() ? std::max(0.0, result.average_mr * *d3_limit) : 0.0);
+    result.mr_chart.moving_ranges = mrs;
+    apply_special_cause_tests(result.z_chart, ControlChartKind::z_mr, {});
+    result.z_chart.diagnostics = result.diagnostics;
+    result.mr_chart.diagnostics = result.diagnostics;
+    return result;
+}
+
+ControlChartResult ControlCharts::moving_average_chart(
+    const std::vector<double>& observations,
+    const MovingAverageOptions& options)
+{
+    ControlChartResult result;
+    const int window = std::max(2, options.window);
+    if (observations.size() < static_cast<std::size_t>(window)) {
+        add_error(result.diagnostics, "ma_insufficient_n",
+                  "移动平均图需要至少 w 个观测。");
+        return result;
+    }
+    if (!std::all_of(observations.begin(), observations.end(),
+                     [](double v) { return std::isfinite(v); })) {
+        add_error(result.diagnostics, "ma_non_finite",
+                  "移动平均图不允许非有限观测。");
+        return result;
+    }
+    const double center = options.historical_mean.value_or(mean(observations));
+    double sigma = options.historical_sigma.value_or(0.0);
+    if (!options.historical_sigma.has_value()) {
+        const auto sigma_hat = estimate_sigma_from_mr(
+            observations, options.moving_range_length, &result.diagnostics);
+        if (!sigma_hat.has_value() || !(*sigma_hat > 0.0)) {
+            add_error(result.diagnostics, "ma_sigma", "无法估计过程 σ。");
+            return result;
+        }
+        sigma = *sigma_hat;
+    }
+    if (!(sigma > 0.0) || !(options.limit_sigma > 0.0)) {
+        add_error(result.diagnostics, "ma_invalid_sigma",
+                  "σ 与控制限倍数必须大于 0。");
+        return result;
+    }
+
+    const std::size_t n = observations.size();
+    result.plotted_values.assign(n, std::numeric_limits<double>::quiet_NaN());
+    result.center_line.assign(n, center);
+    result.lower_control_limit.assign(n, std::numeric_limits<double>::quiet_NaN());
+    result.upper_control_limit.assign(n, std::numeric_limits<double>::quiet_NaN());
+    result.point_sigma.assign(n, sigma / std::sqrt(static_cast<double>(window)));
+    const double half = options.limit_sigma * sigma
+        / std::sqrt(static_cast<double>(window));
+    double running = 0.0;
+    for (std::size_t i = 0; i < n; ++i) {
+        running += observations[i];
+        if (i + 1 >= static_cast<std::size_t>(window)) {
+            if (i + 1 > static_cast<std::size_t>(window)) {
+                running -= observations[i - static_cast<std::size_t>(window)];
+            }
+            result.plotted_values[i] = running / static_cast<double>(window);
+            result.lower_control_limit[i] = center - half;
+            result.upper_control_limit[i] = center + half;
+        }
+    }
+    apply_special_cause_tests(result, ControlChartKind::moving_average, {});
+    return result;
+}
+
 std::vector<std::vector<double>> build_subgroups(
     const std::vector<double>& observations,
     int subgroup_size)
@@ -1065,16 +1449,18 @@ std::vector<std::vector<double>> build_subgroups_by_label(
 
 const std::vector<SpecialCauseTestSpec>& all_special_cause_tests()
 {
-    static const std::vector<SpecialCauseTestSpec> tests = {
-        {1, 3, "1 点超出 3σ", "1 点与中心线的距离严格超过 3σ 控制限。"},
-        {2, 9, "9 点同侧", "连续 9 点位于中心线同一侧；中心线上的点会打断该连续段。"},
-        {3, 6, "6 点趋势", "连续 6 点严格单调上升或下降；相等点会打断趋势。"},
-        {4, 14, "14 点交替", "连续 14 点相邻升降交替；零差分会打断模式。"},
-        {5, 2, "3 点中 2 点超 2σ", "连续 3 点中至少 2 点位于中心线同侧且超过 2σ。"},
-        {6, 1, "5 点中 4 点超 1σ", "连续 5 点中至少 4 点位于中心线同侧且超过 1σ。"},
-        {7, 15, "15 点在 1σ 内", "连续 15 点都落在中心线 ±1σ 以内，允许任一侧。"},
-        {8, 8, "8 点在 1σ 外", "连续 8 点都落在 ±1σ 以外，允许全部位于同一侧。"}
-    };
+    static const std::vector<SpecialCauseTestSpec> tests = [] {
+        std::vector<SpecialCauseTestSpec> mapped;
+        for (const SpecialCauseRuleSpec& rule : special_cause_rule_catalog()) {
+            mapped.push_back({
+                rule.number,
+                rule.default_window_size,
+                rule.rule_id,
+                rule.display_name,
+                rule.short_explanation});
+        }
+        return mapped;
+    }();
     return tests;
 }
 
@@ -1088,9 +1474,13 @@ std::vector<int> applicable_special_cause_tests(ControlChartKind kind)
     case ControlChartKind::ewma:
     case ControlChartKind::g:
     case ControlChartKind::t:
+    case ControlChartKind::moving_average:
         return {1};
+    case ControlChartKind::zone:
     case ControlChartKind::cusum:
         return {};
+    case ControlChartKind::z_mr:
+        return {1, 2, 3, 4};
     case ControlChartKind::individuals:
     case ControlChartKind::xbar:
     case ControlChartKind::attribute:
@@ -1137,6 +1527,15 @@ ControlChartKind control_chart_kind_from_name(const std::string& name)
     if (name == "t" || name == "t_chart") {
         return ControlChartKind::t;
     }
+    if (name == "zone" || name == "zone_chart") {
+        return ControlChartKind::zone;
+    }
+    if (name == "z_mr" || name == "zmr") {
+        return ControlChartKind::z_mr;
+    }
+    if (name == "moving_average" || name == "ma" || name == "ma_chart") {
+        return ControlChartKind::moving_average;
+    }
     return ControlChartKind::individuals;
 }
 
@@ -1163,6 +1562,12 @@ std::string control_chart_kind_name(ControlChartKind kind)
         return "g";
     case ControlChartKind::t:
         return "t";
+    case ControlChartKind::zone:
+        return "zone";
+    case ControlChartKind::z_mr:
+        return "z_mr";
+    case ControlChartKind::moving_average:
+        return "moving_average";
     case ControlChartKind::individuals:
         break;
     }
@@ -1216,17 +1621,7 @@ std::vector<int> parse_special_cause_tests(const std::string& text)
 
 std::string format_special_cause_tests(const std::vector<int>& tests)
 {
-    if (tests.empty()) {
-        return "无";
-    }
-    std::ostringstream stream;
-    for (std::size_t index = 0; index < tests.size(); ++index) {
-        if (index > 0) {
-            stream << ", ";
-        }
-        stream << "Test " << tests[index];
-    }
-    return stream.str();
+    return format_special_cause_rule_names(tests);
 }
 
 std::vector<int> resolve_special_cause_tests(
@@ -1236,16 +1631,34 @@ std::vector<int> resolve_special_cause_tests(
 {
     const std::vector<int> applicable = applicable_special_cause_tests(kind);
     std::vector<int> chosen;
-    if (selection.policy == "default_all_applicable" && selection.enabled_tests.empty()) {
-        chosen = applicable;
-    } else if (!selection.enabled_tests.empty()) {
+    const std::string& policy = selection.policy;
+    if (!selection.enabled_tests.empty()) {
         chosen = selection.enabled_tests;
-    } else if (selection.policy == "explicit") {
+    } else if (policy == "minitab_like" || policy == "default_minitab_like") {
+        if (std::find(applicable.begin(), applicable.end(), 1) != applicable.end()) {
+            chosen = {1};
+        }
+        if (diagnostics != nullptr) {
+            diagnostics->push_back({
+                DiagnosticMessage::Severity::info,
+                "special_cause_policy_minitab_like",
+                "特殊原因策略=minitab_like：默认仅启用「"
+                + special_cause_rule_display_name(1)
+                + "」（与 Minitab 常见默认接近）。"});
+        }
+    } else if (policy == "explicit") {
         chosen.clear();
-    } else if (selection.policy == "default_all_applicable") {
-        chosen = applicable;
     } else {
-        chosen = {1};
+        // all_applicable / default_all_applicable / empty → all applicable
+        chosen = applicable;
+        if (diagnostics != nullptr) {
+            diagnostics->push_back({
+                DiagnosticMessage::Severity::info,
+                "special_cause_policy_all_applicable",
+                "特殊原因策略=all_applicable：启用该图种全部适用特殊原因规则；"
+                "多规则提高灵敏度也提高误报风险，与 Minitab 默认仅「"
+                + special_cause_rule_display_name(1) + "」不同。"});
+        }
     }
     std::vector<int> filtered;
     std::vector<int> ignored;
@@ -1263,14 +1676,15 @@ std::vector<int> resolve_special_cause_tests(
         add_warning(
             *diagnostics,
             "test_not_applicable",
-            "已忽略不适用于此控制图的特殊原因测试：" + format_special_cause_tests(ignored)
+            "已忽略不适用于此控制图的特殊原因规则：" + format_special_cause_tests(ignored)
                 + "。");
     }
     if (diagnostics != nullptr && kind == ControlChartKind::cusum) {
         add_warning(
             *diagnostics,
             "cusum_signals_only",
-            "CUSUM 不使用 Tests 1–8，改用上/下侧累计和首次信号。");
+            "CUSUM 不使用 Shewhart 特殊原因规则（beyond_control_limit 等），"
+            "改用上/下侧累计和首次信号。");
     }
     return filtered;
 }

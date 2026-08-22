@@ -30,6 +30,11 @@ public:
     void set_model(const ChartModel& model);
     void set_source_rows(const std::vector<std::size_t>& rows);
     void set_selected_source_rows(const std::vector<std::size_t>& rows);
+    void set_row_visibility_summary(
+        std::size_t excluded_count,
+        std::size_t hidden_count,
+        std::size_t analysis_n = 0,
+        std::size_t display_n = 0);
     bool copy_to_clipboard();
 signals:
     void rows_selected(const std::vector<std::size_t>& rows);
@@ -68,6 +73,10 @@ private:
     ChartModel model_;
     QWidget* surface_ = nullptr;
     GraphPropertiesPanel* panel_ = nullptr;
+    std::size_t excluded_count_ = 0;
+    std::size_t hidden_count_ = 0;
+    std::size_t analysis_n_ = 0;
+    std::size_t display_n_ = 0;
     QPoint last_mouse_position_;
     QPoint selection_start_;
     QPoint selection_end_;

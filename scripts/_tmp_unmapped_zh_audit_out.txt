@@ -1,0 +1,139 @@
+MAPPED_CJK_LITERALS 2228
+UNMAPPED_ENTRIES 123
+BY_KIND
+  interp	90
+  title	26
+  param	14
+  diag	5
+  header	2
+BY_FILE
+  90	src/application/interpretation_service.cpp
+  38	src/application/analysis_service.cpp
+  3	src/application/graph_service.cpp
+  3	src/domain/statistics/control_charts.cpp
+  2	src/application/doe_pages.cpp
+  1	src/domain/statistics/doe_factorial.cpp
+ITEMS
+title	2	src/application/analysis_service.cpp:14364;src/application/analysis_service.cpp:14364	I-MR-R/S 逐子组统计
+title	2	src/application/graph_service.cpp:2109;src/application/graph_service.cpp:2109	Hexbin（分面）
+title	2	src/application/analysis_service.cpp:7620;src/application/analysis_service.cpp:7620	ANOVA 表
+title	2	src/application/analysis_service.cpp:8406;src/application/analysis_service.cpp:8406	容差区间直方图
+title	2	src/application/analysis_service.cpp:4031;src/application/analysis_service.cpp:4031	率比置信区间
+title	2	src/application/analysis_service.cpp:15756;src/application/analysis_service.cpp:15756	泊松参数
+title	2	src/application/analysis_service.cpp:15310;src/application/analysis_service.cpp:15310	缺陷计数
+title	2	src/application/analysis_service.cpp:13878;src/application/analysis_service.cpp:13878	摘要
+title	2	src/application/analysis_service.cpp:15317;src/application/analysis_service.cpp:15487	类别
+title	1	src/application/analysis_service.cpp:4689	标准化变换 SD
+title	1	src/application/analysis_service.cpp:7859	事件概率
+title	1	src/application/analysis_service.cpp:9761	候选排序
+title	1	src/application/analysis_service.cpp:10064	测量序号
+title	1	src/application/analysis_service.cpp:4572	类别序号
+title	1	src/application/analysis_service.cpp:15488	原因数
+title	1	src/application/analysis_service.cpp:4729	变换值
+title	1	src/application/analysis_service.cpp:4032	率比
+header	2	src/application/analysis_service.cpp:9580;src/application/analysis_service.cpp:9644	总体 D
+param	2	src/application/analysis_service.cpp:2801;src/application/analysis_service.cpp:3236	    第二列 = 
+param	2	src/application/analysis_service.cpp:2714;src/application/analysis_service.cpp:2754	    方法 = 
+param	1	src/application/graph_service.cpp:1694	    面积表示相邻观测之间的数值区间，不是置信区间
+param	1	src/application/analysis_service.cpp:15306	    Other 阈值 = 
+param	1	src/application/analysis_service.cpp:9869	    过程变差(6σ) = 
+param	1	src/application/analysis_service.cpp:8220	    有效观测 = 
+param	1	src/application/analysis_service.cpp:8501	    分组列 = 
+param	1	src/application/doe_pages.cpp:589	    分辨度 = 
+param	1	src/application/analysis_service.cpp:2851	    事件 = 
+param	1	src/application/doe_pages.cpp:695	    变体 = 
+param	1	src/application/analysis_service.cpp:8213	    因子 = 
+param	1	src/application/analysis_service.cpp:2676	    目标 = 
+diag	1	src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。
+diag	1	src/domain/statistics/control_charts.cpp:1752	无法计算该子组大小的 c4。
+diag	1	src/domain/statistics/control_charts.cpp:1708	组内 σ 至少需要两个子组。
+diag	1	src/domain/statistics/control_charts.cpp:1720	各子组必须具有相同观测数。
+diag	1	src/domain/statistics/doe_factorial.cpp:427	部分析因分辨度 
+interp	2	src/application/interpretation_service.cpp:2375;src/application/interpretation_service.cpp:2387	应优先结合现场原因验证，而不是直接假设存在 80/20 规律。
+interp	2	src/application/interpretation_service.cpp:2414;src/application/interpretation_service.cpp:2441	不能将统计信号直接等同于过程失控判定或稳定结论。
+interp	1	src/application/interpretation_service.cpp:2003	不得写成过程合格（formula_reference / gaussian_mixture_k_bic；非 vendor_oracle）。
+interp	1	src/application/interpretation_service.cpp:2110	CUSUM 使用累计和决策间隔信号，不套用 Shewhart 特殊原因规则（beyond_control_limit 等）；
+interp	1	src/application/interpretation_service.cpp:1992	）：I-MR Rule-1 / 直方图双峰 / Hartigan dip / 高斯混合门禁筛查不等于完整稳定性或单峰验收。
+interp	1	src/application/interpretation_service.cpp:2403	对照 P clustering / mixtures / trends / oscillation 与现场时序，
+interp	1	src/application/interpretation_service.cpp:452	不是 Fine-Gray 回归，也不是 cause-specific 可靠度或 vendor_oracle。
+interp	1	src/application/interpretation_service.cpp:2490	；同页包含 run sequence、lag-1、histogram、normal probability。
+interp	1	src/application/interpretation_service.cpp:1547	分模式 R 为 cause-specific（竞争失效作右删失）formula_reference，
+interp	1	src/application/interpretation_service.cpp:2417	不是完整 Shewhart 特殊原因规则（beyond_control_limit 等）的替代品。
+interp	1	src/application/interpretation_service.cpp:441	不是 vendor_oracle / golden；阈值模型与 pinned R 对齐仍未冻结。
+interp	1	src/application/interpretation_service.cpp:2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+interp	1	src/application/interpretation_service.cpp:2008	Hartigan dip 为 evidence_against：单一分布能力指数仅供调查，
+interp	1	src/application/interpretation_service.cpp:2458	不是 ARIMA 识别用的 Bartlett 变带宽；亦非 Minitab golden。
+interp	1	src/application/interpretation_service.cpp:2009	不得写成过程合格（formula_reference；非 vendor_oracle）。
+interp	1	src/application/interpretation_service.cpp:1637	非参数容差依赖序统计与连续分布假设；achieved confidence 低于目标时，
+interp	1	src/application/interpretation_service.cpp:2042	非正态 Z-score Pp/Ppk 依赖所选分布的 CDF；拟合未拒绝假设不等于已证明
+interp	1	src/application/interpretation_service.cpp:1300	 个 T²/Q 异常观测。异常阈值只作诊断，T²/Q 超限不是过程合格或失控判定。
+interp	1	src/application/interpretation_service.cpp:2213	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，
+interp	1	src/application/interpretation_service.cpp:451	CIF 为 formula_reference（Aalen–Johansen），
+interp	1	src/application/interpretation_service.cpp:2416	区域图采用 Jaehn 1/2/4 计分（formula_reference），
+interp	1	src/application/interpretation_service.cpp:2034	组间/组内能力使用 σ_BW 计算 Cp/Cpk、样本标准差计算 Pp/Ppk；
+interp	1	src/application/interpretation_service.cpp:2200	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+interp	1	src/application/interpretation_service.cpp:2040	Johnson 变换后的 Pp/Ppk 是变换尺度上的 overall 指数；
+interp	1	src/application/interpretation_service.cpp:203	等值线/曲面在编码 [-1,1] 空间求值；非轴因子默认 hold 编码 0，
+interp	1	src/application/interpretation_service.cpp:2491	四图用于检查位置/散布/随机性/分布形态假设，不能写成受控结论或正态已成立。
+interp	1	src/application/interpretation_service.cpp:210	 个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。
+interp	1	src/application/interpretation_service.cpp:2002	二维高斯混合为 preferred_2comp：单一分布能力指数仅供调查，
+interp	1	src/application/interpretation_service.cpp:1665	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+interp	1	src/application/interpretation_service.cpp:1111	Cochran Q 未计算出统计量（例如列数不足、编码失败或分母退化）。
+interp	1	src/application/interpretation_service.cpp:204	也可按实际单位 hold；二水平模型无平方项，不能把曲面曲率当成已估计。
+interp	1	src/application/interpretation_service.cpp:440	分模式可靠度为 formula_reference（竞争失效作右删失），
+interp	1	src/application/interpretation_service.cpp:1820	响应优化在编码 ±1 空间枚举候选组合；缺协方差时置信/预测区间不可用，
+interp	1	src/application/interpretation_service.cpp:323	按零件图展示各零件重复测量的离散程度；同一零件上点越集中表示重复性越小。
+interp	1	src/application/interpretation_service.cpp:1487	本批观测均为精确失效（无左/区间/右删失）；仍走区间 NPMLE 路径，
+interp	1	src/application/interpretation_service.cpp:1668	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+interp	1	src/application/interpretation_service.cpp:1112	两列配对请用 McNemar；不得写成已证明各处理阳性率相同或不同。
+interp	1	src/application/interpretation_service.cpp:2041	未拒绝变换后正态假设不等于原始数据服从正态分布，也不能写成过程合格。
+interp	1	src/application/interpretation_service.cpp:2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+interp	1	src/application/interpretation_service.cpp:135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+interp	1	src/application/interpretation_service.cpp:393	斜率检验 p≤0.05，提示线性显著；应分别解读各参考水平的偏倚，
+interp	1	src/application/interpretation_service.cpp:1094	这只说明当前配对表不支持该检验，不能写成前后比例已证明相同或不同。
+interp	1	src/application/interpretation_service.cpp:1093	McNemar 未计算出统计量（非二元、无不一致对或输入不足）。
+interp	1	src/application/interpretation_service.cpp:265	多响应冲突时优先核对各响应 Desirability 与权重；
+interp	1	src/application/interpretation_service.cpp:2457	默认带宽是 NIST 白噪声固定 ±z/√n（独立性检验），
+interp	1	src/application/interpretation_service.cpp:2014	双峰初筛为 suspected：单一分布能力指数仅供调查，
+interp	1	src/application/interpretation_service.cpp:371	回归关系不能替代跨操作者、跨部件的完整 Gage R&R。
+interp	1	src/application/interpretation_service.cpp:2443	移动平均图与 EWMA 不同；仅完整窗 MA 点参与判读，
+interp	1	src/application/interpretation_service.cpp:592	对数正态模型估计了右删失下的位置/尺度参数；分位寿命由 
+interp	1	src/application/interpretation_service.cpp:84	不得将 hidden 与 excluded 合并叙述。
+interp	1	src/application/interpretation_service.cpp:2214	不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+interp	1	src/application/interpretation_service.cpp:268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+interp	1	src/application/interpretation_service.cpp:266	确认性试验应覆盖总体 D 靠前且工程上可实施的组合。
+interp	1	src/application/interpretation_service.cpp:2288	（按输入顺序与 α=0.05 近似 dL/dU）。
+interp	1	src/application/interpretation_service.cpp:2440	；MA 平滑后的出限是信号提示，需要结合工艺调查，
+interp	1	src/application/interpretation_service.cpp:2513	 条原因。这是结构化头脑风暴摘要，不是统计检验，
+interp	1	src/application/interpretation_service.cpp:342	按时间顺序回查校准、环境、操作者和量具维护记录；
+interp	1	src/application/interpretation_service.cpp:260	缺协方差或残差自由度不足，置信/预测区间不可用；
+interp	1	src/application/interpretation_service.cpp:370	将端点偏倚与产品公差和测量系统可接受界限比较；
+interp	1	src/application/interpretation_service.cpp:2413	 个；这是统计信号提示，需要调查特殊原因，
+interp	1	src/application/interpretation_service.cpp:593	exp(μ + σ Φ⁻¹(p)) 给出。
+interp	1	src/application/interpretation_service.cpp:83	 行；隐藏行仍计入分析口径，仅影响显示。
+interp	1	src/application/interpretation_service.cpp:1488	不自动等价替换为经典右删失 KM 报告。
+interp	1	src/application/interpretation_service.cpp:343	不要在特殊原因未排除前用该量具放行产品。
+interp	1	src/application/interpretation_service.cpp:1666	极偏/重尾小样本时宜对照 Levene。
+interp	1	src/application/interpretation_service.cpp:2111	信号点需结合原始行调查，不是删点指令。
+interp	1	src/application/interpretation_service.cpp:2404	小 P 只表示该模式方向上的偏离证据。
+interp	1	src/application/interpretation_service.cpp:2444	不是 Minitab golden。
+interp	1	src/application/interpretation_service.cpp:2289	不能写成已证明无自相关或存在自相关。
+interp	1	src/application/interpretation_service.cpp:2043	过程服从该分布，也不能写成过程合格。
+interp	1	src/application/interpretation_service.cpp:78	 行；结论只适用于纳入分析的数据。
+interp	1	src/application/interpretation_service.cpp:1638	只说明样本量不足，不是计算错误。
+interp	1	src/application/interpretation_service.cpp:136	显著性本身不代表工程影响足够大。
+interp	1	src/application/interpretation_service.cpp:1821	最佳组合不能外推到设计空间之外。
+interp	1	src/application/interpretation_service.cpp:2275	需要后续多重比较确定具体组对。
+interp	1	src/application/interpretation_service.cpp:1745	，比较量=率比 ρ=λ1/λ2
+interp	1	src/application/interpretation_service.cpp:261	不要仅凭点预测确定最优设置。
+interp	1	src/application/interpretation_service.cpp:324	该图不单独判定量具是否合格。
+interp	1	src/application/interpretation_service.cpp:1669	正态假设状态未在本页验证。
+interp	1	src/application/interpretation_service.cpp:269	不要仅凭主效应图下结论。
+interp	1	src/application/interpretation_service.cpp:1791	，区间未落入等价界限内。
+interp	1	src/application/interpretation_service.cpp:2266	不能单独证明因果关系。
+interp	1	src/application/interpretation_service.cpp:2514	不能写成已证明根因。
+interp	1	src/application/interpretation_service.cpp:394	不宜只用平均偏倚。
+interp	1	src/application/interpretation_service.cpp:77	配置排除了 
+interp	1	src/application/interpretation_service.cpp:82	配置隐藏了 
+interp	1	src/application/interpretation_service.cpp:1786	) 为 [
+interp	1	src/application/interpretation_service.cpp:1879	超限点数

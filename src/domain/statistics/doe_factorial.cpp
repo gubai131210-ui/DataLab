@@ -5,7 +5,9 @@
 #include "domain/statistics/hypothesis_tests.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -69,12 +71,277 @@ double lenth_pseudo_standard_error(const std::vector<double>& effects)
     return 1.5 * median_absolute(trimmed);
 }
 
+std::string mask_to_letters(std::uint32_t mask)
+{
+    if (mask == 0) {
+        return "I";
+    }
+    std::string text;
+    for (std::size_t index = 0; index < 26; ++index) {
+        if ((mask & (std::uint32_t{1} << index)) != 0) {
+            text.push_back(static_cast<char>('A' + index));
+        }
+    }
+    return text;
+}
+
+int popcount_u32(std::uint32_t mask)
+{
+    int count = 0;
+    while (mask != 0) {
+        count += static_cast<int>(mask & 1U);
+        mask >>= 1;
+    }
+    return count;
+}
+
+std::optional<std::uint32_t> parse_letter_product(const std::string& text)
+{
+    std::uint32_t mask = 0;
+    for (char ch : text) {
+        if (ch >= 'a' && ch <= 'z') {
+            ch = static_cast<char>(ch - 'a' + 'A');
+        }
+        if (ch < 'A' || ch > 'Z') {
+            if (ch == ' ' || ch == '*' || ch == 'x' || ch == 'X') {
+                continue;
+            }
+            return std::nullopt;
+        }
+        mask ^= (std::uint32_t{1} << (ch - 'A'));
+    }
+    return mask;
+}
+
+std::vector<std::uint32_t> default_generator_masks(std::size_t k, std::size_t p)
+{
+    // Highest-resolution style defaults for common (k,p). Empty → unsupported.
+    struct Entry {
+        std::size_t k;
+        std::size_t p;
+        std::vector<std::uint32_t> masks;
+    };
+    // Masks are products for the last p factors in order (factor index k-p … k-1).
+    // Bit i = letter A+i in the generator product (excluding the generated factor).
+    const std::vector<Entry> table = {
+        {3, 1, {0b011}},                          // C=AB
+        {4, 1, {0b0111}},                         // D=ABC
+        {5, 1, {0b01111}},                        // E=ABCD
+        {5, 2, {0b0011, 0b0101}},                 // D=AB, E=AC
+        {6, 1, {0b011111}},                       // F=ABCDE
+        {6, 2, {0b0111, 0b1011}},                 // E=ABC, F=ABD
+        {6, 3, {0b0011, 0b0101, 0b0110}},         // D=AB, E=AC, F=BC
+        {7, 1, {0b0111111}},                      // G=ABCDEF
+        {7, 2, {0b001111, 0b010111}},             // F=ABCD, G=ABCE
+        {7, 3, {0b0111, 0b1011, 0b1101}},         // E=ABC, F=ABD, G=ACD
+        {7, 4, {0b0011, 0b0101, 0b0110, 0b0111}}, // D=AB,E=AC,F=BC,G=ABC
+        {8, 1, {0b01111111}},                     // H=ABCDEFG
+        {8, 2, {0b001111, 0b110011}},             // G=ABCD, H=ABEF
+        {8, 3, {0b0111, 0b1011, 0b11001}},        // F=ABC, G=ABD, H=ACDE
+        {8, 4, {0b0111, 0b1011, 0b1101, 0b1110}}, // E=ABC,F=ABD,G=ACD,H=BCD
+    };
+    for (const Entry& entry : table) {
+        if (entry.k == k && entry.p == p) {
+            return entry.masks;
+        }
+    }
+    return {};
+}
+
+bool parse_generators_text(
+    const std::string& text,
+    std::size_t factor_count,
+    std::size_t fraction_p,
+    std::vector<std::uint32_t>& masks,
+    std::vector<DiagnosticMessage>& diagnostics)
+{
+    masks.clear();
+    if (text.empty()) {
+        return true;
+    }
+    std::string token;
+    for (std::size_t index = 0; index <= text.size(); ++index) {
+        const char ch = index < text.size() ? text[index] : ';';
+        if (ch == ';' || ch == ',' || ch == '\n') {
+            if (!token.empty()) {
+                const auto eq = token.find('=');
+                if (eq == std::string::npos || eq == 0 || eq + 1 >= token.size()) {
+                    add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                                   "invalid_doe_generator",
+                                   "生成器格式应为 D=ABC;E=ABD。");
+                    return false;
+                }
+                std::string left = token.substr(0, eq);
+                std::string right = token.substr(eq + 1);
+                left.erase(std::remove_if(left.begin(), left.end(), ::isspace), left.end());
+                right.erase(std::remove_if(right.begin(), right.end(), ::isspace), right.end());
+                if (left.size() != 1) {
+                    add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                                   "invalid_doe_generator_left",
+                                   "生成器左侧应为单个因子字母。");
+                    return false;
+                }
+                char letter = left[0];
+                if (letter >= 'a' && letter <= 'z') {
+                    letter = static_cast<char>(letter - 'a' + 'A');
+                }
+                const std::size_t generated = static_cast<std::size_t>(letter - 'A');
+                if (generated >= factor_count) {
+                    add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                                   "doe_generator_factor_out_of_range",
+                                   "生成器引用了不存在的因子字母。");
+                    return false;
+                }
+                const auto product = parse_letter_product(right);
+                if (!product.has_value()) {
+                    add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                                   "invalid_doe_generator_product",
+                                   "生成器右侧乘积无法解析。");
+                    return false;
+                }
+                if ((*product & (std::uint32_t{1} << generated)) != 0) {
+                    add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                                   "doe_generator_self_reference",
+                                   "生成器右侧不能包含被生成因子。");
+                    return false;
+                }
+                if (generated < factor_count - fraction_p) {
+                    add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                                   "doe_generator_not_extra_factor",
+                                   "生成器应定义最后 p 个附加因子。");
+                    return false;
+                }
+                while (masks.size() < fraction_p) {
+                    masks.push_back(0);
+                }
+                const std::size_t slot = generated - (factor_count - fraction_p);
+                masks[slot] = *product;
+                token.clear();
+            }
+            continue;
+        }
+        token.push_back(ch);
+    }
+    if (masks.size() != fraction_p) {
+        add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                       "doe_generator_count_mismatch",
+                       "生成器数量必须等于部分析因 p。");
+        return false;
+    }
+    for (const std::uint32_t mask : masks) {
+        if (mask == 0) {
+            add_diagnostic(diagnostics, DiagnosticMessage::Severity::error,
+                           "incomplete_doe_generators",
+                           "每个附加因子都需要生成器。");
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<std::uint32_t> defining_relation_words(
+    const std::vector<std::uint32_t>& generator_words)
+{
+    std::vector<std::uint32_t> words = {0};
+    for (const std::uint32_t generator : generator_words) {
+        const std::size_t prior = words.size();
+        for (std::size_t index = 0; index < prior; ++index) {
+            words.push_back(words[index] ^ generator);
+        }
+    }
+    std::sort(words.begin(), words.end(), [](std::uint32_t a, std::uint32_t b) {
+        const int ca = popcount_u32(a);
+        const int cb = popcount_u32(b);
+        if (ca != cb) {
+            return ca < cb;
+        }
+        return a < b;
+    });
+    words.erase(std::unique(words.begin(), words.end()), words.end());
+    return words;
+}
+
+int design_resolution(const std::vector<std::uint32_t>& relation)
+{
+    int best = 0;
+    for (const std::uint32_t word : relation) {
+        if (word == 0) {
+            continue;
+        }
+        const int length = popcount_u32(word);
+        if (best == 0 || length < best) {
+            best = length;
+        }
+    }
+    return best;
+}
+
+std::string roman_resolution(int resolution)
+{
+    static const char* kRomans[] = {
+        "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
+    if (resolution <= 0 || resolution > 10) {
+        return resolution <= 0 ? "" : std::to_string(resolution);
+    }
+    return kRomans[resolution];
+}
+
+std::vector<std::string> build_alias_lines(
+    std::size_t factor_count,
+    const std::vector<std::uint32_t>& relation)
+{
+    std::vector<std::string> lines;
+    std::vector<std::uint32_t> effects;
+    for (std::size_t i = 0; i < factor_count; ++i) {
+        effects.push_back(std::uint32_t{1} << i);
+    }
+    for (std::size_t i = 0; i < factor_count; ++i) {
+        for (std::size_t j = i + 1; j < factor_count; ++j) {
+            effects.push_back((std::uint32_t{1} << i) | (std::uint32_t{1} << j));
+        }
+    }
+    std::set<std::uint32_t> emitted;
+    for (const std::uint32_t effect : effects) {
+        std::uint32_t canonical = effect;
+        for (const std::uint32_t word : relation) {
+            canonical = std::min(canonical, effect ^ word);
+        }
+        if (!emitted.insert(canonical).second) {
+            continue;
+        }
+        std::vector<std::uint32_t> aliases;
+        for (const std::uint32_t word : relation) {
+            aliases.push_back(effect ^ word);
+        }
+        std::sort(aliases.begin(), aliases.end(), [](std::uint32_t a, std::uint32_t b) {
+            const int ca = popcount_u32(a);
+            const int cb = popcount_u32(b);
+            if (ca != cb) {
+                return ca < cb;
+            }
+            return a < b;
+        });
+        aliases.erase(std::unique(aliases.begin(), aliases.end()), aliases.end());
+        std::string line;
+        for (std::size_t index = 0; index < aliases.size(); ++index) {
+            if (index > 0) {
+                line += " + ";
+            }
+            line += mask_to_letters(aliases[index]);
+        }
+        lines.push_back(std::move(line));
+    }
+    return lines;
+}
+
 }  // namespace
 
 DoeFactorialDesign generate_2_level_factorial(const DoeDesignOptions& options)
 {
     DoeFactorialDesign design;
     design.factors = options.factors;
+    design.fraction_p = options.fraction_p;
+    design.design_kind = options.fraction_p == 0 ? "full" : "fractional";
 
     if (options.factors.empty()) {
         add_diagnostic(design.diagnostics, DiagnosticMessage::Severity::error,
@@ -84,6 +351,12 @@ DoeFactorialDesign generate_2_level_factorial(const DoeDesignOptions& options)
     if (options.block_count == 0) {
         add_diagnostic(design.diagnostics, DiagnosticMessage::Severity::error,
                        "invalid_doe_block_count", "区组数必须大于零。");
+        return design;
+    }
+    if (options.fraction_p >= options.factors.size()) {
+        add_diagnostic(design.diagnostics, DiagnosticMessage::Severity::error,
+                       "invalid_doe_fraction_p",
+                       "部分析因 p 必须小于因子数 k。");
         return design;
     }
 
@@ -104,13 +377,66 @@ DoeFactorialDesign generate_2_level_factorial(const DoeDesignOptions& options)
     }
 
     const std::size_t factor_count = options.factors.size();
+    const std::size_t base_factor_count = factor_count - options.fraction_p;
+    if (base_factor_count > 20) {
+        add_diagnostic(design.diagnostics, DiagnosticMessage::Severity::error,
+                       "doe_factor_count_overflow",
+                       "基设计因子过多，无法生成运行数。");
+        return design;
+    }
+
+    std::vector<std::uint32_t> generator_masks;
+    if (options.fraction_p > 0) {
+        if (!options.generators_text.empty()) {
+            if (!parse_generators_text(options.generators_text, factor_count,
+                                       options.fraction_p, generator_masks,
+                                       design.diagnostics)) {
+                return design;
+            }
+        } else {
+            generator_masks = default_generator_masks(factor_count, options.fraction_p);
+            if (generator_masks.empty()) {
+                add_diagnostic(design.diagnostics, DiagnosticMessage::Severity::error,
+                               "unsupported_doe_fraction_default",
+                               "该 (k,p) 无内置默认生成器，请在 generators 中手写。");
+                return design;
+            }
+        }
+        std::vector<std::uint32_t> relation_generators;
+        relation_generators.reserve(generator_masks.size());
+        for (std::size_t index = 0; index < generator_masks.size(); ++index) {
+            const std::size_t generated = base_factor_count + index;
+            const std::uint32_t word =
+                generator_masks[index] | (std::uint32_t{1} << generated);
+            relation_generators.push_back(word);
+            design.generators.push_back(
+                std::string(1, static_cast<char>('A' + generated)) + "="
+                + mask_to_letters(generator_masks[index]));
+        }
+        const std::vector<std::uint32_t> relation =
+            defining_relation_words(relation_generators);
+        design.resolution = design_resolution(relation);
+        for (const std::uint32_t word : relation) {
+            design.defining_relation.push_back(mask_to_letters(word));
+        }
+        design.alias_lines = build_alias_lines(factor_count, relation);
+        {
+            DiagnosticMessage note;
+            note.severity = DiagnosticMessage::Severity::info;
+            note.code = "doe_fractional_resolution";
+            note.message = "部分析因分辨度 " + roman_resolution(design.resolution)
+                + "（字长最短非 I 词）。";
+            design.diagnostics.push_back(std::move(note));
+        }
+    }
+
     const std::size_t max_size = std::numeric_limits<std::size_t>::max();
     std::size_t factorial_run_count = 1;
-    for (std::size_t index = 0; index < factor_count; ++index) {
+    for (std::size_t index = 0; index < base_factor_count; ++index) {
         if (factorial_run_count > max_size / 2) {
             add_diagnostic(design.diagnostics, DiagnosticMessage::Severity::error,
                            "doe_factor_count_overflow",
-                           "因子数量过大，无法生成全因子运行数。");
+                           "因子数量过大，无法生成运行数。");
             return design;
         }
         factorial_run_count *= 2;
@@ -127,10 +453,20 @@ DoeFactorialDesign generate_2_level_factorial(const DoeDesignOptions& options)
          standard_order < factorial_run_count; ++standard_order) {
         DoeRun run;
         run.standard_order = standard_order;
-        run.coded_levels.reserve(factor_count);
-        for (std::size_t factor = 0; factor < factor_count; ++factor) {
+        run.coded_levels.assign(factor_count, -1);
+        for (std::size_t factor = 0; factor < base_factor_count; ++factor) {
             const bool high = (standard_order & (std::size_t{1} << factor)) != 0;
-            run.coded_levels.push_back(high ? 1 : -1);
+            run.coded_levels[factor] = high ? 1 : -1;
+        }
+        for (std::size_t index = 0; index < generator_masks.size(); ++index) {
+            int level = 1;
+            std::uint32_t mask = generator_masks[index];
+            for (std::size_t factor = 0; factor < factor_count; ++factor) {
+                if ((mask & (std::uint32_t{1} << factor)) != 0) {
+                    level *= run.coded_levels[factor];
+                }
+            }
+            run.coded_levels[base_factor_count + index] = level;
         }
         design.runs.push_back(std::move(run));
     }

@@ -1,0 +1,68 @@
+exact=1624 sw=207 ew=147 reconstructed_bullets=304 uncovered_bullets=30 unmapped_chrome=1 unmapped_diags=1
+
+=== UNCOVERED BULLET TOPICS ===
+  14	other
+  6	inference
+  3	spc
+  2	msa
+  2	capability
+  1	reliability
+  1	regression
+  1	doe
+
+=== UNCOVERED BULLETS BY TOPIC ===
+
+## other n=14
+  L76	配置排除了  行；结论只适用于纳入分析的数据。
+  L81	配置隐藏了  行；隐藏行仍计入分析口径，仅影响显示。不得将 hidden 与 excluded 合并叙述。
+  L290	；用于对照测量增量是否物理合理，不是公差合格证明。
+  L418	；请与产品公差及风险等级核对后决定校准、维修或放行策略。
+  L525	可靠性结果当前不可识别，不能估计寿命分位数。可靠性结果不可识别（），不能估计寿命分位数。
+  L1125	 使用  近似，P = ，已做 ties 修正。未拒绝原假设不能证明两组或各组分布相同。
+  L1264	模型出现完全分离，极大似然估计可能不存在，不对系数给出稳定解释。IRLS 未收敛，不对发散系数给出稳定解释。
+  L1376	，变量 = ，树数 = ，标记异常 = ；分数阈值 ≈ 。分数高只提示相对孤立，与单变量 outlier_test 分流，不能写成工艺判定。
+  L1541	已按  追溯  个分层分母；部分/全部分层 expected_failures 使用 cause-specific 分模式 R(T_w)。
+  L1550	已按  追溯  个分层分母；分层 expected_failures 使用池化 R(T_w)。
+  L2075	规则「」已触发。：
+  L2340	 Sigma Z = ，存在过度离散，传统控制限可能过窄。，控制限已按离散程度进行调整。
+  L2369	前  个类别累计占比 未知%；应优先结合现场原因验证，而不是直接假设存在 80/20 规律。
+  L2383	前  个类别累计占比 %；应优先结合现场原因验证，而不是直接假设存在 80/20 规律。
+
+## inference n=6
+  L1449	）：变量数 = ，成对数 = 。热图只展示两两相关结构。
+  L1938	；未拒绝正态假设不等于已证明正态分布。
+  L2199	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  L2211	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+  L2285	，判定区 = （按输入顺序与 α=0.05 近似 dL/dU）。不能写成已证明无自相关或存在自相关。
+  L2460	；小 P 提示序列存在总体自相关结构，应结合 ACF/PACF 图与工艺时序解释。
+
+## spc n=3
+  L387	；基于用户提供的过程变差（6σ）。
+  L2056	发现  个控制图超限点。
+  L2318	：m = ，p = ，子组数 = ，超限 = 。超限是统计信号提示，需要结合工艺调查，不能单独写成失控或稳定结论。 本图不是 PCA 经验分位 T²。 默认 UCL 可能是渐近近似，不是 ARL 仿真校准。 Montgomery |S| 子组图；个体路径与 NIST 争议说明见诊断。
+
+## msa n=2
+  L283	，分级 = 。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+  L311	；%Contribution 与 %Study Var 口径不同，不能混用。
+
+## capability n=2
+  L1838	）。这是当前样本的不合格品率估计，不是过程合格判定。
+  L2038	Johnson 变换后的 Pp/Ppk 是变换尺度上的 overall 指数；未拒绝变换后正态假设不等于原始数据服从正态分布，也不能写成过程合格。非正态 Z-score Pp/Ppk 依赖所选分布的 CDF；拟合未拒绝假设不等于已证明过程服从该分布，也不能写成过程合格。
+
+## reliability n=1
+  L433	已对  个失效模式做 cause-specific 分模式拟合（scheme=
+
+## regression n=1
+  L1345	）：N = ，滞后 = ，有效回归行 = ；τ ≈ ；5% 临界值 ≈ ；相对 5% 临界值有拒绝单位根的证据；相对 5% 临界值未拒绝单位根。单位根结论只描述差分平稳性证据，不能外推为工艺判定。
+
+## doe n=1
+  L1513	）：因子 = ，立方点 = ，星点 = ，中心点 = ，α = 。
+
+=== UNMAPPED CHROME ===
+  src/application/graph_service.cpp:2109	Hexbin（分面）
+
+=== UNMAPPED DIAGS BY FILE ===
+  1	doe_factorial.cpp
+
+=== UNMAPPED DIAGS ===
+  src/domain/statistics/doe_factorial.cpp:427	部分析因分辨度 

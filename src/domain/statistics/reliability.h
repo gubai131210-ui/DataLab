@@ -58,6 +58,27 @@ LogRankResult log_rank_test(const std::vector<double>& times,
                             const std::vector<bool>& events,
                             const std::vector<int>& groups);
 
+struct LogRankGroupSummary {
+    int group_id = 0;
+    std::size_t n = 0;
+    std::size_t failures = 0;
+    std::size_t censored = 0;
+};
+
+struct LogRankKGroupsResult {
+    double chi_square = 0.0;
+    double df = 0.0;
+    double p_value = 1.0;
+    std::vector<LogRankGroupSummary> group_summaries;
+    QualityEvidence evidence;
+    std::vector<RuleEvidence> rules;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+LogRankKGroupsResult log_rank_k_groups(const std::vector<double>& times,
+                                       const std::vector<bool>& events,
+                                       const std::vector<int>& groups);
+
 struct WeibullResult {
     double shape = 0.0;
     double scale = 0.0;

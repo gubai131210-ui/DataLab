@@ -1,0 +1,34 @@
+{
+  "dataset_id": "phase4_doe_bbd_k3_stdorder",
+  "design_type": "bbd",
+  "evidence_type": "golden",
+  "source_evidence_type": "reference_implementation",
+  "reference_script": "scripts/doe_rsm_reference_points.py",
+  "formula_source": "https://itl.nist.gov/div898/handbook/pri/section3/pri3362.htm",
+  "notes": "Frozen standard-order coded points for 3-factor Box–Behnken (n0=1, randomize=false). Pair loops: i<j, si in {-1,1}, sj in {-1,1}. Corners absent by design. Not vendor_oracle.",
+  "tolerance": 1e-12,
+  "options": {
+    "center_point_count": 1,
+    "randomize": false,
+    "factors": [
+      {"id": "X1", "low": -1.0, "high": 1.0, "center": 0.0},
+      {"id": "X2", "low": -1.0, "high": 1.0, "center": 0.0},
+      {"id": "X3", "low": -1.0, "high": 1.0, "center": 0.0}
+    ]
+  },
+  "runs_standard_order": [
+    {"standard_order": 1, "point_type": "edge", "coded": [-1.0, -1.0, 0.0]},
+    {"standard_order": 2, "point_type": "edge", "coded": [-1.0, 1.0, 0.0]},
+    {"standard_order": 3, "point_type": "edge", "coded": [1.0, -1.0, 0.0]},
+    {"standard_order": 4, "point_type": "edge", "coded": [1.0, 1.0, 0.0]},
+    {"standard_order": 5, "point_type": "edge", "coded": [-1.0, 0.0, -1.0]},
+    {"standard_order": 6, "point_type": "edge", "coded": [-1.0, 0.0, 1.0]},
+    {"standard_order": 7, "point_type": "edge", "coded": [1.0, 0.0, -1.0]},
+    {"standard_order": 8, "point_type": "edge", "coded": [1.0, 0.0, 1.0]},
+    {"standard_order": 9, "point_type": "edge", "coded": [0.0, -1.0, -1.0]},
+    {"standard_order": 10, "point_type": "edge", "coded": [0.0, -1.0, 1.0]},
+    {"standard_order": 11, "point_type": "edge", "coded": [0.0, 1.0, -1.0]},
+    {"standard_order": 12, "point_type": "edge", "coded": [0.0, 1.0, 1.0]},
+    {"standard_order": 13, "point_type": "center", "coded": [0.0, 0.0, 0.0]}
+  ]
+}

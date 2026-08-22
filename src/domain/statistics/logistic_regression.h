@@ -52,6 +52,40 @@ struct LogisticRegressionResult {
     double leverage_threshold = 0.0;
     std::optional<double> maximum_leverage;
     std::optional<double> maximum_vif;
+    std::size_t concordant_pairs = 0;
+    std::size_t discordant_pairs = 0;
+    std::size_t tied_pairs = 0;
+    std::optional<double> pairs_concordance_percent;
+    std::size_t true_positive = 0;
+    std::size_t true_negative = 0;
+    std::size_t false_positive = 0;
+    std::size_t false_negative = 0;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+struct LogisticStepwiseStep {
+    std::size_t step = 0;
+    std::string action;  // enter / remove / start / stop
+    std::string term;
+    std::optional<double> deviance;
+    std::optional<double> aic;
+    std::optional<double> aicc;
+    std::optional<double> bic;
+    std::optional<double> enter_p_value;
+    std::optional<double> remove_p_value;
+};
+
+struct LogisticStepwiseResult {
+    std::string method = "stepwise";
+    std::string criterion = "alpha";
+    double alpha_enter = 0.15;
+    double alpha_remove = 0.15;
+    std::size_t observation_count = 0;
+    std::size_t candidate_count = 0;
+    std::size_t best_step_index = 0;
+    std::vector<std::string> selected_terms;
+    std::vector<LogisticStepwiseStep> steps;
+    LogisticRegressionResult final_model;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -72,5 +106,16 @@ double predict_logistic_probability(
 std::vector<double> predict_logistic_probabilities(
     const LogisticRegressionResult& result,
     const std::vector<std::vector<double>>& predictors);
+
+LogisticStepwiseResult fit_logistic_stepwise(
+    const std::vector<int>& response,
+    const std::vector<std::vector<double>>& predictors,
+    const std::vector<std::string>& predictor_labels = {},
+    const std::string& method = "stepwise",
+    double alpha_enter = 0.15,
+    double alpha_remove = 0.15,
+    double confidence_level = 0.95,
+    std::size_t max_iterations = 100,
+    double tolerance = 1.0e-8);
 
 }  // namespace datalab::domain::statistics

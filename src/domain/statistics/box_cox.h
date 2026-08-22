@@ -21,4 +21,16 @@ BoxCoxResult box_cox_transform(
     std::optional<double> requested_lambda = std::nullopt,
     bool round_interpretable_lambda = true);
 
+// Classic power transform used for dual-scale reporting (not geometric-mean scaled).
+double box_cox_apply(double value, double lambda);
+
+// Transform a specification limit; returns nullopt for non-positive / nonfinite.
+std::optional<double> box_cox_transform_limit(double limit, double lambda);
+
+// True when transformed LSL/USL preserve strict order (Box-Cox/log strictly increasing on (0,∞)).
+bool box_cox_limits_order_ok(
+    double original_lsl,
+    double original_usl,
+    double lambda);
+
 }  // namespace datalab::domain::statistics

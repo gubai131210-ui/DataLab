@@ -1,0 +1,283 @@
+unmapped axis/title/diag count: 282
+doe_pages.cpp	axis	观测顺序
+doe_pages.cpp	axis	理论分位数
+doe_pages.cpp	axis	频数
+doe_pages.cpp	title	残差 = 0
+doe_pages.cpp	title	棱
+doe_pages.cpp	push_diag	立方图仅支持 2 或 3 个因子（当前 
+doe_pages.cpp	push_diag	等值线/曲面的 X/Y 因子无效或相同；请指定两个不同的因子名。
+doe_pages.cpp	push_diag	等值线/曲面图需要至少两个连续因子。
+doe_pages.cpp	push_diag	已生成可写入工作表的设计矩阵（实际水平 + 空 Response 列）；
+output_builder.cpp	push_diag	是
+output_builder.cpp	push_diag	无
+analysis_service.cpp	axis	零件
+analysis_service.cpp	axis	单元格均值
+analysis_service.cpp	axis	样本
+analysis_service.cpp	axis	理论标准正态分位数
+analysis_service.cpp	axis	变换后测量
+analysis_service.cpp	axis	分组
+analysis_service.cpp	axis	标准正态分位数
+analysis_service.cpp	axis	观测序
+analysis_service.cpp	axis	成对比较
+analysis_service.cpp	axis	率比
+analysis_service.cpp	axis	类别序号
+analysis_service.cpp	axis	标准化变换 SD
+analysis_service.cpp	axis	变换值
+analysis_service.cpp	axis	阳性率
+analysis_service.cpp	axis	事件概率
+analysis_service.cpp	axis	候选排序
+analysis_service.cpp	axis	参考值
+analysis_service.cpp	axis	测量序号
+analysis_service.cpp	axis	评估者
+analysis_service.cpp	axis	拟合
+analysis_service.cpp	axis	类别
+analysis_service.cpp	axis	原因数
+analysis_service.cpp	axis	接收概率 Pa(p)
+analysis_service.cpp	title	零件均值
+analysis_service.cpp	title	中心
+analysis_service.cpp	title	拟合线
+analysis_service.cpp	title	异常点
+analysis_service.cpp	title	嫌疑观测
+analysis_service.cpp	title	等价下限
+analysis_service.cpp	title	等价上限
+analysis_service.cpp	title	差 = 0
+analysis_service.cpp	title	差值置信区间
+analysis_service.cpp	title	率比置信区间
+analysis_service.cpp	title	选定 λ
+analysis_service.cpp	title	方差分量（交叉 ANOVA）
+analysis_service.cpp	title	秩和检验
+analysis_service.cpp	title	符号秩检验
+analysis_service.cpp	title	位置估计（Walsh）
+analysis_service.cpp	title	符号摘要
+analysis_service.cpp	title	中位数置信区间
+analysis_service.cpp	title	比较准则
+analysis_service.cpp	title	Runs检验
+analysis_service.cpp	title	Fisher精确检验
+analysis_service.cpp	title	2×2 交叉表
+analysis_service.cpp	title	处理成功计数
+analysis_service.cpp	title	各处理阳性率
+analysis_service.cpp	title	各组 Above/Below
+analysis_service.cpp	title	Kruskal-Wallis 结果
+analysis_service.cpp	title	检验统计量
+analysis_service.cpp	title	处理摘要
+analysis_service.cpp	title	Nemenyi 成对比较
+analysis_service.cpp	title	T² 摘要
+analysis_service.cpp	title	逐点 T²
+analysis_service.cpp	title	逐点 MEWMA T²
+analysis_service.cpp	title	广义方差摘要
+analysis_service.cpp	title	逐子组 |S|
+analysis_service.cpp	title	广义方差 |S| 图
+analysis_service.cpp	title	区域图参数
+analysis_service.cpp	title	区域累计得分
+analysis_service.cpp	title	拟合与预测明细
+analysis_service.cpp	title	预测准确度
+analysis_service.cpp	title	实际值、拟合值与预测区间
+analysis_service.cpp	title	预测值
+analysis_service.cpp	title	预测区间
+analysis_service.cpp	title	候选模型比较
+analysis_service.cpp	title	模型摘要与预测
+analysis_service.cpp	title	ARIMA 拟合与预测
+analysis_service.cpp	title	ANOVA 表
+analysis_service.cpp	title	因子 A 均值
+analysis_service.cpp	title	因子 B 均值
+analysis_service.cpp	title	拟合优度
+analysis_service.cpp	title	系数与 Odds Ratio
+analysis_service.cpp	title	拟合与残差
+analysis_service.cpp	title	参数估计
+analysis_service.cpp	title	因子均值
+analysis_service.cpp	title	单元均值
+analysis_service.cpp	title	单元统计
+analysis_service.cpp	title	标准差图
+analysis_service.cpp	title	容差区间直方图
+analysis_service.cpp	title	方差检验结果
+analysis_service.cpp	title	季节指数
+analysis_service.cpp	title	时间序列分解拟合
+analysis_service.cpp	title	趋势
+analysis_service.cpp	title	响应目标
+analysis_service.cpp	title	最佳组合
+analysis_service.cpp	title	候选组合
+analysis_service.cpp	title	响应预测
+analysis_service.cpp	title	候选组合总体 Desirability
+analysis_service.cpp	title	观测偏倚
+analysis_service.cpp	title	功效与样本量
+analysis_service.cpp	title	功效曲线
+analysis_service.cpp	title	功效
+analysis_service.cpp	title	上置信限
+analysis_service.cpp	title	下置信限
+analysis_service.cpp	title	评估者内一致性
+analysis_service.cpp	title	评估者间一致性
+analysis_service.cpp	title	评估者间总体 Kappa（Fleiss）
+analysis_service.cpp	title	评估者间 Kendall W
+analysis_service.cpp	title	评估者内 Kendall W
+analysis_service.cpp	title	评估者 vs 标准 Kendall τ
+analysis_service.cpp	title	全体 vs 标准 Kendall τ
+analysis_service.cpp	title	评估者×零件一致率
+analysis_service.cpp	title	评估者一致率
+analysis_service.cpp	title	SARIMA 候选模型比较
+analysis_service.cpp	title	Rolling-origin 评估
+analysis_service.cpp	title	Rolling-origin 明细
+analysis_service.cpp	title	季节性拟合与预测
+analysis_service.cpp	title	特征值与解释率
+analysis_service.cpp	title	主成分系数
+analysis_service.cpp	title	相关载荷
+analysis_service.cpp	title	主成分得分
+analysis_service.cpp	title	T² 与 Q 阈值
+analysis_service.cpp	title	T² 与 Q 残差
+analysis_service.cpp	title	PCA 得分图
+analysis_service.cpp	title	簇摘要
+analysis_service.cpp	title	质心（分析尺度）
+analysis_service.cpp	title	簇分配
+analysis_service.cpp	title	K-Means 散点（前两列）
+analysis_service.cpp	title	树结点
+analysis_service.cpp	title	变量重要性
+analysis_service.cpp	title	训练集混淆矩阵
+analysis_service.cpp	title	观测 vs 拟合
+analysis_service.cpp	title	ADF 检验
+analysis_service.cpp	title	ADF 回归系数
+analysis_service.cpp	title	序列
+analysis_service.cpp	title	拟合与 Pearson 残差
+analysis_service.cpp	title	拟合 vs Pearson 残差
+analysis_service.cpp	title	异常分数
+analysis_service.cpp	title	Bootstrap 摘要
+analysis_service.cpp	title	Bootstrap 均值分布
+analysis_service.cpp	title	合并历程
+analysis_service.cpp	title	簇分配（切 k）
+analysis_service.cpp	title	层次聚类散点（前两列）
+analysis_service.cpp	title	系数（阈值与斜率）
+analysis_service.cpp	title	类均值
+analysis_service.cpp	title	LD 投影（示意）
+analysis_service.cpp	title	相关矩阵
+analysis_service.cpp	title	相关热图
+analysis_service.cpp	title	逐步步骤
+analysis_service.cpp	title	选入项
+analysis_service.cpp	title	终模型系数
+analysis_service.cpp	title	摘要
+analysis_service.cpp	title	I-MR-R/S 参数
+analysis_service.cpp	title	I-MR-R/S 逐子组统计
+analysis_service.cpp	title	能力图
+analysis_service.cpp	title	四图说明
+analysis_service.cpp	title	箱线统计
+analysis_service.cpp	title	缺陷计数
+analysis_service.cpp	title	关于中位数的游程
+analysis_service.cpp	title	上升/下降游程
+analysis_service.cpp	title	结构摘要
+analysis_service.cpp	title	抽样计划
+analysis_service.cpp	title	OC 曲线
+analysis_service.cpp	title	OC 曲线（二项）
+analysis_service.cpp	title	决策限
+analysis_service.cpp	title	总体均值
+analysis_service.cpp	title	泊松参数
+analysis_service.cpp	diag	无法计算 I-MR-R/S 控制图。
+analysis_service.cpp	push_diag	重复次数小于 2，无法绘制按零件 R 图。
+analysis_service.cpp	push_diag	重复次数小于 2，无法绘制按操作者 R 图。
+analysis_service.cpp	push_diag	跳过 
+analysis_service.cpp	push_diag	目标不合格品率
+analysis_service.cpp	push_diag	AD 判定
+analysis_service.cpp	push_diag	Johnson 能力为研究/预览结果：可显示拟合与变换尺度指数，
+analysis_service.cpp	push_diag	正态能力未满足稳定性/正态性验收前置：禁止过程合格判定
+analysis_service.cpp	push_diag	描述统计跳过 
+analysis_service.cpp	push_diag	相关分析 complete-case 跳过 
+analysis_service.cpp	push_diag	单侧置信区间缺少一端，未输出均值区间图。
+analysis_service.cpp	push_diag	双样本 t 检验跳过缺失或非法单元格；组 1 = 
+analysis_service.cpp	push_diag	单侧置信区间缺少一端，未输出组均值区间图。
+analysis_service.cpp	push_diag	目标比例
+analysis_service.cpp	push_diag	样本 1
+analysis_service.cpp	push_diag	样本 2
+analysis_service.cpp	push_diag	配对差值
+analysis_service.cpp	push_diag	参考样本
+analysis_service.cpp	push_diag	双样本等价性检验跳过缺失或非法单元格。
+analysis_service.cpp	push_diag	均值比等价性检验跳过缺失或非法单元格。
+analysis_service.cpp	push_diag	配对等价性检验按 complete-case 对齐，已跳过不成对的缺失或非法单元格。
+analysis_service.cpp	push_diag	已将多行事件数/试验数求和后再做单比例等价性检验。
+analysis_service.cpp	push_diag	已将一组或多组的多行事件数/试验数求和后再做两比例等价性检验。
+analysis_service.cpp	push_diag	两比例等价性检验跳过了缺失或非法单元格。
+analysis_service.cpp	push_diag	ANOVA 跳过 
+analysis_service.cpp	push_diag	是（区间不含 0）
+analysis_service.cpp	push_diag	误差自由度或 MSE 不可用，未输出组均值区间。
+analysis_service.cpp	push_diag	单侧置信区间缺少一端，未输出差值区间图。
+analysis_service.cpp	push_diag	回归使用 complete-case，跳过响应缺失、预测变量缺失或无效的行。
+analysis_service.cpp	push_diag	残差正态性
+analysis_service.cpp	push_diag	已将一组或多组的多行事件数/试验数求和后再做两比例检验。
+analysis_service.cpp	push_diag	两比例检验跳过了缺失或非法单元格。
+analysis_service.cpp	push_diag	交叉表仅汇总频数与百分比；独立性检验请使用命令 chi_square。
+analysis_service.cpp	push_diag	Box-Cox 跳过 
+analysis_service.cpp	push_diag	Mann–Whitney 跳过 
+analysis_service.cpp	push_diag	Wilcoxon 跳过 
+analysis_service.cpp	push_diag	符号检验跳过 
+analysis_service.cpp	push_diag	序列中间存在缺失或非法值，游程检验要求完整连续观测，未计算检验。
+analysis_service.cpp	push_diag	游程检验跳过两端缺失或非法单元格 N* = 
+analysis_service.cpp	push_diag	Fisher 精确检验要求恰好 2×2 水平；当前行水平数 = 
+analysis_service.cpp	push_diag	Fisher 精确检验按 complete-case 跳过 
+analysis_service.cpp	push_diag	McNemar 按 complete-case 跳过 
+analysis_service.cpp	push_diag	Cochran Q 要求至少 3 个处理列；两列配对请用 McNemar。
+analysis_service.cpp	push_diag	存在无法识别为二元水平的标签。
+analysis_service.cpp	push_diag	Cochran Q 按 complete-case 跳过 
+analysis_service.cpp	push_diag	Mood 跳过 
+analysis_service.cpp	push_diag	Kruskal–Wallis 跳过 
+analysis_service.cpp	push_diag	Friedman 按 complete-case 跳过 
+analysis_service.cpp	push_diag	超限
+analysis_service.cpp	push_diag	平滑跳过缺失或无效的数值单元格。
+analysis_service.cpp	push_diag	Logistic 回归使用 complete-case，缺失或非法行已排除。
+analysis_service.cpp	push_diag	 跳过 
+analysis_service.cpp	push_diag	测量或因子缺失、* 或非法单元格已跳过 
+analysis_service.cpp	push_diag	所有单元仅 1 个观测，标准差图无可绘点。
+analysis_service.cpp	push_diag	缺失、* 或非法数值未进入容差区间计算。
+analysis_service.cpp	push_diag	Bonett 仅支持两样本；k>2 组请改用 Levene（中位数）。
+analysis_service.cpp	push_diag	时间列与值列未配对的行已跳过，分解仅使用可对齐的完整观测。
+analysis_service.cpp	push_diag	分解跳过缺失或无效的时间/数值单元格。
+analysis_service.cpp	push_diag	因子编码失败。
+analysis_service.cpp	push_diag	未检测到中心点（编码全 0）；纯误差/失拟诊断受限。
+analysis_service.cpp	push_diag	曲面图为静态栅格可视化，不得解读为可旋转交互 3D。
+analysis_service.cpp	push_diag	存在缺少有效因子水平的运行，已跳过。
+analysis_service.cpp	push_diag	已按 PointType/中心水平导入中心点运行，可用于曲率与纯误差。
+analysis_service.cpp	push_diag	缺少回归系数协方差矩阵，响应优化表中的置信区间与预测区间显示为 *。
+analysis_service.cpp	push_diag	Bias/Linearity 跳过 
+analysis_service.cpp	push_diag	未提供过程变差（6×过程标准差），Linearity / %Linearity / %Bias 未计算。
+analysis_service.cpp	push_diag	Type 1 Gage 跳过 
+analysis_service.cpp	push_diag	当前为二参数 Weibull。含阈值的三参数模型请选择 model=weibull3。
+analysis_service.cpp	push_diag	当前为一参数指数。含阈值的两参数模型请选择 model=exponential2。
+analysis_service.cpp	push_diag	当前为二参数对数正态。含阈值的三参数模型请选择 model=lognormal3。
+analysis_service.cpp	push_diag	已指定多协变量列：Fine-Gray 使用 multi IPCW，
+analysis_service.cpp	push_diag	已指定连续协变量列：Fine-Gray 使用 continuous IPCW，
+analysis_service.cpp	push_diag	已生成逐观测删失状态工作表（
+analysis_service.cpp	push_diag	暴露量列必须为有限非负数；缺失或非法值不会被静默补齐。
+analysis_service.cpp	push_diag	暴露量列求和后必须为正有限数；不得用标量默认值静默补齐。
+analysis_service.cpp	push_diag	同时提供了暴露量列与标量暴露量；摘要使用列求和，标量被忽略。
+analysis_service.cpp	push_diag	Nested Gage R&R 跳过缺失或非法的测量/零件/操作者单元格。
+analysis_service.cpp	push_diag	经验分位（非 Minitab T² 控制图 UCL）
+analysis_service.cpp	push_diag	(仅截距)
+analysis_service.cpp	push_diag	区间删失 Turnbull 为简化网格 NPMLE（formula_reference）；
+analysis_service.cpp	push_diag	历史 μ
+analysis_service.cpp	push_diag	历史 σ
+analysis_service.cpp	push_diag	控制限参数来源
+analysis_service.cpp	push_diag	阶段数
+analysis_service.cpp	push_diag	阶段 
+analysis_service.cpp	push_diag	阶段列
+analysis_service.cpp	push_diag	EDA 四图用于探索位置/散布/随机性/分布形态假设，不能写成过程受控或分布已正态。
+analysis_service.cpp	push_diag	已忽略类别为空或 * 的汇总行。
+analysis_service.cpp	push_diag	已忽略负数或非整数缺陷计数。
+analysis_service.cpp	push_diag	序列中间存在缺失或非法值，运行图随机性检验要求完整连续观测，未计算四模式 P。
+analysis_service.cpp	push_diag	运行图跳过两端缺失或非法单元格 N* = 
+analysis_service.cpp	push_diag	因果图跳过 
+analysis_service.cpp	push_diag	本轮 ANOM 仅支持正态均值；二项/泊松计数请用其他工具。
+analysis_service.cpp	push_diag	ANOM 跳过 
+analysis_service.cpp	push_diag	泊松拟合优度跳过 
+chart_pages.cpp	push_diag	规则策略
+chart_pages.cpp	push_diag	启用规则
+graph_service.cpp	title	散点图（分面）
+graph_service.cpp	title	区间散点图（分面）
+graph_service.cpp	title	相关图（分面）
+graph_service.cpp	title	气泡图（分面）
+graph_service.cpp	title	正态概率图（分面）
+graph_service.cpp	title	经验累积分布图（分面）
+graph_service.cpp	title	矩阵图（分面）
+graph_service.cpp	title	边际图（分面）
+graph_service.cpp	title	平行坐标图（分面）
+graph_service.cpp	title	热图（分面）
+graph_service.cpp	title	时间序列图（分面）
+graph_service.cpp	title	等值线图（分面）
+graph_service.cpp	title	密度图（分面）
+graph_service.cpp	title	Hexbin（分面）
+graph_service.cpp	title	小提琴图（分面）
+graph_service.cpp	title	条形图（分面）
+graph_service.cpp	diag	密度曲线是连续估计网格，不是离散观测标记；

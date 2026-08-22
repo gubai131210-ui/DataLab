@@ -1,0 +1,45 @@
+﻿# F' deepen (scenario prefilter - section 3.1) — 30 tests in 4 Qt Creator targets
+
+## report_export_phase2_test (20 tests)
+  - pdf_box_cox_invalid_spec_limit_cross_template_table_visibility_and_en_us_locale
+  - pdf_box_cox_invalid_spec_limit_localizes_to_en_us_without_chinese_leak
+  - pdf_box_cox_spec_limit_gate_localizes_and_audit_evidence_carries_label_text_id
+  - pdf_density_curve_not_discrete_marks_gate_localizes_and_audit_evidence_carries_label_text_id
+  - pdf_graph_bar_faceted_cross_template_plot_visibility_and_en_us_locale
+  - pdf_graph_density_faceted_cross_template_plot_visibility_and_en_us_locale
+  - pdf_graph_hexbin_faceted_cross_template_plot_visibility_and_en_us_locale
+  - pdf_hexbin_rectangular_bins_gate_localizes_and_audit_evidence_carries_label_text_id
+  - pdf_johnson_spec_outside_cross_template_table_visibility_and_en_us_locale
+  - pdf_johnson_spec_outside_support_localizes_to_en_us_without_chinese_leak
+  - pdf_warranty_exposure_column_override_localizes_to_en_us_without_chinese_leak
+  - pdf_warranty_exposure_cross_template_table_visibility_and_en_us_locale
+  - pdf_warranty_exposure_gate_localizes_and_audit_evidence_carries_label_text_id
+  - pdf_warranty_invalid_exposure_localizes_to_en_us_without_chinese_leak
+  - representative_graph_bar_faceted_three_report_profiles_localize_without_cross_language_leak
+  - representative_graph_density_faceted_three_report_profiles_localize_without_cross_language_leak
+  - representative_graph_hexbin_faceted_three_report_profiles_localize_without_cross_language_leak
+  - representative_johnson_spec_outside_three_report_profiles_localize_without_cross_language_leak
+  - representative_warranty_exposure_column_override_three_report_profiles_localize_without_cross_language_leak
+  - representative_warranty_exposure_gate_three_report_profiles_localize_without_cross_language_leak
+
+## report_locale_phase3_test (2 tests)
+  - box_cox_spec_limit_diag_localizes_to_en_us
+  - warranty_exposure_diag_localizes_to_en_us
+
+## report_profile_phase1_test (5 tests)
+  - customer_keeps_box_cox_limiting_evidence_under_truncation
+  - customer_keeps_density_curve_not_discrete_marks_limiting_evidence_under_truncation
+  - customer_keeps_hexbin_rectangular_bins_limiting_evidence_under_truncation
+  - customer_keeps_johnson_spec_limit_evidence_under_truncation
+  - customer_keeps_warranty_exposure_gate_evidence_under_truncation
+
+## interpretation_service_test (3 tests)
+  - usesBoxCoxSpecLimitGateInterpretationBullet
+  - usesJohnsonSpecLimitGateInterpretationBullet
+  - usesWarrantyExposureGateInterpretationBullet
+
+
+# Qt Creator: open Tests, run targets above (ReportExportPhase2Test is largest batch).
+# Full section 3.1: python tools/list_qt_creator_test_targets.py --by-target
+# Full scenario: python tools/list_qt_creator_test_targets.py --scenario --by-target
+# By scenario: python tools/list_phase3_prefilter_by_scenario.py

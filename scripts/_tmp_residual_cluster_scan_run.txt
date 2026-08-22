@@ -1,0 +1,12 @@
+﻿wrote D:\QT_CppPrograms\DataLab\scripts\_tmp_residual_cluster_scan_out.txt
+UNIQ_UNMAPPED 539
+  189	domain_diag
+  86	misc_param_chrome
+  69	inference
+  65	reliability
+  41	doe_rsm
+  18	attrib_spc_oc
+  14	msa
+  14	capability
+  14	graph_eda_facet
+  12	forecast_ts

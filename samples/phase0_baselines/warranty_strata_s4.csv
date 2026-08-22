@@ -1,0 +1,6 @@
+time,censor_type,mode,exposure
+10,exact,wear,10
+12,exact,wear,10
+15,right,wear,20
+8,exact,early,5
+30,right,,5

@@ -90,6 +90,17 @@ void ReliabilityMsaPowerTest::kaplanMeierAndLifetimeModels()
     QVERIFY(log_rank.chi_square >= 0.0);
     QVERIFY(log_rank.p_value >= 0.0 && log_rank.p_value <= 1.0);
 
+    const auto log_rank_k = datalab::domain::statistics::log_rank_k_groups(
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0},
+        {true, false, true, false, true, true, false},
+        {0, 0, 1, 1, 2, 2, 2});
+    QCOMPARE(log_rank_k.group_summaries.size(), std::size_t{3});
+    QVERIFY(log_rank_k.chi_square >= 0.0);
+    QVERIFY(std::abs(log_rank_k.df - 2.0) < 1.0e-9);
+    QVERIFY(log_rank_k.p_value >= 0.0 && log_rank_k.p_value <= 1.0);
+    QCOMPARE(log_rank_k.group_summaries[0].n, std::size_t{2});
+    QCOMPARE(log_rank_k.group_summaries[2].failures, std::size_t{1});
+
     const std::vector<double> lognormal_times = {
         std::exp(0.0), std::exp(0.2), std::exp(-0.1), std::exp(0.4),
         std::exp(0.1), std::exp(-0.2), std::exp(0.3), std::exp(0.05)};

@@ -40,4 +40,10 @@ struct Element final {
 QString tooltip_text(const ChartModel& model, const Hit& hit);
 QString element_path(const ChartModel& model, const Element& element);
 
+// Resolve chart selection indices to worksheet source rows.
+// Prefer member_source_rows[i] for aggregated marks; else source_rows[i].
+std::vector<std::size_t> resolve_selected_source_rows(
+    const ChartModel& model,
+    const std::vector<std::size_t>& selected_points);
+
 }  // namespace chart_interaction

@@ -1,5 +1,6 @@
 #include "domain/statistics/equivalence_test.h"
 
+#include "domain/statistics/inference_extensions.h"
 #include "domain/statistics/normal_distribution.h"
 
 #include <algorithm>

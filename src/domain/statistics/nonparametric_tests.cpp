@@ -1460,4 +1460,222 @@ CochranQResult cochran_q_test(
     return result;
 }
 
+namespace {
+
+std::size_t count_side_runs(const std::vector<int>& sides)
+{
+    if (sides.empty()) {
+        return 0;
+    }
+    std::size_t runs = 1;
+    for (std::size_t i = 1; i < sides.size(); ++i) {
+        if (sides[i] != sides[i - 1]) {
+            ++runs;
+        }
+    }
+    return runs;
+}
+
+std::size_t longest_side_run(const std::vector<int>& sides)
+{
+    if (sides.empty()) {
+        return 0;
+    }
+    std::size_t best = 1;
+    std::size_t current = 1;
+    for (std::size_t i = 1; i < sides.size(); ++i) {
+        if (sides[i] == sides[i - 1]) {
+            ++current;
+            best = std::max(best, current);
+        } else {
+            current = 1;
+        }
+    }
+    return best;
+}
+
+}  // namespace
+
+RunsTestResult runs_test(
+    const std::vector<double>& values,
+    RunsCriterionKind criterion_kind,
+    std::optional<double> criterion_value)
+{
+    RunsTestResult result;
+    result.criterion_kind = criterion_kind;
+    std::vector<double> finite;
+    finite.reserve(values.size());
+    for (double value : values) {
+        if (std::isfinite(value)) {
+            finite.push_back(value);
+        }
+    }
+    result.n = finite.size();
+    if (result.n < 2) {
+        error(result.diagnostics, "runs_insufficient_n",
+              "游程检验至少需要 2 个有限观测。");
+        return result;
+    }
+
+    if (criterion_kind == RunsCriterionKind::value) {
+        if (!criterion_value.has_value() || !std::isfinite(*criterion_value)) {
+            error(result.diagnostics, "runs_missing_criterion",
+                  "指定比较准则时必须提供有限的 K。");
+            return result;
+        }
+        result.criterion = *criterion_value;
+    } else if (criterion_kind == RunsCriterionKind::median) {
+        result.criterion = median_of(finite);
+    } else {
+        result.criterion = std::accumulate(finite.begin(), finite.end(), 0.0)
+            / static_cast<double>(finite.size());
+    }
+
+    std::vector<int> sides;
+    sides.reserve(finite.size());
+    for (double value : finite) {
+        if (value > result.criterion) {
+            ++result.above;
+            sides.push_back(1);
+        } else {
+            ++result.below_or_equal;
+            sides.push_back(0);
+        }
+    }
+    result.observed_runs = count_side_runs(sides);
+
+    const double a = static_cast<double>(result.above);
+    const double b = static_cast<double>(result.below_or_equal);
+    const double n = static_cast<double>(result.n);
+    if (result.above == 0 || result.below_or_equal == 0) {
+        error(result.diagnostics, "runs_one_sided_empty",
+              "所有观测都在比较准则的同一侧，无法进行游程检验。");
+        return result;
+    }
+    if (result.above < 10 || result.below_or_equal < 10) {
+        result.small_sample_warning = true;
+        warning(result.diagnostics, "runs_normal_approximation_thin",
+                "两侧观测少于 10，正态近似可能不稳定。");
+    }
+
+    const double expected = 2.0 * a * b / n + 1.0;
+    const double variance = (2.0 * a * b * (2.0 * a * b - n))
+        / (n * n * (n - 1.0));
+    result.expected_runs = expected;
+    result.variance = variance;
+    if (!(variance > 0.0) || !std::isfinite(variance)) {
+        error(result.diagnostics, "runs_variance_invalid",
+              "游程方差不可计算。");
+        return result;
+    }
+    const double z = (static_cast<double>(result.observed_runs) - expected)
+        / std::sqrt(variance);
+    result.z_statistic = z;
+    result.p_value = std::clamp(
+        2.0 * (1.0 - standard_normal_cdf(std::abs(z))), 0.0, 1.0);
+    return result;
+}
+
+RunChartResult run_chart_analysis(const std::vector<double>& values)
+{
+    RunChartResult result;
+    std::vector<double> finite;
+    finite.reserve(values.size());
+    for (double value : values) {
+        if (std::isfinite(value)) {
+            finite.push_back(value);
+        }
+    }
+    result.n = finite.size();
+    if (result.n == 0) {
+        error(result.diagnostics, "run_chart_empty",
+              "Run Chart 需要至少一个有限观测。");
+        return result;
+    }
+    result.median = median_of(finite);
+
+    std::vector<int> sides;
+    sides.reserve(finite.size());
+    for (double value : finite) {
+        if (value > result.median) {
+            ++result.above_median;
+            sides.push_back(1);
+        } else {
+            ++result.below_or_equal_median;
+            sides.push_back(0);
+        }
+    }
+    result.runs_about_median = count_side_runs(sides);
+    result.longest_run_about_median = longest_side_run(sides);
+
+    // Up/down runs: strict up continues up; strict down OR equal continues down
+    // (Minitab: flat belongs to downward). Direction change starts a new run.
+    if (finite.size() >= 2) {
+        int direction = 0;  // +1 up, -1 down
+        std::size_t run_len = 1;
+        std::size_t longest = 1;
+        std::size_t run_count = 0;
+        for (std::size_t i = 1; i < finite.size(); ++i) {
+            const int step = (finite[i] > finite[i - 1]) ? 1 : -1;
+            if (finite[i] == finite[i - 1]) {
+                result.ties_break_direction = true;  // flag equals were present
+            }
+            if (direction == 0) {
+                direction = step;
+                run_len = 2;
+            } else if (direction == step) {
+                ++run_len;
+            } else {
+                ++run_count;
+                longest = std::max(longest, run_len);
+                direction = step;
+                run_len = 2;
+            }
+        }
+        if (direction != 0) {
+            ++run_count;
+            longest = std::max(longest, run_len);
+        }
+        result.runs_up_down = run_count;
+        result.longest_run_up_down = longest;
+    }
+
+    if (result.n >= 3 && result.above_median > 0 && result.below_or_equal_median > 0) {
+        const double m = static_cast<double>(result.above_median);
+        const double n_le = static_cast<double>(result.below_or_equal_median);
+        const double n = static_cast<double>(result.n);
+        const double expected_r = 2.0 * m * n_le / n + 1.0;
+        const double var_r = (2.0 * m * n_le * (2.0 * m * n_le - n))
+            / (n * n * (n - 1.0));
+        result.expected_runs_about_median = expected_r;
+        if (var_r > 0.0 && std::isfinite(var_r)) {
+            const double z_r = (static_cast<double>(result.runs_about_median)
+                - expected_r) / std::sqrt(var_r);
+            result.p_clustering = std::clamp(standard_normal_cdf(z_r), 0.0, 1.0);
+            result.p_mixtures = std::clamp(1.0 - standard_normal_cdf(z_r), 0.0, 1.0);
+        }
+
+        const double expected_v = (2.0 * n - 1.0) / 3.0;
+        const double var_v = (16.0 * n - 29.0) / 90.0;
+        result.expected_runs_up_down = expected_v;
+        if (var_v > 0.0 && std::isfinite(var_v) && result.n >= 3) {
+            const double z_v = (static_cast<double>(result.runs_up_down) - expected_v)
+                / std::sqrt(var_v);
+            result.p_trends = std::clamp(standard_normal_cdf(z_v), 0.0, 1.0);
+            result.p_oscillation = std::clamp(1.0 - standard_normal_cdf(z_v), 0.0, 1.0);
+        }
+    } else if (result.n < 3) {
+        warning(result.diagnostics, "run_chart_small_n",
+                "N < 3，仅输出图形与描述，不出随机性近似 P。");
+    } else {
+        warning(result.diagnostics, "run_chart_median_degenerate",
+                "全部点落在中位数同一侧，关于中位数的随机性 P 不可用。");
+    }
+    if (result.ties_break_direction) {
+        warning(result.diagnostics, "run_chart_flat_as_down",
+                "存在相邻相等点：按产品锁定计入下行游程（平坦差分归下行）。");
+    }
+    return result;
+}
+
 }  // namespace datalab::domain::statistics

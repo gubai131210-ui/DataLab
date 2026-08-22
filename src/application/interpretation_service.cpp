@@ -77,6 +77,12 @@ void add_limitations(const domain::OutputPage& page,
             "配置排除了 " + std::to_string(page.configuration.excluded_rows.size())
             + " 行；结论只适用于纳入分析的数据。");
     }
+    if (!page.configuration.hidden_rows.empty()) {
+        limitations.bullets.push_back(
+            "配置隐藏了 " + std::to_string(page.configuration.hidden_rows.size())
+            + " 行；隐藏行仍计入分析口径，仅影响显示。"
+            "不得将 hidden 与 excluded 合并叙述。");
+    }
 }
 
 void add_doe_rules(const domain::OutputPage& page,
@@ -203,6 +209,23 @@ void add_doe_rules(const domain::OutputPage& page,
             + " 个因子、" + std::to_string(page.configuration.doe.center_point_count)
             + " 个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。");
     }
+    if (page.facts.doe.has_value() && page.facts.doe->run_count > 0
+        && page.method_name.find("Factorial Design") != std::string::npos) {
+        conclusion.bullets.push_back(
+            "设计类型 = " + (page.facts.doe->design_kind.empty()
+                                 ? std::string("factorial")
+                                 : page.facts.doe->design_kind)
+            + "；运行数 = " + std::to_string(page.facts.doe->run_count)
+            + (page.facts.doe->resolution > 0
+                   ? ("；分辨度 = " + std::to_string(page.facts.doe->resolution))
+                   : "")
+            + "。可将设计矩阵写入工作表后用 DOE 响应分析衔接。");
+        if (!page.facts.doe->generator_text.empty()) {
+            advice.bullets.push_back(
+                "生成器：" + page.facts.doe->generator_text
+                + "。别名结构仅说明混淆模式，不是显著性结论。");
+        }
+    }
     if (page.configuration.doe.center_point_count == 0
         && page.method_name.find("Response") != std::string::npos) {
         limitations.bullets.push_back("未配置中心点，无法用中心点直接检验曲率；二水平线性模型的适用范围有限。");
@@ -253,8 +276,22 @@ void add_msa_rules(const domain::OutputPage& page,
 {
     if (page.facts.msa.has_value()
         && (page.method_name.find("Gage R&R") != std::string::npos
-            || page.method_name.find("Nested Gage") != std::string::npos)) {
+            || page.method_name.find("Nested Gage") != std::string::npos
+            || page.method_name.find("EMP") != std::string::npos)) {
         const auto& facts = *page.facts.msa;
+        if (facts.emp_available) {
+            conclusion.bullets.push_back(
+                "EMP Crossed：ICC(with interaction) = "
+                + (facts.emp_icc_with_interaction.has_value()
+                       ? std::to_string(*facts.emp_icc_with_interaction) : "*")
+                + "，分级 = " + facts.emp_classification
+                + "。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。");
+            if (facts.emp_probable_error.has_value()) {
+                limitations.bullets.push_back(
+                    "Probable Error = " + std::to_string(*facts.emp_probable_error)
+                    + "；用于对照测量增量是否物理合理，不是公差合格证明。");
+            }
+        }
         if (facts.ndc_available && facts.ndc.has_value()) {
             conclusion.bullets.push_back(
                 "ndc = " + std::to_string(*facts.ndc)
@@ -392,6 +429,112 @@ void add_reliability_rules(const domain::OutputPage& page,
 {
     if (page.facts.reliability.has_value()) {
         const auto& facts = *page.facts.reliability;
+        if (!facts.mode_fits.empty()) {
+            conclusion.bullets.push_back(
+                "已对 " + std::to_string(facts.mode_fits.size())
+                + " 个失效模式做 cause-specific 分模式拟合（scheme="
+                + (facts.mode_fit_scheme.empty() ? "cause_specific"
+                                                 : facts.mode_fit_scheme)
+                + "）。");
+            limitations.bullets.push_back(
+                "分模式可靠度为 formula_reference（竞争失效作右删失），"
+                "不是 vendor_oracle / golden；阈值模型与 pinned R 对齐仍未冻结。");
+        }
+        if (!facts.cif_modes.empty()) {
+            conclusion.bullets.push_back(
+                "已计算 " + std::to_string(facts.cif_modes.size())
+                + " 个失效模式的 Aalen–Johansen 累计发生函数 CIF（algorithm="
+                + (facts.cif_algorithm_id.empty() ? "aalen_johansen_cif"
+                                                  : facts.cif_algorithm_id)
+                + "）。");
+            limitations.bullets.push_back(
+                "CIF 为 formula_reference（Aalen–Johansen），"
+                "不是 Fine-Gray 回归，也不是 cause-specific 可靠度或 vendor_oracle。"
+                "Log-rank 不用于竞争风险 CIF 组间比较。");
+        }
+        if (facts.gray_chi_square.has_value() && facts.gray_p_value.has_value()) {
+            conclusion.bullets.push_back(
+                "Gray CIF 组间检验：χ²="
+                + std::to_string(*facts.gray_chi_square)
+                + "，P="
+                + std::to_string(*facts.gray_p_value)
+                + "（formula_reference / gray_cif_group_test）。");
+            limitations.bullets.push_back(
+                "Gray 检验为 formula_reference 窄化实现；Minitab 无对应菜单项。");
+        } else if (!facts.gray_not_computed_reason.empty()) {
+            limitations.bullets.push_back(
+                "Gray 检验未运行（" + facts.gray_not_computed_reason + "）。");
+        }
+        if (!facts.fine_gray_algorithm_id.empty()) {
+            if (facts.fine_gray_converged
+                && (facts.fine_gray_kind == "multi"
+                        ? !facts.fine_gray_terms.empty()
+                        : facts.fine_gray_beta.has_value())) {
+                if (facts.fine_gray_kind == "multi") {
+                    std::ostringstream multi;
+                    multi << "Fine-Gray 多协变量子分布风险：目标原因="
+                          << facts.fine_gray_target_mode << "，项数="
+                          << facts.fine_gray_terms.size();
+                    for (const auto& term : facts.fine_gray_terms) {
+                        multi << "；" << term.name;
+                        if (term.beta.has_value()) {
+                            multi << " β=" << *term.beta;
+                        }
+                        if (term.hazard_ratio.has_value()) {
+                            multi << " HR(+1)=" << *term.hazard_ratio;
+                        }
+                        if (term.p_value.has_value()) {
+                            multi << " P=" << *term.p_value;
+                        }
+                    }
+                    multi << "。";
+                    conclusion.bullets.push_back(multi.str());
+                } else if (facts.fine_gray_kind == "continuous") {
+                    conclusion.bullets.push_back(
+                        "Fine-Gray 连续协变量子分布风险：目标原因="
+                        + facts.fine_gray_target_mode + "，协变量="
+                        + (facts.fine_gray_covariate_name.empty()
+                               ? "x"
+                               : facts.fine_gray_covariate_name)
+                        + "，β=" + std::to_string(*facts.fine_gray_beta)
+                        + (facts.fine_gray_hazard_ratio.has_value()
+                               ? ("，HR(+1)="
+                                  + std::to_string(*facts.fine_gray_hazard_ratio))
+                               : "")
+                        + (facts.fine_gray_p_value.has_value()
+                               ? ("，P=" + std::to_string(*facts.fine_gray_p_value))
+                               : "")
+                        + "。");
+                } else {
+                    conclusion.bullets.push_back(
+                        "Fine-Gray 二分类子分布风险：目标原因="
+                        + facts.fine_gray_target_mode + "，group "
+                        + facts.fine_gray_group0 + "→0 / " + facts.fine_gray_group1
+                        + "→1，β=" + std::to_string(*facts.fine_gray_beta)
+                        + (facts.fine_gray_hazard_ratio.has_value()
+                               ? ("，HR=" + std::to_string(*facts.fine_gray_hazard_ratio))
+                               : "")
+                        + (facts.fine_gray_p_value.has_value()
+                               ? ("，P=" + std::to_string(*facts.fine_gray_p_value))
+                               : "")
+                        + "。");
+                }
+                if (facts.fine_gray_kind == "multi") {
+                    limitations.bullets.push_back(
+                        "Fine-Gray 为 formula_reference / fine_gray_multi_ipcw（多协变量 IPCW，均值中心化）；不是 cause-specific Cox、不是 vendor_oracle；未对齐 pinned R survival::finegray。");
+                } else if (facts.fine_gray_kind == "continuous") {
+                    limitations.bullets.push_back(
+                        "Fine-Gray 为 formula_reference / fine_gray_continuous_ipcw（单协变量 IPCW）；不是 cause-specific Cox、不是 vendor_oracle。");
+                } else {
+                    limitations.bullets.push_back(
+                        "Fine-Gray 为 formula_reference / fine_gray_binary_ipcw（单协变量 IPCW）；不是 cause-specific Cox、不是 vendor_oracle。");
+                }
+            } else if (!facts.fine_gray_not_computed_reason.empty()) {
+                limitations.bullets.push_back(
+                    "Fine-Gray 未计算（" + facts.fine_gray_not_computed_reason
+                    + "）；不得伪造子分布风险比。");
+            }
+        }
         if (!facts.identifiable) {
             limitations.bullets.push_back(
                 facts.not_computed_reason.empty()
@@ -417,6 +560,46 @@ void add_reliability_rules(const domain::OutputPage& page,
             if (!facts.median_life.has_value()) {
                 limitations.bullets.push_back(
                     "生存曲线未下降到 0.5，中位寿命不可估计。");
+            }
+            if (facts.log_rank_p_value.has_value() && facts.log_rank_chi_square.has_value()
+                && facts.log_rank_df.has_value()) {
+                const std::size_t group_count = facts.log_rank_group_count.value_or(
+                    facts.log_rank_groups.size());
+                std::ostringstream log_rank_summary;
+                log_rank_summary << "Log-rank 检验（K=" << group_count << "）：χ²="
+                                 << *facts.log_rank_chi_square << "，df="
+                                 << *facts.log_rank_df << "，P="
+                                 << *facts.log_rank_p_value << "。";
+                conclusion.bullets.push_back(log_rank_summary.str());
+                if (*facts.log_rank_p_value < 0.05) {
+                    conclusion.bullets.push_back(
+                        "在 α=0.05 下拒绝各组生存分布相等（formula_reference Log-rank）；"
+                        "应结合分组 KM 曲线解读差异。");
+                } else {
+                    limitations.bullets.push_back(
+                        "Log-rank 未在 α=0.05 下拒绝各组生存分布相等；"
+                        "未拒绝不等于已证明分布相同。");
+                }
+                if (!facts.log_rank_groups.empty()) {
+                    std::ostringstream group_detail;
+                    group_detail << "分组样本：";
+                    for (std::size_t index = 0; index < facts.log_rank_groups.size(); ++index) {
+                        if (index > 0) {
+                            group_detail << "；";
+                        }
+                        const auto& group = facts.log_rank_groups[index];
+                        group_detail << (group.label.empty()
+                                             ? ("组" + std::to_string(group.group_id))
+                                             : group.label)
+                                     << " N=" << group.n << " 失效=" << group.failures
+                                     << " 删失=" << group.censored;
+                    }
+                    group_detail << "。";
+                    conclusion.bullets.push_back(group_detail.str());
+                }
+                limitations.bullets.push_back(
+                    "Log-rank 为 formula_reference（Mantel–Cox 型），不是 vendor_oracle；"
+                    "多组比较自由度为 K−1。");
             }
             advice.bullets.push_back(
                 "按目标任务时间读取生存概率和置信区间；比较方案时使用分层或 Log-rank。");
@@ -740,6 +923,65 @@ void InterpretationService::enrich(domain::OutputPage& page)
         || page.method_name.find("Factorial") != std::string::npos
         || page.method_name == "Response Optimization") {
         add_doe_rules(page, conclusion, advice, limitations);
+    } else if (page.method_name.find("Response Surface") != std::string::npos
+               || page.facts.rsm.has_value()) {
+        if (page.facts.rsm.has_value()) {
+            const auto& rsm = *page.facts.rsm;
+            conclusion.bullets.push_back(
+                "RSM 二次模型（编码单位）：因子数 = "
+                + std::to_string(rsm.factor_count)
+                + "；项数 = " + std::to_string(rsm.term_count)
+                + (rsm.r_squared.has_value()
+                       ? "；R² = " + std::to_string(*rsm.r_squared)
+                       : "")
+                + "。");
+            if (!rsm.largest_abs_t_term.empty()) {
+                conclusion.bullets.push_back(
+                    "当前 |t| 最大项 = " + rsm.largest_abs_t_term
+                    + "（仅描述相对大小，不是工程最优）。");
+            }
+            if (rsm.contour_plot_available) {
+                advice.bullets.push_back(
+                    "等值线/曲面按前两因子绘制，其余因子编码 hold=0；用于探索响应形状。");
+            }
+            if (rsm.surface_is_static) {
+                limitations.bullets.push_back(
+                    "曲面图为静态栅格，不是可旋转交互 3D。");
+            }
+            if (!rsm.design_source_id.empty()) {
+                conclusion.bullets.push_back(
+                    "设计来源 ID = " + rsm.design_source_id
+                    + (rsm.design_kind.empty() ? "" : ("（" + rsm.design_kind + "）"))
+                    + "；编码模式 = " + rsm.coding_mode + "。");
+            }
+            if (rsm.center_point_count == 0) {
+                limitations.bullets.push_back(
+                    "未检测到中心点；纯误差估计可能不可用。");
+            }
+            if (!rsm.pure_error_available) {
+                limitations.bullets.push_back(
+                    "无重复编码点：未报告纯误差/失拟；不得用残差 MS 冒充纯误差。");
+            } else if (rsm.lack_of_fit_available) {
+                conclusion.bullets.push_back(
+                    "失拟检验可用（纯误差 DF = "
+                    + std::to_string(rsm.pure_error_df)
+                    + "；失拟 DF = "
+                    + std::to_string(rsm.lack_of_fit_df)
+                    + (rsm.lack_of_fit_p.has_value()
+                           ? ("；P = " + std::to_string(*rsm.lack_of_fit_p))
+                           : "")
+                    + "）；证据类型 formula_reference，不是 vendor_oracle。");
+            } else {
+                limitations.bullets.push_back(
+                    "有纯误差但失拟自由度不足，未给出失拟 F/P。");
+            }
+            if (rsm.residual_count > 0) {
+                advice.bullets.push_back(
+                    "请结合残差与拟合值/顺序/正态/直方图判断模型充分性。");
+            }
+            limitations.bullets.push_back(
+                "RSM 系数在编码单位；显著不等于已找到工程最优设定。");
+        }
     } else if (page.method_name.find("MSA") != std::string::npos
                || page.method_name.find("Stability") != std::string::npos
                || page.method_name.find("Gage R&R") != std::string::npos) {
@@ -794,32 +1036,87 @@ void InterpretationService::enrich(domain::OutputPage& page)
     }
     if (page.facts.chi_square.has_value()) {
         const auto& facts = *page.facts.chi_square;
-        conclusion.bullets.push_back(
-            "Pearson χ²"
-            + (facts.statistic.has_value() ? " = " + std::to_string(*facts.statistic) : "")
-            + (facts.p_value.has_value()
-                   ? "，P = " + std::to_string(*facts.p_value) : "")
-            + "。P 值只描述当前列联表与独立性假设的一致程度，不能证明因果关系。");
-        if (facts.expected_count_warning) {
-            raise_severity(conclusion.severity, Severity::warning);
-            limitations.bullets.push_back("存在期望频数过小的单元格，卡方近似可能不可靠。");
+        if (facts.method == "fisher_exact") {
+            conclusion.bullets.push_back(
+                "Fisher 精确检验"
+                + (facts.fisher_p_value.has_value()
+                       ? " P = " + std::to_string(*facts.fisher_p_value)
+                       : (facts.p_value.has_value()
+                              ? " P = " + std::to_string(*facts.p_value) : ""))
+                + (facts.odds_ratio.has_value()
+                       ? "，优势比 OR = " + std::to_string(*facts.odds_ratio)
+                       : "")
+                + "。P 值只描述当前 2×2 表与独立性假设的一致程度，不能写成已证明存在或不存在关联。");
+        } else {
+            conclusion.bullets.push_back(
+                "Pearson χ²"
+                + (facts.statistic.has_value() ? " = " + std::to_string(*facts.statistic) : "")
+                + (facts.p_value.has_value()
+                       ? "，P = " + std::to_string(*facts.p_value) : "")
+                + "。P 值只描述当前列联表与独立性假设的一致程度，不能证明因果关系。");
+            if (facts.expected_count_warning) {
+                raise_severity(conclusion.severity, Severity::warning);
+                limitations.bullets.push_back("存在期望频数过小的单元格，卡方近似可能不可靠。");
+            }
         }
         if (facts.plot_available) {
             limitations.bullets.push_back(
                 "观察频数热图只展示列联表中的计数分布，不能证明因果关系。");
         }
+        if (facts.residual_heatmap_available) {
+            limitations.bullets.push_back(
+                "调整残差热图只描述单元格相对独立假设的偏离方向与相对大小，不是因果证据。");
+        }
+        if (facts.max_abs_adjusted_residual.has_value()) {
+            conclusion.bullets.push_back(
+                "最大 |调整残差| = " + std::to_string(*facts.max_abs_adjusted_residual)
+                + (facts.largest_contribution_cell.empty()
+                       ? std::string()
+                       : ("，贡献最大单元格: " + facts.largest_contribution_cell))
+                + "。这些量只帮助定位偏离，不能写成已证明关联或无关联。");
+        }
+        if (facts.percent_tables_available) {
+            limitations.bullets.push_back(
+                "行%/列%/合计% 是描述性汇总，不替代独立性检验结论。");
+        }
+    }
+    if (page.facts.cross_tab.has_value()) {
+        const auto& facts = *page.facts.cross_tab;
+        conclusion.bullets.push_back(
+            "交叉表汇总 "
+            + std::to_string(facts.row_count) + " × " + std::to_string(facts.column_count)
+            + " 分类，N = " + std::to_string(facts.total_count)
+            + "。本输出只提供频数与百分比，不做独立性检验；检验请使用列联表卡方。");
+        if (facts.percent_tables_available) {
+            limitations.bullets.push_back(
+                "百分比表是描述性结果，不能写成已证明存在或不存在关联。");
+        }
     }
     if (page.facts.chi_square_gof.has_value()) {
         const auto& facts = *page.facts.chi_square_gof;
-        conclusion.bullets.push_back(
-            "拟合优度 Pearson χ²"
-            + (facts.statistic.has_value() ? " = " + std::to_string(*facts.statistic) : "")
-            + (facts.p_value.has_value()
-                   ? "，P = " + std::to_string(*facts.p_value) : "")
-            + "，DF = "
-            + (facts.degrees_of_freedom.has_value()
-                   ? std::to_string(*facts.degrees_of_freedom) : "*")
-            + "。P 值只描述观察频数与指定比例的一致程度，不能证明总体比例等于假设。");
+        if (facts.method == "poisson") {
+            conclusion.bullets.push_back(
+                "泊松拟合优度 Pearson χ²"
+                + (facts.statistic.has_value() ? " = " + std::to_string(*facts.statistic) : "")
+                + (facts.p_value.has_value()
+                       ? "，P = " + std::to_string(*facts.p_value) : "")
+                + "，DF = "
+                + (facts.degrees_of_freedom.has_value()
+                       ? std::to_string(*facts.degrees_of_freedom) : "*")
+                + (facts.lambda_hat.has_value()
+                       ? "，λ̂ = " + std::to_string(*facts.lambda_hat) : "")
+                + "。P 值只描述观察计数与泊松模型的偏离程度，不能证明总体服从泊松分布。");
+        } else {
+            conclusion.bullets.push_back(
+                "拟合优度 Pearson χ²"
+                + (facts.statistic.has_value() ? " = " + std::to_string(*facts.statistic) : "")
+                + (facts.p_value.has_value()
+                       ? "，P = " + std::to_string(*facts.p_value) : "")
+                + "，DF = "
+                + (facts.degrees_of_freedom.has_value()
+                       ? std::to_string(*facts.degrees_of_freedom) : "*")
+                + "。P 值只描述观察频数与指定比例的一致程度，不能证明总体比例等于假设。");
+        }
         if (facts.expected_count_warning) {
             raise_severity(conclusion.severity, Severity::warning);
             limitations.bullets.push_back("存在期望频数过小的类别，卡方近似可能不可靠。");
@@ -895,7 +1192,8 @@ void InterpretationService::enrich(domain::OutputPage& page)
                     + std::to_string(*facts.ci_upper)
                     + "]。区间只描述中位数的可能范围，不能写成已证明等于假设值。");
             } else if (facts.method != "sign_test"
-                       && facts.method != "sign_test_paired") {
+                       && facts.method != "sign_test_paired"
+                       && facts.method != "runs_test") {
                 conclusion.bullets.push_back(
                     "位置差异估计为 " + std::to_string(*facts.location_estimate)
                     + "，置信区间 [" + std::to_string(*facts.ci_lower) + ", "
@@ -909,7 +1207,8 @@ void InterpretationService::enrich(domain::OutputPage& page)
                     "Walsh 估计中位数为 " + std::to_string(*facts.location_estimate)
                     + "，置信下界 " + std::to_string(*facts.ci_lower) + "。");
             } else if (facts.method != "sign_test"
-                       && facts.method != "sign_test_paired") {
+                       && facts.method != "sign_test_paired"
+                       && facts.method != "runs_test") {
                 conclusion.bullets.push_back(
                     "位置差异估计为 " + std::to_string(*facts.location_estimate)
                     + "，置信下界 " + std::to_string(*facts.ci_lower) + "。");
@@ -922,7 +1221,8 @@ void InterpretationService::enrich(domain::OutputPage& page)
                     "Walsh 估计中位数为 " + std::to_string(*facts.location_estimate)
                     + "，置信上界 " + std::to_string(*facts.ci_upper) + "。");
             } else if (facts.method != "sign_test"
-                       && facts.method != "sign_test_paired") {
+                       && facts.method != "sign_test_paired"
+                       && facts.method != "runs_test") {
                 conclusion.bullets.push_back(
                     "位置差异估计为 " + std::to_string(*facts.location_estimate)
                     + "，置信上界 " + std::to_string(*facts.ci_upper) + "。");
@@ -977,6 +1277,18 @@ void InterpretationService::enrich(domain::OutputPage& page)
                     + "]，只描述位置不确定性，不能写成已证明等于假设值。");
             }
         }
+        if (facts.method == "runs_test") {
+            conclusion.bullets.push_back(
+                "游程检验"
+                + (facts.p_value.has_value()
+                       ? " P = " + std::to_string(*facts.p_value) : " 未计算出 P")
+                + "。结果只陈述相对比较准则 K 的顺序随机性证据，不能写成已证明过程受控或失控。");
+            if (facts.location_estimate.has_value()) {
+                limitations.bullets.push_back(
+                    "比较准则 K = " + std::to_string(*facts.location_estimate)
+                    + "；等号归入 ≤K 侧。");
+            }
+        }
         if (facts.method == "wilcoxon_one_sample" && facts.p_value.has_value()) {
             conclusion.bullets.push_back(
                 "单样本 Wilcoxon 符号秩 P = " + std::to_string(*facts.p_value)
@@ -1028,7 +1340,22 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 + (facts.maximum_vif.has_value()
                        ? "；最大 VIF = " + std::to_string(*facts.maximum_vif)
                        : "")
+                + (facts.concordant_pairs + facts.discordant_pairs > 0
+                       ? "；配对一致率 ≈ "
+                           + std::to_string(facts.pairs_concordance_percent.value_or(0.0))
+                           + "%"
+                       : "")
                 + "。系数解释依赖事件编码和 complete-case 样本。");
+        }
+        if (!facts.stepwise_method.empty() && facts.stepwise_step_count > 0) {
+            conclusion.bullets.push_back(
+                "Logistic 逐步（" + facts.stepwise_method + " / "
+                + facts.stepwise_criterion + "）：保留 "
+                + std::to_string(facts.stepwise_selected_count)
+                + " 个预测变量；best step = "
+                + std::to_string(facts.stepwise_best_step_index) + "。");
+            limitations.bullets.push_back(
+                "logistic_regression 逐步选择不稳定时勿外推；非 Minitab golden；非 holdout 验证。");
         }
     }
     if (page.facts.pca.has_value() && conclusion.bullets.empty()) {
@@ -1044,6 +1371,387 @@ void InterpretationService::enrich(domain::OutputPage& page)
             raise_severity(conclusion.severity, Severity::warning);
             limitations.bullets.push_back("特征分解未收敛时不对主成分或异常点给出稳定解释。");
         }
+    }
+    if (page.facts.kmeans.has_value()) {
+        const auto& facts = *page.facts.kmeans;
+        conclusion.bullets.push_back(
+            "K-Means：k = " + std::to_string(facts.k)
+            + "，N = " + std::to_string(facts.n)
+            + "，变量数 = " + std::to_string(facts.variable_count)
+            + "，迭代 = " + std::to_string(facts.iterations)
+            + (facts.converged ? "（已收敛）" : "（未完全收敛）")
+            + (facts.total_within_ss.has_value()
+                   ? "；总簇内平方和 ≈ " + std::to_string(*facts.total_within_ss)
+                   : "")
+            + "。簇标签只描述相对邻近结构，不能写成过程或批次判定。");
+        limitations.bullets.push_back(
+            "初始质心取前 k 个观测；结果依赖尺度"
+            + std::string(facts.standardized ? "（已标准化）" : "（未标准化）")
+            + "；非 Minitab golden。");
+    }
+    if (page.facts.cart_tree.has_value()) {
+        const auto& facts = *page.facts.cart_tree;
+        std::string metric_text;
+        if (facts.train_metric.has_value()) {
+            metric_text = facts.task == "regression"
+                ? ("；训练集 RMSE ≈ " + std::to_string(*facts.train_metric))
+                : ("；训练集准确率 ≈ " + std::to_string(*facts.train_metric));
+        }
+        conclusion.bullets.push_back(
+            "CART 单树任务 = " + facts.task
+            + "，N = " + std::to_string(facts.n)
+            + "，预测变量 = " + std::to_string(facts.predictor_count)
+            + "，结点 = " + std::to_string(facts.node_count)
+            + "，叶 = " + std::to_string(facts.leaf_count)
+            + (facts.top_variable.empty() ? "" : ("；主导分裂变量 = " + facts.top_variable))
+            + metric_text
+            + "。训练集指标不能外推为过程合格结论。");
+        limitations.bullets.push_back(
+            "自研二叉 CART；非 Minitab TreeNet/Random Forests 对齐；本轮无成本复杂度剪枝。");
+    }
+    if (page.facts.adf.has_value()) {
+        const auto& facts = *page.facts.adf;
+        conclusion.bullets.push_back(
+            "ADF（" + facts.regression + "）：N = " + std::to_string(facts.n)
+            + "，滞后 = " + std::to_string(facts.lags)
+            + "，有效回归行 = " + std::to_string(facts.used_observations)
+            + (facts.tau.has_value() ? ("；τ ≈ " + std::to_string(*facts.tau)) : "")
+            + (facts.critical_5.has_value()
+                   ? ("；5% 临界值 ≈ " + std::to_string(*facts.critical_5))
+                   : "")
+            + (facts.reject_unit_root_at_5
+                   ? "；相对 5% 临界值有拒绝单位根的证据"
+                   : "；相对 5% 临界值未拒绝单位根")
+            + "。单位根结论只描述差分平稳性证据，不能外推为工艺判定。");
+        limitations.bullets.push_back(
+            "临界值为大样本 MacKinnon 风格常数；非 Minitab 导出；宜与 ACF/PACF 一并阅读。");
+    }
+    if (page.facts.poisson_regression.has_value()) {
+        const auto& facts = *page.facts.poisson_regression;
+        conclusion.bullets.push_back(
+            "Poisson 回归（log 链）：N = " + std::to_string(facts.n)
+            + "，预测变量 = " + std::to_string(facts.predictor_count)
+            + "，迭代 = " + std::to_string(facts.iteration_count)
+            + (facts.converged ? "（已收敛）" : "（未收敛）")
+            + (facts.deviance.has_value()
+                   ? "；偏差 ≈ " + std::to_string(*facts.deviance) : "")
+            + (facts.aic.has_value() ? "；AIC ≈ " + std::to_string(*facts.aic) : "")
+            + "。系数显著性只描述计数均值与预测变量的关联证据。");
+        limitations.bullets.push_back(
+            "本轮无负二项/零膨胀/偏移列；非 Minitab golden。");
+    }
+    if (page.facts.isolation_forest.has_value()) {
+        const auto& facts = *page.facts.isolation_forest;
+        conclusion.bullets.push_back(
+            "Isolation Forest：N = " + std::to_string(facts.n)
+            + "，变量 = " + std::to_string(facts.variable_count)
+            + "，树数 = " + std::to_string(facts.tree_count)
+            + "，标记异常 = " + std::to_string(facts.anomaly_count)
+            + (facts.score_threshold.has_value()
+                   ? ("；分数阈值 ≈ " + std::to_string(*facts.score_threshold))
+                   : "")
+            + "。分数高只提示相对孤立，与单变量 outlier_test 分流，不能写成工艺判定。");
+        limitations.bullets.push_back(
+            "自研实现；非 sklearn 运行时；非 TreeNet/RF。");
+    }
+    if (page.facts.bootstrap_mean.has_value()) {
+        const auto& facts = *page.facts.bootstrap_mean;
+        conclusion.bullets.push_back(
+            "Bootstrap 均值（" + facts.method + "）：N = " + std::to_string(facts.n)
+            + "，B = " + std::to_string(facts.replicates)
+            + (facts.sample_mean.has_value()
+                   ? ("；均值 ≈ " + std::to_string(*facts.sample_mean)) : "")
+            + (facts.ci_lower.has_value() && facts.ci_upper.has_value()
+                   ? ("；CI ≈ [" + std::to_string(*facts.ci_lower) + ", "
+                      + std::to_string(*facts.ci_upper) + "]")
+                   : "")
+            + "。区间只描述重抽样不确定性。");
+        limitations.bullets.push_back("本轮为百分位法，非 BCa。");
+    }
+    if (page.facts.bootstrap_two_sample.has_value()) {
+        const auto& facts = *page.facts.bootstrap_two_sample;
+        conclusion.bullets.push_back(
+            "Bootstrap 双样本均值差（" + facts.method + "）：N1 = "
+            + std::to_string(facts.n_first) + "，N2 = "
+            + std::to_string(facts.n_second) + "，B = "
+            + std::to_string(facts.replicates)
+            + (facts.mean_difference.has_value()
+                   ? ("；均值差 ≈ " + std::to_string(*facts.mean_difference)) : "")
+            + (facts.ci_lower.has_value() && facts.ci_upper.has_value()
+                   ? ("；CI ≈ [" + std::to_string(*facts.ci_lower) + ", "
+                      + std::to_string(*facts.ci_upper) + "]")
+                   : "")
+            + "。区间只描述重抽样不确定性。");
+        limitations.bullets.push_back("本轮为百分位法，非 BCa；两组独立重抽样。");
+    }
+    if (page.facts.probit_reliability.has_value()) {
+        const auto& facts = *page.facts.probit_reliability;
+        conclusion.bullets.push_back(
+            "Probit 可靠性（" + facts.link + "）：N = " + std::to_string(facts.n)
+            + "，收敛 = " + std::string(facts.converged ? "是" : "否")
+            + (facts.ld50.has_value()
+                   ? ("；LD50 ≈ " + std::to_string(*facts.ld50)) : "")
+            + (facts.deviance.has_value()
+                   ? ("；偏差 ≈ " + std::to_string(*facts.deviance)) : "")
+            + "。系数描述应力/剂量与失效比例的关联证据。");
+        limitations.bullets.push_back(
+            "本轮为 logit 链接二项模型；非 Minitab probit golden。");
+    }
+    if (page.facts.hierarchical_cluster.has_value()) {
+        const auto& facts = *page.facts.hierarchical_cluster;
+        conclusion.bullets.push_back(
+            "层次聚类（" + facts.linkage + "）：N = " + std::to_string(facts.n)
+            + "，k = " + std::to_string(facts.cluster_count)
+            + "，合并步 = " + std::to_string(facts.merge_count)
+            + (facts.standardized ? "；已标准化" : "；未标准化")
+            + "。簇标签只描述相对邻近结构。");
+        limitations.bullets.push_back(
+            "本轮仅 complete linkage；非 K-Means；非 Minitab golden。");
+    }
+    if (page.facts.ordinal_logistic.has_value()) {
+        const auto& facts = *page.facts.ordinal_logistic;
+        conclusion.bullets.push_back(
+            "有序 Logistic（比例优势 logit）：N = " + std::to_string(facts.n)
+            + "，水平 = " + std::to_string(facts.category_count)
+            + "，预测变量 = " + std::to_string(facts.predictor_count)
+            + (facts.converged ? "；已收敛" : "；未收敛")
+            + (facts.aic.has_value() ? ("；AIC ≈ " + std::to_string(*facts.aic)) : "")
+            + "。系数描述有序累积对数优势的关联证据。");
+        limitations.bullets.push_back("本轮仅 logit 链；非名义 Logistic；非 Minitab golden。");
+    }
+    if (page.facts.nominal_logistic.has_value()) {
+        const auto& facts = *page.facts.nominal_logistic;
+        conclusion.bullets.push_back(
+            "名义 Logistic（广义 logit）：N = " + std::to_string(facts.n)
+            + "，水平 = " + std::to_string(facts.category_count)
+            + "，Logit = " + std::to_string(facts.logit_count)
+            + "，参考 = " + facts.reference_category
+            + (facts.converged ? "；已收敛" : "；未收敛")
+            + (facts.aic.has_value() ? ("；AIC ≈ " + std::to_string(*facts.aic)) : "")
+            + "。系数描述相对参考类别的对数优势证据。");
+        limitations.bullets.push_back("非有序 Logistic；非 Minitab golden。");
+    }
+    if (page.facts.discriminant.has_value()) {
+        const auto& facts = *page.facts.discriminant;
+        conclusion.bullets.push_back(
+            "线性判别：N = " + std::to_string(facts.n)
+            + "，类数 = " + std::to_string(facts.class_count)
+            + "，预测变量 = " + std::to_string(facts.predictor_count)
+            + (facts.train_accuracy.has_value()
+                   ? ("；训练准确率 ≈ " + std::to_string(*facts.train_accuracy))
+                   : "")
+            + "。训练集准确率不能外推为工艺判定。");
+        limitations.bullets.push_back("等协方差 LDA；不做 QDA；非 Minitab golden。");
+    }
+    if (page.facts.ccf.has_value()) {
+        const auto& facts = *page.facts.ccf;
+        conclusion.bullets.push_back(
+            "CCF：N = " + std::to_string(facts.n)
+            + "，max|lag| = " + std::to_string(facts.max_lag)
+            + (facts.ccf_at_zero.has_value()
+                   ? ("；lag0 ≈ " + std::to_string(*facts.ccf_at_zero))
+                   : "")
+            + "。越过带宽只提示相对独立性零假设的相关证据。");
+        limitations.bullets.push_back("白噪声固定带宽；非预白化；宜与 ACF/PACF 对照。");
+    }
+    if (page.facts.correlogram.has_value()) {
+        const auto& facts = *page.facts.correlogram;
+        conclusion.bullets.push_back(
+            "Correlogram（" + facts.method + "）：变量数 = "
+            + std::to_string(facts.variable_count)
+            + "，成对数 = " + std::to_string(facts.pair_count)
+            + "。热图只展示两两相关结构。");
+        limitations.bullets.push_back("与 correlation_plot 分流；非 Graph Builder。");
+    }
+    if (page.facts.stepwise_regression.has_value()) {
+        const auto& facts = *page.facts.stepwise_regression;
+        conclusion.bullets.push_back(
+            "逐步回归（" + facts.method
+            + (facts.criterion != "alpha" ? (" / " + facts.criterion) : "")
+            + "）：N = " + std::to_string(facts.n)
+            + "，候选 = " + std::to_string(facts.candidate_count)
+            + "，选入 = " + std::to_string(facts.selected_count)
+            + (facts.r_squared.has_value()
+                   ? ("；R² ≈ " + std::to_string(*facts.r_squared))
+                   : "")
+            + "。选入项只描述相对拟合证据。");
+        limitations.bullets.push_back(
+            facts.criterion != "alpha"
+                ? ("Forward " + facts.criterion + "；非 Best subsets；选择不稳定时勿外推。")
+                : "α 逐步；非 Best subsets；选择不稳定时勿外推。");
+    }
+    if (page.facts.nonparametric_capability.has_value()) {
+        const auto& facts = *page.facts.nonparametric_capability;
+        conclusion.bullets.push_back(
+            "非参数能力：N = " + std::to_string(facts.n)
+            + "，K = " + std::to_string(facts.tolerance_k)
+            + (facts.cnpk.has_value() ? ("；Cnpk ≈ " + std::to_string(*facts.cnpk)) : "")
+            + (facts.cnp.has_value() ? ("；Cnp ≈ " + std::to_string(*facts.cnp)) : "")
+            + (facts.observed_ppm_total.has_value()
+                   ? ("；Observed PPM Total ≈ "
+                      + std::to_string(*facts.observed_ppm_total))
+                   : "")
+            + "。指标基于经验分位数，不假设正态。");
+        limitations.bullets.push_back("禁止单独作为过程合格结论；非 Minitab golden。");
+    }
+    if (page.facts.cox_regression.has_value()) {
+        const auto& facts = *page.facts.cox_regression;
+        conclusion.bullets.push_back(
+            "Cox PH（" + facts.algorithm_id + "）：N = "
+            + std::to_string(facts.n)
+            + "，Events = " + std::to_string(facts.events)
+            + "，Censored = " + std::to_string(facts.censored)
+            + (facts.converged ? "；已收敛" : "；未收敛")
+            + (facts.log_likelihood.has_value()
+                   ? ("；Log-L = " + std::to_string(*facts.log_likelihood))
+                   : "")
+            + "。HR 为相对风险证据，不是因果或寿命达标证明。");
+        limitations.bullets.push_back(
+            "固定协变量 Cox（Breslow ties）；不是 Fine-Gray、不是 ALT、不是 Minitab golden。");
+    }
+    if (page.facts.accelerated_life.has_value()) {
+        const auto& facts = *page.facts.accelerated_life;
+        conclusion.bullets.push_back(
+            "加速寿命（Weibull+Arrhenius）：N = " + std::to_string(facts.n)
+            + "，失效 = " + std::to_string(facts.failure_count)
+            + "，应力水平 = " + std::to_string(facts.stress_level_count)
+            + (facts.shape.has_value() ? ("；Shape ≈ " + std::to_string(*facts.shape)) : "")
+            + (facts.converged ? "；已收敛" : "；未收敛")
+            + "。回归系数描述应力与对数寿命的关联证据。");
+        limitations.bullets.push_back("窄化 ALT；非试验计划；非 Minitab golden。");
+    }
+    if (page.facts.best_subsets_regression.has_value()) {
+        const auto& facts = *page.facts.best_subsets_regression;
+        conclusion.bullets.push_back(
+            "Best Subsets：N = " + std::to_string(facts.n)
+            + "，候选 = " + std::to_string(facts.candidate_count)
+            + "，摘要模型 = " + std::to_string(facts.model_count)
+            + (facts.best_r_squared.has_value()
+                   ? ("；最高 R² ≈ " + std::to_string(*facts.best_r_squared))
+                   : "")
+            + (facts.best_predictor_count.has_value()
+                   ? ("（" + std::to_string(*facts.best_predictor_count) + " 个预测变量）")
+                   : "")
+            + "。子集比较只描述相对拟合证据。");
+        limitations.bullets.push_back(
+            "子集枚举（≤15 候选）；非 Hamiltonian Walk；非 Minitab golden。");
+    }
+    if (page.facts.batch_capability.has_value()) {
+        const auto& facts = *page.facts.batch_capability;
+        conclusion.bullets.push_back(
+            "批次过程能力：批次数 = " + std::to_string(facts.batch_count)
+            + "，总 N = " + std::to_string(facts.total_observations)
+            + (facts.skipped_batch_count > 0
+                   ? ("，跳过小批次 = " + std::to_string(facts.skipped_batch_count))
+                   : "")
+            + "。各批指标只描述该批样本证据。");
+        limitations.bullets.push_back(
+            "逐批正态能力（样本 σ）；非 Between/Within；禁止写成批次合格。");
+    }
+    if (page.facts.km_interval.has_value()) {
+        const auto& facts = *page.facts.km_interval;
+        conclusion.bullets.push_back(
+            "区间删失 KM（Turnbull）：N = " + std::to_string(facts.n)
+            + "，左/区间/右 = "
+            + std::to_string(facts.left_censored_count) + "/"
+            + std::to_string(facts.interval_censored_count) + "/"
+            + std::to_string(facts.right_censored_count)
+            + (facts.median_life.has_value()
+                   ? ("；中位寿命 ≈ " + std::to_string(*facts.median_life))
+                   : "；中位寿命未估出")
+            + "。");
+        limitations.bullets.push_back(
+            "Turnbull NPMLE（简化网格）；evidence_type="
+            + facts.evidence_type + "；algorithm_id=" + facts.algorithm_id
+            + "；非右删失 product-limit；非参数寿命模型；不得写成 vendor_oracle/golden。");
+        if (facts.classic_km_equivalent) {
+            limitations.bullets.push_back(
+                "本批观测均为精确失效（无左/区间/右删失）；仍走区间 NPMLE 路径，"
+                "不自动等价替换为经典右删失 KM 报告。");
+        }
+        raise_severity(limitations.severity, Severity::warning);
+    }
+    if (page.facts.plackett_burman.has_value()) {
+        const auto& facts = *page.facts.plackett_burman;
+        conclusion.bullets.push_back(
+            "Plackett–Burman：因子 = " + std::to_string(facts.factor_count)
+            + "，运行 = " + std::to_string(facts.run_count)
+            + "，中心点 = " + std::to_string(facts.center_point_count)
+            + "。设计矩阵仅供筛选实验排布。");
+        limitations.bullets.push_back("分辨率 III；非 CCD/BBD；非 Minitab golden。");
+    }
+    if (page.facts.design_generation.has_value()) {
+        const auto& facts = *page.facts.design_generation;
+        if (facts.design_kind == "bbd") {
+            conclusion.bullets.push_back(
+                "Box–Behnken：因子 = " + std::to_string(facts.factor_count)
+                + "，边中点 = " + std::to_string(facts.edge_count)
+                + "，中心点 = " + std::to_string(facts.center_count)
+                + "，总运行 = " + std::to_string(facts.run_count)
+                + "。不包含所有因子同时极端的角点。");
+            limitations.bullets.push_back(
+                "证据类型 formula_reference；未宣称全域预测最优；非 vendor_oracle。");
+        } else {
+            conclusion.bullets.push_back(
+                "CCD（" + facts.ccd_variant + "）：因子 = "
+                + std::to_string(facts.factor_count)
+                + "，立方点 = " + std::to_string(facts.cube_count)
+                + "，星点 = " + std::to_string(facts.star_count)
+                + "，中心点 = " + std::to_string(facts.center_count)
+                + "，α = " + std::to_string(facts.alpha) + "。");
+            if (facts.beyond_range_detected) {
+                limitations.bullets.push_back(
+                    "检测到星点超出原始因素范围；需人工确认实验可行性。");
+            }
+            limitations.bullets.push_back(
+                "证据类型 formula_reference；非 vendor_oracle / 商业软件对齐。");
+        }
+    }
+    if (page.facts.warranty.has_value()) {
+        const auto& facts = *page.facts.warranty;
+        conclusion.bullets.push_back(
+            "保修摘要：T_w = " + std::to_string(facts.warranty_time) + " "
+            + facts.time_unit + "，暴露量 = " + std::to_string(facts.exposure)
+            + "，claims/1000 = " + std::to_string(facts.claims_per_1000)
+            + "（口径 = " + facts.quantity_label + "）。");
+        limitations.bullets.push_back(
+            "不得把统计预测写成法律/质量承诺；分母与时间窗口必须一并阅读。");
+        limitations.bullets.push_back(
+            "证据类型 " + facts.evidence_type + "；非 vendor_oracle。");
+        if (!facts.strata.empty()) {
+            if (facts.uses_mode_specific_reliability) {
+                conclusion.bullets.push_back(
+                    "已按 " + facts.stratum_kind + " 追溯 "
+                    + std::to_string(facts.strata.size())
+                    + " 个分层分母；部分/全部分层 expected_failures 使用 "
+                      "cause-specific 分模式 R(T_w)。");
+                limitations.bullets.push_back(
+                    "分模式 R 为 cause-specific（竞争失效作右删失）formula_reference，"
+                    "不是 vendor_oracle；不得写成商业软件对齐。");
+            } else {
+                conclusion.bullets.push_back(
+                    "已按 " + facts.stratum_kind + " 追溯 "
+                    + std::to_string(facts.strata.size())
+                    + " 个分层分母；分层 expected_failures 使用池化 R(T_w)。");
+                limitations.bullets.push_back(
+                    "分层未估计分模式可靠度（uses_pooled_reliability="
+                    + std::string(facts.uses_pooled_reliability ? "true" : "false")
+                    + "）；比例分摊暴露量须标注 proportional_scalar。");
+            }
+        }
+    }
+    bool warranty_exposure_gate = false;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "invalid_exposure_value"
+            || diagnostic.code == "warranty_zero_exposure") {
+            warranty_exposure_gate = true;
+            break;
+        }
+    }
+    if (warranty_exposure_gate) {
+        limitations.bullets.push_back(
+            "暴露量列无效或求和为零，已跳过保修摘要指标（非法律/质量承诺）。");
+        raise_severity(limitations.severity, Severity::warning);
     }
     if (page.facts.multi_vari.has_value()) {
         const auto& facts = *page.facts.multi_vari;
@@ -1062,6 +1770,30 @@ void InterpretationService::enrich(domain::OutputPage& page)
             "结合因子均值表回查占主导的因子水平；需要检验显著性时使用 ANOVA 或回归。");
         limitations.bullets.push_back(
             "分层均值图只用于探索变异来源，不能把结果写成过程判定。");
+        if (facts.missing_count > 0) {
+            limitations.bullets.push_back(
+                "已跳过 " + std::to_string(facts.missing_count)
+                + " 个缺失或不完整行。");
+        }
+    }
+    if (page.facts.variability.has_value()) {
+        const auto& facts = *page.facts.variability;
+        std::ostringstream text;
+        text << "变异性图按 " << facts.factor_count << " 个因子汇总 "
+             << facts.cell_count << " 个单元、" << facts.valid_count
+             << " 个有效测量的均值与标准差";
+        if (facts.overall_mean.has_value()) {
+            text << "，总均值 = " << *facts.overall_mean;
+        }
+        if (facts.mean_of_cell_sds.has_value()) {
+            text << "，单元 StDev 平均 = " << *facts.mean_of_cell_sds;
+        }
+        text << "。图只用于探索变异结构，不是显著性检验或过程判定。";
+        conclusion.bullets.push_back(text.str());
+        advice.bullets.push_back(
+            "先看均值面板中极差较大的单元，再对照标准差面板定位离散度来源。");
+        limitations.bullets.push_back(
+            "变异性图与 Multi-Vari 语义不同：本命令输出均值+极差与标准差双面板，不替代 ANOVA。");
         if (facts.missing_count > 0) {
             limitations.bullets.push_back(
                 "已跳过 " + std::to_string(facts.missing_count)
@@ -1091,13 +1823,20 @@ void InterpretationService::enrich(domain::OutputPage& page)
         if (facts.upper.has_value()) {
             interval_text += "，上限 " + std::to_string(*facts.upper);
         }
-        interval_text += "。正态假设状态为 " + facts.assumption_status
-            + "，区间只描述当前样本覆盖，不是规格覆盖或过程判定。";
+        interval_text += "。区间只描述当前样本覆盖，不是规格覆盖或过程判定。";
         conclusion.bullets.push_back(interval_text);
         advice.bullets.push_back(
-            "结合直方图与正态性诊断调查覆盖区间；需要对照规格时使用过程能力分析。");
-        limitations.bullets.push_back(
-            "本方法假设测量近似正态且未在本页验证；单侧使用 Natrella 近似，双侧使用 Howe 近似。");
+            "结合直方图与方法族诊断调查覆盖区间；需要对照规格时使用过程能力分析。");
+        if (facts.method_family == "nonparametric") {
+            limitations.bullets.push_back(
+                "非参数容差依赖序统计与连续分布假设；achieved confidence 低于目标时，"
+                "只说明样本量不足，不是计算错误。");
+        } else {
+            limitations.bullets.push_back(
+                "本方法假设测量近似正态且未在本页验证（assumption_status="
+                + facts.assumption_status
+                + "）；单侧使用 Natrella 近似，双侧使用 Howe 近似。");
+        }
         if (facts.missing_count > 0) {
             limitations.bullets.push_back(
                 "已跳过 " + std::to_string(facts.missing_count)
@@ -1190,6 +1929,18 @@ void InterpretationService::enrich(domain::OutputPage& page)
         limitations.bullets.push_back(
             "变换后能力指数（若出现）不是过程合格判定（assumption_status="
             + facts.assumption_status + "）。");
+        bool spec_limit_gate = false;
+        for (const auto& diagnostic : page.diagnostics) {
+            if (diagnostic.code == "box_cox_invalid_spec_limit"
+                || diagnostic.code == "box_cox_spec_limits_order") {
+                spec_limit_gate = true;
+                break;
+            }
+        }
+        if (spec_limit_gate) {
+            limitations.bullets.push_back(
+                "规格限无法变换或顺序无效，已跳过变换后过程能力表（非合格判定）。");
+        }
         raise_severity(limitations.severity, Severity::warning);
     }
     if (page.facts.poisson_rate.has_value()) {
@@ -1351,14 +2102,32 @@ void InterpretationService::enrich(domain::OutputPage& page)
         }
     }
     if (cpk.has_value()) {
-        raise_severity(conclusion.severity, *cpk < 1.33 ? Severity::warning : Severity::info);
+        const bool judgment_allowed = !page.facts.capability.has_value()
+            || page.facts.capability->pass_fail_judgment_allowed;
+        raise_severity(conclusion.severity,
+                      (!judgment_allowed || *cpk < 1.33) ? Severity::warning
+                                                         : Severity::info);
         const std::string assumption = page.facts.capability.has_value()
             ? page.facts.capability->assumption_status : "not_verified";
-        conclusion.bullets.push_back("Cpk = " + std::to_string(*cpk)
-                                 + (*cpk < 1.33
-                                        ? "，低于项目提示基准 1.33，需要调查过程能力。"
-                                        : "，达到项目提示基准 1.33；这不是已验证的过程合格结论。"));
-        if (page.facts.capability.has_value()
+        if (judgment_allowed) {
+            conclusion.bullets.push_back("Cpk = " + std::to_string(*cpk)
+                                     + (*cpk < 1.33
+                                            ? "，低于项目提示基准 1.33，需要调查过程能力。"
+                                            : "，达到项目提示基准 1.33；这不是已验证的过程合格结论。"));
+        } else {
+            const bool research = page.facts.capability.has_value()
+                && page.facts.capability->research_preview;
+            const bool nonnormal_path = page.facts.capability.has_value()
+                && (page.facts.capability->method == "non_normal"
+                    || page.facts.capability->method == "johnson");
+            conclusion.bullets.push_back(
+                "Cpk = " + std::to_string(*cpk)
+                + (research
+                       ? "（研究/预览指数；门禁禁止写成过程合格判定）。"
+                       : (nonnormal_path
+                              ? "（非正态/变换路径；禁止写成过程合格判定）。"
+                              : "（稳定性前置未验收；禁止写成过程合格判定）。")));
+        }        if (page.facts.capability.has_value()
             && page.facts.capability->cpk_lower.has_value()
             && page.facts.capability->cpk_upper.has_value()) {
             conclusion.bullets.push_back(
@@ -1380,10 +2149,88 @@ void InterpretationService::enrich(domain::OutputPage& page)
         }
     }
     if (ppk.has_value()) {
-        conclusion.bullets.push_back("Ppk = " + std::to_string(*ppk)
-                                 + (*ppk < 1.33
-                                        ? "，整体过程表现低于 1.33 提示基准。"
-                                        : "，整体过程表现达到 1.33 提示基准。"));
+        const bool judgment_allowed = !page.facts.capability.has_value()
+            || page.facts.capability->pass_fail_judgment_allowed;
+        if (judgment_allowed) {
+            conclusion.bullets.push_back("Ppk = " + std::to_string(*ppk)
+                                     + (*ppk < 1.33
+                                            ? "，整体过程表现低于 1.33 提示基准。"
+                                            : "，整体过程表现达到 1.33 提示基准。"));
+        } else {
+            const bool research = page.facts.capability.has_value()
+                && page.facts.capability->research_preview;
+            const bool nonnormal_path = page.facts.capability.has_value()
+                && (page.facts.capability->method == "non_normal"
+                    || page.facts.capability->method == "johnson");
+            conclusion.bullets.push_back(
+                "Ppk = " + std::to_string(*ppk)
+                + (research
+                       ? "（研究/预览指数；门禁禁止写成过程合格判定）。"
+                       : (nonnormal_path
+                              ? "（非正态/变换路径；禁止写成过程合格判定）。"
+                              : "（稳定性前置未验收；禁止写成过程合格判定）。")));
+        }
+    }
+    if (page.facts.capability.has_value()
+        && !page.facts.capability->pass_fail_judgment_allowed
+        && !page.facts.capability->research_preview
+        && page.facts.capability->method != "non_normal"
+        && page.facts.capability->method != "johnson") {
+        limitations.bullets.push_back(
+            "gate_status=" + page.facts.capability->gate_status
+            + "；stability_screen="
+            + page.facts.capability->stability_screen_status
+            + "（OOC="
+            + std::to_string(page.facts.capability->stability_out_of_control_count)
+            + "）；bimodality_screen="
+            + page.facts.capability->bimodality_screen_status
+            + "（peaks="
+            + std::to_string(page.facts.capability->bimodality_peak_count)
+            + "）；hartigan_dip="
+            + page.facts.capability->hartigan_dip_status
+            + "（D="
+            + std::to_string(page.facts.capability->hartigan_dip_statistic)
+            + "）；mixture="
+            + page.facts.capability->mixture_status
+            + "（k="
+            + std::to_string(page.facts.capability->mixture_k_selected)
+            + "，ΔBIC="
+            + std::to_string(page.facts.capability->mixture_delta_bic)
+            + "）：I-MR Rule-1 / 直方图双峰 / Hartigan dip / 高斯混合门禁筛查不等于完整稳定性或单峰验收。");
+        raise_severity(limitations.severity, Severity::warning);
+        if (page.facts.capability->mixture_status == "preferred_2comp"
+            || page.facts.capability->mixture_status == "preferred_kcomp") {
+            limitations.bullets.push_back(
+                page.facts.capability->mixture_status == "preferred_kcomp"
+                    ? ("高斯混合为 preferred_kcomp（k="
+                       + std::to_string(page.facts.capability->mixture_k_selected)
+                       + "）：单一分布能力指数仅供调查，不得写成过程合格（formula_reference / "
+                         "gaussian_mixture_k_bic；非 vendor_oracle）。")
+                    : "二维高斯混合为 preferred_2comp：单一分布能力指数仅供调查，"
+                      "不得写成过程合格（formula_reference / gaussian_mixture_k_bic；非 vendor_oracle）。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
+        if (page.facts.capability->hartigan_dip_status == "evidence_against") {
+            limitations.bullets.push_back(
+                "Hartigan dip 为 evidence_against：单一分布能力指数仅供调查，"
+                "不得写成过程合格（formula_reference；非 vendor_oracle）。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
+        if (page.facts.capability->bimodality_screen_status == "suspected") {
+            limitations.bullets.push_back(
+                "双峰初筛为 suspected：单一分布能力指数仅供调查，"
+                "不得写成过程合格（直方图初筛 ≠ 混合模型证明）。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
+    }
+    if (page.facts.capability.has_value()
+        && page.facts.capability->research_preview) {
+        limitations.bullets.push_back(
+            "gate_status=" + page.facts.capability->gate_status
+            + "：当前为研究/预览，证据类型 "
+            + page.facts.capability->evidence_type
+            + "；未满足 golden/尾部验收前不得开放合格判定。");
+        raise_severity(limitations.severity, Severity::warning);
     }
     if (page.facts.capability.has_value()
         && (page.facts.capability->method == "johnson"
@@ -1408,6 +2255,19 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 + std::to_string(*page.facts.capability->transform_p_value)
                 + "；这是变换尺度上的拟合证据，不是原始数据正态性证明。");
         }
+        bool johnson_spec_limit_gate = false;
+        for (const auto& diagnostic : page.diagnostics) {
+            if (diagnostic.code == "johnson_spec_outside_support"
+                && diagnostic.message
+                       == "规格限落在 Johnson 变换定义域外，无法计算 Pp/Ppk。") {
+                johnson_spec_limit_gate = true;
+                break;
+            }
+        }
+        if (johnson_spec_limit_gate) {
+            limitations.bullets.push_back(
+                "规格限落在 Johnson 变换定义域外，已跳过 overall 能力指数表（非合格判定）。");
+        }
         raise_severity(limitations.severity, Severity::warning);
         }
     }
@@ -1416,6 +2276,33 @@ void InterpretationService::enrich(domain::OutputPage& page)
         conclusion.bullets.push_back(
             "发现 " + std::to_string(out_of_control) + " 个控制图超限点。");
         advice.bullets.push_back("建议回查对应原始行并确认特殊原因。");
+    }
+    if (page.facts.spc.has_value() && !page.facts.spc->rule_policy.empty()) {
+        const auto& policy = page.facts.spc->rule_policy;
+        conclusion.bullets.push_back(
+            "特殊原因策略 = " + policy
+            + (policy == "all_applicable" || policy == "default_all_applicable"
+                   ? "（多规则提高灵敏度也提高误报风险）"
+                   : policy == "minitab_like"
+                         ? "（默认接近 Minitab 仅「单点超出 3σ 控制限」）"
+                         : ""));
+    }
+    if (page.facts.spc.has_value() && !page.facts.spc->rules.empty()) {
+        std::size_t triggered = 0;
+        for (const auto& rule : page.facts.spc->rules) {
+            if (rule.status == "triggered") {
+                ++triggered;
+                advice.bullets.push_back(
+                    "规则「" + (rule.name.empty() ? rule.id : rule.name) + "」已触发"
+                    + (rule.suggested_action.empty()
+                           ? "。"
+                           : ("：" + rule.suggested_action)));
+            }
+        }
+        conclusion.bullets.push_back(
+            "特殊原因规则证据：已触发 " + std::to_string(triggered) + " / "
+            + std::to_string(page.facts.spc->rules.size())
+            + " 条；详见「特殊原因规则证据」表（含 rule_id、窗口、阈值与状态）。");
     }
     if (page.facts.spc.has_value() && page.facts.spc->sigma_within.has_value()) {
         const auto& spc = *page.facts.spc;
@@ -1435,19 +2322,28 @@ void InterpretationService::enrich(domain::OutputPage& page)
     }
     if (page.method_name == "EWMA Chart") {
         limitations.bullets.push_back(
-            "EWMA 仅启用 Test 1；Tests 2–8 不适用，超限点需结合原始观测调查。");
+            "EWMA 仅启用「单点超出 3σ 控制限」；其余特殊原因规则不适用，超限点需结合原始观测调查。");
         raise_severity(limitations.severity, Severity::info);
     }
     if (page.method_name == "CUSUM Chart") {
         limitations.bullets.push_back(
-            "CUSUM 使用累计和决策间隔信号，不套用 Shewhart Tests 1–8；"
+            "CUSUM 使用累计和决策间隔信号，不套用 Shewhart 特殊原因规则（beyond_control_limit 等）；"
             "信号点需结合原始行调查，不是删点指令。");
         raise_severity(limitations.severity, Severity::info);
     }
     if (page.facts.t_test.has_value()) {
         const auto& facts = *page.facts.t_test;
         std::ostringstream text;
-        if (facts.kind == "two_sample") {
+        if (facts.kind == "one_sample_z") {
+            text << "单样本 Z 检验（已知 σ";
+            if (facts.known_sigma.has_value()) {
+                text << "=" << *facts.known_sigma;
+            }
+            text << "）";
+            if (facts.z_statistic.has_value()) {
+                text << "，Z = " << *facts.z_statistic;
+            }
+        } else if (facts.kind == "two_sample") {
             text << "双样本 t 检验（"
                  << (facts.variance_method.empty() ? "welch" : facts.variance_method)
                  << "）";
@@ -1464,9 +2360,15 @@ void InterpretationService::enrich(domain::OutputPage& page)
         }
         text << "。P 值与置信区间只描述当前样本证据，统计显著不等于工程差异具有实际重要性，也不是过程合格判定。";
         conclusion.bullets.push_back(text.str());
-        limitations.bullets.push_back(
-            "t 检验正态与独立假设未验证（assumption_status="
-            + facts.assumption_status + "）。");
+        if (facts.kind == "one_sample_z") {
+            limitations.bullets.push_back(
+                "Z 检验要求已知总体标准差且正态/大样本近似成立（assumption_status="
+                + facts.assumption_status + "）；样本 StDev 仅展示，不参与 Z/CI。");
+        } else {
+            limitations.bullets.push_back(
+                "t 检验正态与独立假设未验证（assumption_status="
+                + facts.assumption_status + "）。");
+        }
         raise_severity(limitations.severity, Severity::warning);
     }
     if (page.facts.normality.has_value()) {
@@ -1495,9 +2397,12 @@ void InterpretationService::enrich(domain::OutputPage& page)
     }
     if (page.facts.outlier_test.has_value()) {
         const auto& facts = *page.facts.outlier_test;
+        const bool dixon = facts.method == "dixon_r10";
         std::ostringstream text;
-        text << "Grubbs 异常值检验";
-        if (facts.g_statistic.has_value()) {
+        text << (dixon ? "Dixon r10 异常值检验" : "Grubbs 异常值检验");
+        if (dixon && facts.dixon_r.has_value()) {
+            text << " r = " << *facts.dixon_r;
+        } else if (facts.g_statistic.has_value()) {
             text << " G = " << *facts.g_statistic;
         }
         if (facts.p_value.has_value()) {
@@ -1505,14 +2410,20 @@ void InterpretationService::enrich(domain::OutputPage& page)
         }
         if (facts.p_value.has_value() && *facts.p_value <= facts.alpha) {
             text << "。在 α 下拒绝“无异常值”假设，嫌疑观测需工程调查，"
-                    "P 值只描述与正态假设下的一致性，不能写成必须删除或已确认异常。";
+                    "P 值只描述与正态假设下的一致性，勿当作删点依据，也勿当成异常已核实。";
         } else {
             text << "。未拒绝“无异常值”假设，不能证明数据中没有异常值。";
         }
         conclusion.bullets.push_back(text.str());
-        limitations.bullets.push_back(
-            "Grubbs 要求近似正态且至多一个异常值（assumption_status="
-            + facts.assumption_status + "）。");
+        if (dixon) {
+            limitations.bullets.push_back(
+                "Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似"
+                "（assumption_status=" + facts.assumption_status + "）。");
+        } else {
+            limitations.bullets.push_back(
+                "Grubbs 要求近似正态且至多一个异常值（assumption_status="
+                + facts.assumption_status + "）。");
+        }
         raise_severity(limitations.severity, Severity::warning);
     }
     if (page.facts.correlation.has_value()) {
@@ -1524,11 +2435,57 @@ void InterpretationService::enrich(domain::OutputPage& page)
         limitations.bullets.push_back(
             "相关分析使用 complete-case 对齐（N = " + std::to_string(facts.n)
             + "），assumption_status=" + facts.assumption_status + "。");
+        if (facts.covariance_available) {
+            limitations.bullets.push_back(
+                "协方差矩阵基于 complete-case 样本协方差；对角线为各变量方差。");
+        }
+        if (facts.partial_available) {
+            limitations.bullets.push_back(
+                "偏相关在控制其余变量后给出 Pearson 偏系数；不能写成已排除混杂或已证明因果。");
+        }
+    }
+    if (page.facts.acceptance_sampling.has_value()) {
+        const auto& facts = *page.facts.acceptance_sampling;
+        conclusion.bullets.push_back(
+            "二项 OC 曲线描述在 n=" + std::to_string(facts.sample_size)
+            + "、c=" + std::to_string(facts.acceptance_number)
+            + " 计划下，不同不合格品率 p 的接收概率 Pa(p)；"
+              "OC 用于评估抽样方案风险，不能替代对具体批次的接收判定。");
+        if (facts.pa_at_aql.has_value()) {
+            limitations.bullets.push_back(
+                "Pa(AQL) = " + std::to_string(*facts.pa_at_aql)
+                + " 只反映 AQL 风险点，不是生产判定结论。");
+        }
+        if (facts.pa_at_rql.has_value()) {
+            limitations.bullets.push_back(
+                "Pa(RQL) = " + std::to_string(*facts.pa_at_rql)
+                + " 只反映 RQL 风险点，不是拒收证明。");
+        }
+        if (facts.lot_size.has_value()) {
+            limitations.bullets.push_back(
+                "批大小 N = " + std::to_string(*facts.lot_size)
+                + " 仅作摘要；本轮 OC 仍用二项（无限批）近似。");
+        }
+    }
+    if (page.facts.anom.has_value()) {
+        const auto& facts = *page.facts.anom;
+        conclusion.bullets.push_back(
+            "ANOM 在 α=" + std::to_string(facts.alpha)
+            + " 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = "
+            + std::to_string(facts.outside_count)
+            + "。这标记值得进一步调查的组，不能写成组间无差异或应剔除该组。");
+        limitations.bullets.push_back(
+            "决策限方法 = " + facts.decision_limit_method
+            + "（正态近似）；二项/泊松计数不适用本命令。");
+        if (facts.outside_count > 0) {
+            raise_severity(conclusion.severity, Severity::warning);
+        }
     }
     if (page.method_name == "Correlation" && !page.facts.correlation.has_value()) {
         conclusion.bullets.push_back("相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，"
                                  "不能单独证明因果关系。");
     } else if ((page.method_name == "One-Sample T"
+                || page.method_name == "One-Sample Z"
                 || page.method_name == "Two-Sample T")
                && !page.facts.t_test.has_value()) {
         conclusion.bullets.push_back("请结合 P-Value 与均值差置信区间判断差异；统计显著不等于工程差异具有实际重要性。");
@@ -1551,6 +2508,47 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 + "（按输入顺序与 α=0.05 近似 dL/dU）。"
                 "不能写成已证明无自相关或存在自相关。");
         }
+    }
+    if (page.facts.spc.has_value() && !page.facts.spc->sigma_method.empty()) {
+        conclusion.bullets.push_back(
+            "I-MR σ 估计方法 = " + page.facts.spc->sigma_method
+            + (page.facts.spc->use_nelson_estimate
+                   ? ("；Nelson estimate 剔除过大 MR "
+                      + std::to_string(page.facts.spc->nelson_excluded_ranges) + " 个")
+                   : "")
+            + "。σ 估计变化只影响控制限宽度，不能单独写成稳定结论。");
+        if (page.facts.spc->historical_parameters_used) {
+            conclusion.bullets.push_back(
+                "控制限使用了历史 μ/σ；分阶段估计表仅供对照，不会自动改写全局限。");
+        } else if (page.facts.spc->stage_count > 0) {
+            conclusion.bullets.push_back(
+                "已按阶段列汇总估计（阶段数 = "
+                + std::to_string(page.facts.spc->stage_count)
+                + "）；当前输出仍使用全样本估计限，不是逐阶段独立控制图。");
+        }
+    }
+    if (page.facts.multivariate_spc.has_value()) {
+        const auto& facts = *page.facts.multivariate_spc;
+        std::string chart_label = "Hotelling T²";
+        if (facts.kind == "mewma") {
+            chart_label = "MEWMA";
+        } else if (facts.kind == "generalized_variance") {
+            chart_label = "广义方差 |S|";
+        }
+        conclusion.bullets.push_back(
+            chart_label
+            + "：m = " + std::to_string(facts.observation_count)
+            + "，p = " + std::to_string(facts.variable_count)
+            + (facts.subgroup_count > 0
+                   ? ("，子组数 = " + std::to_string(facts.subgroup_count))
+                   : "")
+            + "，超限 = " + std::to_string(facts.out_of_control_count)
+            + "。超限是统计信号提示，需要结合工艺调查，不能单独写成失控或稳定结论。"
+            + (facts.kind == "hotelling_t2"
+                   ? " 本图不是 PCA 经验分位 T²。"
+                   : (facts.kind == "mewma"
+                          ? " 默认 UCL 可能是渐近近似，不是 ARL 仿真校准。"
+                          : " Montgomery |S| 子组图；个体路径与 NIST 争议说明见诊断。")));
     }
     std::optional<double> sigma_z;
     if (page.facts.spc.has_value()) {
@@ -1609,6 +2607,133 @@ void InterpretationService::enrich(domain::OutputPage& page)
                 "应优先结合现场原因验证，而不是直接假设存在 80/20 规律。");
         }
         }
+    }
+    if (page.facts.run_chart.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.run_chart;
+        conclusion.bullets.push_back(
+            "运行图 N = " + std::to_string(facts.n)
+            + (facts.median.has_value()
+                   ? "，中位数 = " + std::to_string(*facts.median) : "")
+            + "；关于中位数游程 = " + std::to_string(facts.runs_about_median)
+            + "，上升/下降游程 = " + std::to_string(facts.runs_up_down)
+            + "。四模式 P 只提示相对随机性的偏离方向，不能写成已证明过程受控或失控。");
+        if (facts.p_clustering.has_value() || facts.p_mixtures.has_value()
+            || facts.p_trends.has_value() || facts.p_oscillation.has_value()) {
+            advice.bullets.push_back(
+                "对照 P clustering / mixtures / trends / oscillation 与现场时序，"
+                "小 P 只表示该模式方向上的偏离证据。");
+        }
+    }
+    if (page.facts.zone_chart.has_value()) {
+        const auto& facts = *page.facts.zone_chart;
+        conclusion.bullets.push_back(
+            "区域图 Jaehn 累计得分达到阈值 "
+            + std::to_string(facts.signal_threshold) + " 的点有 "
+            + std::to_string(facts.signal_count)
+            + " 个；这是统计信号提示，需要调查特殊原因，"
+            "不能将统计信号直接等同于过程失控判定或稳定结论。");
+        limitations.bullets.push_back(
+            "区域图采用 Jaehn 1/2/4 计分（formula_reference），"
+            "不是完整 Shewhart 特殊原因规则（beyond_control_limit 等）的替代品。");
+        raise_severity(limitations.severity, Severity::warning);
+    }
+    if (page.facts.z_mr.has_value()) {
+        const auto& facts = *page.facts.z_mr;
+        conclusion.bullets.push_back(
+            "Z-MR 图 N = " + std::to_string(facts.n)
+            + "，组数 = " + std::to_string(facts.group_count)
+            + "，Z 图超限 = " + std::to_string(facts.z_out_of_control_count)
+            + "；短流程标准化依赖 "
+            + (facts.used_sample_parameters ? "样本估计 μ/σ" : "历史 μ/σ")
+            + "，超限点需要调查，不能直接当作过程失控或稳定结论。");
+        if (facts.used_sample_parameters) {
+            limitations.bullets.push_back(
+                "未提供完整历史 μ/σ 表；本轮用各组样本均值与全序列 MR/d2 估计 σ。");
+            raise_severity(limitations.severity, Severity::warning);
+        }
+    }
+    if (page.facts.moving_average.has_value()) {
+        const auto& facts = *page.facts.moving_average;
+        conclusion.bullets.push_back(
+            "移动平均图窗宽 w = " + std::to_string(facts.window)
+            + "，「单点超出 3σ 控制限」触发 = " + std::to_string(facts.out_of_control_count)
+            + "；MA 平滑后的出限是信号提示，需要结合工艺调查，"
+            "不能将统计信号直接等同于过程失控判定或稳定结论。");
+        limitations.bullets.push_back(
+            "移动平均图与 EWMA 不同；仅完整窗 MA 点参与判读，"
+            "不是 Minitab golden。");
+    }
+    if (page.facts.acf_pacf.has_value()) {
+        const auto& facts = *page.facts.acf_pacf;
+        conclusion.bullets.push_back(
+            "ACF/PACF 基于 N = " + std::to_string(facts.n)
+            + "，最大滞后 = " + std::to_string(facts.max_lag)
+            + "；默认置信带方法 = " + facts.confidence_band_method
+            + (facts.band_half_width.has_value()
+                   ? ("，半宽 ≈ " + std::to_string(*facts.band_half_width))
+                   : "")
+            + "。越过带宽只提示相对白噪声零假设的相关证据，不能写成过程失控判定。");
+        limitations.bullets.push_back(
+            "默认带宽是 NIST 白噪声固定 ±z/√n（独立性检验），"
+            "不是 ARIMA 识别用的 Bartlett 变带宽；亦非 Minitab golden。");
+        if (facts.ljung_box_available && facts.ljung_box_p_value.has_value()) {
+            advice.bullets.push_back(
+                "Ljung–Box P ≈ " + std::to_string(*facts.ljung_box_p_value)
+                + "；小 P 提示序列存在总体自相关结构，应结合 ACF/PACF 图与工艺时序解释。");
+        }
+    }
+    if (page.facts.eda.has_value()) {
+        const auto& eda = *page.facts.eda;
+        if (eda.kind == "density") {
+            conclusion.bullets.push_back(
+                "密度图：N = " + std::to_string(eda.n)
+                + (eda.bandwidth.has_value()
+                       ? "；Silverman 带宽 h = " + std::to_string(*eda.bandwidth)
+                       : "")
+                + "。曲线是平滑估计，不能据此写成正态性结论。");
+        } else if (eda.kind == "hexbin") {
+            conclusion.bullets.push_back(
+                "二维分箱：N = " + std::to_string(eda.n) + "；格 = "
+                + std::to_string(eda.x_bins) + "×" + std::to_string(eda.y_bins)
+                + "（矩形格，产品名 Hexbin）。");
+        } else if (eda.kind == "violin") {
+            conclusion.bullets.push_back(
+                "小提琴图：组数 = " + std::to_string(eda.category_count)
+                + "；形状来自分组 KDE，箱线为五数摘要。");
+        } else if (eda.kind == "bar") {
+            conclusion.bullets.push_back(
+                "通用条形图：类别数 = " + std::to_string(eda.category_count)
+                + "；未按计数排序，无累积百分比（与柏拉图分流）。");
+        } else if (eda.kind == "eda_4plot") {
+            conclusion.bullets.push_back(
+                "NIST EDA 四图：N = " + std::to_string(eda.n)
+                + "；同页包含 run sequence、lag-1、histogram、normal probability。"
+                "四图用于检查位置/散布/随机性/分布形态假设，不能写成受控结论或正态已成立。");
+        }
+        if (eda.facet_enabled) {
+            conclusion.bullets.push_back(
+                "受控分面：面板 = " + std::to_string(eda.facet_panel_count)
+                + "/" + std::to_string(eda.facet_level_count)
+                + "（max=" + std::to_string(eda.facet_max_panels) + "）"
+                + (eda.facet_truncated_levels > 0
+                       ? "；已截断 " + std::to_string(eda.facet_truncated_levels) + " 个水平"
+                       : "")
+                + "。分面是多面板编排，不是自由拼版；by/分组仍是图内着色。");
+            raise_severity(conclusion.severity, Severity::info);
+        }
+        limitations.bullets.push_back(
+            "EDA 图用于探索形态与频数，不是假设检验结论。");
+    }
+    if (page.facts.cause_effect.has_value() && conclusion.bullets.empty()) {
+        const auto& facts = *page.facts.cause_effect;
+        conclusion.bullets.push_back(
+            "因果图效应为“" + facts.effect + "”，共 "
+            + std::to_string(facts.category_count) + " 个类别、"
+            + std::to_string(facts.cause_count)
+            + " 条原因。这是结构化头脑风暴摘要，不是统计检验，"
+            "不能写成已证明根因。");
+        advice.bullets.push_back(
+            "若要比较原因频次优先级，请改用柏拉图并结合现场验证。");
     }
     if (conclusion.bullets.empty()) {
         conclusion.bullets.push_back("未发现当前规则能够自动判定的异常；请结合现场工艺、规格要求和图表进行确认。");

@@ -34,7 +34,8 @@ RuleEvidence make_rule_evidence(
     const std::string& status,
     const std::string& message,
     const std::vector<RowId>& related_rows = {},
-    const std::string& suggested_action = {});
+    const std::string& suggested_action = {},
+    const std::string& name = {});
 
 std::string combine_assumption_status(const std::vector<AssumptionCheck>& checks);
 

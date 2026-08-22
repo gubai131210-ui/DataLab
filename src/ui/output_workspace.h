@@ -23,12 +23,14 @@ public:
     datalab::domain::OutputPage current_page() const;
     bool has_pages() const;
     void set_selected_source_rows(const std::vector<std::size_t>& rows);
+    AnalysisChartWidget* chart_for_copy() const;
 
 signals:
     void rows_selected(const std::vector<std::size_t>& rows);
     void page_title_changed(const QString& id, const QString& title);
     void page_closed(const QString& id);
     void pages_changed();
+    void copy_chart_requested();
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -40,4 +42,5 @@ private:
 
     std::vector<datalab::domain::OutputPage> pages_;
     QLabel* empty_label_ = nullptr;
+    AnalysisChartWidget* last_focused_chart_ = nullptr;
 };

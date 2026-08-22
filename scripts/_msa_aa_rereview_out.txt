@@ -1,0 +1,27 @@
+catalog_count=1824 unique=1824 dupes=0
+exists rule.msa.design_balance_unbalanced.message: True
+exists rule.msa.design_balance_unbalanced.action: True
+exists rule.msa.nested_design_balance_unbalanced.message: True
+exists rule.msa.nested_design_balance_unbalanced.action: True
+exists rule.msa.nested_design_balance_ok.message: True
+exists rule.msa.nested_design_balance_triggered.message: True
+exists rule.msa.nested_design_balance.action: True
+exists rule.msa.nested_negative_variance_triggered.message: True
+exists rule.msa.nested_negative_variance.action: True
+=== source vs catalog vs exact ===
+gage_unbal_msg: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.design_balance_unbalanced.message'
+gage_unbal_act: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.design_balance_unbalanced.action'
+nest_early_msg: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_design_balance_unbalanced.message'
+nest_early_act: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_design_balance_unbalanced.action'
+nest_ok_msg: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_design_balance_ok.message'
+nest_trig_msg: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_design_balance_triggered.message'
+nest_bal_act: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_design_balance.action'
+nest_neg_msg: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_negative_variance_triggered.message'
+nest_neg_act: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.nested_negative_variance.action'
+nest_neg_ok: in_src=True cat_ok=True exact_ok=True exact_maps='rule.msa.negative_variance_ok.message'
+=== test EN frags ===
+OK rule.msa.design_balance_unbalanced.message: 'inconsistent' in 'Part×operator cell replicate counts are inconsistent.'
+OK rule.msa.nested_design_balance_unbalanced.message: 'Nested-design' in 'Nested-design part replicate counts are inconsistent.'
+OK rule.msa.catalog.design_balance.name: 'Design balance' in 'Design balance'
+OK rule.msa.nested_negative_variance_triggered.message: 'truncated to 0' in 'Negative variance components were truncated to 0.'
+PLAN: - [x] 规则证据加深：MSA ndc/设计平衡（含交叉不平衡与嵌套）/交互/负方差/%Contribution/%Tolerance + 属性一致性 Kappa/加权κ/Kendall 证据与建议（`localize_known_plain_message` 精确匹配；rule_id 不译）

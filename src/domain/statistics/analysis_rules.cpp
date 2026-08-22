@@ -87,9 +87,17 @@ RuleEvidence make_rule_evidence(
     const std::string& status,
     const std::string& message,
     const std::vector<RowId>& related_rows,
-    const std::string& suggested_action)
+    const std::string& suggested_action,
+    const std::string& name)
 {
-    return {id, status, message, related_rows, suggested_action};
+    RuleEvidence evidence;
+    evidence.id = id;
+    evidence.status = status;
+    evidence.message = message;
+    evidence.related_rows = related_rows;
+    evidence.suggested_action = suggested_action;
+    evidence.name = name;
+    return evidence;
 }
 
 std::string combine_assumption_status(const std::vector<AssumptionCheck>& checks)
@@ -436,6 +444,10 @@ ReliabilityFacts kaplan_meier_facts_from(const KaplanMeierResult& result)
     facts.identifiable = result.survival_identifiable;
     facts.not_computed_reason = result.not_computed_reason;
     facts.rules = result.rules;
+    facts.distribution = "kaplan_meier";
+    facts.evidence_type = "formula_reference";
+    facts.exact_count = result.failure_count;
+    facts.right_censored_count = result.censored_count;
     return facts;
 }
 
@@ -457,6 +469,9 @@ ReliabilityFacts weibull_facts_from(const WeibullResult& result)
     facts.converged = result.converged;
     facts.not_computed_reason = result.not_computed_reason;
     facts.rules = result.rules;
+    facts.evidence_type = "formula_reference";
+    facts.exact_count = result.failures;
+    facts.right_censored_count = facts.censored_count.value_or(0);
     return facts;
 }
 
@@ -477,6 +492,9 @@ ReliabilityFacts exponential_facts_from(const ExponentialResult& result)
     facts.converged = result.converged || result.identifiable;
     facts.not_computed_reason = result.not_computed_reason;
     facts.rules = result.rules;
+    facts.evidence_type = "formula_reference";
+    facts.exact_count = result.failures;
+    facts.right_censored_count = facts.censored_count.value_or(0);
     return facts;
 }
 
@@ -498,6 +516,9 @@ ReliabilityFacts lognormal_facts_from(const LognormalResult& result)
     facts.converged = result.converged;
     facts.not_computed_reason = result.not_computed_reason;
     facts.rules = result.rules;
+    facts.evidence_type = "formula_reference";
+    facts.exact_count = result.failures;
+    facts.right_censored_count = facts.censored_count.value_or(0);
     return facts;
 }
 

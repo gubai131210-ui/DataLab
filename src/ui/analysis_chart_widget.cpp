@@ -1,7 +1,9 @@
 #include "ui/analysis_chart_widget.h"
+#include "ui/row_visibility_clipboard.h"
 #include "ui/graph_properties_dialog.h"
 #include "ui/graph_properties_panel.h"
 
+#include "domain/statistics/special_cause_rule_catalog.h"
 #include "reporting/chart_coordinate_mapper.h"
 #include "reporting/chart_geometry.h"
 #include "reporting/chart_interaction.h"
@@ -59,6 +61,7 @@ chart_interaction::Element element_for_hit(const ChartModel& model, const std::s
     case ChartKind::Parallel:
         return {ElementKind::ParallelObservation, index};
     case ChartKind::Contour:
+    case ChartKind::Hexbin:
         return {ElementKind::ContourCell, index};
     case ChartKind::Surface:
     case ChartKind::Control:
@@ -218,6 +221,22 @@ void AnalysisChartWidget::set_selected_source_rows(const std::vector<std::size_t
     request_chart_update();
 }
 
+void AnalysisChartWidget::set_row_visibility_summary(
+    const std::size_t excluded_count,
+    const std::size_t hidden_count,
+    const std::size_t analysis_n,
+    const std::size_t display_n)
+{
+    excluded_count_ = excluded_count;
+    hidden_count_ = hidden_count;
+    analysis_n_ = analysis_n;
+    display_n_ = display_n;
+    if (panel_ != nullptr) {
+        panel_->set_row_visibility_summary(
+            excluded_count_, hidden_count_, analysis_n_, display_n_);
+    }
+}
+
 bool AnalysisChartWidget::eventFilter(QObject* watched, QEvent* event)
 {
     if (watched != surface_) {
@@ -298,7 +317,8 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
         if (model_.kind == ChartKind::Parallel) {
             text = chart_interaction::tooltip_text(
                 model_, {chart_interaction::HitKind::ParallelObservation, index});
-        } else if (model_.kind == ChartKind::Contour) {
+        } else if (model_.kind == ChartKind::Contour
+                   || model_.kind == ChartKind::Hexbin) {
             text = chart_interaction::tooltip_text(
                 model_, {chart_interaction::HitKind::ContourCell, index});
         } else if (model_.kind == ChartKind::Control && index < model_.values.size()) {
@@ -312,19 +332,24 @@ void AnalysisChartWidget::mouseMoveEvent(QMouseEvent* event)
             QStringList tests;
             if (index < model_.triggered_tests.size()) {
                 for (const int test : model_.triggered_tests[index]) {
-                    tests.push_back(QStringLiteral("Test %1").arg(test));
+                    tests.push_back(QString::fromStdString(
+                        datalab::domain::statistics::special_cause_rule_display_name(test)));
                 }
             } else {
                 for (std::size_t test = 0; test < model_.special_cause_points.size(); ++test) {
                     if (std::find(model_.special_cause_points[test].cbegin(),
                                   model_.special_cause_points[test].cend(), index)
                         != model_.special_cause_points[test].cend()) {
-                        tests.push_back(QStringLiteral("Test %1").arg(static_cast<int>(test + 1)));
+                        tests.push_back(QString::fromStdString(
+                            datalab::domain::statistics::special_cause_rule_display_name(
+                                static_cast<int>(test + 1))));
                     }
                 }
             }
             if (!tests.isEmpty()) {
-                text += QStringLiteral("\n失败测试: ") + tests.join(QStringLiteral(", "));
+                text += QStringLiteral("\n触发规则: ") + tests.join(QStringLiteral(", "));
+            } else {
+                text += QStringLiteral("\n触发规则: 未触发");
             }
             if (model_.sigma_z > 0.0) {
                 text += QStringLiteral("\nSigma Z: ")
@@ -745,8 +770,13 @@ void AnalysisChartWidget::enter_edit_mode(const QString& path)
                         panel_->set_selected_path(selected);
                     }
                 });
+        panel_->set_model(model_);
+        panel_->set_row_visibility_summary(
+            excluded_count_, hidden_count_, analysis_n_, display_n_);
     } else {
         panel_->set_model(model_);
+        panel_->set_row_visibility_summary(
+            excluded_count_, hidden_count_, analysis_n_, display_n_);
     }
     panel_->show();
     if (!path.isEmpty()) {
@@ -813,19 +843,32 @@ void AnalysisChartWidget::save_graph()
 
 bool AnalysisChartWidget::copy_to_clipboard()
 {
-    const QPixmap pixmap = render_chart_pixmap();
+    const QPixmap chart = render_chart_pixmap();
+    if (chart.isNull()) {
+        return false;
+    }
+    const QString footnote = datalab::ui::row_visibility_footnote(
+        excluded_count_, hidden_count_, analysis_n_, display_n_);
+    const QPixmap pixmap = datalab::ui::compose_chart_pixmap_with_footnote(chart, footnote);
     if (pixmap.isNull()) {
         return false;
     }
     const QImage image = pixmap.toImage();
     QByteArray png;
-    QBuffer buffer(&png);
-    buffer.open(QIODevice::WriteOnly);
-    image.save(&buffer, "PNG");
+    QBuffer png_buffer(&png);
+    png_buffer.open(QIODevice::WriteOnly);
+    image.save(&png_buffer, "PNG");
+    QByteArray bmp;
+    QBuffer bmp_buffer(&bmp);
+    bmp_buffer.open(QIODevice::WriteOnly);
+    image.save(&bmp_buffer, "BMP");
     auto* mime = new QMimeData();
     mime->setImageData(image);
     if (!png.isEmpty()) {
         mime->setData(QStringLiteral("image/png"), png);
+    }
+    if (!bmp.isEmpty()) {
+        mime->setData(QStringLiteral("image/bmp"), bmp);
     }
     QClipboard* clipboard = QApplication::clipboard();
     clipboard->setMimeData(mime);
@@ -851,14 +894,8 @@ void AnalysisChartWidget::fit_to_window()
 
 void AnalysisChartWidget::emit_selected_rows()
 {
-    std::vector<std::size_t> rows;
-    rows.reserve(model_.view.selected_points.size());
-    for (const std::size_t point : model_.view.selected_points) {
-        if (point < model_.source_rows.size()) {
-            rows.push_back(model_.source_rows[point]);
-        }
-    }
-    emit rows_selected(rows);
+    emit rows_selected(chart_interaction::resolve_selected_source_rows(
+        model_, model_.view.selected_points));
 }
 
 std::optional<std::size_t> AnalysisChartWidget::hit_test(const QPoint& position) const
@@ -905,7 +942,33 @@ std::optional<std::size_t> AnalysisChartWidget::hit_test(const QPoint& position)
         }
         return std::nullopt;
     }
+    if (model_.kind == ChartKind::Bar && !model_.values.empty()) {
+        const double maximum = *std::max_element(model_.values.cbegin(), model_.values.cend());
+        ChartCoordinateMapper mapper(plot);
+        mapper.set_data_range(-0.5, static_cast<double>(model_.values.size()) - 0.5,
+                              0.0, std::max(1.0, maximum));
+        mapper.zoom(model_.view.zoom_factor, plot.center());
+        const QPointF data = mapper.to_data(position);
+        const auto index = static_cast<long long>(std::llround(data.x()));
+        if (index >= 0 && index < static_cast<long long>(model_.values.size())) {
+            return static_cast<std::size_t>(index);
+        }
+        return std::nullopt;
+    }
     if (model_.kind == ChartKind::BoxPlot && !model_.box_median.empty()) {
+        const double minimum = *std::min_element(model_.box_min.cbegin(), model_.box_min.cend());
+        const double maximum = *std::max_element(model_.box_max.cbegin(), model_.box_max.cend());
+        ChartCoordinateMapper mapper(plot);
+        mapper.set_data_range(-0.5, static_cast<double>(model_.box_median.size()) - 0.5,
+                              minimum, maximum);
+        mapper.zoom(model_.view.zoom_factor, plot.center());
+        const auto index = static_cast<long long>(std::llround(mapper.to_data(position).x()));
+        if (index >= 0 && index < static_cast<long long>(model_.box_median.size())) {
+            return static_cast<std::size_t>(index);
+        }
+        return std::nullopt;
+    }
+    if (model_.kind == ChartKind::Violin && !model_.box_median.empty()) {
         const double minimum = *std::min_element(model_.box_min.cbegin(), model_.box_min.cend());
         const double maximum = *std::max_element(model_.box_max.cbegin(), model_.box_max.cend());
         ChartCoordinateMapper mapper(plot);
@@ -952,9 +1015,9 @@ std::optional<std::size_t> AnalysisChartWidget::hit_test(const QPoint& position)
         }
         return result;
     }
-    if (model_.kind == ChartKind::Contour
+    if ((model_.kind == ChartKind::Contour || model_.kind == ChartKind::Hexbin)
         && model_.contour_x.size() >= 2 && model_.contour_y.size() >= 2
-        && model_.matrix_values.size() >= model_.contour_y.size()) {
+        && model_.matrix_values.size() >= model_.contour_y.size() - 1) {
         ChartCoordinateMapper mapper(plot);
         mapper.set_data_range(model_.contour_x.front(), model_.contour_x.back(),
                               model_.contour_y.front(), model_.contour_y.back());

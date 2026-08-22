@@ -1,0 +1,287 @@
+=== quality_extensions ===
+  UN L115	样本量 n 必须 ≥ 1。
+  UN L120	接收数 c 不能大于样本量 n。
+  UN L125	批大小 N < n；本轮仍用二项 OC（无限批近似）。
+  OK L154	ANOM 至少需要两个组。
+  OK L165	每组至少需要 2 个观测。
+  OK L190	无法估计组内方差。
+  OK L196	组内标准差为 0。
+  UN L207	决策限采用正态/多重比较近似（formula_reference），不是 Minitab exact h 表 golden。
+  UN L210	各组样本量不等；决策限仍用总 N 近似，解读需谨慎。
+  UN L230	泊松拟合优度要求非负整数计数。
+  UN L238	至少需要 2 个有效计数。
+  UN L289	合并后类别不足，无法计算拟合优度。
+  UN L304	自由度 < 1（类别过少）。
+  UN L311	存在期望频数 < 5，卡方近似需谨慎。
+
+=== response_surface_design ===
+  OK L38	至少需要一个连续因素。
+  UN L44	因素 ID 不能为空。
+  OK L48	因素 ID 必须唯一。
+  OK L54	第一阶段只接受连续因素；分类因素不得静默编码。
+  UN L58	因素低/高水平必须有限。
+  OK L63	因素低水平必须严格小于高水平。
+  UN L69	中心值必须有限且落在 [low, high] 内。
+  OK L187	CCD 至少需要 2 个连续因素。
+  UN L201	alpha 必须为正有限数。
+  OK L212	CCC 星点超出原始因素范围；请允许超范围星点，或改用 CCI/CCF。
+  OK L217	CCC 星点超出原始 low/high；已按允许超范围策略生成，实验可行性需人工确认。
+  UN L266	CCD 点集按 NIST Response Surface / CCD 定义生成；证据类型 formula_reference，
+  OK L289	BBD 第一阶段支持 3–7 个连续因素；2 因素不接受。
+  OK L314	BBD 不包含所有因素同时处于极端水平的角点；这是设计空间边界，不是实现缺陷。
+  UN L328	BBD 点集按 NIST Box–Behnken 定义生成；证据类型 formula_reference，
+
+=== doe_pages (CJK sample) ===
+  OK L41	残差 = 0
+  OK L71	残差与拟合值
+  OK L82	残差与观测顺序
+  OK L83	观测顺序
+  OK L93	残差正态概率图
+  OK L94	理论分位数
+  OK L107	残差直方图
+  OK L143	主效应图 - 
+  OK L194	立方图（方形）
+  OK L275	效应 Pareto
+  OK L276	标准化效应 Pareto
+  UN L278	|效应|
+  OK L318	交互作用图 - 
+  UN L321	 分组）
+  OK L370	DOE 响应分析
+  OK L373	响应 = 
+  UN L374	    因子数 = 
+  UN L375	    有效运行数 = 
+  OK L380	系数与效应
+  OK L395	模型项与区组
+  OK L404	纯误差与失拟
+  OK L416	中心点与曲率
+  OK L431	残差诊断
+  UN L448	立方图仅支持 2 或 3 个因子（当前 
+  UN L450	 个）；请用主效应图、交互图、等值线/曲面图查看高维设计。
+  OK L481	等值线/曲面的 X/Y 因子无效或相同；请指定两个不同的因子名。
+  OK L508	等值线图 - 
+  OK L510	（编码）
+  OK L528	响应曲面图 - 
+  OK L537	等值线/曲面图需要至少两个连续因子。
+  OK L577	Plackett–Burman 设计
+  OK L580	2 水平部分析因设计
+  OK L580	2 水平全因子设计
+  OK L585	因子数 k = 
+  UN L587	    运行数 = 
+  UN L589	    分辨度 = 
+  OK L594	设计信息
+  OK L612	设计生成器
+  OK L621	定义关系
+  OK L630	别名结构
+  OK L639	设计矩阵
+  UN L676	已生成可写入工作表的设计矩阵（实际水平 + 空 Response 列）；
+  UN L677	UI 可一键替换活动工作表以录入响应。
+  OK L688	Box–Behnken 设计
+  OK L688	中心复合设计 (CCD)
+  OK L691	因子数 = 
+  UN L695	    变体 = 
+  OK L719	因素定义
+
+=== INTERP TEMPLATE FRAGMENTS (CJK, likely dynamic) ===
+  OK L126	在 α = 
+  UN L143	；参考线方法为 
+  UN L168	；其余因子实际单位 hold：
+  UN L179	（编码 
+  UN L184	；其余因子编码 hold=0：
+  OK L215	设计类型 = 
+  UN L218	；运行数 = 
+  UN L220	；分辨度 = 
+  UN L253	；这是在编码 ±1 设计空间内枚举得到的结果。
+  UN L287	，分级 = 
+  UN L292	；用于对照测量增量是否物理合理，不是公差合格证明。
+  UN L314	；%Contribution 与 %Study Var 口径不同，不能混用。
+  OK L366	偏倚回归斜率 = 
+  UN L367	，低/高参考点偏倚 = 
+  UN L389	；基于用户提供的过程变差（6σ）。
+  OK L412	偏倚检验 P = 
+  UN L413	，与参考值差异具有统计证据。
+  UN L416	；应结合组织规定的能力门槛解释，而非套用单一通用阈值。
+  UN L419	；请与产品公差及风险等级核对后决定校准、维修或放行策略。
+  UN L435	 个失效模式做 cause-specific 分模式拟合（scheme=
+  UN L446	 个失效模式的 Aalen–Johansen 累计发生函数 CIF（algorithm=
+  UN L481	，协变量=
+  UN L537	，失效 
+  UN L539	，删失 
+  OK L558	Weibull 形状参数 β = 
+  OK L559	，提示失效率随时间上升。
+  OK L565	阈值 λ = 
+  UN L566	；百分位寿命按 t_p = λ + α[-ln(1-p)]^(1/β) 计算。
+  OK L579	两参数指数估计了阈值 λ = 
+  OK L590	三参数对数正态估计了阈值 λ = 
+  UN L591	；分位寿命按 λ + exp(μ + σ Φ⁻¹(p)) 计算。
+  OK L687	在效应量 = 
+  UN L689	 下，估计实际功效 = 
+  UN L695	、目标功效 = 
+  UN L698	，对应样本量 n = 
+  OK L795	最大 VIF = 
+  UN L796	，提示共线性调查，不会自动删除预测变量。
+  OK L836	Tukey 同时置信水平 = 
+  UN L837	，显著比较对数 = 
+  UN L838	；区间含 0 不显著。同字母仅表示在本产品 Tukey 近似规则下未显著不同，
+  UN L879	；项数 = 
+  OK L886	当前 |t| 最大项 = 
+  UN L887	（仅描述相对大小，不是工程最优）。
+  OK L899	设计来源 ID = 
+  UN L901	；编码模式 = 
+  UN L914	；失拟 DF = 
+  OK L977	有效观测 N = 
+  UN L978	，缺失 N* = 
+  UN L980	，均值为 
+  UN L993	，优势比 OR = 
+  OK L1018	最大 |调整残差| = 
+  UN L1021	，贡献最大单元格: 
+  UN L1034	 分类，N = 
+  OK L1085	缺失 N* = 
+  UN L1085	，未进入类别计数。
+  UN L1100	，配对有效 N = 
+  UN L1101	，不一致对数 b+c = 
+  UN L1129	，已做 ties 修正
+  UN L1137	，置信区间 [
+  UN L1154	，置信下界 
+  UN L1168	，置信上界 
+  OK L1209	Friedman S（调整后）= 
+  OK L1216	符号检验（二项精确）P = 
+  OK L1234	比较准则 K = 
+  UN L1235	；等号归入 ≤K 侧。
+  OK L1240	单样本 Wilcoxon 符号秩 P = 
+  OK L1245	配对 Wilcoxon 符号秩 P = 
+  UN L1283	；检测到 
+  UN L1287	；最大 VIF = 
+  UN L1295	，保留 
+  OK L1298	，有效观测 
+  UN L1299	，检测到 
+  UN L1311	，变量数 = 
+  UN L1312	，迭代 = 
+  OK L1313	（已收敛）
+  OK L1313	（未完全收敛）
+  OK L1315	；总簇内平方和 ≈ 
+  UN L1320	（已标准化）
+  UN L1320	（未标准化）
+  UN L1321	；非 Minitab golden。
+  OK L1328	；训练集 RMSE ≈ 
+  OK L1329	；训练集准确率 ≈ 
+  OK L1332	CART 单树任务 = 
+  UN L1334	，预测变量 = 
+  UN L1335	，结点 = 
+  UN L1336	，叶 = 
+  OK L1337	；主导分裂变量 = 
+  UN L1347	，滞后 = 
+  UN L1348	，有效回归行 = 
+  OK L1351	；5% 临界值 ≈ 
+  OK L1363	Poisson 回归（log 链）：N = 
+  OK L1366	（未收敛）
+  OK L1368	；偏差 ≈ 
+  UN L1378	，变量 = 
+  UN L1379	，树数 = 
+  UN L1380	，标记异常 = 
+  UN L1382	；分数阈值 ≈ 
+  OK L1394	；均值 ≈ 
+  UN L1407	，合并步 = 
+  UN L1408	；已标准化
+  UN L1408	；未标准化
+  OK L1416	有序 Logistic（比例优势 logit）：N = 
+  UN L1417	，水平 = 
+  OK L1419	；已收敛
+  OK L1419	；未收敛
+  OK L1427	线性判别：N = 
+  UN L1428	，类数 = 
+  UN L1431	；训练准确率 ≈ 
+  UN L1450	）：变量数 = 
+  UN L1452	，成对数 = 
+  UN L1460	，候选 = 
+  UN L1461	，选入 = 
+  OK L1472	区间删失 KM（Turnbull）：N = 
+  UN L1473	，左/区间/右 = 
+  UN L1478	；中位寿命 ≈ 
+  UN L1484	；非右删失 product-limit；非参数寿命模型；不得写成 vendor_oracle/golden。
+  OK L1495	Plackett–Burman：因子 = 
+  UN L1496	，运行 = 
+  UN L1497	，中心点 = 
+  OK L1505	Box–Behnken：因子 = 
+  UN L1506	，边中点 = 
+  UN L1508	，总运行 = 
+  UN L1514	）：因子 = 
+  UN L1516	，立方点 = 
+  UN L1517	，星点 = 
+  OK L1531	保修摘要：T_w = 
+  UN L1532	，暴露量 = 
+  UN L1534	（口径 = 
+  UN L1538	；非 vendor_oracle。
+  UN L1616	，覆盖率 
+  UN L1619	，置信水平 
+  UN L1626	，下限 
+  UN L1629	，上限 
+  UN L1813	假设（assumption_status=
+  UN L1848	，由 Average P 的标准正态右尾得到。
+  OK L1934	过程能力未验证稳定性与正态性（assumption_status=
+  UN L1941	；未拒绝正态假设不等于已证明正态分布。
+  UN L2025	；未满足 golden/尾部验收前不得开放合格判定。
+  UN L2049	；这是变换尺度上的拟合证据，不是原始数据正态性证明。
+  OK L2063	特殊原因策略 = 
+  OK L2216	相关分析使用 complete-case 对齐（N = 
+  OK L2230	二项 OC 曲线描述在 n=
+  OK L2246	批大小 N = 
+  OK L2253	ANOM 在 α=
+  UN L2254	 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = 
+  OK L2258	决策限方法 = 
+  UN L2259	（正态近似）；二项/泊松计数不适用本命令。
+  UN L2287	，判定区 = 
+  UN L2288	（按输入顺序与 α=0.05 近似 dL/dU）。
+  OK L2294	I-MR σ 估计方法 = 
+  UN L2323	，子组数 = 
+  UN L2325	，超限 = 
+  UN L2366	，单项占比 
+  OK L2394	运行图 N = 
+  UN L2396	，中位数 = 
+  UN L2397	；关于中位数游程 = 
+  UN L2398	，上升/下降游程 = 
+  OK L2423	Z-MR 图 N = 
+  UN L2424	，组数 = 
+  UN L2425	，Z 图超限 = 
+  UN L2426	；短流程标准化依赖 
+  UN L2428	，超限点需要调查，不能直接当作过程失控或稳定结论。
+  OK L2438	移动平均图窗宽 w = 
+  UN L2439	，「单点超出 3σ 控制限」触发 = 
+  UN L2440	；MA 平滑后的出限是信号提示，需要结合工艺调查，
+  OK L2449	ACF/PACF 基于 N = 
+  UN L2450	，最大滞后 = 
+  UN L2451	；默认置信带方法 = 
+  UN L2453	，半宽 ≈ 
+  UN L2462	；小 P 提示序列存在总体自相关结构，应结合 ACF/PACF 图与工艺时序解释。
+  OK L2469	密度图：N = 
+  UN L2471	；Silverman 带宽 h = 
+  OK L2476	二维分箱：N = 
+  UN L2476	；格 = 
+  UN L2478	（矩形格，产品名 Hexbin）。
+  OK L2481	小提琴图：组数 = 
+  UN L2482	；形状来自分组 KDE，箱线为五数摘要。
+  OK L2485	通用条形图：类别数 = 
+  UN L2486	；未按计数排序，无累积百分比（与柏拉图分流）。
+  OK L2489	NIST EDA 四图：N = 
+  UN L2490	；同页包含 run sequence、lag-1、histogram、normal probability。
+  OK L2495	受控分面：面板 = 
+  OK L2499	；已截断 
+
+=== CATALOG RSD/OC KEYS ===
+  interp.bbd_design_summary
+  interp.bbd_design_honesty
+  interp.ccd_design_summary
+  interp.ccd_design_honesty
+  interp.rsd_err_no_factors
+  interp.rsd_err_duplicate_factor_id
+  interp.rsd_err_categorical_blocked
+  interp.rsd_err_invalid_bounds
+  interp.ccd_err_min_factors
+  interp.ccd_err_ccc_beyond_range
+  interp.ccd_info_ccc_beyond_allowed
+  interp.bbd_err_factor_count
+  interp.bbd_info_no_corners
+  interp.rsd_err_need_continuous_factor
+  interp.oc_binomial
+  interp.oc_pa_aql
+  interp.oc_pa_rql
+  interp.oc_lot_size

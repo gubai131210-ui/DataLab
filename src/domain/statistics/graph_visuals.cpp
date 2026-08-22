@@ -392,11 +392,11 @@ HeatmapPlotResult heatmap_from_categories(
     const std::vector<std::size_t>& source_rows)
 {
     HeatmapPlotResult result;
-    static_cast<void>(source_rows);
     const std::size_t count = std::min({rows.size(), columns.size(), values.size()});
     std::vector<std::string> row_order;
     std::vector<std::string> column_order;
     std::map<std::pair<std::string, std::string>, std::pair<double, std::size_t>> cells;
+    std::map<std::pair<std::string, std::string>, std::vector<std::size_t>> cell_rows;
     for (std::size_t index = 0; index < count; ++index) {
         if (!std::isfinite(values[index])) {
             continue;
@@ -406,6 +406,9 @@ HeatmapPlotResult heatmap_from_categories(
         auto& cell = cells[{rows[index], columns[index]}];
         cell.first += values[index];
         ++cell.second;
+        if (index < source_rows.size()) {
+            cell_rows[{rows[index], columns[index]}].push_back(source_rows[index]);
+        }
     }
     if (row_order.empty() || column_order.empty()) {
         add_error(result.diagnostics, "no_valid_cells",
@@ -416,11 +419,15 @@ HeatmapPlotResult heatmap_from_categories(
     result.column_labels = column_order;
     result.values.assign(row_order.size(), std::vector<double>(column_order.size(), 0.0));
     result.counts.assign(row_order.size(), std::vector<std::size_t>(column_order.size(), 0));
+    result.cell_source_rows.assign(
+        row_order.size(),
+        std::vector<std::vector<std::size_t>>(column_order.size()));
     double minimum = std::numeric_limits<double>::infinity();
     double maximum = -std::numeric_limits<double>::infinity();
     for (std::size_t row = 0; row < row_order.size(); ++row) {
         for (std::size_t column = 0; column < column_order.size(); ++column) {
-            const auto found = cells.find({row_order[row], column_order[column]});
+            const auto key = std::make_pair(row_order[row], column_order[column]);
+            const auto found = cells.find(key);
             if (found == cells.end() || found->second.second == 0) {
                 continue;
             }
@@ -428,6 +435,7 @@ HeatmapPlotResult heatmap_from_categories(
                 / static_cast<double>(found->second.second);
             result.values[row][column] = mean;
             result.counts[row][column] = found->second.second;
+            result.cell_source_rows[row][column] = cell_rows[key];
             minimum = std::min(minimum, mean);
             maximum = std::max(maximum, mean);
         }
@@ -558,12 +566,14 @@ ContourPlotResult contour_plot(
 PiePlotResult pie_plot(
     const std::vector<std::string>& categories,
     const std::vector<double>& weights,
-    const double other_threshold_percent)
+    const double other_threshold_percent,
+    const std::vector<std::size_t>& source_rows)
 {
     PiePlotResult result;
     const std::size_t count = std::min(categories.size(), weights.size());
     std::vector<std::string> order;
     std::map<std::string, double> totals;
+    std::map<std::string, std::vector<std::size_t>> members;
     double total = 0.0;
     for (std::size_t index = 0; index < count; ++index) {
         if (!std::isfinite(weights[index])) {
@@ -583,6 +593,9 @@ PiePlotResult pie_plot(
         }
         totals[label] += weights[index];
         total += weights[index];
+        if (index < source_rows.size()) {
+            members[label].push_back(source_rows[index]);
+        }
     }
     if (total <= 0.0) {
         add_error(result.diagnostics, "zero_total",
@@ -590,22 +603,27 @@ PiePlotResult pie_plot(
         return result;
     }
     double other = 0.0;
+    std::vector<std::size_t> other_members;
     const double threshold = std::clamp(other_threshold_percent, 0.0, 100.0);
     for (const std::string& label : order) {
         const double value = totals[label];
         const double percent = 100.0 * value / total;
         if (percent < threshold && order.size() > 1) {
             other += value;
+            other_members.insert(other_members.end(),
+                                 members[label].begin(), members[label].end());
             continue;
         }
         result.labels.push_back(label);
         result.values.push_back(value);
         result.percents.push_back(percent);
+        result.member_source_rows.push_back(members[label]);
     }
     if (other > 0.0) {
         result.labels.push_back("Other");
         result.values.push_back(other);
         result.percents.push_back(100.0 * other / total);
+        result.member_source_rows.push_back(std::move(other_members));
     }
     return result;
 }

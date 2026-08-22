@@ -51,6 +51,10 @@ WorksheetView::WorksheetView(QWidget* parent)
     horizontalHeader()->setSectionsClickable(true);
     horizontalHeader()->setStretchLastSection(false);
     verticalHeader()->setDefaultSectionSize(26);
+    verticalHeader()->setVisible(true);
+    verticalHeader()->setMinimumWidth(56);
+    verticalHeader()->setDefaultAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    verticalHeader()->setSectionsClickable(false);
     connect(horizontalHeader(), &QHeaderView::sectionDoubleClicked,
             this, [this](int section) {
                 if (model() == nullptr) {

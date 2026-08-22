@@ -1,0 +1,21 @@
+exact=1910 sw=208 uniq_unmapped=2
+
+BY KIND
+  1	title
+  1	diag
+
+BY FAM
+  1	eda_graph
+  1	misc_diag
+
+BY FILE
+  1	graph_service.cpp
+  1	special_cause_rule_catalog.cpp
+
+=== ITEMS BY FAM ===
+
+## eda_graph n=1
+  title	src/application/graph_service.cpp:2109	Hexbin（分面）
+
+## misc_diag n=1
+  diag	src/domain/statistics/special_cause_rule_catalog.cpp:242	 当前未触发。

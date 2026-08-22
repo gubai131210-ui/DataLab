@@ -27,15 +27,20 @@ struct CorrelationPairResult {
 struct CorrelationResult {
     CorrelationMethod method = CorrelationMethod::pearson;
     std::vector<std::vector<double>> coefficients;
+    std::vector<std::vector<double>> covariances;
+    std::vector<std::vector<double>> partial_coefficients;
     std::vector<std::vector<std::size_t>> counts;
     std::vector<CorrelationPairResult> pairs;
     double confidence_level = 0.95;
+    bool covariance_available = false;
+    bool partial_available = false;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
 CorrelationResult correlation_matrix(
     const std::vector<std::vector<double>>& columns,
     CorrelationMethod method = CorrelationMethod::pearson,
-    double confidence_level = 0.95);
+    double confidence_level = 0.95,
+    bool compute_partial = false);
 
 }  // namespace datalab::domain::statistics

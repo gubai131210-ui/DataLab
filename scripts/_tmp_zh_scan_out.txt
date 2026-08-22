@@ -1,0 +1,238 @@
+TOTAL missing literal hits: 137
+By file:
+  src/application/analysis_service.cpp: 77
+  src/domain/statistics/analysis_rules.cpp: 26
+  src/domain/statistics/control_charts.cpp: 15
+  src/domain/statistics/graph_visuals.cpp: 9
+  src/domain/graph_assembly.cpp: 5
+  src/application/graph_service.cpp: 2
+  src/application/doe_pages.cpp: 2
+  src/domain/statistics/special_cause_rule_catalog.cpp: 1
+
+Top unique strings (by hit count):
+
+[3 hits] 时间序列没有有效数值观测。
+  src/application/analysis_service.cpp:7240
+  src/application/analysis_service.cpp:7369
+  src/application/analysis_service.cpp:8682
+
+[2 hits] 嫌疑值
+  src/application/analysis_service.cpp:1975
+  src/application/analysis_service.cpp:1991
+
+[2 hits] 第一组：
+  src/application/analysis_service.cpp:2899
+  src/application/analysis_service.cpp:3622
+
+[2 hits] 第二组：
+  src/application/analysis_service.cpp:2903
+  src/application/analysis_service.cpp:3626
+
+[2 hits] 因子列存在缺失标签，无法进行分组。原始行 
+  src/application/analysis_service.cpp:2946
+  src/application/analysis_service.cpp:15622
+
+[2 hits]     列: 
+  src/application/analysis_service.cpp:4133
+  src/application/analysis_service.cpp:4366
+
+[2 hits] 响应列索引超出当前数据表范围。
+  src/application/analysis_service.cpp:9181
+  src/application/analysis_service.cpp:9447
+
+[2 hits] 设计因子列索引超出当前数据表范围。
+  src/application/analysis_service.cpp:9186
+  src/application/analysis_service.cpp:9453
+
+[2 hits] 至少需要选择两个数值变量。
+  src/application/analysis_service.cpp:12241
+  src/application/analysis_service.cpp:12420
+
+[2 hits] 至少需要两个数值变量。
+  src/application/analysis_service.cpp:13142
+  src/application/analysis_service.cpp:13617
+
+[2 hits] (空)
+  src/domain/graph_assembly.cpp:148
+  src/domain/statistics/graph_visuals.cpp:590
+
+[1 hits] 零件均值
+  src/application/analysis_service.cpp:434
+
+[1 hits] 超限点数
+  src/application/analysis_service.cpp:1510
+
+[1 hits] 是（区间不含 0）
+  src/application/analysis_service.cpp:3052
+
+[1 hits] 否（区间含 0）
+  src/application/analysis_service.cpp:3052
+
+[1 hits] 差值区间图
+  src/application/analysis_service.cpp:3268
+
+[1 hits] 有效交叉分类观测不足。
+  src/application/analysis_service.cpp:4338
+
+[1 hits] 交叉表仅汇总频数与百分比；独立性检验请使用命令 chi_square。
+  src/application/analysis_service.cpp:4450
+
+[1 hits] complete-case 多元观测不足。
+  src/application/analysis_service.cpp:6581
+
+[1 hits] UCL 方法
+  src/application/analysis_service.cpp:6730
+
+[1 hits] 超限子组数
+  src/application/analysis_service.cpp:6838
+
+[1 hits] 上侧 CUSUM
+  src/application/analysis_service.cpp:6934
+
+[1 hits] 下侧 CUSUM
+  src/application/analysis_service.cpp:6935
+
+[1 hits] 区域图（个体值）
+  src/application/analysis_service.cpp:6986
+
+[1 hits] 分组列存在缺失标签，原始行 
+  src/application/analysis_service.cpp:7032
+
+--- all samples ---
+src/application/analysis_service.cpp:434: 零件均值
+src/application/analysis_service.cpp:1510: 超限点数
+src/application/analysis_service.cpp:1975: 嫌疑值
+src/application/analysis_service.cpp:1991: 嫌疑值
+src/application/analysis_service.cpp:2899: 第一组：
+src/application/analysis_service.cpp:2903: 第二组：
+src/application/analysis_service.cpp:2946: 因子列存在缺失标签，无法进行分组。原始行 
+src/application/analysis_service.cpp:3052: 是（区间不含 0）
+src/application/analysis_service.cpp:3052: 否（区间含 0）
+src/application/analysis_service.cpp:3268: 差值区间图
+src/application/analysis_service.cpp:3622: 第一组：
+src/application/analysis_service.cpp:3626: 第二组：
+src/application/analysis_service.cpp:4133:     列: 
+src/application/analysis_service.cpp:4338: 有效交叉分类观测不足。
+src/application/analysis_service.cpp:4366:     列: 
+src/application/analysis_service.cpp:4450: 交叉表仅汇总频数与百分比；独立性检验请使用命令 chi_square。
+src/application/analysis_service.cpp:6581: complete-case 多元观测不足。
+src/application/analysis_service.cpp:6730: UCL 方法
+src/application/analysis_service.cpp:6838: 超限子组数
+src/application/analysis_service.cpp:6934: 上侧 CUSUM
+src/application/analysis_service.cpp:6935: 下侧 CUSUM
+src/application/analysis_service.cpp:6986: 区域图（个体值）
+src/application/analysis_service.cpp:7032: 分组列存在缺失标签，原始行 
+src/application/analysis_service.cpp:7074: MR(Z) 图
+src/application/analysis_service.cpp:7240: 时间序列没有有效数值观测。
+src/application/analysis_service.cpp:7369: 时间序列没有有效数值观测。
+src/application/analysis_service.cpp:7375: 时间列与数值列的有效行不一致。
+src/application/analysis_service.cpp:7380: 时间列必须严格递增，且不能包含重复时间点。
+src/application/analysis_service.cpp:7390: 没有可拟合的候选模型。
+src/application/analysis_service.cpp:8321: 平均 StDev
+src/application/analysis_service.cpp:8508: Bonett 仅支持两样本；k>2 组请改用 Levene（中位数）。
+src/application/analysis_service.cpp:8682: 时间序列没有有效数值观测。
+src/application/analysis_service.cpp:8709: 时间列与值列没有可对齐的完整观测。
+src/application/analysis_service.cpp:9156: 曲面图为静态栅格可视化，不得解读为可旋转交互 3D。
+src/application/analysis_service.cpp:9177: 因子数量过大，无法建立 2 水平模型。
+src/application/analysis_service.cpp:9181: 响应列索引超出当前数据表范围。
+src/application/analysis_service.cpp:9186: 设计因子列索引超出当前数据表范围。
+src/application/analysis_service.cpp:9447: 响应列索引超出当前数据表范围。
+src/application/analysis_service.cpp:9453: 设计因子列索引超出当前数据表范围。
+src/application/analysis_service.cpp:9459: 没有可用于优化的有效 DOE 运行。
+src/application/analysis_service.cpp:9534:  行：因子水平既不匹配 -1/+1，也不匹配给定的低/高水平。
+src/application/analysis_service.cpp:10231: Log-rank 分组目前只支持两个非空水平。
+src/application/analysis_service.cpp:10272: 区间删失行需要有效的左右界列（interval_left < interval_right）；
+src/application/analysis_service.cpp:10273: 缺失或非有限值不会被静默补齐。
+src/application/analysis_service.cpp:10286: 暴露量列必须为有限非负数；缺失或非法值不会被静默当作 0 或 1。
+src/application/analysis_service.cpp:10961: 已生成逐观测删失状态工作表（
+src/application/analysis_service.cpp:10963:  行；censoring_type=exact|right|left|interval）。
+src/application/analysis_service.cpp:10964: 可写回活动表以便审计或再导入；不是 vendor_oracle。
+src/application/analysis_service.cpp:11027: 暴露量列必须为有限非负数；缺失或非法值不会被静默补齐。
+src/application/analysis_service.cpp:11043: 暴露量列求和后必须为正有限数；不得用标量默认值静默补齐。
+src/application/analysis_service.cpp:11050: 同时提供了暴露量列与标量暴露量；摘要使用列求和，标量被忽略。
+src/application/analysis_service.cpp:12241: 至少需要选择两个数值变量。
+src/application/analysis_service.cpp:12420: 至少需要选择两个数值变量。
+src/application/analysis_service.cpp:12423: k 必须 ≥ 2。
+src/application/analysis_service.cpp:12464:     标准化
+src/application/analysis_service.cpp:12587: 分类任务需要至少两个响应类别。
+src/application/analysis_service.cpp:12982: 至少需要两个数值变量（多元异常）。
+src/application/analysis_service.cpp:13080: Bootstrap 均值 CI
+src/application/analysis_service.cpp:13142: 至少需要两个数值变量。
+src/application/analysis_service.cpp:13411: 至少需要两个类别。
+src/application/analysis_service.cpp:13519: CCF 互相关
+src/application/analysis_service.cpp:13617: 至少需要两个数值变量。
+src/application/analysis_service.cpp:13932: 区间删失 Turnbull 为简化网格 NPMLE（formula_reference）；
+src/application/analysis_service.cpp:13933: 分模式可靠度拟合与 pinned R/商业对齐仍未冻结，不得宣称 vendor_oracle。
+src/application/analysis_service.cpp:13989: 响应曲面设计
+src/application/analysis_service.cpp:14049: I-MR 至少需要两个数值观测。
+src/application/analysis_service.cpp:14317: 组内图
+src/application/analysis_service.cpp:14644: 检验数必须是有效的非负整数列。
+src/application/analysis_service.cpp:14714: 组间/组内能力需要子组标识列。
+src/application/analysis_service.cpp:14720: 组间/组内能力至少需要四个数值观测。
+src/application/analysis_service.cpp:14814: 过程能力至少需要两个数值观测。
+src/application/analysis_service.cpp:14912: Sixpack 至少需要两个数值观测。
+src/application/analysis_service.cpp:15073: 至少需要两个数值观测。
+src/application/analysis_service.cpp:15261: 已忽略类别为空或 * 的汇总行。
+src/application/analysis_service.cpp:15526: 属性抽样
+src/application/analysis_service.cpp:15622: 因子列存在缺失标签，无法进行分组。原始行 
+src/application/analysis_service.cpp:15652: 本轮 ANOM 仅支持正态均值；二项/泊松计数请用其他工具。
+src/application/graph_service.cpp:1937: 密度曲线是连续估计网格，不是离散观测标记；
+src/application/graph_service.cpp:1938: 点选曲线不会映射到单条工作表行（hidden/excluded 仍分别计入分析/显示 N）。
+src/application/doe_pages.cpp:321: （按 
+src/application/doe_pages.cpp:321:  分组）
+src/domain/graph_assembly.cpp:148: (空)
+src/domain/graph_assembly.cpp:169: 分面水平数 = 
+src/domain/graph_assembly.cpp:170: ，受控 Graph Builder 最多显示 
+src/domain/graph_assembly.cpp:179: 使用受控分面面板（facet），不是自由像素拼版；
+src/domain/graph_assembly.cpp:180: by/分组仍是图内着色，与分面列不同。
+src/domain/statistics/analysis_rules.cpp:132: N-p-1 必须为正才能输出 t、F 与 P。
+src/domain/statistics/analysis_rules.cpp:134: Anderson-Darling 只能拒绝或未拒绝正态假设。
+src/domain/statistics/analysis_rules.cpp:135: 残差独立性
+src/domain/statistics/analysis_rules.cpp:136: Durbin-Watson 对照 α=0.05 近似 dL/dU 判定区；不能写成已证明无自相关。
+src/domain/statistics/analysis_rules.cpp:137: 残差对拟合值图是主要证据，不单独宣称已验证。
+src/domain/statistics/analysis_rules.cpp:138: 杠杆值 > 2p/n 时标记为需要调查的高杠杆点。
+src/domain/statistics/analysis_rules.cpp:139: 异常残差
+src/domain/statistics/analysis_rules.cpp:140: Cook's D > 4/n 或 |DFITS| 超过阈值时标记影响点。
+src/domain/statistics/analysis_rules.cpp:141: VIF > 5 提示共线性调查，不自动删除变量。
+src/domain/statistics/analysis_rules.cpp:149: 用残差 Anderson-Darling 作为假设证据。
+src/domain/statistics/analysis_rules.cpp:150: Levene/组内标准差比较只作为调查证据。
+src/domain/statistics/analysis_rules.cpp:152: 不平衡时 Sequential SS 与 Adjusted SS 可能不同。
+src/domain/statistics/analysis_rules.cpp:161: 交互项模型
+src/domain/statistics/analysis_rules.cpp:161: 报告 Part×Operator 显著性，不自动缩减模型。
+src/domain/statistics/analysis_rules.cpp:163: 百分比口径
+src/domain/statistics/analysis_rules.cpp:163: %Contribution 与 %Study Var 不可混用。
+src/domain/statistics/analysis_rules.cpp:164: 无有效公差时不计算 %Tolerance。
+src/domain/statistics/analysis_rules.cpp:165: 零重复性
+src/domain/statistics/analysis_rules.cpp:165: Type 1 零重复性不输出伪造 p=0 推断。
+src/domain/statistics/analysis_rules.cpp:172: 只接受明确的失效/删失语义，拒绝未知编码。
+src/domain/statistics/analysis_rules.cpp:173: 时间合法性
+src/domain/statistics/analysis_rules.cpp:174: 同一时刻多个失效应合并，并报告 at-risk/failures/censored。
+src/domain/statistics/analysis_rules.cpp:175: 可识别性
+src/domain/statistics/analysis_rules.cpp:175: 全删失或最大观测删失时尾部指标可能不可估计。
+src/domain/statistics/analysis_rules.cpp:176: 参数收敛
+src/domain/statistics/analysis_rules.cpp:176: Weibull 必须回显收敛、边界命中和估计方法。
+src/domain/statistics/control_charts.cpp:585: Nelson estimate 剔除了 
+src/domain/statistics/control_charts.cpp:1251: Z-MR 至少需要 2 个观测。
+src/domain/statistics/control_charts.cpp:1257: Z-MR 不允许非有限观测。
+src/domain/statistics/control_charts.cpp:1360: 移动平均图需要至少 w 个观测。
+src/domain/statistics/control_charts.cpp:1645: 特殊原因策略=minitab_like：默认仅启用「
+src/domain/statistics/control_charts.cpp:1647: 」（与 Minitab 常见默认接近）。
+src/domain/statistics/control_charts.cpp:1658: 特殊原因策略=all_applicable：启用该图种全部适用特殊原因规则；
+src/domain/statistics/control_charts.cpp:1659: 多规则提高灵敏度也提高误报风险，与 Minitab 默认仅「
+src/domain/statistics/control_charts.cpp:1660: 」不同。
+src/domain/statistics/control_charts.cpp:1679: 已忽略不适用于此控制图的特殊原因规则：
+src/domain/statistics/control_charts.cpp:1821: G 图至少需要两个有限间隔。
+src/domain/statistics/control_charts.cpp:1828: G 图间隔必须为非负有限数。
+src/domain/statistics/control_charts.cpp:1864: T 图间隔必须为非负有限数。
+src/domain/statistics/control_charts.cpp:1875: T 图至少需要两个正间隔。
+src/domain/statistics/control_charts.cpp:1922: 0 间隔回归得到非正形状参数。
+src/domain/statistics/graph_visuals.cpp:128: 区间图没有可用于计算的有效分组。
+src/domain/statistics/graph_visuals.cpp:151: 气泡大小不能为负数。
+src/domain/statistics/graph_visuals.cpp:167: 气泡图没有可用于绘制的完整观测行。
+src/domain/statistics/graph_visuals.cpp:415: 热图没有可用于聚合的完整观测。
+src/domain/statistics/graph_visuals.cpp:495: 存在重复时间点；图形按时间排序后保留全部观测。
+src/domain/statistics/graph_visuals.cpp:512: 时间间隔不规则；图形按时间排序，但不把间隔当作等距。
+src/domain/statistics/graph_visuals.cpp:584: 饼图权重不能为负数。
+src/domain/statistics/graph_visuals.cpp:590: (空)
+src/domain/statistics/graph_visuals.cpp:602: 饼图各类别合计必须大于 0。
+src/domain/statistics/special_cause_rule_catalog.cpp:129: 未知特殊原因规则

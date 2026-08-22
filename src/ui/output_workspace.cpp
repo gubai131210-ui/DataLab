@@ -4,15 +4,20 @@
 #include "ui/page_renderer.h"
 #include "reporting/chart_adapter.h"
 
+#include <QApplication>
 #include <QFrame>
 #include <QIcon>
 #include <QInputDialog>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
 #include <QResizeEvent>
 #include <QScrollArea>
+#include <QShortcut>
 #include <QTabBar>
+#include <QTableView>
+#include <QFocusEvent>
 
 OutputWorkspace::OutputWorkspace(QWidget* parent)
     : QTabWidget(parent)
@@ -73,6 +78,9 @@ void OutputWorkspace::close_page_at(int index)
     }
     const QString id = QString::fromStdString(pages_[static_cast<std::size_t>(index)].id);
     QWidget* page = widget(index);
+    if (last_focused_chart_ != nullptr && page != nullptr && page->isAncestorOf(last_focused_chart_)) {
+        last_focused_chart_ = nullptr;
+    }
     removeTab(index);
     pages_.erase(pages_.begin() + index);
     if (page != nullptr) {
@@ -85,6 +93,23 @@ void OutputWorkspace::close_page_at(int index)
 
 bool OutputWorkspace::eventFilter(QObject* watched, QEvent* event)
 {
+    if (event->type() == QEvent::FocusIn || event->type() == QEvent::MouseButtonPress) {
+        auto* widget = qobject_cast<QWidget*>(watched);
+        if (widget != nullptr) {
+            AnalysisChartWidget* chart = qobject_cast<AnalysisChartWidget*>(widget);
+            if (chart == nullptr) {
+                for (QWidget* parent = widget->parentWidget(); parent != nullptr;
+                     parent = parent->parentWidget()) {
+                    if ((chart = qobject_cast<AnalysisChartWidget*>(parent)) != nullptr) {
+                        break;
+                    }
+                }
+            }
+            if (chart != nullptr) {
+                last_focused_chart_ = chart;
+            }
+        }
+    }
     if (watched == tabBar() && event->type() == QEvent::MouseButtonDblClick) {
         auto* mouse_event = static_cast<QMouseEvent*>(event);
         const int index = tabBar()->tabAt(mouse_event->position().toPoint());
@@ -135,6 +160,30 @@ void OutputWorkspace::add_page(const datalab::domain::OutputPage& page)
         emit rows_selected(rows);
     };
     scroll->setWidget(page_renderer::build_page_widget(page, scroll, options));
+    for (AnalysisChartWidget* chart : scroll->findChildren<AnalysisChartWidget*>()) {
+        chart->installEventFilter(this);
+        if (QWidget* surface = chart->findChild<QWidget*>(QStringLiteral("chart_surface"))) {
+            surface->installEventFilter(this);
+        }
+    }
+    auto* copy_chart_shortcut = new QShortcut(QKeySequence::Copy, scroll);
+    copy_chart_shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    QObject::connect(copy_chart_shortcut, &QShortcut::activated, scroll, [this, scroll]() {
+        QWidget* focus = QApplication::focusWidget();
+        if (focus != nullptr) {
+            if (qobject_cast<QTableView*>(focus) != nullptr) {
+                return;
+            }
+            for (QWidget* widget = focus; widget != nullptr; widget = widget->parentWidget()) {
+                if (qobject_cast<AnalysisChartWidget*>(widget) != nullptr) {
+                    return;
+                }
+            }
+        }
+        if (focus == nullptr || scroll->isAncestorOf(focus) || focus == scroll) {
+            emit copy_chart_requested();
+        }
+    });
     const int index = addTab(
         scroll,
         QIcon(page_renderer::icon_resource(page.id)),
@@ -157,6 +206,7 @@ void OutputWorkspace::show_page(const QString& id)
 
 void OutputWorkspace::clear_pages()
 {
+    last_focused_chart_ = nullptr;
     while (count() > 0) {
         QWidget* page = widget(0);
         removeTab(0);
@@ -194,4 +244,17 @@ void OutputWorkspace::set_selected_source_rows(const std::vector<std::size_t>& r
     for (AnalysisChartWidget* chart : charts) {
         chart->set_selected_source_rows(rows);
     }
+}
+
+AnalysisChartWidget* OutputWorkspace::chart_for_copy() const
+{
+    QWidget* page = currentWidget();
+    if (page == nullptr) {
+        return nullptr;
+    }
+    if (last_focused_chart_ != nullptr && page->isAncestorOf(last_focused_chart_)) {
+        return last_focused_chart_;
+    }
+    const auto charts = page->findChildren<AnalysisChartWidget*>();
+    return charts.isEmpty() ? nullptr : charts.front();
 }

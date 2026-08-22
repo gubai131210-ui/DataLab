@@ -8,8 +8,11 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
 #include <map>
+#include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -566,12 +569,72 @@ domain::OutputPage doe_design_page(
 {
     domain::OutputPage page;
     page.id = new_id("doe");
-    page.title = "2 水平全因子设计";
-    page.method_name = "2-Level Factorial Design";
+    const bool plackett_burman = design.design_kind == "plackett_burman";
+    const bool fractional =
+        !plackett_burman
+        && (design.design_kind == "fractional" || design.fraction_p > 0);
+    if (plackett_burman) {
+        page.title = "Plackett–Burman 设计";
+        page.method_name = "Plackett-Burman Design";
+    } else {
+        page.title = fractional ? "2 水平部分析因设计" : "2 水平全因子设计";
+        page.method_name = fractional ? "2-Level Fractional Factorial Design"
+                                      : "2-Level Factorial Design";
+    }
     page.configuration = configuration;
-    page.parameter_summary = "因子数 = " + std::to_string(factors.size())
+    page.parameter_summary = "因子数 k = " + std::to_string(factors.size())
+        + "    p = " + std::to_string(design.fraction_p)
         + "    运行数 = " + std::to_string(design.runs.size());
+    if (design.resolution > 0) {
+        page.parameter_summary += "    分辨度 = " + std::to_string(design.resolution);
+    }
     page.diagnostics = design.diagnostics;
+
+    StatisticTable info;
+    info.title = "设计信息";
+    info.headers = {"Property", "Value"};
+    if (plackett_burman) {
+        info.rows.push_back({"Design", "Plackett-Burman"});
+    } else {
+        info.rows.push_back(
+            {"Design", fractional ? "2^(k-p) fractional" : "2^k full"});
+    }
+    info.rows.push_back({"Factors (k)", std::to_string(factors.size())});
+    info.rows.push_back({"Fraction (p)", std::to_string(design.fraction_p)});
+    info.rows.push_back({"Runs", std::to_string(design.runs.size())});
+    if (design.resolution > 0) {
+        info.rows.push_back({"Resolution", std::to_string(design.resolution)});
+    }
+    page.tables.push_back(std::move(info));
+
+    if (!design.generators.empty()) {
+        StatisticTable generators;
+        generators.title = "设计生成器";
+        generators.headers = {"Generator"};
+        for (const auto& generator : design.generators) {
+            generators.rows.push_back({generator});
+        }
+        page.tables.push_back(std::move(generators));
+    }
+    if (!design.defining_relation.empty()) {
+        StatisticTable relation;
+        relation.title = "定义关系";
+        relation.headers = {"Word"};
+        for (const auto& word : design.defining_relation) {
+            relation.rows.push_back({word});
+        }
+        page.tables.push_back(std::move(relation));
+    }
+    if (!design.alias_lines.empty()) {
+        StatisticTable aliases;
+        aliases.title = "别名结构";
+        aliases.headers = {"Alias Chain"};
+        for (const auto& line : design.alias_lines) {
+            aliases.rows.push_back({line});
+        }
+        page.tables.push_back(std::move(aliases));
+    }
+
     StatisticTable design_table;
     design_table.title = "设计矩阵";
     design_table.headers = {"Standard Order", "Run Order", "Block"};
@@ -588,7 +651,514 @@ domain::OutputPage doe_design_page(
         design_table.rows.push_back(std::move(row));
     }
     page.tables.push_back(std::move(design_table));
+
+    page.facts.doe = datalab::domain::DoeFacts{};
+    page.facts.doe->factor_count = factors.size();
+    page.facts.doe->design_kind = design.design_kind;
+    page.facts.doe->fraction_p = design.fraction_p;
+    page.facts.doe->resolution = design.resolution;
+    page.facts.doe->run_count = design.runs.size();
+    if (!design.generators.empty()) {
+        std::string joined;
+        for (std::size_t index = 0; index < design.generators.size(); ++index) {
+            if (index > 0) {
+                joined += ";";
+            }
+            joined += design.generators[index];
+        }
+        page.facts.doe->generator_text = joined;
+    }
+
+    const std::string source_id = page.id.empty() ? "factorial_design" : page.id;
+    page.worksheet_export = factorial_design_to_worksheet(design, source_id);
+    page.diagnostics.push_back({
+        datalab::domain::DiagnosticMessage::Severity::info, "doe_worksheet_export_ready",
+        "已生成可写入工作表的设计矩阵（实际水平 + 空 Response 列）；"
+        "UI 可一键替换活动工作表以录入响应。"});
     return page;
+}
+
+domain::OutputPage response_surface_design_page(
+    const domain::AnalysisConfiguration& configuration,
+    const domain::statistics::ResponseSurfaceDesign& design)
+{
+    domain::OutputPage page;
+    page.id = new_id("doe_rsd");
+    const bool is_bbd = design.design_kind_id == "bbd";
+    page.title = is_bbd ? "Box–Behnken 设计" : "中心复合设计 (CCD)";
+    page.method_name = is_bbd ? "Box-Behnken Design" : "Central Composite Design";
+    page.configuration = configuration;
+    page.parameter_summary = "因子数 = " + std::to_string(design.factor_count)
+        + "    运行数 = " + std::to_string(design.run_count)
+        + "    α = " + format_number(design.alpha);
+    if (!is_bbd) {
+        page.parameter_summary += "    变体 = " + design.ccd_variant_id;
+    }
+    page.diagnostics = design.diagnostics;
+
+    StatisticTable info;
+    info.title = "设计信息";
+    info.headers = {"Property", "Value"};
+    info.rows.push_back({"Design", design.design_kind_id});
+    if (!is_bbd) {
+        info.rows.push_back({"CCD variant", design.ccd_variant_id});
+        info.rows.push_back({"Alpha", format_number(design.alpha)});
+    }
+    info.rows.push_back({"Factors", std::to_string(design.factor_count)});
+    info.rows.push_back({"Runs", std::to_string(design.run_count)});
+    info.rows.push_back({"Cube points", std::to_string(design.cube_count)});
+    info.rows.push_back({"Star points", std::to_string(design.star_count)});
+    info.rows.push_back({"Edge midpoints", std::to_string(design.edge_count)});
+    info.rows.push_back({"Center points", std::to_string(design.center_count)});
+    info.rows.push_back({"Randomized", design.randomized ? "true" : "false"});
+    info.rows.push_back({"Seed", std::to_string(design.random_seed)});
+    info.rows.push_back({"Evidence", "formula_reference"});
+    page.tables.push_back(std::move(info));
+
+    StatisticTable factors_table;
+    factors_table.title = "因素定义";
+    factors_table.headers = {"ID", "Name", "Unit", "Low", "High", "Center"};
+    for (const auto& factor : design.factors) {
+        factors_table.rows.push_back({
+            factor.id,
+            factor.name.empty() ? factor.id : factor.name,
+            factor.unit,
+            format_number(factor.low),
+            format_number(factor.high),
+            format_number(datalab::domain::statistics::factor_center(factor))});
+    }
+    page.tables.push_back(std::move(factors_table));
+
+    StatisticTable design_table;
+    design_table.title = "设计矩阵";
+    design_table.headers = {
+        "Run ID", "Standard Order", "Run Order", "Block", "Point Type"};
+    for (const auto& factor : design.factors) {
+        const std::string label = factor.name.empty() ? factor.id : factor.name;
+        design_table.headers.push_back(label + " (coded)");
+        design_table.headers.push_back(label + " (actual)");
+    }
+    for (const auto& run : design.runs) {
+        std::vector<std::string> row = {
+            run.run_id,
+            std::to_string(run.standard_order),
+            std::to_string(run.run_order),
+            std::to_string(run.block),
+            run.point_type};
+        for (std::size_t index = 0; index < design.factors.size(); ++index) {
+            const double coded = index < run.coded_levels.size() ? run.coded_levels[index] : 0.0;
+            const double actual =
+                index < run.actual_levels.size() ? run.actual_levels[index] : 0.0;
+            row.push_back(format_number(coded));
+            row.push_back(format_number(actual));
+        }
+        design_table.rows.push_back(std::move(row));
+    }
+    page.tables.push_back(std::move(design_table));
+
+    domain::DesignGenerationFacts facts;
+    facts.design_kind = design.design_kind_id;
+    facts.ccd_variant = design.ccd_variant_id;
+    facts.design_source_id = configuration.response_surface_design.design_source_id.empty()
+        ? page.id
+        : configuration.response_surface_design.design_source_id;
+    facts.factor_count = design.factor_count;
+    facts.run_count = design.run_count;
+    facts.cube_count = design.cube_count;
+    facts.star_count = design.star_count;
+    facts.edge_count = design.edge_count;
+    facts.center_count = design.center_count;
+    facts.alpha = design.alpha;
+    facts.allow_beyond_range = configuration.response_surface_design.allow_beyond_range;
+    facts.beyond_range_detected = design.beyond_range_detected;
+    facts.randomized = design.randomized;
+    facts.random_seed = design.random_seed;
+    facts.evidence_type = "formula_reference";
+    page.facts.design_generation = std::move(facts);
+
+    page.facts.doe = domain::DoeFacts{};
+    page.facts.doe->factor_count = design.factor_count;
+    page.facts.doe->design_kind = design.design_kind_id;
+    page.facts.doe->run_count = design.run_count;
+    page.worksheet_export = response_surface_design_to_worksheet(
+        design,
+        page.facts.design_generation.has_value()
+            ? page.facts.design_generation->design_source_id
+            : configuration.response_surface_design.design_source_id);
+    page.diagnostics.push_back({
+        datalab::domain::DiagnosticMessage::Severity::info, "doe_worksheet_export_ready",
+        "已生成可写入工作表的设计矩阵（实际水平 + 空 Response 列）；"
+        "UI 可一键替换活动工作表以录入响应。"});
+    return page;
+}
+
+domain::DataTable response_surface_design_to_worksheet(
+    const domain::statistics::ResponseSurfaceDesign& design,
+    const std::string& design_source_id)
+{
+    domain::DataTable table;
+    table.name = design_source_id.empty()
+        ? (design.design_kind_id + "_worksheet")
+        : (design_source_id + "_worksheet");
+    table.source_path = "generated:response_surface_design";
+    table.import_metadata.provider_id = "datalab.doe";
+    table.import_metadata.source_object = design.design_kind_id;
+    table.import_metadata.object_kind = "design_matrix";
+    table.import_metadata.row_id_is_synthetic = true;
+    table.import_metadata.filter_summary =
+        "design_source_id=" + design_source_id;
+
+    table.columns = {"RunID", "StdOrder", "RunOrder", "Block", "PointType"};
+    for (const auto& factor : design.factors) {
+        const std::string label = factor.name.empty() ? factor.id : factor.name;
+        table.columns.push_back(label);
+    }
+    table.columns.push_back("Response");
+
+    table.column_types.assign(table.columns.size(), domain::ColumnType::unknown);
+    table.column_types[0] = domain::ColumnType::categorical;  // RunID
+    table.column_types[1] = domain::ColumnType::numeric;      // StdOrder
+    table.column_types[2] = domain::ColumnType::numeric;      // RunOrder
+    table.column_types[3] = domain::ColumnType::numeric;      // Block
+    table.column_types[4] = domain::ColumnType::categorical;  // PointType
+    for (std::size_t index = 0; index < design.factors.size(); ++index) {
+        table.column_types[5 + index] = domain::ColumnType::numeric;
+    }
+    table.column_types.back() = domain::ColumnType::numeric;  // Response empty
+
+    for (std::size_t run_index = 0; run_index < design.runs.size(); ++run_index) {
+        const auto& run = design.runs[run_index];
+        std::vector<std::string> row = {
+            run.run_id,
+            std::to_string(run.standard_order),
+            std::to_string(run.run_order),
+            std::to_string(run.block),
+            run.point_type};
+        for (std::size_t index = 0; index < design.factors.size(); ++index) {
+            const double actual =
+                index < run.actual_levels.size() ? run.actual_levels[index] : 0.0;
+            row.push_back(format_number(actual));
+        }
+        row.push_back("");  // Response placeholder for experiment entry
+        table.rows.push_back(std::move(row));
+        table.row_ids.push_back(static_cast<domain::RowId>(run_index + 1));
+    }
+    return table;
+}
+
+namespace {
+
+std::string factorial_actual_level(
+    const domain::statistics::DoeFactor& factor, const int coded)
+{
+    if (coded < 0) {
+        return factor.low_level.empty() ? "-1" : factor.low_level;
+    }
+    if (coded > 0) {
+        return factor.high_level.empty() ? "1" : factor.high_level;
+    }
+    const auto low = parse_numeric_cell(factor.low_level);
+    const auto high = parse_numeric_cell(factor.high_level);
+    if (low.has_value() && high.has_value()) {
+        return format_number((*low + *high) / 2.0);
+    }
+    return "0";
+}
+
+std::string factorial_worksheet_default_name(
+    const domain::statistics::DoeFactorialDesign& design)
+{
+    if (design.design_kind == "plackett_burman") {
+        return "plackett_burman_worksheet";
+    }
+    const bool fractional =
+        design.design_kind == "fractional" || design.fraction_p > 0;
+    return fractional ? "fractional_factorial_worksheet"
+                      : "full_factorial_worksheet";
+}
+
+std::string factorial_worksheet_source_object(
+    const domain::statistics::DoeFactorialDesign& design)
+{
+    if (!design.design_kind.empty()) {
+        return design.design_kind;
+    }
+    const bool fractional = design.fraction_p > 0;
+    return fractional ? "2_level_fractional_factorial" : "2_level_full_factorial";
+}
+
+}  // namespace
+
+domain::DataTable factorial_design_to_worksheet(
+    const domain::statistics::DoeFactorialDesign& design,
+    const std::string& design_source_id)
+{
+    domain::DataTable table;
+    table.name = design_source_id.empty()
+        ? factorial_worksheet_default_name(design)
+        : (design_source_id + "_worksheet");
+    table.source_path = "generated:factorial_design";
+    table.import_metadata.provider_id = "datalab.doe";
+    table.import_metadata.source_object = factorial_worksheet_source_object(design);
+    table.import_metadata.object_kind = "design_matrix";
+    table.import_metadata.row_id_is_synthetic = true;
+    table.import_metadata.filter_summary =
+        "design_source_id=" + design_source_id
+        + ";design_kind=" + table.import_metadata.source_object
+        + ";p=" + std::to_string(design.fraction_p);
+
+    table.columns = {"RunID", "StdOrder", "RunOrder", "Block", "PointType"};
+    for (const auto& factor : design.factors) {
+        table.columns.push_back(factor.name.empty() ? "Factor" : factor.name);
+    }
+    table.columns.push_back("Response");
+
+    table.column_types.assign(table.columns.size(), domain::ColumnType::unknown);
+    table.column_types[0] = domain::ColumnType::categorical;
+    table.column_types[1] = domain::ColumnType::numeric;
+    table.column_types[2] = domain::ColumnType::numeric;
+    table.column_types[3] = domain::ColumnType::numeric;
+    table.column_types[4] = domain::ColumnType::categorical;
+    for (std::size_t index = 0; index < design.factors.size(); ++index) {
+        table.column_types[5 + index] = domain::ColumnType::categorical;
+    }
+    table.column_types.back() = domain::ColumnType::numeric;
+
+    for (std::size_t run_index = 0; run_index < design.runs.size(); ++run_index) {
+        const auto& run = design.runs[run_index];
+        const std::string point_type = run.center_point ? "center" : "factorial";
+        std::vector<std::string> row = {
+            "R" + std::to_string(run_index + 1),
+            std::to_string(run.standard_order),
+            std::to_string(run.run_order),
+            std::to_string(run.block),
+            point_type};
+        for (std::size_t index = 0; index < design.factors.size(); ++index) {
+            const int coded =
+                index < run.coded_levels.size() ? run.coded_levels[index] : 0;
+            row.push_back(factorial_actual_level(design.factors[index], coded));
+        }
+        row.push_back("");
+        table.rows.push_back(std::move(row));
+        table.row_ids.push_back(static_cast<domain::RowId>(run_index + 1));
+    }
+    return table;
+}
+
+namespace {
+
+std::string ascii_lower(std::string text)
+{
+    for (char& ch : text) {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    return text;
+}
+
+std::optional<std::size_t> find_column_ci(
+    const domain::DataTable& table, const std::string& name)
+{
+    const std::string needle = ascii_lower(name);
+    for (std::size_t index = 0; index < table.columns.size(); ++index) {
+        if (ascii_lower(table.columns[index]) == needle) {
+            return index;
+        }
+    }
+    return std::nullopt;
+}
+
+bool nearly_equal_level(double left, double right)
+{
+    const double scale = std::max({1.0, std::abs(left), std::abs(right)});
+    return std::abs(left - right) <= 1e-9 * scale;
+}
+
+bool cell_matches_level(const std::string& cell, const std::string& level)
+{
+    if (cell == level) {
+        return true;
+    }
+    const auto cell_value = parse_numeric_cell(cell);
+    const auto level_value = parse_numeric_cell(level);
+    return cell_value.has_value() && level_value.has_value()
+        && nearly_equal_level(*cell_value, *level_value);
+}
+
+bool is_center_point_type(const std::string& point_type)
+{
+    const std::string lower = ascii_lower(point_type);
+    return lower == "center" || lower == "centre" || lower == "cp";
+}
+
+bool is_factorial_point_type(const std::string& point_type)
+{
+    const std::string lower = ascii_lower(point_type);
+    return lower == "factorial" || lower == "cube" || lower == "corner";
+}
+
+std::optional<int> parse_coded_factor_cell(
+    const std::string& value,
+    const std::string& low,
+    const std::string& high)
+{
+    if (cell_matches_level(value, low)) {
+        return -1;
+    }
+    if (cell_matches_level(value, high)) {
+        return 1;
+    }
+    const auto numeric = parse_numeric_cell(value);
+    if (numeric.has_value()) {
+        if (nearly_equal_level(*numeric, -1.0)) {
+            return -1;
+        }
+        if (nearly_equal_level(*numeric, 1.0)) {
+            return 1;
+        }
+        if (nearly_equal_level(*numeric, 0.0)) {
+            return 0;
+        }
+        const auto low_value = parse_numeric_cell(low);
+        const auto high_value = parse_numeric_cell(high);
+        if (low_value.has_value() && high_value.has_value()) {
+            const double mid = (*low_value + *high_value) / 2.0;
+            if (nearly_equal_level(*numeric, mid)) {
+                return 0;
+            }
+        }
+    }
+    if (value == "0") {
+        return 0;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::size_t> parse_positive_index_cell(const std::string& text)
+{
+    const auto numeric = parse_numeric_cell(text);
+    if (!numeric.has_value() || *numeric < 1.0
+        || !nearly_equal_level(*numeric, std::floor(*numeric))) {
+        return std::nullopt;
+    }
+    return static_cast<std::size_t>(*numeric);
+}
+
+}  // namespace
+
+ImportedFactorialRuns import_factorial_runs_from_worksheet(
+    const domain::DataTable& table,
+    const domain::AnalysisConfiguration& configuration)
+{
+    ImportedFactorialRuns imported;
+    for (std::size_t factor = 0; factor < configuration.doe.factor_columns.size();
+         ++factor) {
+        const std::size_t column = configuration.doe.factor_columns[factor];
+        const std::string low = factor < configuration.doe.low_levels.size()
+            ? configuration.doe.low_levels[factor]
+            : "-1";
+        const std::string high = factor < configuration.doe.high_levels.size()
+            ? configuration.doe.high_levels[factor]
+            : "+1";
+        imported.design.factors.push_back({
+            column < table.columns.size() ? table.columns[column]
+                                          : domain::column_label(table, column),
+            low,
+            high});
+    }
+
+    const auto point_type_column = find_column_ci(table, "PointType");
+    const auto block_column = find_column_ci(table, "Block");
+    const auto std_order_column = find_column_ci(table, "StdOrder");
+    const auto run_order_column = find_column_ci(table, "RunOrder");
+    std::set<std::size_t> excluded(
+        configuration.excluded_rows.cbegin(), configuration.excluded_rows.cend());
+
+    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
+        if (excluded.count(row_index) != 0) {
+            continue;
+        }
+        const auto& row = table.rows[row_index];
+        std::optional<std::string> point_type;
+        if (point_type_column.has_value() && *point_type_column < row.size()) {
+            point_type = row[*point_type_column];
+        }
+
+        std::vector<int> levels;
+        levels.reserve(configuration.doe.factor_columns.size());
+        bool valid_levels = true;
+        for (std::size_t factor = 0;
+             factor < configuration.doe.factor_columns.size(); ++factor) {
+            const std::size_t column = configuration.doe.factor_columns[factor];
+            const std::string value = column < row.size() ? row[column] : "";
+            const std::string low = factor < configuration.doe.low_levels.size()
+                ? configuration.doe.low_levels[factor]
+                : "-1";
+            const std::string high = factor < configuration.doe.high_levels.size()
+                ? configuration.doe.high_levels[factor]
+                : "+1";
+            if (point_type.has_value() && is_center_point_type(*point_type)) {
+                levels.push_back(0);
+                continue;
+            }
+            const auto coded = parse_coded_factor_cell(value, low, high);
+            if (!coded.has_value()) {
+                valid_levels = false;
+                break;
+            }
+            if (point_type.has_value() && is_factorial_point_type(*point_type)
+                && *coded == 0) {
+                valid_levels = false;
+                break;
+            }
+            levels.push_back(*coded);
+        }
+        if (!valid_levels || levels.size() != configuration.doe.factor_columns.size()) {
+            ++imported.skipped_level_rows;
+            continue;
+        }
+
+        const bool all_zero = std::all_of(
+            levels.cbegin(), levels.cend(), [](int level) { return level == 0; });
+        const bool any_zero = std::any_of(
+            levels.cbegin(), levels.cend(), [](int level) { return level == 0; });
+        bool center_point = false;
+        if (point_type.has_value() && is_center_point_type(*point_type)) {
+            center_point = true;
+        } else if (all_zero) {
+            center_point = true;
+        } else if (any_zero) {
+            ++imported.skipped_level_rows;
+            continue;
+        }
+
+        domain::statistics::DoeRun run;
+        run.center_point = center_point;
+        run.coded_levels = std::move(levels);
+        if (std_order_column.has_value() && *std_order_column < row.size()) {
+            run.standard_order =
+                parse_positive_index_cell(row[*std_order_column]).value_or(row_index + 1);
+        } else {
+            run.standard_order = row_index + 1;
+        }
+        if (run_order_column.has_value() && *run_order_column < row.size()) {
+            run.run_order =
+                parse_positive_index_cell(row[*run_order_column]).value_or(
+                    imported.design.runs.size() + 1);
+        } else {
+            run.run_order = imported.design.runs.size() + 1;
+        }
+        if (block_column.has_value() && *block_column < row.size()) {
+            run.block = parse_positive_index_cell(row[*block_column]).value_or(1);
+        } else {
+            run.block = 1;
+        }
+        if (center_point) {
+            ++imported.center_run_count;
+        }
+        imported.design.runs.push_back(std::move(run));
+        imported.source_rows.push_back(row_index);
+    }
+    return imported;
 }
 
 }  // namespace datalab::application

@@ -1,0 +1,121 @@
+﻿catalog_entry_count=1815
+unique_ids=1815 dupes=0
+msa_aa_ids=28
+  rule.msa.ndc_not_computed.message
+  rule.msa.ndc_not_computed.action
+  rule.msa.ndc_lt5.message
+  rule.msa.ndc_lt5.action
+  rule.msa.ndc_ge5.message
+  rule.msa.ndc_ge5.action
+  rule.msa.design_balance.message
+  rule.msa.design_balance.action
+  rule.msa.interaction_triggered.message
+  rule.msa.interaction_ok.message
+  rule.msa.interaction.action
+  rule.msa.negative_variance_triggered.message
+  rule.msa.negative_variance_ok.message
+  rule.msa.negative_variance.action
+  rule.msa.percent_metrics.message
+  rule.msa.percent_metrics.action
+  rule.msa.invalid_tolerance.message
+  rule.msa.invalid_tolerance.action
+  rule.aa.kappa_interpretation.message
+  rule.aa.kappa_interpretation.action
+  rule.aa.weighted_kappa.message
+  rule.aa.weighted_kappa.action
+  rule.aa.kendall_ok.message
+  rule.aa.kendall_unavailable.message
+  rule.aa.kendall.action
+  rule.msa.catalog.design_balance.name
+  rule.msa.catalog.ndc_investigation.name
+  rule.msa.catalog.ndc_investigation.message
+
+=== catalog vs expected zh ===
+OK rule.msa.ndc_not_computed.message
+OK rule.msa.ndc_not_computed.action
+OK rule.msa.ndc_lt5.message
+OK rule.msa.ndc_lt5.action
+OK rule.msa.ndc_ge5.message
+OK rule.msa.ndc_ge5.action
+OK rule.msa.design_balance.message
+OK rule.msa.design_balance.action
+OK rule.msa.interaction_triggered.message
+OK rule.msa.interaction_ok.message
+OK rule.msa.interaction.action
+OK rule.msa.negative_variance_triggered.message
+OK rule.msa.negative_variance_ok.message
+OK rule.msa.negative_variance.action
+OK rule.msa.percent_metrics.message
+OK rule.msa.percent_metrics.action
+OK rule.msa.invalid_tolerance.message
+OK rule.msa.invalid_tolerance.action
+OK rule.aa.kappa_interpretation.message
+OK rule.aa.kappa_interpretation.action
+OK rule.aa.weighted_kappa.message
+OK rule.aa.weighted_kappa.action
+OK rule.aa.kendall_ok.message
+OK rule.aa.kendall_unavailable.message
+OK rule.aa.kendall.action
+OK rule.msa.catalog.design_balance.name
+OK rule.msa.catalog.ndc_investigation.name
+OK rule.msa.catalog.ndc_investigation.message
+
+=== unbalanced design_balance in catalog? ===
+
+exact_ids_count=511
+
+=== exact_ids vs sources ===
+EXACT_OK rule.msa.ndc_not_computed.message
+EXACT_OK rule.msa.ndc_not_computed.action
+EXACT_OK rule.msa.ndc_lt5.message
+EXACT_OK rule.msa.ndc_lt5.action
+EXACT_OK rule.msa.ndc_ge5.message
+EXACT_OK rule.msa.ndc_ge5.action
+EXACT_OK rule.msa.design_balance.message
+EXACT_OK rule.msa.design_balance.action
+EXACT_OK rule.msa.interaction_triggered.message
+EXACT_OK rule.msa.interaction_ok.message
+EXACT_OK rule.msa.interaction.action
+EXACT_OK rule.msa.negative_variance_triggered.message
+EXACT_OK rule.msa.negative_variance_ok.message
+EXACT_OK rule.msa.negative_variance.action
+EXACT_OK rule.msa.percent_metrics.message
+EXACT_OK rule.msa.percent_metrics.action
+EXACT_OK rule.msa.invalid_tolerance.message
+EXACT_OK rule.msa.invalid_tolerance.action
+EXACT_OK rule.aa.kappa_interpretation.message
+EXACT_OK rule.aa.kappa_interpretation.action
+EXACT_OK rule.aa.weighted_kappa.message
+EXACT_OK rule.aa.weighted_kappa.action
+EXACT_OK rule.aa.kendall_ok.message
+EXACT_OK rule.aa.kendall_unavailable.message
+EXACT_OK rule.aa.kendall.action
+EXACT_OK rule.msa.catalog.design_balance.name
+EXACT_OK rule.msa.catalog.ndc_investigation.name
+EXACT_OK rule.msa.catalog.ndc_investigation.message
+
+=== test en fragments vs catalog ===
+OK rule.msa.ndc_not_computed.message: look for 'cannot be estimated' in 'ndc cannot be estimated; do not judge measurement-system discrimination from it.'
+OK rule.msa.ndc_not_computed.action: look for 'zero Gage SD' in 'Check zero total variation, zero Gage SD, or invalid tolerance before interpreting ndc.'
+OK rule.msa.ndc_lt5.message: look for 'ndc < 5' in 'ndc < 5 suggests investigating discrimination versus part-to-part variation.'
+OK rule.msa.catalog.ndc_investigation.name: look for 'ndc investigation' in 'ndc investigation'
+OK rule.msa.ndc_ge5.message: look for 'ndc ≥ 5' in 'ndc ≥ 5 only means part variation is large relative to Gage variation in this study.'
+OK rule.msa.catalog.design_balance.name: look for 'Design balance' in 'Design balance'
+OK rule.msa.interaction_triggered.message: look for 'Interaction p>0.25' in 'Interaction p>0.25; reduction may be considered, but the full model is retained.'
+OK rule.msa.percent_metrics.message: look for '%Contribution is variance-based' in '%Contribution is variance-based; %Study Var is SD-based—different bases.'
+OK rule.aa.kappa_interpretation.message: look for 'does not prove rater agreement' in 'Rejecting Kappa=0 does not prove rater agreement.'
+OK rule.aa.weighted_kappa.message: look for 'not Minitab AAA' in "Weighted Kappa is DataLab's optional Cohen weighting, not Minitab AAA default output."
+OK rule.aa.kendall_ok.message: look for 'Kendall W/τ' in 'Ordinal ratings computed Kendall W/τ; rejecting zero coefficient does not prove ordinal agreement.'
+OK rule.aa.kendall_unavailable.message: look for 'not identifiable' in 'Ordinal ratings were requested, but Kendall is not identifiable or levels are insufficient.'
+OK rule.msa.negative_variance_triggered.message: look for 'truncated to 0' in 'Negative variance components were truncated to 0; original estimates are retained.'
+
+=== headers ===
+header.rule: zh='规则' en='Rule'
+header.rule_name_col: zh='名称' en='Name'
+header.status: zh='状态' en='Status'
+header.evidence: zh='证据' en='Evidence'
+header.related_rows: zh='关联行' en='Related rows'
+header.suggestion: zh='建议' en='Suggestion'
+table.rule_evidence: zh='规则证据' en='Rule evidence'
+unbalanced_in_exact=False '零件×操作员单元重复次数不一致。' -> None
+unbalanced_in_exact=False '交叉设计需要平衡重复后才能解释方差分量。' -> None

@@ -1,0 +1,82 @@
+diag_unique=107 unmapped=81 plain=568
+analysis_service.cpp:259	重复次数小于 2，无法绘制按零件 R 图。
+analysis_service.cpp:348	重复次数小于 2，无法绘制按操作者 R 图。
+analysis_service.cpp:718	 个缺失或非法单元格（计入 N*）。
+analysis_service.cpp:1192	Johnson 能力为研究/预览结果：可显示拟合与变换尺度指数，
+analysis_service.cpp:1192	但不得输出过程合格判定（门禁：缺 golden/尾部/人工解释验收）。
+analysis_service.cpp:1217	正态能力未满足稳定性/正态性验收前置：禁止过程合格判定
+analysis_service.cpp:1753	 个缺失或非法单元格（含 *）。
+analysis_service.cpp:2106	 个含缺失或非法单元格的行。
+analysis_service.cpp:2232	 个缺失或非法单元格。
+analysis_service.cpp:2251	单侧置信区间缺少一端，未输出均值区间图。
+analysis_service.cpp:2425	双样本 t 检验跳过缺失或非法单元格；组 1 = 
+analysis_service.cpp:2425	，组 2 = 
+analysis_service.cpp:2502	单侧置信区间缺少一端，未输出组均值区间图。
+analysis_service.cpp:2717	双样本等价性检验跳过缺失或非法单元格。
+analysis_service.cpp:2759	均值比等价性检验跳过缺失或非法单元格。
+analysis_service.cpp:2805	配对等价性检验按 complete-case 对齐，已跳过不成对的缺失或非法单元格。
+analysis_service.cpp:2856	已将多行事件数/试验数求和后再做单比例等价性检验。
+analysis_service.cpp:2918	已将一组或多组的多行事件数/试验数求和后再做两比例等价性检验。
+analysis_service.cpp:2923	两比例等价性检验跳过了缺失或非法单元格。
+analysis_service.cpp:2967	 个缺失或非法响应值。
+analysis_service.cpp:3278	单侧置信区间缺少一端，未输出差值区间图。
+analysis_service.cpp:3362	回归使用 complete-case，跳过响应缺失、预测变量缺失或无效的行。
+analysis_service.cpp:3647	已将一组或多组的多行事件数/试验数求和后再做两比例检验。
+analysis_service.cpp:3652	两比例检验跳过了缺失或非法单元格。
+analysis_service.cpp:3652	第一组 = 
+analysis_service.cpp:3653	    第二组 = 
+analysis_service.cpp:4448	交叉表仅汇总频数与百分比；独立性检验请使用命令 chi_square。
+analysis_service.cpp:4637	 个缺失或非法观测。
+analysis_service.cpp:5496	序列中间存在缺失或非法值，游程检验要求完整连续观测，未计算检验。
+analysis_service.cpp:5630	Fisher 精确检验要求恰好 2×2 水平；当前行水平数 = 
+analysis_service.cpp:5631	，列水平数 = 
+analysis_service.cpp:5661	 个缺失单元格。
+analysis_service.cpp:5924	 行缺失（含 *）。
+analysis_service.cpp:7064	样本估计（未提供完整历史 μ/σ）
+analysis_service.cpp:7064	历史 μ/σ
+analysis_service.cpp:7263	平滑跳过缺失或无效的数值单元格。
+analysis_service.cpp:7781	Logistic 回归使用 complete-case，缺失或非法行已排除。
+analysis_service.cpp:8041	测量或因子缺失、* 或非法单元格已跳过 
+analysis_service.cpp:8230	所有单元仅 1 个观测，标准差图无可绘点。
+analysis_service.cpp:8376	缺失、* 或非法数值未进入容差区间计算。
+analysis_service.cpp:8505	Bonett 仅支持两样本；k>2 组请改用 Levene（中位数）。
+analysis_service.cpp:8739	时间列与值列未配对的行已跳过，分解仅使用可对齐的完整观测。
+analysis_service.cpp:8745	分解跳过缺失或无效的时间/数值单元格。
+analysis_service.cpp:8940	因子编码失败。
+analysis_service.cpp:8960	未检测到中心点（编码全 0）；纯误差/失拟诊断受限。
+analysis_service.cpp:8965	设计来源 ID = 
+analysis_service.cpp:8966	；设计族 = 
+analysis_service.cpp:9154	曲面图为静态栅格可视化，不得解读为可旋转交互 3D。
+analysis_service.cpp:9524	缺少回归系数协方差矩阵，响应优化表中的置信区间与预测区间显示为 *。
+analysis_service.cpp:9530	 行：因子水平既不匹配 -1/+1，也不匹配给定的低/高水平。
+analysis_service.cpp:9876	 个缺失或不完整观测。
+analysis_service.cpp:10335	当前为二参数 Weibull。含阈值的三参数模型请选择 model=weibull3。
+analysis_service.cpp:10416	当前为一参数指数。含阈值的两参数模型请选择 model=exponential2。
+analysis_service.cpp:10492	当前为二参数对数正态。含阈值的三参数模型请选择 model=lognormal3。
+analysis_service.cpp:10828	已指定多协变量列：Fine-Gray 使用 multi IPCW，
+analysis_service.cpp:10828	不与二分类 group Fine-Gray 同时运行。
+analysis_service.cpp:10857	已指定连续协变量列：Fine-Gray 使用 continuous IPCW，
+analysis_service.cpp:10958	已生成逐观测删失状态工作表（
+analysis_service.cpp:10959	 行；censoring_type=exact|right|left|interval）。
+analysis_service.cpp:11024	暴露量列必须为有限非负数；缺失或非法值不会被静默补齐。
+analysis_service.cpp:11040	暴露量列求和后必须为正有限数；不得用标量默认值静默补齐。
+analysis_service.cpp:11047	同时提供了暴露量列与标量暴露量；摘要使用列求和，标量被忽略。
+analysis_service.cpp:11790	Nested Gage R&R 跳过缺失或非法的测量/零件/操作者单元格。
+analysis_service.cpp:13929	区间删失 Turnbull 为简化网格 NPMLE（formula_reference）；
+analysis_service.cpp:13929	分模式可靠度拟合与 pinned R/商业对齐仍未冻结，不得宣称 vendor_oracle。
+analysis_service.cpp:15149	EDA 四图用于探索位置/散布/随机性/分布形态假设，不能写成过程受控或分布已正态。
+analysis_service.cpp:15258	已忽略类别为空或 * 的汇总行。
+analysis_service.cpp:15266	已忽略负数或非整数缺陷计数。
+analysis_service.cpp:15352	序列中间存在缺失或非法值，运行图随机性检验要求完整连续观测，未计算四模式 P。
+analysis_service.cpp:15475	 个空类别或空原因单元格。
+analysis_service.cpp:15649	本轮 ANOM 仅支持正态均值；二项/泊松计数请用其他工具。
+analysis_service.cpp:2232	单样本 t 检验
+analysis_service.cpp:7263	拟合与预测明细
+analysis_service.cpp:10019	Type 1 Gage 结果
+analysis_service.cpp:10335	三参数 Weibull 参数
+analysis_service.cpp:10335	Weibull 参数
+analysis_service.cpp:10416	两参数指数参数
+analysis_service.cpp:10416	Exponential 参数
+analysis_service.cpp:10492	三参数对数正态参数
+analysis_service.cpp:10492	Lognormal 参数
+analysis_service.cpp:10958	可写回活动表以便审计或再导入；不是 vendor_oracle。

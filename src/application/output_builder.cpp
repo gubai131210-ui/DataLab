@@ -1,9 +1,12 @@
 #include "application/output_builder.h"
 
+#include "domain/statistics/special_cause_rule_catalog.h"
+
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -17,18 +20,16 @@ std::string triggered_tests_text(
     const datalab::domain::statistics::ControlChartResult& chart,
     std::size_t index)
 {
-    if (index >= chart.triggered_tests.size()
-        || chart.triggered_tests[index].empty()) {
-        return {};
+    if (index >= chart.triggered_tests.size()) {
+        return datalab::domain::statistics::format_triggered_special_cause_rules({});
     }
-    std::ostringstream stream;
-    for (std::size_t offset = 0; offset < chart.triggered_tests[index].size(); ++offset) {
-        if (offset > 0) {
-            stream << ",";
-        }
-        stream << "Test " << chart.triggered_tests[index][offset];
-    }
-    return stream.str();
+    return datalab::domain::statistics::format_triggered_special_cause_rules(
+        chart.triggered_tests[index]);
+}
+
+std::string primary_test_text(int primary_test)
+{
+    return datalab::domain::statistics::format_primary_special_cause_rule(primary_test);
 }
 
 std::string merged_dual_triggered_tests(
@@ -39,12 +40,20 @@ std::string merged_dual_triggered_tests(
 {
     const std::string xbar_tests = triggered_tests_text(primary, index);
     const std::string secondary_tests = triggered_tests_text(secondary, index);
+    const bool xbar_active =
+        xbar_tests != datalab::domain::statistics::format_triggered_special_cause_rules({});
+    const bool secondary_active =
+        secondary_tests
+        != datalab::domain::statistics::format_triggered_special_cause_rules({});
+    if (!xbar_active && !secondary_active) {
+        return "未触发";
+    }
     std::ostringstream stream;
-    if (!xbar_tests.empty()) {
+    if (xbar_active) {
         stream << "Xbar: " << xbar_tests;
     }
-    if (!secondary_tests.empty()) {
-        if (!xbar_tests.empty()) {
+    if (secondary_active) {
+        if (xbar_active) {
             stream << "; ";
         }
         stream << secondary_short << ": " << secondary_tests;
@@ -64,13 +73,14 @@ std::string merged_dual_minimum_test(
         ? secondary.primary_test_by_point[index] : 0;
     if (xbar_test > 0 && secondary_test > 0) {
         const int minimum = std::min(xbar_test, secondary_test);
-        return "Test " + std::to_string(minimum);
+        return datalab::domain::statistics::format_primary_special_cause_rule(minimum);
     }
     if (xbar_test > 0) {
-        return "Test " + std::to_string(xbar_test);
+        return datalab::domain::statistics::format_primary_special_cause_rule(xbar_test);
     }
     if (secondary_test > 0) {
-        return secondary_short + ": Test " + std::to_string(secondary_test);
+        return secondary_short + ": "
+            + datalab::domain::statistics::format_primary_special_cause_rule(secondary_test);
     }
     const bool xbar_failed = std::find(
         primary.test1_points.cbegin(), primary.test1_points.cend(), index)
@@ -78,16 +88,18 @@ std::string merged_dual_minimum_test(
     const bool secondary_failed = std::find(
         secondary.test1_points.cbegin(), secondary.test1_points.cend(), index)
         != secondary.test1_points.cend();
-    if (xbar_failed && secondary_failed) {
-        return "Test 1";
+    if (xbar_failed || secondary_failed) {
+        const std::string name =
+            datalab::domain::statistics::special_cause_rule_display_name(1);
+        if (xbar_failed && secondary_failed) {
+            return name;
+        }
+        if (xbar_failed) {
+            return name;
+        }
+        return secondary_short + ": " + name;
     }
-    if (xbar_failed) {
-        return "Test 1";
-    }
-    if (secondary_failed) {
-        return secondary_short + ": Test 1";
-    }
-    return {};
+    return "未触发";
 }
 
 std::string cusum_signal_label(
@@ -187,9 +199,19 @@ void append_rule_table(
     if (rules.empty()) {
         return;
     }
+    const bool special_cause = std::any_of(
+        rules.begin(), rules.end(),
+        [](const domain::RuleEvidence& rule) {
+            return !rule.window.empty() || rule.id.find('_') != std::string::npos;
+        });
+    if (special_cause) {
+        page.tables.push_back(
+            datalab::domain::statistics::special_cause_rule_evidence_table(rules));
+        return;
+    }
     domain::StatisticTable table;
     table.title = "规则证据";
-    table.headers = {"规则", "状态", "证据", "关联行", "建议"};
+    table.headers = {"规则", "名称", "状态", "证据", "关联行", "建议"};
     for (const auto& rule : rules) {
         std::string rows;
         for (std::size_t index = 0; index < rule.related_rows.size(); ++index) {
@@ -199,7 +221,12 @@ void append_rule_table(
             rows += std::to_string(rule.related_rows[index] + 1);
         }
         table.rows.push_back({
-            rule.id, rule.status, rule.message, rows, rule.suggested_action});
+            rule.id,
+            rule.name.empty() ? rule.id : rule.name,
+            rule.status,
+            rule.message,
+            rows,
+            rule.suggested_action});
     }
     page.tables.push_back(std::move(table));
 }
@@ -326,7 +353,7 @@ StatisticTable attribute_chart_table(
     table.title = title;
     table.headers = {
         "原始行", "子组", "阶段", count_header, denominator_header, rate_header, "中心线", "LCL",
-        "UCL", "触发测试", "最小测试"};
+        "UCL", "触发规则", "主要规则"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         const std::size_t count = index < counts.size() ? counts[index] : 0;
         const std::size_t denominator = index < denominators.size() ? denominators[index] : 0;
@@ -350,7 +377,7 @@ StatisticTable attribute_chart_table(
             format_number(lower),
             format_number(upper),
             tests,
-            primary_test > 0 ? "Test " + std::to_string(primary_test) : ""});
+            primary_test_text(primary_test)});
     }
     return table;
 }
@@ -366,9 +393,12 @@ StatisticTable laney_chart_table(
     StatisticTable table;
     table.title = "Laney 图逐子组统计";
     table.headers = {"原始行", "子组", "阶段", count_header, denominator_header, "绘制值",
-                    "Z", "MR", "中心线", "LCL", "UCL", "Test 1", "Test 2",
-                    "Test 3", "Test 4", "Test 5", "Test 6", "Test 7", "Test 8",
-                    "触发测试", "最小测试"};
+                    "Z", "MR", "中心线", "LCL", "UCL"};
+    for (const auto& rule : datalab::domain::statistics::special_cause_rule_catalog()) {
+        table.headers.push_back(rule.display_name);
+    }
+    table.headers.push_back("触发规则");
+    table.headers.push_back("主要规则");
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         const auto test_failed = [&](std::size_t test) {
             return test < chart.special_cause_points.size()
@@ -401,9 +431,7 @@ StatisticTable laney_chart_table(
             test_failed(6) ? "是" : "",
             test_failed(7) ? "是" : "",
             triggered_tests_text(chart, index),
-            index < chart.primary_test_by_point.size()
-                && chart.primary_test_by_point[index] > 0
-                ? "Test " + std::to_string(chart.primary_test_by_point[index]) : ""});
+            primary_test_text(index < chart.primary_test_by_point.size() ? chart.primary_test_by_point[index] : 0)});
     }
     return table;
 }
@@ -417,7 +445,7 @@ StatisticTable individuals_point_table(
     StatisticTable table;
     table.title = "I-MR 逐点统计";
     table.headers = {"原始行", "阶段", "观测值", "I CL", "I LCL", "I UCL", "MR",
-                     "触发测试", "最小测试"};
+                     "触发规则", "主要规则"};
     for (std::size_t index = 0; index < individuals.plotted_values.size(); ++index) {
         table.rows.push_back({
             index < source_rows.size()
@@ -433,10 +461,7 @@ StatisticTable individuals_point_table(
             index < moving_range.plotted_values.size()
                 ? format_number(moving_range.plotted_values[index]) : "*",
             triggered_tests_text(individuals, index),
-            index < individuals.primary_test_by_point.size()
-                && individuals.primary_test_by_point[index] > 0
-                ? "Test " + std::to_string(individuals.primary_test_by_point[index])
-                : ""});
+            primary_test_text(index < individuals.primary_test_by_point.size() ? individuals.primary_test_by_point[index] : 0)});
     }
     return table;
 }
@@ -457,7 +482,7 @@ StatisticTable subgroup_dual_point_table(
                      "Xbar CL", "Xbar LCL", "Xbar UCL",
                      secondary_short + " CL",
                      secondary_short + " LCL",
-                     secondary_short + " UCL", "触发测试", "最小测试"};
+                     secondary_short + " UCL", "触发规则", "主要规则"};
     for (std::size_t index = 0; index < subgroups.size(); ++index) {
         table.rows.push_back({
             index < subgroup_source_rows.size()
@@ -495,7 +520,7 @@ StatisticTable ewma_point_table(
     StatisticTable table;
     table.title = "EWMA 逐点统计";
     table.headers = {"原始行", "观测值", "EWMA", "σ", "CL", "LCL", "UCL",
-                     "触发测试", "最小测试"};
+                     "触发规则", "主要规则"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         table.rows.push_back({
             index < source_rows.size()
@@ -512,10 +537,7 @@ StatisticTable ewma_point_table(
             index < chart.upper_control_limit.size()
                 ? format_number(chart.upper_control_limit[index]) : "*",
             triggered_tests_text(chart, index),
-            index < chart.primary_test_by_point.size()
-                && chart.primary_test_by_point[index] > 0
-                ? "Test " + std::to_string(chart.primary_test_by_point[index])
-                : ""});
+            primary_test_text(index < chart.primary_test_by_point.size() ? chart.primary_test_by_point[index] : 0)});
     }
     return table;
 }
@@ -527,7 +549,7 @@ StatisticTable rare_event_point_table(
 {
     StatisticTable table;
     table.title = title;
-    table.headers = {"原始行", "间隔", "CL", "LCL", "UCL", "触发测试", "最小测试"};
+    table.headers = {"原始行", "间隔", "CL", "LCL", "UCL", "触发规则", "主要规则"};
     for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
         table.rows.push_back({
             index < source_rows.size()
@@ -542,10 +564,7 @@ StatisticTable rare_event_point_table(
                 && std::isfinite(chart.upper_control_limit[index])
                 ? format_number(chart.upper_control_limit[index]) : "*",
             triggered_tests_text(chart, index),
-            index < chart.primary_test_by_point.size()
-                && chart.primary_test_by_point[index] > 0
-                ? "Test " + std::to_string(chart.primary_test_by_point[index])
-                : ""});
+            primary_test_text(index < chart.primary_test_by_point.size() ? chart.primary_test_by_point[index] : 0)});
     }
     return table;
 }
@@ -602,6 +621,109 @@ StatisticTable cusum_signal_table(
     return table;
 }
 
+StatisticTable zone_point_table(
+    const domain::statistics::ZoneChartResult& chart,
+    const std::vector<std::size_t>& source_rows)
+{
+    StatisticTable table;
+    table.title = "区域图逐点统计";
+    table.headers = {"原始行", "观测值", "Z", "区域带", "累计得分", "Jaehn 信号"};
+    const auto band_label = [](int band) -> std::string {
+        switch (band) {
+        case 3:
+            return ">3σ";
+        case 2:
+            return "2–3σ";
+        case 1:
+            return "1–2σ";
+        default:
+            return "≤1σ";
+        }
+    };
+    std::set<std::size_t> signals(chart.signal_points.cbegin(), chart.signal_points.cend());
+    for (std::size_t index = 0; index < chart.individuals.plotted_values.size(); ++index) {
+        const double z = chart.sigma > 0.0
+            ? (chart.individuals.plotted_values[index] - chart.center) / chart.sigma
+            : 0.0;
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            format_number(chart.individuals.plotted_values[index]),
+            format_number(z),
+            index < chart.zone_band.size() ? band_label(chart.zone_band[index]) : "*",
+            index < chart.zone_scores.size()
+                ? format_number(chart.zone_scores[index]) : "*",
+            signals.count(index) != 0 ? "是" : ""});
+    }
+    return table;
+}
+
+StatisticTable zmr_point_table(
+    const domain::statistics::ZmrChartResult& chart,
+    const std::vector<std::size_t>& source_rows,
+    const std::vector<std::string>& group_labels)
+{
+    StatisticTable table;
+    table.title = "Z-MR 逐点统计";
+    table.headers = {"原始行", "组", "Z", "Z CL", "Z LCL", "Z UCL",
+                     "MR(Z)", "MR CL", "MR UCL", "触发规则", "主要规则"};
+    for (std::size_t index = 0; index < chart.z_values.size(); ++index) {
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            index < group_labels.size() ? group_labels[index] : "",
+            format_number(chart.z_values[index]),
+            index < chart.z_chart.center_line.size()
+                ? format_number(chart.z_chart.center_line[index]) : "*",
+            index < chart.z_chart.lower_control_limit.size()
+                ? format_number(chart.z_chart.lower_control_limit[index]) : "*",
+            index < chart.z_chart.upper_control_limit.size()
+                ? format_number(chart.z_chart.upper_control_limit[index]) : "*",
+            index < chart.mr_chart.plotted_values.size()
+                ? format_number(chart.mr_chart.plotted_values[index]) : "*",
+            index < chart.mr_chart.center_line.size()
+                ? format_number(chart.mr_chart.center_line[index]) : "*",
+            index < chart.mr_chart.upper_control_limit.size()
+                ? format_number(chart.mr_chart.upper_control_limit[index]) : "*",
+            triggered_tests_text(chart.z_chart, index),
+            primary_test_text(index < chart.z_chart.primary_test_by_point.size() ? chart.z_chart.primary_test_by_point[index] : 0)});
+    }
+    return table;
+}
+
+StatisticTable moving_average_point_table(
+    const domain::statistics::ControlChartResult& chart,
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows)
+{
+    StatisticTable table;
+    table.title = "移动平均逐点统计";
+    table.headers = {"原始行", "观测值", "MA", "σ/√w", "CL", "LCL", "UCL",
+                     "触发规则", "主要规则"};
+    for (std::size_t index = 0; index < chart.plotted_values.size(); ++index) {
+        if (!std::isfinite(chart.plotted_values[index])) {
+            continue;
+        }
+        table.rows.push_back({
+            index < source_rows.size()
+                ? std::to_string(source_rows[index] + 1) : "*",
+            index < observations.size()
+                ? format_number(observations[index]) : "*",
+            format_number(chart.plotted_values[index]),
+            index < chart.point_sigma.size()
+                ? format_number(chart.point_sigma[index]) : "*",
+            index < chart.center_line.size()
+                ? format_number(chart.center_line[index]) : "*",
+            index < chart.lower_control_limit.size()
+                ? format_number(chart.lower_control_limit[index]) : "*",
+            index < chart.upper_control_limit.size()
+                ? format_number(chart.upper_control_limit[index]) : "*",
+            triggered_tests_text(chart, index),
+            primary_test_text(index < chart.primary_test_by_point.size() ? chart.primary_test_by_point[index] : 0)});
+    }
+    return table;
+}
+
 domain::PlotSpec control_plot(
     const std::string& title,
     const std::string& y_axis,
@@ -643,6 +765,39 @@ domain::PlotSpec control_plot(
         plot.point_labels = chart.phase_labels;
     }
     return plot;
+}
+
+void attach_special_cause_rules(
+    domain::SpcFacts& spc,
+    const domain::statistics::ControlChartResult& chart,
+    domain::statistics::ControlChartKind kind,
+    const domain::statistics::SpecialCauseSelection& selection)
+{
+    const auto enabled =
+        datalab::domain::statistics::resolve_special_cause_tests(selection, kind);
+    spc.enabled_special_cause_tests = enabled;
+    spc.enabled_special_cause_rule_ids.clear();
+    for (const int number : enabled) {
+        if (const auto* spec =
+                datalab::domain::statistics::find_special_cause_rule_by_number(number)) {
+            spc.enabled_special_cause_rule_ids.push_back(spec->rule_id);
+        }
+    }
+    if (spc.rule_policy.empty()) {
+        spc.rule_policy = selection.policy;
+    }
+    spc.rules = datalab::domain::statistics::build_special_cause_rule_evidences(
+        chart, kind, selection);
+}
+
+void append_special_cause_rule_table(
+    domain::OutputPage& page,
+    const domain::SpcFacts& spc)
+{
+    if (spc.rules.empty()) {
+        return;
+    }
+    append_rule_table(page, spc.rules);
 }
 
 }  // namespace datalab::application

@@ -29,6 +29,14 @@ void add_info(
     diagnostics.push_back({DiagnosticMessage::Severity::info, code, message});
 }
 
+void add_warning(
+    std::vector<DiagnosticMessage>& diagnostics,
+    const char* code,
+    const char* message)
+{
+    diagnostics.push_back({DiagnosticMessage::Severity::warning, code, message});
+}
+
 double regularized_gamma_q(double shape, double value)
 {
     if (!(shape > 0.0) || value < 0.0) {

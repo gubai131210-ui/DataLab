@@ -1,6 +1,23 @@
 cmake_minimum_required(VERSION 3.19)
 project(DataLab LANGUAGES CXX C)
 
+# MinGW cc1plus may crash with no diagnostic when %TEMP%/%TMP% lives under a
+# non-ASCII user profile path (common on zh-CN Windows). Route compiler temps
+# into the ASCII build directory instead.
+if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    configure_file(
+        "${CMAKE_SOURCE_DIR}/cmake/compile_with_ascii_tmp.cmd.in"
+        "${CMAKE_BINARY_DIR}/compile_with_ascii_tmp.cmd"
+        @ONLY
+    )
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/compile_with_ascii_tmp.cmd")
+    set(CMAKE_C_COMPILER_LAUNCHER "${CMAKE_BINARY_DIR}/compile_with_ascii_tmp.cmd")
+    # Large TUs (e.g. analysis_service.cpp) exceed default COFF section limits.
+    add_compile_options(-Wa,-mbig-obj)
+    message(STATUS "MinGW ASCII compiler temp: ${CMAKE_BINARY_DIR}/.compiler_tmp")
+    message(STATUS "MinGW big object format: -Wa,-mbig-obj")
+endif()
+
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test Concurrent)
 
 qt_standard_project_setup()
@@ -15,20 +32,55 @@ add_library(datalab_domain STATIC
     src/domain/column_extract.cpp
     src/domain/column_extract.h
     src/domain/graph_assembly.cpp
+    src/domain/row_visibility.cpp
+    src/domain/row_visibility.h
     src/domain/graph_assembly.h
     src/domain/quality_types.h
+    src/domain/report_types.h
+    src/domain/report_text_catalog.cpp
+    src/domain/report_text_catalog.h
+    src/domain/report_text_catalog_part1.cpp
+    src/domain/report_text_catalog_part2.cpp
+    src/domain/report_text_catalog_part3.cpp
+    src/domain/report_text_catalog_part4.cpp
+    src/domain/report_text_catalog_part5.cpp
+    src/domain/report_text_catalog_part6.cpp
+    src/domain/report_text_catalog_part7.cpp
+    src/domain/report_text_catalog_part8.cpp
+    src/domain/report_text_catalog_part9.cpp
+    src/domain/report_text_catalog_part10.cpp
+    src/domain/report_text_catalog_part11.cpp
+    src/domain/report_text_catalog_part12.cpp
+    src/domain/report_text_catalog_part13.cpp
+    src/domain/report_text_catalog_part14.cpp
+    src/domain/report_text_catalog_part15.cpp
+    src/domain/report_text_catalog_part16.cpp
     src/domain/quality_diagnostics.cpp
     src/domain/quality_diagnostics.h
     src/domain/statistics/descriptive_statistics.cpp
     src/domain/statistics/descriptive_statistics.h
     src/domain/statistics/process_capability.cpp
     src/domain/statistics/process_capability.h
+    src/domain/statistics/hartigan_dip.cpp
+    src/domain/statistics/hartigan_dip.h
+    src/domain/statistics/gaussian_mixture_2.cpp
+    src/domain/statistics/gaussian_mixture_2.h
     src/domain/statistics/attribute_capability.cpp
     src/domain/statistics/attribute_capability.h
     src/domain/statistics/johnson_transform.cpp
     src/domain/statistics/johnson_transform.h
     src/domain/statistics/control_charts.cpp
     src/domain/statistics/control_charts.h
+    src/domain/statistics/special_cause_rule_catalog.cpp
+    src/domain/statistics/special_cause_rule_catalog.h
+    src/domain/database_types.h
+    src/domain/database/database_provider.h
+    src/domain/database/database_provider_registry.cpp
+    src/domain/database/import_plan_validation.cpp
+    src/domain/database/keyset_sql.cpp
+    src/domain/database/keyset_sql.h
+    src/domain/statistics/multivariate_control.cpp
+    src/domain/statistics/multivariate_control.h
     src/domain/statistics/quality_visuals.cpp
     src/domain/statistics/normal_probability.cpp
     src/domain/statistics/normality_test.cpp
@@ -42,6 +94,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/spc_constants.h
     src/domain/statistics/normal_distribution.cpp
     src/domain/statistics/normal_distribution.h
+    src/domain/statistics/quality_extensions.cpp
+    src/domain/statistics/quality_extensions.h
     src/domain/statistics/correlation.cpp
     src/domain/statistics/correlation.h
     src/domain/statistics/hypothesis_tests.cpp
@@ -57,6 +111,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/box_cox.cpp
     src/domain/statistics/box_cox.h
     src/domain/statistics/gage_rr.cpp
+    src/domain/statistics/expanded_gage_rr.cpp
+    src/domain/statistics/expanded_gage_rr.h
     src/domain/statistics/gage_rr.h
     src/domain/statistics/msa_type1.cpp
     src/domain/statistics/msa_type1.h
@@ -64,6 +120,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/reliability.h
     src/domain/statistics/t_power.cpp
     src/domain/statistics/t_power.h
+    src/domain/statistics/autocorrelation.cpp
+    src/domain/statistics/autocorrelation.h
     src/domain/statistics/nonparametric_tests.cpp
     src/domain/statistics/nonparametric_tests.h
     src/domain/statistics/time_series.cpp
@@ -78,6 +136,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/time_series_decomposition.h
     src/domain/statistics/doe_factorial.cpp
     src/domain/statistics/doe_factorial.h
+    src/domain/statistics/rsm_analysis.cpp
+    src/domain/statistics/rsm_analysis.h
     src/domain/statistics/response_optimization.cpp
     src/domain/statistics/response_optimization.h
     src/domain/statistics/nested_gage_rr.cpp
@@ -88,8 +148,62 @@ add_library(datalab_domain STATIC
     src/domain/statistics/seasonal_forecasting.h
     src/domain/statistics/pca.cpp
     src/domain/statistics/pca.h
+    src/domain/statistics/kmeans.cpp
+    src/domain/statistics/kmeans.h
+    src/domain/statistics/cart_tree.cpp
+    src/domain/statistics/cart_tree.h
+    src/domain/statistics/adf_test.cpp
+    src/domain/statistics/adf_test.h
+    src/domain/statistics/poisson_regression.cpp
+    src/domain/statistics/poisson_regression.h
+    src/domain/statistics/isolation_forest.cpp
+    src/domain/statistics/isolation_forest.h
+    src/domain/statistics/bootstrap_mean.cpp
+    src/domain/statistics/bootstrap_mean.h
+    src/domain/statistics/bootstrap_two_sample.cpp
+    src/domain/statistics/bootstrap_two_sample.h
+    src/domain/statistics/probit_reliability.cpp
+    src/domain/statistics/probit_reliability.h
+    src/domain/statistics/hierarchical_cluster.cpp
+    src/domain/statistics/hierarchical_cluster.h
+    src/domain/statistics/ordinal_logistic.cpp
+    src/domain/statistics/ordinal_logistic.h
+    src/domain/statistics/nominal_logistic.cpp
+    src/domain/statistics/nominal_logistic.h
+    src/domain/statistics/nonparametric_capability.cpp
+    src/domain/statistics/nonparametric_capability.h
+    src/domain/statistics/accelerated_life.cpp
+    src/domain/statistics/accelerated_life.h
+    src/domain/statistics/discriminant.cpp
+    src/domain/statistics/discriminant.h
+    src/domain/statistics/ccf.cpp
+    src/domain/statistics/ccf.h
+    src/domain/statistics/stepwise_regression.cpp
+    src/domain/statistics/stepwise_regression.h
+    src/domain/statistics/best_subsets_regression.cpp
+    src/domain/statistics/best_subsets_regression.h
+    src/domain/statistics/batch_capability.cpp
+    src/domain/statistics/batch_capability.h
+    src/domain/statistics/km_interval.cpp
+    src/domain/statistics/km_interval.h
+    src/domain/statistics/aalen_johansen_cif.cpp
+    src/domain/statistics/aalen_johansen_cif.h
+    src/domain/statistics/cox_regression.cpp
+    src/domain/statistics/cox_regression.h
+    src/domain/statistics/gray_test.cpp
+    src/domain/statistics/gray_test.h
+    src/domain/statistics/fine_gray.cpp
+    src/domain/statistics/fine_gray.h
+    src/domain/statistics/plackett_burman.cpp
+    src/domain/statistics/plackett_burman.h
+    src/domain/statistics/response_surface_design.cpp
+    src/domain/statistics/response_surface_design.h
+    src/domain/statistics/censoring_contract.cpp
+    src/domain/statistics/censoring_contract.h
     src/domain/statistics/graph_visuals.cpp
     src/domain/statistics/graph_visuals.h
+    src/domain/statistics/eda_plots.cpp
+    src/domain/statistics/eda_plots.h
     src/domain/statistics/multi_vari.cpp
     src/domain/statistics/multi_vari.h
     src/domain/statistics/tolerance_intervals.cpp
@@ -126,6 +240,14 @@ add_library(datalab_application STATIC
     src/application/graph_service.h
     src/application/doe_pages.cpp
     src/application/doe_pages.h
+    src/application/database/database_import_service.cpp
+    src/application/database/database_import_service.h
+    src/application/report_assembly_service.cpp
+    src/application/report_assembly_service.h
+    src/application/report_export_service.cpp
+    src/application/report_export_service.h
+    src/application/report_localization.cpp
+    src/application/report_localization.h
 )
 
 target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -173,8 +295,24 @@ add_library(datalab_infrastructure STATIC
     src/infrastructure/project_repository.h
     src/infrastructure/output_serialization.cpp
     src/infrastructure/output_serialization.h
+    src/infrastructure/database/database_provider_bootstrap.cpp
+    src/infrastructure/database/database_provider_bootstrap.h
+    src/infrastructure/database/sqlite_database_provider.cpp
+    src/infrastructure/database/sqlite_database_provider.h
+    src/infrastructure/database/postgresql_database_provider.cpp
+    src/infrastructure/database/postgresql_database_provider.h
+    src/infrastructure/database/mysql_database_provider.cpp
+    src/infrastructure/database/mysql_database_provider.h
+    src/infrastructure/database/odbc_database_provider.cpp
+    src/infrastructure/database/odbc_database_provider.h
+    src/infrastructure/database/import_plan_serialization.cpp
+    src/infrastructure/database/import_plan_serialization.h
     src/infrastructure/pdf_report_writer.cpp
     src/infrastructure/pdf_report_writer.h
+    src/infrastructure/report_serialization.cpp
+    src/infrastructure/report_serialization.h
+    src/infrastructure/report_export_writer.cpp
+    src/infrastructure/report_export_writer.h
     src/infrastructure/report_layout_cursor.cpp
     src/infrastructure/report_layout_cursor.h
     src/infrastructure/report_painter.cpp
@@ -226,10 +364,18 @@ add_library(datalab_ui STATIC
     src/ui/project_navigator.h
     src/ui/worksheet_model.cpp
     src/ui/worksheet_model.h
+    src/ui/worksheet_sort_filter_proxy.cpp
+    src/ui/worksheet_sort_filter_proxy.h
+    src/ui/database_preview_model.cpp
+    src/ui/database_preview_model.h
+    src/ui/report_table_model.cpp
+    src/ui/report_table_model.h
     src/ui/worksheet_view.cpp
     src/ui/worksheet_view.h
     src/ui/report_preview_dialog.cpp
     src/ui/report_preview_dialog.h
+    src/ui/report_template_dialog.cpp
+    src/ui/report_template_dialog.h
     src/ui/graph_properties_panel.cpp
     src/ui/graph_properties_panel.h
     src/ui/graph_properties_dialog.cpp
@@ -238,8 +384,14 @@ add_library(datalab_ui STATIC
     src/ui/algorithm_help_catalog.h
     src/ui/algorithm_help_dialog.cpp
     src/ui/algorithm_help_dialog.h
+    src/ui/database_import_wizard.cpp
+    src/ui/database_import_wizard.h
     src/ui/formula_renderer.cpp
     src/ui/formula_renderer.h
+    src/ui/formula_registry_dialog.cpp
+    src/ui/formula_registry_dialog.h
+    src/ui/row_visibility_clipboard.cpp
+    src/ui/row_visibility_clipboard.h
     src/ui/algorithm_help_types.h
 )
 
@@ -283,6 +435,7 @@ set(DATALAB_ICON_FILES
     resources/icons/outlier_test.svg
     resources/icons/correlation.svg
     resources/icons/one_sample_t.svg
+    resources/icons/one_sample_z.svg
     resources/icons/two_sample_t.svg
     resources/icons/paired_t.svg
     resources/icons/one_way_anova.svg
@@ -295,6 +448,11 @@ set(DATALAB_ICON_FILES
     resources/icons/equivalence_t.svg
     resources/icons/mann_whitney.svg
     resources/icons/wilcoxon_signed_rank.svg
+    resources/icons/sign_test.svg
+    resources/icons/mcnemar.svg
+    resources/icons/cochran_q.svg
+    resources/icons/mood_median.svg
+    resources/icons/friedman.svg
     resources/icons/kruskal_wallis.svg
     resources/icons/regression.svg
     resources/icons/logistic_regression.svg
@@ -304,6 +462,7 @@ set(DATALAB_ICON_FILES
     resources/icons/xbar_r.svg
     resources/icons/xbar_s.svg
     resources/icons/imr_rs.svg
+    resources/icons/hotelling_t2.svg
     resources/icons/p_chart.svg
     resources/icons/np_chart.svg
     resources/icons/c_chart.svg
@@ -336,6 +495,7 @@ set(DATALAB_ICON_FILES
     resources/icons/parallel.svg
     resources/icons/heatmap.svg
     resources/icons/time_series.svg
+    resources/icons/time_series_plot.svg
     resources/icons/area.svg
     resources/icons/contour.svg
     resources/icons/pie.svg
@@ -349,7 +509,17 @@ set(DATALAB_ICON_FILES
 qt_add_executable(DataLab
     WIN32 MACOSX_BUNDLE
     main.cpp
-    translations/translations.qrc
+)
+
+qt_add_resources(DataLab translations
+    PREFIX "/i18n"
+    FILES
+        translations/DataLab_zh_CN.qm
+        translations/DataLab_en_US.qm
+        translations/DataLab_zh_CN.ts
+        translations/DataLab_en_US.ts
+        translations/report_strings.json
+        translations/ui_menu_strings.json
 )
 
 qt_add_resources(DataLab app_resources
@@ -376,6 +546,14 @@ function(add_datalab_test name source)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 add_datalab_test(descriptive_statistics_test tests/descriptive_statistics_test.cpp datalab_domain)
+add_datalab_test(report_contract_phase0_test tests/report_contract_phase0_test.cpp datalab_domain)
+add_datalab_test(report_profile_phase1_test tests/report_profile_phase1_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(report_export_phase2_test tests/report_export_phase2_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(report_locale_phase3_test tests/report_locale_phase3_test.cpp datalab_domain datalab_application)
+add_datalab_test(response_surface_design_phase4_test tests/response_surface_design_phase4_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(reliability_phase5_test tests/reliability_phase5_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(nonnormal_capability_phase6_test tests/nonnormal_capability_phase6_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(graph_visibility_phase7_test tests/graph_visibility_phase7_test.cpp datalab_domain datalab_application datalab_infrastructure)
 
 add_datalab_test(column_extract_import_test tests/column_extract_import_test.cpp datalab_domain datalab_infrastructure)
 
@@ -403,6 +581,22 @@ add_datalab_test(grubbs_test tests/grubbs_test.cpp datalab_domain datalab_applic
 add_datalab_test(imr_rs_test tests/imr_rs_test.cpp datalab_domain datalab_application)
 add_datalab_test(xbar_output_test tests/xbar_output_test.cpp datalab_domain datalab_application)
 add_datalab_test(ewma_cusum_output_test tests/ewma_cusum_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(zone_zmr_ma_output_test tests/zone_zmr_ma_output_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p2_doe_acf_power_test tests/p2_doe_acf_power_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p3_batch1_kmeans_cart_adf_test tests/p3_batch1_kmeans_cart_adf_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p3_batch2_poisson_iforest_bootstrap_hclust_test tests/p3_batch2_poisson_iforest_bootstrap_hclust_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p3_batch3_ordinal_lda_ccf_correlogram_test tests/p3_batch3_ordinal_lda_ccf_correlogram_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p3_track_h_stepwise_km_pb_test tests/p3_track_h_stepwise_km_pb_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_batch_2026_08_test tests/algorithm_batch_2026_08_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave2_track_test tests/algorithm_wave2_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave2_hardening_test tests/algorithm_wave2_hardening_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave3_track_test tests/algorithm_wave3_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave4_track_test tests/algorithm_wave4_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p2_rsm_special_cause_test tests/p2_rsm_special_cause_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p2_eda_plots_test tests/p2_eda_plots_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p2_eda4_crosstab_chi_resid_test tests/p2_eda4_crosstab_chi_resid_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p2_t2_mewma_nelson_emp_test tests/p2_t2_mewma_nelson_emp_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(p2_gv_expanded_b4b5_test tests/p2_gv_expanded_b4b5_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(capability_ci_gof_rare_event_power_test tests/capability_ci_gof_rare_event_power_test.cpp datalab_domain datalab_application)
 
 qt_add_executable(minitab_fixture_test
@@ -424,7 +618,7 @@ add_test(NAME minitab_fixture_test COMMAND minitab_fixture_test)
 add_datalab_test(chart_geometry_test tests/chart_geometry_test.cpp datalab_reporting)
 
 add_datalab_test(chart_renderer_test tests/chart_renderer_test.cpp datalab_reporting)
-add_datalab_test(chart_interaction_test tests/chart_interaction_test.cpp datalab_reporting)
+add_datalab_test(chart_interaction_test tests/chart_interaction_test.cpp datalab_reporting datalab_application datalab_infrastructure datalab_domain)
 set_tests_properties(
     chart_renderer_test
     chart_interaction_test
@@ -522,6 +716,46 @@ set_tests_properties(
 )
 
 add_datalab_test(
+    special_cause_rule_catalog_test
+    tests/special_cause_rule_catalog_test.cpp
+    datalab_domain
+    datalab_application
+    datalab_infrastructure
+)
+
+add_datalab_test(
+    database_provider_registry_test
+    tests/database_provider_registry_test.cpp
+    datalab_application
+    datalab_infrastructure
+)
+set_tests_properties(
+    database_provider_registry_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    database_import_test
+    tests/database_import_test.cpp
+    datalab_application
+    datalab_infrastructure
+)
+set_tests_properties(
+    database_import_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    worksheet_interaction_test
+    tests/worksheet_interaction_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    worksheet_interaction_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
     graph_properties_dialog_test
     tests/graph_properties_dialog_test.cpp
     datalab_ui
@@ -576,6 +810,40 @@ set_tests_properties(
     algorithm_help_dialog_test
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
+
+add_datalab_test(
+    formula_registry_dialog_test
+    tests/formula_registry_dialog_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    formula_registry_dialog_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    row_visibility_clipboard_test
+    tests/row_visibility_clipboard_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    row_visibility_clipboard_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_datalab_test(
+    output_workspace_test
+    tests/output_workspace_test.cpp
+    datalab_ui
+)
+set_tests_properties(
+    output_workspace_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+set(DATALAB_TRACK_G1_G2_TESTS_REGISTERED TRUE CACHE INTERNAL
+    "Track G1+G2 tests registered (formula_registry_dialog_test, row_visibility_clipboard_test, analysis_chart_widget_test, output_workspace_test, algorithm_help_dialog_test)")
+message(STATUS "Track G1+G2: 5 test targets registered (see tools/check_g1g2_build_ready.py)")
 
 qt_add_executable(excel_table_importer_test
     tests/excel_table_importer_test.cpp

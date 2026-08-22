@@ -28,6 +28,8 @@ struct PageRenderOptions {
         on_display_properties_changed;
     // 图表行选择回调（interactive_charts 时使用）。
     std::function<void(const std::vector<std::size_t>&)> on_rows_selected;
+    // 报告/预览图表空态与占位文案 locale（默认 zh-CN；预览/PDF 应传入 ReportProfile locale）。
+    std::string chart_language_tag = "zh-CN";
 };
 
 // 分析图标资源路径（页标题/页签图标共用；缺省回退 report.svg）。

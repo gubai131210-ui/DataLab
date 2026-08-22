@@ -1,0 +1,227 @@
+summaries_with_cjk=141
+graph_slice_sites=35 still_after_caption=24
+inference_slice_sites=18
+
+=== GRAPH SITES (param leak; caption would clear most) ===
+  src/application/graph_service.cpp:410 still_after_cap=False
+    AFTER_PARAM: X =     Y =     显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:497 still_after_cap=True
+    AFTER_PARAM: X =     Y =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   X =     Y =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:565 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.response_eq⟧    分组 =     置信⟦param.summary.level_count_eq⟧    显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.response_eq⟧    分组 =     置信⟦param.summary.level_count_eq⟧    ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:616 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.response_eq⟧    分组 =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.response_eq⟧    分组 =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:691 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.method_eq⟧    ⟦param.summary.variable_count_eq⟧    显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:722 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.method_eq⟧    ⟦param.summary.variable_count_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.method_eq⟧    ⟦param.summary.variable_count_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    exc
+  src/application/graph_service.cpp:779 still_after_cap=True
+    AFTER_PARAM: X =     Y =     大小 =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   X =     Y =     大小 =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:811 still_after_cap=True
+    AFTER_PARAM: X =     Y =     大小 =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   X =     Y =     大小 =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:876 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.variable_eq⟧    显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:907 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.variable_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.variable_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:966 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.variable_eq⟧    显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:995 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.variable_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.variable_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1055 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.variable_count_eq⟧    显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:1084 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.variable_count_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.variable_count_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1150 still_after_cap=False
+    AFTER_PARAM: X =     Y =     显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:1181 still_after_cap=True
+    AFTER_PARAM: X =     Y =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   X =     Y =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1244 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.variable_count_eq⟧    显示 N =     分析 N =     坐标已按各变量最小-最大范围标准化    excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.variable_count_eq⟧    ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    坐标已按各变量最小-最大范围标准化    excluded =     hidden = 
+  src/application/graph_service.cpp:1274 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.variable_count_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     坐标已按各变量最小-最大范围标准化    excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.variable_count_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    坐标已按各变量最小-最大范围标准化    excluded = 
+  src/application/graph_service.cpp:1357 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.corr_color_range⟧    显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:1388 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.corr_color_range⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.corr_color_range⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1500 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.cell_group_mean⟧    显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:1538 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.cell_group_mean⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.cell_group_mean⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1607 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.time_eq⟧    数值 =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.time_eq⟧    数值 =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1659 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.time_eq⟧    数值 =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.time_eq⟧    数值 =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1754 still_after_cap=False
+    AFTER_PARAM: X =     Y =     Z =     显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:1801 still_after_cap=True
+    AFTER_PARAM: X =     Y =     Z =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   X =     Y =     Z =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1864 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.category_eq⟧    小类别合并阈值 = %    显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.category_eq⟧    小类别合并阈值 = %    ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:1948 still_after_cap=False
+    AFTER_PARAM: ⟦param.summary.variable_eq⟧    显示 N =     分析 N =     h =     excluded =     hidden = 
+  src/application/graph_service.cpp:2006 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.variable_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.variable_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:2082 still_after_cap=False
+    AFTER_PARAM: X =     Y =     显示 N =     分析 N =     excluded =     hidden = 
+  src/application/graph_service.cpp:2136 still_after_cap=True
+    AFTER_PARAM: X =     Y =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   X =     Y =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:2210 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.response_eq⟧    分组 =     显示组数 =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.response_eq⟧    分组 =     显示组数 =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:2262 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.response_eq⟧    分组 =     分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.response_eq⟧    分组 =     ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+  src/application/graph_service.cpp:2408 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.category_eq⟧    显示类别数 =     分析类别数 =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.category_eq⟧    显示类别数 =     分析类别数 =     excluded =     hidden = 
+  src/application/graph_service.cpp:2476 still_after_cap=True
+    AFTER_PARAM: ⟦param.summary.category_eq⟧    分面 =     面板 = /    max_panels =     显示 N =     分析 N =     excluded =     hidden = 
+    AFTER_CAP:   ⟦param.summary.category_eq⟧    ⟦graph.caption.facet⟧    面板 = /    max_panels =     ⟦graph.caption.display_n⟧    ⟦graph.caption.analysis_n⟧    excluded =     hidden = 
+
+=== INFERENCE SITES ===
+  src/application/analysis_service.cpp:1791
+    AFTER: ⟦param.summary.variable_colon⟧    方法:     缺失值 N* = 
+    RAW:   变量:     方法:     缺失值 N* = 
+  src/application/analysis_service.cpp:1958
+    AFTER: ⟦param.summary.variable_colon⟧    方法:     备择:     α =     缺失值 N* = 
+    RAW:   变量:     方法:     备择:     α =     缺失值 N* = 
+  src/application/analysis_service.cpp:2095
+    AFTER: ⟦param.summary.method_eq⟧SpearmanPearson    置信⟦param.summary.level_count_eq⟧    有效⟦param.summary.variable_count_eq⟧    N =     偏相关 = 是
+    RAW:   方法 = SpearmanPearson    置信水平 =     有效变量数 =     N =     偏相关 = 是
+  src/application/analysis_service.cpp:2226
+    AFTER: ⟦param.summary.variable_eq⟧    假设均值 =     备择：总体均值  假设均值
+    RAW:   变量 =     假设均值 =     备择：总体均值  假设均值
+  src/application/analysis_service.cpp:2308
+    AFTER: ⟦param.summary.variable_eq⟧    假设均值 =     Known σ =     备择：总体均值  假设均值
+    RAW:   变量 =     假设均值 =     Known σ =     备择：总体均值  假设均值
+  src/application/analysis_service.cpp:2420
+    AFTER: ⟦param.summary.method_eq⟧pooled合并方差Welch    置信⟦param.summary.level_count_eq⟧
+    RAW:   方法 = pooled合并方差Welch    置信水平 = 
+  src/application/analysis_service.cpp:2714
+    AFTER:     ⟦param.summary.method_eq⟧pooled合并方差Welch
+    RAW:       方法 = pooled合并方差Welch
+  src/application/analysis_service.cpp:2754
+    AFTER:     ⟦param.summary.method_eq⟧pooled合并方差Welch    变换 = lognone    检验 =     参考 = 
+    RAW:       方法 = pooled合并方差Welch    变换 = lognone    检验 =     参考 = 
+  src/application/analysis_service.cpp:2851
+    AFTER:     ⟦param.summary.events_eq⟧    试验 =     目标比例 = 
+    RAW:       事件 =     试验 =     目标比例 = 
+  src/application/analysis_service.cpp:3347
+    AFTER: ⟦param.summary.response_eq⟧    ⟦param.summary.predictor_count_eq⟧    ⟦param.summary.valid_obs_eq⟧    置信⟦param.summary.level_count_eq⟧
+    RAW:   响应 =     预测变量 =     有效观测 =     置信水平 = 
+  src/application/analysis_service.cpp:3775
+    AFTER: ⟦param.summary.events_eq⟧    试验 =     假设比例 =     ⟦param.summary.method_eq⟧    CI = 
+    RAW:   事件 =     试验 =     假设比例 =     方法 =     CI = 
+  src/application/analysis_service.cpp:3904
+    AFTER: ⟦param.summary.defects_eq⟧    假设发生率 =     ⟦param.summary.method_eq⟧
+    RAW:   缺陷 =     假设发生率 =     方法 = 
+  src/application/analysis_service.cpp:3991
+    AFTER: ⟦param.summary.first_group_eq⟧/    ⟦param.summary.second_group_eq⟧/    ⟦param.summary.method_eq⟧    比较 = 
+    RAW:   第一组 = /    第二组 = /    方法 =     比较 = 
+  src/application/analysis_service.cpp:4131
+    AFTER: 行:     列:     N =     N* = 
+    RAW:   行:     列:     N =     N* = 
+  src/application/analysis_service.cpp:4364
+    AFTER: 行:     列:     N =     N* =     （本命令不做卡方检验；关联检验请用列联表卡方）
+    RAW:   行:     列:     N =     N* =     （本命令不做卡方检验；关联检验请用列联表卡方）
+  src/application/analysis_service.cpp:8369
+    AFTER: ⟦param.summary.measurement_short_eq⟧    ⟦param.summary.method_eq⟧nonparametricnormal    覆盖率 =     置信⟦param.summary.level_count_eq⟧    方向 = 
+    RAW:   测量 =     方法 = nonparametricnormal    覆盖率 =     置信水平 =     方向 = 
+  src/application/analysis_service.cpp:15299
+    AFTER: ⟦param.summary.category_column_colon⟧    总计数 = 
+    RAW:   类别列:     总计数 = 
+  src/application/graph_service.cpp:565
+    AFTER: ⟦param.summary.response_eq⟧    分组 =     置信⟦param.summary.level_count_eq⟧    显示 N =     分析 N =     excluded =     hidden = 
+    RAW:   响应 =     分组 =     置信水平 =     显示 N =     分析 N =     excluded =     hidden = 
+
+=== INFERENCE RAW SNIPPETS ===
+  875:    page.parameter_summary =
+  876:        "变量: " + extracted.name
+  877:        + "    子组大小 = " + std::to_string(subgroup_size)
+  879:        + "    方法: " + method;
+  881:        page.title = "Johnson 变换过程能力";
+  1791:    page.parameter_summary = "变量: " + extracted.name
+  1792:        + "    方法: " + method_label + "    缺失值 N* = "
+  1958:    page.parameter_summary = "变量: " + extracted.name
+  1959:        + "    方法: " + method_label
+  1960:        + "    备择: " + alternative_text
+  1962:        + "    缺失值 N* = " + std::to_string(extracted.missing_count);
+  2095:    page.parameter_summary = "方法 = " + std::string(spearman ? "Spearman" : "Pearson")
+  2096:        + "    置信水平 = " + format_number(configuration.inference.confidence_level)
+  2097:        + "    有效变量数 = " + std::to_string(columns.size())
+  2099:        + (compute_partial ? "    偏相关 = 是" : "");
+  2226:    page.parameter_summary = "变量 = " + extracted.name
+  2227:        + "    假设均值 = " + format_number(*configuration.inference.hypothesis_mean)
+  2228:        + "    备择：总体均值 " + alternative_label(configuration.inference.alternative)
+  2229:        + " 假设均值";
+  2230:    append_diagnostics(page.diagnostics, result.diagnostics, "单样本 t：");
+  2308:    page.parameter_summary = "变量 = " + extracted.name
+  2309:        + "    假设均值 = " + format_number(*configuration.inference.hypothesis_mean)
+  2311:        + "    备择：总体均值 " + alternative_label(configuration.inference.alternative)
+  2312:        + " 假设均值";
+  2313:    append_diagnostics(page.diagnostics, result.diagnostics, "单样本 Z：");
+  2420:    page.parameter_summary = "方法 = "
+  2421:        + std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch")
+  2422:        + "    置信水平 = " + format_number(configuration.inference.confidence_level);
+  2423:    append_diagnostics(page.diagnostics, result.diagnostics, "双样本 t：");
+  2714:    page.parameter_summary += "    方法 = "
+  2715:        + std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch");
+  2720:            "双样本等价性检验跳过缺失或非法单元格。"});
+  2754:    page.parameter_summary += "    方法 = "
+  2755:        + std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch")
+  2756:        + "    变换 = " + std::string(use_log ? "log" : "none")
+  2757:        + "    检验 = " + first.name + "    参考 = " + second.name;
+  2851:    page.parameter_summary += "    事件 = " + events_column.name
+  2852:        + "    试验 = " + trials_column.name
+  2853:        + "    目标比例 = "
+  3347:    page.parameter_summary = "响应 = " + response.name
+  3348:        + "    预测变量 = " + predictor_summary
+  3349:        + "    有效观测 = " + std::to_string(aligned.values.size())
+  3350:        + "    置信水平 = " + format_number(configuration.inference.confidence_level);
+  3775:    page.parameter_summary = "事件 = " + events_column.name
+  3776:        + "    试验 = " + trials_column.name
+  3777:        + "    假设比例 = " + format_number(*configuration.inference.hypothesis_mean)
+  3778:        + "    方法 = " + result.method
+  3781:    summary.title = "单比例描述";
+  3904:    page.parameter_summary = "缺陷 = " + events_column.name
+  3905:        + "    假设发生率 = " + format_number(*configuration.inference.hypothesis_mean)
+  3906:        + "    方法 = " + result.method;
+  3908:    summary.title = "泊松率描述";
+  3909:    summary.headers = {"事件数", "观测长度", "率", "N*", "行数"};
+  3991:    page.parameter_summary = "第一组 = " + first_events.name + "/" + first_exposure.name
+  3992:        + "    第二组 = " + second_events.name + "/" + second_exposure.name
+  3993:        + "    方法 = " + result.method
+  3994:        + "    比较 = " + result.comparison;
+  3996:    output.title = "双样本泊松率描述";
+  3997:    output.headers = {"组", "事件数", "观测长度", "率"};
+  4131:    page.parameter_summary =
+  4132:        "行: " + column_label(table, *configuration.inference.row_category_column)
+  4133:        + "    列: " + column_label(table, *configuration.inference.column_category_column)
+  4137:    counts.title = "观察频数";
+  4364:    page.parameter_summary =
+  4365:        "行: " + column_label(table, *configuration.inference.row_category_column)
+  4366:        + "    列: " + column_label(table, *configuration.inference.column_category_column)
+  4369:        + "    （本命令不做卡方检验；关联检验请用列联表卡方）";
+  4537:    page.parameter_summary = "分类列 = " + column_label(table, *column)
+  4540:        + "    比例 = " + result.proportion_source;
+  4542:    observed.title = "观察与期望";

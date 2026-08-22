@@ -1,0 +1,115 @@
+graph_facetish n=33
+  '    分析 N = '
+  '    分析 N(水平) = '
+  '    分析类别数 = '
+  '    分组 = '
+  '    分面 = '
+  'Hexbin / 二维分箱'
+  'Hexbin（分面）'
+  '二维分箱 · '
+  '二维分箱散点'
+  '分组'
+  '区域图（分面）'
+  '区间散点图（分面）'
+  '密度图（分面）'
+  '小提琴图（分面）'
+  '平行坐标图（分面）'
+  '散点图（分面）'
+  '时间序列图（分面）'
+  '条形图（分面）'
+  '正态概率图（分面）'
+  '气泡图（分面）'
+  '点选曲线不会映射到单条工作表行（hidden/excluded 仍分别计入分析/显示 N）。'
+  '热图（分面）'
+  '理论分位数'
+  '直线性不能单独作为正态性证明；显示拟合省略 hidden，分析拟合保留 hidden'
+  '相关图（分面）'
+  '矩阵图（分面）'
+  '等值线图（分面）'
+  '经验累积分布图'
+  '经验累积分布图 · '
+  '经验累积分布图（分面）'
+  '请选择分类变量。'
+  '请选择响应变量和分类变量。'
+  '边际图（分面）'
+loc_facet_literals n=1
+  '（分面）'
+GS_HEX '        return error_page("Hexbin", "请选择 X 变量和 Y 变量。");'
+GS_HEX '        page.title = "Hexbin / 二维分箱";'
+GS_HEX '        page.method_name = "Hexbin Plot";'
+GS_HEX '    page.title = "Hexbin（分面）";'
+GS_HEX '    page.method_name = "Faceted Hexbin Plot";'
+LOC_HEX '                           bullet, "（矩形格，产品名 Hexbin）。")) {'
+LOC_HEX '                        - std::string("（矩形格，产品名 Hexbin）。").size());'
+LOC_HEX '        {"Hexbin / 二维分箱", "page.hexbin"},'
+LOC_HEX '        {"Hexbin", "page.hexbin_short"},'
+LOC_HEX '        {"Hexbin / 二维分箱", "page.hexbin"},'
+LOC_HEX '        {"Hexbin", "page.hexbin_short"},'
+nodata n=2
+  'Johnson 能力为研究/预览结果：可显示拟合与变换尺度指数，但不得输出过程合格判定（门禁：缺 golden/尾部/人工解释验收）。'
+  '没有可显示的数据。'
+notrig n=2
+  ' 当前未触发。'
+  '未触发'
+res n=3
+  '生成器数量必须等于部分析因 p。'
+  '部分析因 p 必须小于因子数 k。'
+  '部分析因分辨度 '
+PARAM_COVERAGE prefs=140
+  UN '区组 = '
+  UN '缺失 = '
+  UN '，列水平数 = '
+  OK '，组 2 = '
+  OK '比例 = '
+  UN '处理 = '
+  UN '预测期数 = '
+  UN '因子 A = '
+  UN '因子 B = '
+  OK '迭代 = '
+  UN '移动极差长度 = '
+  UN '正态概率图相关系数 = '
+  OK '组数 = '
+  OK '中位数 = '
+  OK '跳过 '
+  OK '显示 N = '
+  OK '分析 N = '
+  OK '分析 N(水平) = '
+  OK '分面 = '
+  OK '    显示 N = '
+  OK '    分析 N = '
+  OK '    分析 N(水平) = '
+  OK '    分面 = '
+  OK ' 跳过 '
+  UN '    缺失 = '
+  OK '描述统计跳过 '
+  OK '    比例 = '
+  UN '；总体中位数 M = '
+  UN '    处理 = '
+  UN '    区组 = '
+  UN '    预测期数 = '
+  UN '    因子 A = '
+  UN '    因子 B = '
+  OK '    迭代 = '
+  UN '    移动极差长度 = '
+  UN '    正态概率图相关系数 = '
+  OK '    组数 = '
+  OK '    中位数 = '
+PLOT_OF_SUFFIXES
+  '的正态概率图' in_loc=False
+  '的直方图' in_loc=False
+  '的个体值图' in_loc=False
+  '的散点图' in_loc=False
+  ' 运行图' in_loc=False
+  '（编码）' in_loc=True
+NEEDLE '已按 ' loc=True interp=True graph=False chart=False doe=False spc=False
+NEEDLE '规则「' loc=True interp=True graph=False chart=False doe=False spc=False
+NEEDLE '部分析因分辨度' loc=False interp=False graph=False chart=False doe=True spc=False
+NEEDLE '没有可显示的数据' loc=True interp=False graph=False chart=True doe=False spc=False
+NEEDLE '当前未触发' loc=True interp=False graph=False chart=False doe=False spc=True
+NEEDLE ' 当前未触发。' loc=True interp=False graph=False chart=False doe=False spc=True
+NEEDLE '（分面）' loc=True interp=False graph=True chart=False doe=False spc=False
+NEEDLE '（分面）' loc=True interp=False graph=True chart=False doe=False spc=False
+EXACT_NEEDLE '部分析因分辨度 ' in_loc=False
+EXACT_NEEDLE ' 当前未触发。' in_loc=True
+EXACT_NEEDLE '诊断无关联行' in_loc=False
+EXACT_NEEDLE '没有可显示的数据。' in_loc=True

@@ -785,4 +785,41 @@ ChiSquareGofResult chi_square_goodness_of_fit(
     return result;
 }
 
+FisherExactResult fisher_exact_2x2(
+    std::size_t a,
+    std::size_t b,
+    std::size_t c,
+    std::size_t d,
+    const std::string& row1_label,
+    const std::string& row2_label,
+    const std::string& col1_label,
+    const std::string& col2_label)
+{
+    FisherExactResult result;
+    result.a = a;
+    result.b = b;
+    result.c = c;
+    result.d = d;
+    result.row1_label = row1_label;
+    result.row2_label = row2_label;
+    result.col1_label = col1_label;
+    result.col2_label = col2_label;
+    const std::size_t total = a + b + c + d;
+    if (total == 0) {
+        add_error(result.diagnostics, "fisher_empty_table",
+                  "2×2 表总计数必须大于 0。");
+        return result;
+    }
+    result.p_value = fisher_two_sided(a, a + b, c, c + d);
+    if (b > 0 && c > 0) {
+        result.odds_ratio = (static_cast<double>(a) * static_cast<double>(d))
+            / (static_cast<double>(b) * static_cast<double>(c));
+    } else if (a > 0 && d > 0 && (b == 0 || c == 0)) {
+        add_warning(result.diagnostics, "fisher_odds_ratio_undefined",
+                    "存在零单元格，优势比未定义（输出 *）。");
+    }
+    result.computable = true;
+    return result;
+}
+
 }  // namespace datalab::domain::statistics

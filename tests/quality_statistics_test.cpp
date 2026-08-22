@@ -18,6 +18,8 @@
 #include "domain/statistics/spc_constants.h"
 #include "domain/statistics/normal_probability.h"
 #include "domain/statistics/quality_visuals.h"
+#include "domain/statistics/quality_extensions.h"
+#include "application/interpretation_service.h"
 #include "domain/statistics/doe_factorial.h"
 #include "domain/statistics/nested_gage_rr.h"
 #include "domain/statistics/attribute_agreement.h"
@@ -98,6 +100,8 @@ private slots:
     void calculatesMckeanRyanConfidenceInterval();
     void calculatesRegressionAndBoxCox();
     void buildsBoxCoxServiceOutputContract();
+    void box_cox_service_skips_capability_on_invalid_spec_limits();
+    void box_cox_service_skips_capability_on_inverted_spec_limits();
     void regressionAnovaSeqAdjSs();
     void calculatesGageRrAndNonparametric();
     void calculatesTimeSeries();
@@ -110,6 +114,7 @@ private slots:
     void calculatesNextBatchAlgorithms();
     void johnsonAndNonnormalCapability();
     void buildsNormalCapabilityTableContract();
+    void acceptanceAnomPoissonCorrelationDeepen();
 };
 
 void QualityStatisticsTest::calculatesCapabilityIndices()
@@ -580,9 +585,10 @@ void QualityStatisticsTest::buildsInferenceOutput()
     datalab::domain::AnalysisConfiguration configuration;
     configuration.variable_columns = {0, 1};
     const auto page = datalab::application::AnalysisService::correlation(table, configuration);
-    QCOMPARE(page.tables.size(), std::size_t{2});
+    QCOMPARE(page.tables.size(), std::size_t{3});
     QCOMPARE(page.method_name, std::string{"Correlation"});
     QVERIFY(page.facts.correlation.has_value());
+    QVERIFY(page.facts.correlation->covariance_available);
     QCOMPARE(page.facts.correlation->n, std::size_t{6});
     QVERIFY(std::any_of(page.plots.cbegin(), page.plots.cend(),
                         [](const datalab::domain::PlotSpec& plot) {
@@ -1459,6 +1465,55 @@ void QualityStatisticsTest::buildsBoxCoxServiceOutputContract()
     QCOMPARE(page.method_metadata.parameter_source, std::string("estimated"));
 }
 
+void QualityStatisticsTest::box_cox_service_skips_capability_on_invalid_spec_limits()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Y"};
+    table.rows = {{"1.0"}, {"2.0"}, {"4.0"}, {"8.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.inference.hypothesis_mean = 1.0;
+    configuration.specifications.lower = -1.0;
+    configuration.specifications.upper = 10.0;
+    const auto page = datalab::application::AnalysisService::box_cox(table, configuration);
+    bool saw_invalid_limit = false;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "box_cox_invalid_spec_limit") {
+            saw_invalid_limit = true;
+        }
+    }
+    QVERIFY(saw_invalid_limit);
+    QVERIFY(std::none_of(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "变换后过程能力";
+        }));
+}
+
+void QualityStatisticsTest::box_cox_service_skips_capability_on_inverted_spec_limits()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Y"};
+    table.rows = {{"1.0"}, {"2.0"}, {"4.0"}, {"8.0"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.specifications.lower = 10.0;
+    configuration.specifications.upper = 2.0;
+    const auto page = datalab::application::AnalysisService::box_cox(table, configuration);
+    bool saw_order_diagnostic = false;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "box_cox_spec_limits_order") {
+            saw_order_diagnostic = true;
+        }
+    }
+    QVERIFY(saw_order_diagnostic);
+    QVERIFY(std::none_of(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "变换后过程能力";
+        }));
+}
+
 void QualityStatisticsTest::regressionAnovaSeqAdjSs()
 {
     const auto regression = datalab::domain::statistics::fit_linear_regression(
@@ -1659,6 +1714,274 @@ void QualityStatisticsTest::calculatesGageRrAndNonparametric()
         [](const datalab::domain::DiagnosticMessage& diagnostic) {
             return diagnostic.code == "sign_test_no_nonzero";
         }));
+
+    // # source: formula_reference — Runs / Fisher / Run Chart / Cause-Effect wiring
+    {
+        const auto runs = datalab::domain::statistics::runs_test(
+            {1.0, 0.0, 1.0, 0.0},
+            datalab::domain::statistics::RunsCriterionKind::mean);
+        QCOMPARE(runs.above, std::size_t{2});
+        QCOMPARE(runs.below_or_equal, std::size_t{2});
+        QCOMPARE(runs.observed_runs, std::size_t{4});
+        QVERIFY(runs.expected_runs.has_value());
+        QVERIFY(std::abs(*runs.expected_runs - 3.0) < 1.0e-12);
+        QVERIFY(runs.p_value.has_value());
+        const auto equals_as_b = datalab::domain::statistics::runs_test(
+            {1.0, 1.0, 2.0},
+            datalab::domain::statistics::RunsCriterionKind::value,
+            1.0);
+        QCOMPARE(equals_as_b.above, std::size_t{1});
+        QCOMPARE(equals_as_b.below_or_equal, std::size_t{2});
+
+        datalab::domain::DataTable runs_table;
+        runs_table.columns = {"X"};
+        runs_table.rows = {{"1"}, {"0"}, {"1"}, {"0"}};
+        datalab::domain::AnalysisConfiguration runs_config;
+        runs_config.variable_columns = {0};
+        runs_config.inference.runs_criterion = "mean";
+        auto runs_page = datalab::application::AnalysisService::runs_test(
+            runs_table, runs_config);
+        QVERIFY(runs_page.facts.nonparametric.has_value());
+        QCOMPARE(runs_page.facts.nonparametric->method, std::string{"runs_test"});
+        QVERIFY(std::any_of(
+            runs_page.tables.cbegin(), runs_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "比较准则";
+            }));
+        QVERIFY(std::any_of(
+            runs_page.tables.cbegin(), runs_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "Runs检验";
+            }));
+    }
+    {
+        const auto fisher = datalab::domain::statistics::fisher_exact_2x2(
+            1, 0, 0, 1);
+        QVERIFY(fisher.computable);
+        QVERIFY(fisher.p_value.has_value());
+        const auto via_proportions = datalab::domain::statistics::two_proportions_test(
+            1, 1, 0, 1);
+        QVERIFY(via_proportions.fisher_p_value.has_value());
+        QVERIFY(std::abs(*fisher.p_value - *via_proportions.fisher_p_value) < 1.0e-12);
+
+        datalab::domain::DataTable fisher_table;
+        fisher_table.columns = {"Row", "Col"};
+        fisher_table.rows = {
+            {"A", "X"}, {"A", "Y"}, {"B", "X"}, {"B", "Y"}, {"B", "Y"}};
+        datalab::domain::AnalysisConfiguration fisher_config;
+        fisher_config.variable_columns = {0, 1};
+        auto fisher_page = datalab::application::AnalysisService::fisher_exact(
+            fisher_table, fisher_config);
+        QVERIFY(fisher_page.facts.chi_square.has_value());
+        QCOMPARE(fisher_page.facts.chi_square->method, std::string{"fisher_exact"});
+        QVERIFY(fisher_page.facts.chi_square->fisher_p_value.has_value());
+        QVERIFY(std::any_of(
+            fisher_page.tables.cbegin(), fisher_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "交叉表";
+            }));
+        QVERIFY(std::any_of(
+            fisher_page.tables.cbegin(), fisher_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "Fisher精确检验";
+            }));
+
+        // two_proportions still exposes Fisher column unchanged
+        datalab::domain::DataTable prop_table;
+        prop_table.columns = {"e1", "n1", "e2", "n2"};
+        prop_table.rows = {{"8", "20", "3", "20"}};
+        datalab::domain::AnalysisConfiguration prop_config;
+        prop_config.inference.first_events_column = 0;
+        prop_config.inference.first_trials_column = 1;
+        prop_config.inference.second_events_column = 2;
+        prop_config.inference.second_trials_column = 3;
+        const auto prop_page = datalab::application::AnalysisService::two_proportions(
+            prop_table, prop_config);
+        QVERIFY(std::any_of(
+            prop_page.tables.cbegin(), prop_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "检验结果"
+                    && std::find(table_out.headers.cbegin(), table_out.headers.cend(),
+                                 "Fisher P-Value") != table_out.headers.cend();
+            }));
+        QVERIFY(prop_page.facts.proportion.has_value());
+        QVERIFY(prop_page.facts.proportion->fisher_p_value.has_value());
+    }
+    {
+        const auto chart = datalab::domain::statistics::run_chart_analysis(
+            {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0});
+        QCOMPARE(chart.n, std::size_t{8});
+        QVERIFY(chart.p_trends.has_value());
+        QVERIFY(chart.p_oscillation.has_value());
+        QVERIFY(*chart.p_trends < *chart.p_oscillation);
+
+        datalab::domain::DataTable chart_table;
+        chart_table.columns = {"Y"};
+        for (int value = 1; value <= 8; ++value) {
+            chart_table.rows.push_back({std::to_string(value)});
+        }
+        datalab::domain::AnalysisConfiguration chart_config;
+        chart_config.variable_columns = {0};
+        auto chart_page = datalab::application::AnalysisService::run_chart(
+            chart_table, chart_config);
+        QVERIFY(chart_page.facts.run_chart.has_value());
+        QCOMPARE(chart_page.facts.run_chart->n, std::size_t{8});
+        QVERIFY(!chart_page.plots.empty());
+        QCOMPARE(chart_page.plots.front().kind, datalab::domain::PlotKind::control);
+        datalab::application::InterpretationService::enrich(chart_page);
+        for (const auto& section : chart_page.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("已证明") == std::string::npos
+                        || bullet.find("不能写成已证明") != std::string::npos);
+            }
+        }
+    }
+    {
+        datalab::domain::DataTable fish_table;
+        fish_table.columns = {"Category", "Cause"};
+        fish_table.rows = {
+            {"人员", "培训不足"},
+            {"人员", "疲劳"},
+            {"机器", "磨损"},
+            {"材料", "批次偏差"}};
+        datalab::domain::AnalysisConfiguration fish_config;
+        fish_config.variable_columns = {0, 1};
+        fish_config.effect_title = "缺陷";
+        auto fish_page = datalab::application::AnalysisService::cause_and_effect(
+            fish_table, fish_config);
+        QVERIFY(fish_page.facts.cause_effect.has_value());
+        QCOMPARE(fish_page.facts.cause_effect->effect, std::string{"缺陷"});
+        QCOMPARE(fish_page.facts.cause_effect->cause_count, std::size_t{4});
+        QCOMPARE(fish_page.facts.cause_effect->category_count, std::size_t{3});
+        datalab::application::InterpretationService::enrich(fish_page);
+        for (const auto& section : fish_page.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("已证明") == std::string::npos
+                        || bullet.find("不能写成已证明") != std::string::npos);
+                QVERIFY(bullet.find("根因已") == std::string::npos);
+            }
+        }
+    }
+
+    // # source: formula_reference — 1-Sample Z / Variability Chart / tolerance method switch
+    {
+        // Z = (x̄−μ0)/(σ/√n); {1,2,3,4,5}, μ0=3, σ=2 → Z=0.
+        const auto z = datalab::domain::statistics::one_sample_z_test(
+            {1.0, 2.0, 3.0, 4.0, 5.0}, 3.0, 2.0, 0.95);
+        QCOMPARE(z.count, std::size_t{5});
+        QVERIFY(std::abs(z.z_statistic) < 1.0e-12);
+        QVERIFY(z.p_value.has_value());
+        QVERIFY(std::abs(*z.p_value - 1.0) < 1.0e-12);
+        QVERIFY(z.confidence_lower.has_value());
+        QVERIFY(z.confidence_upper.has_value());
+        const auto bad_sigma = datalab::domain::statistics::one_sample_z_test(
+            {1.0, 2.0}, 0.0, 0.0);
+        QVERIFY(std::any_of(
+            bad_sigma.diagnostics.cbegin(), bad_sigma.diagnostics.cend(),
+            [](const datalab::domain::DiagnosticMessage& diagnostic) {
+                return diagnostic.code == "invalid_sigma";
+            }));
+
+        datalab::domain::DataTable z_table;
+        z_table.columns = {"X"};
+        z_table.rows = {{"1"}, {"2"}, {"3"}, {"4"}, {"5"}};
+        datalab::domain::AnalysisConfiguration z_config;
+        z_config.variable_columns = {0};
+        z_config.inference.hypothesis_mean = 3.0;
+        z_config.inference.known_sigma = 2.0;
+        z_config.inference.confidence_level = 0.95;
+        auto z_page = datalab::application::AnalysisService::one_sample_z(
+            z_table, z_config);
+        QVERIFY(z_page.facts.t_test.has_value());
+        QCOMPARE(z_page.facts.t_test->kind, std::string{"one_sample_z"});
+        QVERIFY(z_page.facts.t_test->z_statistic.has_value());
+        QVERIFY(std::abs(*z_page.facts.t_test->z_statistic) < 1.0e-12);
+        QCOMPARE(*z_page.facts.t_test->known_sigma, 2.0);
+        datalab::application::InterpretationService::enrich(z_page);
+        for (const auto& section : z_page.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("已证明") == std::string::npos
+                        || bullet.find("不能写成已证明") != std::string::npos);
+            }
+        }
+    }
+    {
+        // Factor A={a,a,b,b}, Factor B={1,2,1,2}, Y={10,12,14,16}
+        // Cells: a|1 mean=10 n=1; a|2 mean=12; b|1 mean=14; b|2 mean=16
+        // Single-factor path: A={a,a,b,b}, Y={10,12,14,16}
+        // cell a: mean=11, sd=√2; cell b: mean=15, sd=√2
+        const auto one_factor = datalab::domain::statistics::variability_chart_summarize(
+            {10.0, 12.0, 14.0, 16.0},
+            {"a", "a", "b", "b"});
+        QCOMPARE(one_factor.factor_count, std::size_t{1});
+        QCOMPARE(one_factor.cells.size(), std::size_t{2});
+        QCOMPARE(one_factor.cells[0].n, std::size_t{2});
+        QVERIFY(std::abs(one_factor.cells[0].mean - 11.0) < 1.0e-12);
+        QVERIFY(std::abs(one_factor.cells[0].sample_sd - std::sqrt(2.0)) < 1.0e-12);
+
+        datalab::domain::DataTable var_table;
+        var_table.columns = {"Y", "A", "B"};
+        var_table.rows = {
+            {"10", "a", "1"}, {"12", "a", "2"},
+            {"14", "b", "1"}, {"16", "b", "2"},
+            {"11", "a", "1"}, {"13", "a", "2"}};
+        datalab::domain::AnalysisConfiguration var_config;
+        var_config.selection.measurement_column = 0;
+        var_config.graph.variable_columns = {1, 2};
+        auto var_page = datalab::application::AnalysisService::variability_chart(
+            var_table, var_config);
+        QVERIFY(var_page.facts.variability.has_value());
+        QCOMPARE(var_page.facts.variability->factor_count, std::size_t{2});
+        QCOMPARE(var_page.facts.variability->valid_count, std::size_t{6});
+        QCOMPARE(var_page.plots.size(), std::size_t{2});
+        QCOMPARE(var_page.plots[0].title, std::string{"均值与极差"});
+        QCOMPARE(var_page.plots[1].title, std::string{"标准差图"});
+        QVERIFY(std::any_of(
+            var_page.tables.cbegin(), var_page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "单元统计";
+            }));
+        // multi_vari still distinct
+        datalab::domain::AnalysisConfiguration multi_config = var_config;
+        multi_config.graph.variable_columns = {1, 2};
+        const auto multi_page = datalab::application::AnalysisService::multi_vari(
+            var_table, multi_config);
+        QVERIFY(multi_page.facts.multi_vari.has_value());
+        QVERIFY(!multi_page.facts.variability.has_value());
+    }
+    {
+        datalab::domain::DataTable tol_table;
+        tol_table.columns = {"Y"};
+        tol_table.rows = {{"1"}, {"2"}, {"3"}, {"4"}, {"5"}, {"6"}, {"7"}, {"8"}};
+        datalab::domain::AnalysisConfiguration tol_config;
+        tol_config.variable_columns = {0};
+        tol_config.selection.measurement_column = 0;
+        tol_config.inference.coverage_proportion = 0.90;
+        tol_config.inference.confidence_level = 0.95;
+        tol_config.inference.alternative = "two_sided";
+        tol_config.inference.tolerance_method = "normal";
+        auto normal_page = datalab::application::AnalysisService::tolerance_intervals(
+            tol_table, tol_config);
+        QCOMPARE(normal_page.title, std::string{"正态容差区间"});
+        QVERIFY(normal_page.facts.tolerance.has_value());
+        QCOMPARE(normal_page.facts.tolerance->method_family, std::string{"normal"});
+
+        tol_config.inference.tolerance_method = "nonparametric";
+        auto np_page = datalab::application::AnalysisService::tolerance_intervals(
+            tol_table, tol_config);
+        QCOMPARE(np_page.title, std::string{"非参数容差区间"});
+        QVERIFY(np_page.facts.tolerance.has_value());
+        QCOMPARE(np_page.facts.tolerance->method_family, std::string{"nonparametric"});
+        QVERIFY(np_page.facts.tolerance->achieved_confidence.has_value());
+
+        // Backward compat: variance_method=nonparametric still switches.
+        tol_config.inference.tolerance_method = "normal";
+        tol_config.inference.variance_method = "nonparametric";
+        auto compat_page = datalab::application::AnalysisService::tolerance_intervals(
+            tol_table, tol_config);
+        QCOMPARE(compat_page.title, std::string{"非参数容差区间"});
+        QCOMPARE(compat_page.facts.tolerance->method_family, std::string{"nonparametric"});
+    }
 }
 
 void QualityStatisticsTest::calculatesTimeSeries()
@@ -2854,6 +3177,130 @@ void QualityStatisticsTest::buildsNormalCapabilityTableContract()
     QCOMPARE(ppm->rows.front()[2], std::string{"*"});
     QVERIFY(page.facts.capability.has_value());
     QVERIFY(page.facts.capability->normality_p_value.has_value());
+}
+
+void QualityStatisticsTest::acceptanceAnomPoissonCorrelationDeepen()
+{
+    // # source: formula_reference — OC at p=0 gives Pa=1.
+    {
+        const auto oc = datalab::domain::statistics::acceptance_sampling_binomial(
+            20, 1, 0.01, 0.05, std::nullopt);
+        QVERIFY(!oc.oc_curve.empty());
+        QCOMPARE(oc.oc_curve.front().fraction_defective, 0.0);
+        QVERIFY(std::abs(oc.oc_curve.front().probability_accept - 1.0) < 1.0e-12);
+        QVERIFY(oc.pa_at_aql.has_value());
+
+        datalab::domain::AnalysisConfiguration config;
+        config.inference.acceptance_sample_size = 20;
+        config.inference.acceptance_number = 1;
+        config.inference.acceptance_aql = 0.01;
+        config.inference.acceptance_rql = 0.05;
+        datalab::domain::DataTable table;
+        const auto page = datalab::application::AnalysisService::acceptance_sampling(
+            table, config);
+        QVERIFY(page.facts.acceptance_sampling.has_value());
+        QCOMPARE(page.facts.acceptance_sampling->sample_size, std::size_t{20});
+        QVERIFY(!page.tables.empty());
+        datalab::application::InterpretationService::enrich(page);
+        for (const auto& section : page.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("批次合格") == std::string::npos);
+                QVERIFY(bullet.find("必须接收") == std::string::npos);
+            }
+        }
+    }
+
+    // # source: formula_reference — extreme ANOM group outside Nelson approx limits.
+    {
+        const auto anom = datalab::domain::statistics::analysis_of_means(
+            {{1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}, {20.0, 21.0, 22.0}},
+            {"A", "B", "C"},
+            0.05);
+        QCOMPARE(anom.groups.size(), std::size_t{3});
+        QVERIFY(anom.groups.back().outside_limits);
+
+        datalab::domain::DataTable table;
+        table.columns = {"Y", "Group"};
+        table.rows = {
+            {"1", "A"}, {"2", "A"}, {"3", "A"},
+            {"1", "B"}, {"2", "B"}, {"3", "B"},
+            {"20", "C"}, {"21", "C"}, {"22", "C"}};
+        datalab::domain::AnalysisConfiguration config;
+        config.variable_columns = {0};
+        config.by_column = 1;
+        config.inference.anom_alpha = 0.05;
+        const auto page = datalab::application::AnalysisService::anom(table, config);
+        QVERIFY(page.facts.anom.has_value());
+        QVERIFY(page.facts.anom->outside_count >= 1);
+        datalab::application::InterpretationService::enrich(page);
+        for (const auto& section : page.interpretation) {
+            for (const auto& bullet : section.bullets) {
+                QVERIFY(bullet.find("已证明同均值") == std::string::npos);
+                QVERIFY(bullet.find("必须删除") == std::string::npos);
+            }
+        }
+    }
+
+    // # source: formula_reference — constant Poisson counts yield large p.
+    {
+        const auto gof = datalab::domain::statistics::poisson_goodness_of_fit(
+            {3.0, 3.0, 3.0, 3.0, 3.0});
+        QCOMPARE(gof.n, std::size_t{5});
+        QVERIFY(gof.p_value.has_value());
+        QVERIFY(*gof.p_value > 0.5);
+
+        datalab::domain::DataTable table;
+        table.columns = {"Count"};
+        for (int index = 0; index < 5; ++index) {
+            table.rows.push_back({"3"});
+        }
+        datalab::domain::AnalysisConfiguration config;
+        config.variable_columns = {0};
+        const auto page = datalab::application::AnalysisService::poisson_gof(table, config);
+        QVERIFY(page.facts.chi_square_gof.has_value());
+        QCOMPARE(page.facts.chi_square_gof->method, std::string{"poisson"});
+        QVERIFY(page.facts.chi_square_gof->lambda_hat.has_value());
+    }
+
+    // # source: formula_reference — covariance diagonal equals variance; partial sign on 3 columns.
+    {
+        const std::vector<std::vector<double>> columns = {
+            {1.0, 2.0, 3.0, 4.0, 5.0},
+            {2.0, 4.0, 6.0, 8.0, 10.0},
+            {5.0, 4.0, 3.0, 2.0, 1.0}};
+        const auto corr = datalab::domain::statistics::correlation_matrix(
+            columns, datalab::domain::statistics::CorrelationMethod::pearson, 0.95, true);
+        QVERIFY(corr.covariance_available);
+        const double var0 = corr.covariances[0][0];
+        const double var1 = corr.covariances[1][1];
+        QVERIFY(var0 > 0.0);
+        QVERIFY(std::abs(var0 - var1 / 4.0) < 1.0e-10);
+        QVERIFY(corr.partial_available);
+        QVERIFY(corr.partial_coefficients[0][2] < 0.0);
+
+        datalab::domain::DataTable table;
+        table.columns = {"X", "Y", "Z"};
+        for (std::size_t row = 0; row < columns[0].size(); ++row) {
+            table.rows.push_back({
+                std::to_string(columns[0][row]),
+                std::to_string(columns[1][row]),
+                std::to_string(columns[2][row])});
+        }
+        datalab::domain::AnalysisConfiguration config;
+        config.variable_columns = {0, 1, 2};
+        config.inference.compute_partial_correlation = true;
+        const auto page = datalab::application::AnalysisService::correlation(table, config);
+        QVERIFY(page.facts.correlation.has_value());
+        QVERIFY(page.facts.correlation->covariance_available);
+        QVERIFY(page.facts.correlation->partial_available);
+        QVERIFY(page.tables.size() >= std::size_t{4});
+        const auto cov_table = std::find_if(
+            page.tables.cbegin(), page.tables.cend(),
+            [](const datalab::domain::StatisticTable& table_out) {
+                return table_out.title == "协方差矩阵";
+            });
+        QVERIFY(cov_table != page.tables.cend());
+    }
 }
 
 QTEST_APPLESS_MAIN(QualityStatisticsTest)

@@ -1,0 +1,87 @@
+unmapped_domain_diags=140
+  122	other
+  10	capability
+  5	reliability
+  1	doe_rsm
+  1	inference
+  1	eda
+src/domain/statistics/aalen_johansen_cif.cpp:84	reliability	累计发生函数 CIF = Aalen–Johansen（formula_reference / aalen_johansen_cif）：
+src/domain/statistics/adf_test.cpp:108	other	默认滞后 p = floor((T-1)^(1/3)) = 
+src/domain/statistics/analysis_rules.cpp:132	other	N-p-1 必须为正才能输出 t、F 与 P。
+src/domain/statistics/analysis_rules.cpp:151	other	家族错误率
+src/domain/statistics/analysis_rules.cpp:151	other	Tukey 必须回显同时置信水平和调整后 p 值。
+src/domain/statistics/censoring_contract.cpp:605	reliability	分层 expected_failures = 层暴露量 * F_mode(T_w)，
+src/domain/statistics/censoring_contract.cpp:611	reliability	分层 expected_failures = 层暴露量 * F(T_w)，F 来自总体池化 R(T_w)；
+src/domain/statistics/censoring_contract.cpp:758	reliability	分模式可靠度 = cause-specific：目标模式 exact 为失效，
+src/domain/statistics/doe_factorial.cpp:427	doe_rsm	部分析因分辨度 
+src/domain/statistics/gaussian_mixture_2.cpp:271	other	二维高斯混合 = formula_reference / gaussian_mixture_2_em（EM + BIC vs 单正态）；
+src/domain/statistics/gaussian_mixture_2.cpp:375	other	多 k 高斯混合 = formula_reference / gaussian_mixture_k_bic（EM + BIC，k=1..
+src/domain/statistics/inference_extensions.cpp:346	inference	Tukey 同时置信水平 = 
+src/domain/statistics/km_interval.cpp:195	reliability	证据类型 = formula_reference（algorithm_id=turnbull_npmle_simplified_grid）；
+src/domain/statistics/process_capability.cpp:629	capability	MR̄(子组均值) / d2(2)
+src/domain/statistics/process_capability.cpp:988	capability	，Uniform 零假设 MC p≈
+src/domain/statistics/process_capability.cpp:991	capability	；提示偏离单峰，单一分布能力指数仅供调查，
+src/domain/statistics/quality_visuals.cpp:196	other	效果（未命名）
+src/domain/statistics/special_cause_rule_catalog.cpp:129	other	未知特殊原因规则
+src/domain/statistics/special_cause_rule_catalog.cpp:242	other	 当前未触发。
+src/domain/column_extract.cpp:141	other	导入结果的列类型数量与列名不一致。
+src/domain/column_extract.cpp:144	other	导入结果的 RowId 数量与数据行不一致。
+src/domain/column_extract.cpp:147	other	导入结果的单元格状态行数与数据行不一致。
+src/domain/column_extract.cpp:150	other	导入元数据中的原始行数与数据行不一致。
+src/domain/column_extract.cpp:153	other	导入元数据中的列数与列名不一致。
+src/domain/column_extract.cpp:159	other	 行的字段数与列数不一致。
+src/domain/column_extract.cpp:162	other	 行的单元格状态数与列数不一致。
+src/domain/column_extract.cpp:165	other	导入结果包含重复的 RowId。
+src/domain/graph_assembly.cpp:169	eda	分面水平数 = 
+src/domain/report_text_catalog.cpp:55	other	工程师规则/诊断
+src/domain/report_text_catalog.cpp:119	other	诊断无关联行
+src/domain/report_text_catalog.cpp:144	other	门禁状态
+src/domain/report_text_catalog.cpp:3549	other	保修摘要：T_w = %1 %2，暴露量 = %3，claims/1000 = %4（口径 = %5）。
+src/domain/report_text_catalog.cpp:3558	other	Weibull 形状参数 β = %1%2
+src/domain/report_text_catalog.cpp:3570	other	阈值 λ = %1；百分位寿命按 t_p = λ + α[-ln(1-p)]^(1/β) 计算。
+src/domain/report_text_catalog.cpp:3573	other	两参数指数估计了阈值 λ = %1 后的恒定失效率。
+src/domain/report_text_catalog.cpp:3576	other	三参数对数正态估计了阈值 λ = %1；分位寿命按 λ + exp(μ + σ Φ⁻¹(p)) 计算。
+src/domain/report_text_catalog.cpp:3654	capability	EMP Crossed：ICC(with interaction) = %1，分级 = %2。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+src/domain/report_text_catalog.cpp:3657	other	Probable Error = %1；用于对照测量增量是否物理合理，不是公差合格证明。
+src/domain/report_text_catalog.cpp:3660	other	ndc = %1，小于 5，提示测量系统分辨力需要调查。
+src/domain/report_text_catalog.cpp:3663	other	ndc = %1；ndc 只描述当前研究中零件间变异相对 Gage 变异的分辨力。
+src/domain/report_text_catalog.cpp:3669	other	Total Gage R&R %Study Var = %1；%Contribution 与 %Study Var 口径不同，不能混用。
+src/domain/report_text_catalog.cpp:3684	other	%Linearity = %1；基于用户提供的过程变差（6σ）。
+src/domain/report_text_catalog.cpp:3690	other	偏倚检验 P = %1，与参考值差异具有统计证据。
+src/domain/report_text_catalog.cpp:3693	other	偏倚检验 P = %1，未发现与参考值差异的统计证据。
+src/domain/report_text_catalog.cpp:3696	capability	Cgk = %1；应结合组织规定的能力门槛解释，而非套用单一通用阈值。
+src/domain/report_text_catalog.cpp:3699	other	%Tolerance = %1；请与产品公差及风险等级核对后决定校准、维修或放行策略。
+src/domain/report_text_catalog.cpp:3753	other	密度图：N = %1%2。曲线是平滑估计，不能据此写成正态性结论。
+src/domain/report_text_catalog.cpp:3756	other	二维分箱：N = %1；格 = %2×%3（矩形格，产品名 Hexbin）。
+src/domain/report_text_catalog.cpp:3759	other	小提琴图：组数 = %1；形状来自分组 KDE，箱线为五数摘要。
+src/domain/report_text_catalog.cpp:3762	other	通用条形图：类别数 = %1；未按计数排序，无累积百分比（与柏拉图分流）。
+src/domain/report_text_catalog.cpp:3765	other	NIST EDA 四图：N = %1；同页包含 run sequence、lag-1、histogram、normal probability。四图用于检查位置/散布/随机性/分布形态假设，不能写成受控结论或正态已成立。
+src/domain/report_text_catalog.cpp:3768	other	受控分面：面板 = %1/%2（max=%3）%4。分面是多面板编排，不是自由拼版；by/分组仍是图内着色。
+src/domain/report_text_catalog.cpp:3774	other	区间删失 KM（Turnbull）：N = %1，左/区间/右 = %2/%3/%4%5。
+src/domain/report_text_catalog.cpp:3783	other	ACF/PACF 基于 N = %1，最大滞后 = %2；默认置信带方法 = %3%4。越过带宽只提示相对白噪声零假设的相关证据，不能写成过程失控判定。
+src/domain/report_text_catalog.cpp:3792	other	Z-MR 图 N = %1，组数 = %2，Z 图超限 = %3；短流程标准化依赖 %4，超限点需要调查，不能直接当作过程失控或稳定结论。
+src/domain/report_text_catalog.cpp:3804	other	运行图 N = %1%2；关于中位数游程 = %3，上升/下降游程 = %4。四模式 P 只提示相对随机性的偏离方向，不能写成已证明过程受控或失控。
+src/domain/report_text_catalog.cpp:3813	other	Plackett–Burman：因子 = %1，运行 = %2，中心点 = %3。设计矩阵仅供筛选实验排布。
+src/domain/report_text_catalog.cpp:3819	other	Box–Behnken：因子 = %1，边中点 = %2，中心点 = %3，总运行 = %4。不包含所有因子同时极端的角点。
+src/domain/report_text_catalog.cpp:3825	other	CCD（%1）：因子 = %2，立方点 = %3，星点 = %4，中心点 = %5，α = %6。
+src/domain/report_text_catalog.cpp:3843	other	CCF：N = %1，max|lag| = %2%3。越过带宽只提示相对独立性零假设的相关证据。
+src/domain/report_text_catalog.cpp:3846	other	Correlogram（%1）：变量数 = %2，成对数 = %3。热图只展示两两相关结构。
+src/domain/report_text_catalog.cpp:3852	other	逐步回归（%1）：N = %2，候选 = %3，选入 = %4%5。选入项只描述相对拟合证据。
+src/domain/report_text_catalog.cpp:3885	other	本方法假设测量近似正态且未在本页验证（assumption_status=%1）；单侧使用 Natrella 近似，双侧使用 Howe 近似。
+src/domain/report_text_catalog.cpp:4104	capability	Cpk = %1，低于项目提示基准 1.33，需要调查过程能力。
+src/domain/report_text_catalog.cpp:4107	other	Cpk = %1，达到项目提示基准 1.33；这不是已验证的过程合格结论。
+src/domain/report_text_catalog.cpp:4110	other	Ppk = %1，整体过程表现低于 1.33 提示基准。
+src/domain/report_text_catalog.cpp:4113	other	Ppk = %1，整体过程表现达到 1.33 提示基准。
+src/domain/report_text_catalog.cpp:4119	capability	过程能力未验证稳定性与正态性（assumption_status=%1），不能把 Cpk/Ppk 直接写成合格判定。
+src/domain/report_text_catalog.cpp:4122	other	Anderson-Darling P = %1；未拒绝正态假设不等于已证明正态分布。
+src/domain/report_text_catalog.cpp:4140	other	gate_status=%1；stability_screen=%2（OOC=%3）；bimodality_screen=%4（peaks=%5）；hartigan_dip=%6（D=%7）；mixture=%8（k=%9，ΔBIC=%10）：I-MR Rule-1 / 直方图双峰 / Hartigan dip / 高斯混合门禁筛查不等于完整稳定性或单峰验收。
+src/domain/report_text_catalog.cpp:4191	other	Durbin-Watson = %1，判定区 = %2（按输入顺序与 α=0.05 近似 dL/dU）。不能写成已证明无自相关或存在自相关。
+src/domain/report_text_catalog.cpp:4194	other	I-MR σ 估计方法 = %1%2。σ 估计变化只影响控制限宽度，不能单独写成稳定结论。
+src/domain/report_text_catalog.cpp:4200	other	已按阶段列汇总估计（阶段数 = %1）；当前输出仍使用全样本估计限，不是逐阶段独立控制图。
+src/domain/report_text_catalog.cpp:4203	other	%1：m = %2，p = %3%4，超限 = %5。超限是统计信号提示，需要结合工艺调查，不能单独写成失控或稳定结论。%6
+src/domain/report_text_catalog.cpp:4215	other	%1 Sigma Z = %2，存在过度离散，传统控制限可能过窄。
+src/domain/report_text_catalog.cpp:4218	other	%1 Sigma Z = %2，控制限已按离散程度进行调整。
+src/domain/report_text_catalog.cpp:4293	other	最大 |调整残差| = %1%2。这些量只帮助定位偏离，不能写成已证明关联或无关联。
+src/domain/report_text_catalog.cpp:4296	other	交叉表汇总 %1 × %2 分类，N = %3。本输出只提供频数与百分比，不做独立性检验；检验请使用列联表卡方。
+src/domain/report_text_catalog.cpp:4299	other	泊松拟合优度 Pearson χ²%1%2，DF = %3%4。P 值只描述观察计数与泊松模型的偏离程度，不能证明总体服从泊松分布。
+src/domain/report_text_catalog.cpp:4302	other	拟合优度 Pearson χ²%1%2，DF = %3。P 值只描述观察频数与指定比例的一致程度，不能证明总体比例等于假设。

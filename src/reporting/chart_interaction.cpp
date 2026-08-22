@@ -1,5 +1,8 @@
 #include "reporting/chart_interaction.h"
 
+#include <algorithm>
+#include <set>
+
 namespace chart_interaction {
 
 QString element_path(const ChartModel& model, const Element& element)
@@ -75,6 +78,27 @@ QString tooltip_text(const ChartModel& model, const Hit& hit)
     }
 
     return {};
+}
+
+std::vector<std::size_t> resolve_selected_source_rows(
+    const ChartModel& model,
+    const std::vector<std::size_t>& selected_points)
+{
+    std::set<std::size_t> unique;
+    for (const std::size_t point : selected_points) {
+        // When member_source_rows is present for this index, it is authoritative —
+        // even if empty (aggregated empty cell must not fall back to row 0).
+        if (point < model.member_source_rows.size()) {
+            for (const std::size_t row : model.member_source_rows[point]) {
+                unique.insert(row);
+            }
+            continue;
+        }
+        if (point < model.source_rows.size()) {
+            unique.insert(model.source_rows[point]);
+        }
+    }
+    return {unique.begin(), unique.end()};
 }
 
 }  // namespace chart_interaction

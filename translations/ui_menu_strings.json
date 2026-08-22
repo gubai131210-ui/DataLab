@@ -1,0 +1,2712 @@
+{
+  "catalog_version": "2026-08-21.phase3-dialog-roles",
+  "context": "DataLabUi",
+  "authority": "translations/ui_menu_strings.json",
+  "note": "UI menu/chrome strings for Linguist. Report body stays report_text_catalog (ADR 0009). Not vendor_oracle.",
+  "languages": [
+    "zh-CN",
+    "en-US"
+  ],
+  "entries": [
+    {
+      "id": "menu.file",
+      "zh_cn": "文件",
+      "en_us": "File"
+    },
+    {
+      "id": "menu.edit",
+      "zh_cn": "编辑",
+      "en_us": "Edit"
+    },
+    {
+      "id": "menu.data",
+      "zh_cn": "数据",
+      "en_us": "Data"
+    },
+    {
+      "id": "menu.view",
+      "zh_cn": "查看",
+      "en_us": "View"
+    },
+    {
+      "id": "menu.help",
+      "zh_cn": "帮助",
+      "en_us": "Help"
+    },
+    {
+      "id": "menu.stats",
+      "zh_cn": "统计",
+      "en_us": "Stat"
+    },
+    {
+      "id": "menu.graph",
+      "zh_cn": "图形",
+      "en_us": "Graph"
+    },
+    {
+      "id": "menu.control_chart",
+      "zh_cn": "控制图",
+      "en_us": "Control Charts"
+    },
+    {
+      "id": "menu.quality",
+      "zh_cn": "质量工具",
+      "en_us": "Quality Tools"
+    },
+    {
+      "id": "menu.group.basic",
+      "zh_cn": "基础统计",
+      "en_us": "Basic Statistics"
+    },
+    {
+      "id": "menu.group.anova",
+      "zh_cn": "ANOVA",
+      "en_us": "ANOVA"
+    },
+    {
+      "id": "menu.group.regression",
+      "zh_cn": "回归",
+      "en_us": "Regression"
+    },
+    {
+      "id": "menu.group.timeseries",
+      "zh_cn": "时间序列",
+      "en_us": "Time series"
+    },
+    {
+      "id": "menu.group.multivariate",
+      "zh_cn": "多变量",
+      "en_us": "Multivariate"
+    },
+    {
+      "id": "menu.group.reliability",
+      "zh_cn": "可靠性",
+      "en_us": "Reliability"
+    },
+    {
+      "id": "menu.group.power",
+      "zh_cn": "功效与样本量",
+      "en_us": "Power and Sample Size"
+    },
+    {
+      "id": "menu.group.hypothesis",
+      "zh_cn": "假设检验",
+      "en_us": "Hypothesis Tests"
+    },
+    {
+      "id": "menu.group.tables",
+      "zh_cn": "表格",
+      "en_us": "Tables"
+    },
+    {
+      "id": "menu.group.doe",
+      "zh_cn": "DOE",
+      "en_us": "DOE"
+    },
+    {
+      "id": "menu.group.eda",
+      "zh_cn": "探索性图形",
+      "en_us": "Exploratory Graphs"
+    },
+    {
+      "id": "action.new",
+      "zh_cn": "新建项目",
+      "en_us": "New Project"
+    },
+    {
+      "id": "action.open",
+      "zh_cn": "打开项目",
+      "en_us": "Open Project"
+    },
+    {
+      "id": "action.save",
+      "zh_cn": "保存项目",
+      "en_us": "Save Project"
+    },
+    {
+      "id": "action.export_pdf",
+      "zh_cn": "导出 PDF",
+      "en_us": "Export PDF"
+    },
+    {
+      "id": "action.exit",
+      "zh_cn": "退出",
+      "en_us": "Exit"
+    },
+    {
+      "id": "action.undo",
+      "zh_cn": "撤销",
+      "en_us": "Undo"
+    },
+    {
+      "id": "action.redo",
+      "zh_cn": "重做",
+      "en_us": "Redo"
+    },
+    {
+      "id": "action.copy",
+      "zh_cn": "复制",
+      "en_us": "Copy"
+    },
+    {
+      "id": "action.copy_chart",
+      "zh_cn": "复制图形",
+      "en_us": "Copy Graph"
+    },
+    {
+      "id": "action.cut",
+      "zh_cn": "剪切",
+      "en_us": "Cut"
+    },
+    {
+      "id": "action.paste",
+      "zh_cn": "粘贴",
+      "en_us": "Paste"
+    },
+    {
+      "id": "action.clear_cells",
+      "zh_cn": "清除单元格",
+      "en_us": "Clear Cells"
+    },
+    {
+      "id": "action.import",
+      "zh_cn": "导入数据",
+      "en_us": "Import Data"
+    },
+    {
+      "id": "action.import_database",
+      "zh_cn": "数据库导入…",
+      "en_us": "Import from Database…"
+    },
+    {
+      "id": "action.exclude",
+      "zh_cn": "排除选中行",
+      "en_us": "Exclude Selected Rows"
+    },
+    {
+      "id": "action.clear_exclude",
+      "zh_cn": "清除排除标记",
+      "en_us": "Clear Exclusions"
+    },
+    {
+      "id": "action.hide_row",
+      "zh_cn": "隐藏选中行（仅显示）",
+      "en_us": "Hide Selected Rows (Display Only)"
+    },
+    {
+      "id": "action.clear_hide",
+      "zh_cn": "清除隐藏标记",
+      "en_us": "Clear Hidden Marks"
+    },
+    {
+      "id": "help.algorithm",
+      "zh_cn": "算法、公式与参考资料",
+      "en_us": "Algorithms, Formulas, and References"
+    },
+    {
+      "id": "help.formula_registry",
+      "zh_cn": "公式注册表",
+      "en_us": "Formula Registry"
+    },
+    {
+      "id": "help.about",
+      "zh_cn": "关于 DataLab",
+      "en_us": "About DataLab"
+    },
+    {
+      "id": "help.about_body",
+      "zh_cn": "DataLab 品质工作站：按 Minitab 方式选择数据、计算并输出质量分析报告。",
+      "en_us": "DataLab Quality Workstation: select data, compute, and produce quality analysis reports in a Minitab-like workflow."
+    },
+    {
+      "id": "help.stats_policy",
+      "zh_cn": "统计口径",
+      "en_us": "Statistical Policy"
+    },
+    {
+      "id": "cmd.acf_pacf",
+      "zh_cn": "ACF/PACF",
+      "en_us": "ACF/PACF"
+    },
+    {
+      "id": "cmd.adf_unit_root_test",
+      "zh_cn": "ADF 单位根检验",
+      "en_us": "ADF Unit Root Test"
+    },
+    {
+      "id": "cmd.augmented_dickey_fuller",
+      "zh_cn": "Augmented Dickey-Fuller",
+      "en_us": "Augmented Dickey-Fuller"
+    },
+    {
+      "id": "cmd.bootstrap_mean_ci",
+      "zh_cn": "Bootstrap Mean CI",
+      "en_us": "Bootstrap Mean CI"
+    },
+    {
+      "id": "cmd.bootstrap_mean_ci_2",
+      "zh_cn": "Bootstrap 均值 CI",
+      "en_us": "Bootstrap Mean CI"
+    },
+    {
+      "id": "cmd.box_behnken_design",
+      "zh_cn": "Box-Behnken Design",
+      "en_us": "Box-Behnken Design"
+    },
+    {
+      "id": "cmd.box_cox_transformation",
+      "zh_cn": "Box-Cox 变换",
+      "en_us": "Box-Cox Transformation"
+    },
+    {
+      "id": "cmd.box_behnken_design_2",
+      "zh_cn": "Box–Behnken 设计",
+      "en_us": "Box-Behnken Design"
+    },
+    {
+      "id": "cmd.c_chart",
+      "zh_cn": "C 图",
+      "en_us": "C Chart"
+    },
+    {
+      "id": "cmd.cart_tree",
+      "zh_cn": "CART Tree",
+      "en_us": "CART Tree"
+    },
+    {
+      "id": "cmd.cusum_chart",
+      "zh_cn": "CUSUM 控制图",
+      "en_us": "CUSUM Chart"
+    },
+    {
+      "id": "cmd.central_composite_design",
+      "zh_cn": "Central Composite Design",
+      "en_us": "Central Composite Design"
+    },
+    {
+      "id": "cmd.cluster_k_means",
+      "zh_cn": "Cluster K-Means",
+      "en_us": "Cluster K-Means"
+    },
+    {
+      "id": "cmd.cluster_observations",
+      "zh_cn": "Cluster Observations",
+      "en_us": "Cluster Observations"
+    },
+    {
+      "id": "cmd.cochran_q_test",
+      "zh_cn": "Cochran Q 检验",
+      "en_us": "Cochran Q Test"
+    },
+    {
+      "id": "cmd.correlogram",
+      "zh_cn": "Correlogram",
+      "en_us": "Correlogram"
+    },
+    {
+      "id": "cmd.cross_correlation",
+      "zh_cn": "Cross Correlation",
+      "en_us": "Cross Correlation"
+    },
+    {
+      "id": "cmd.crossed_gage_r_r",
+      "zh_cn": "Crossed Gage R&R",
+      "en_us": "Crossed Gage R&R"
+    },
+    {
+      "id": "cmd.doe_response_optimization",
+      "zh_cn": "DOE 响应优化",
+      "en_us": "DOE Response Optimization"
+    },
+    {
+      "id": "cmd.discriminant_analysis",
+      "zh_cn": "Discriminant Analysis",
+      "en_us": "Discriminant Analysis"
+    },
+    {
+      "id": "cmd.emp_crossed",
+      "zh_cn": "EMP Crossed",
+      "en_us": "EMP Crossed"
+    },
+    {
+      "id": "cmd.emp_crossed_wheeler",
+      "zh_cn": "EMP Crossed（Wheeler）",
+      "en_us": "EMP Crossed (Wheeler)"
+    },
+    {
+      "id": "cmd.ewma_chart",
+      "zh_cn": "EWMA 控制图",
+      "en_us": "EWMA Chart"
+    },
+    {
+      "id": "cmd.expanded_gage_r_r",
+      "zh_cn": "Expanded Gage R&R",
+      "en_us": "Expanded Gage R&R"
+    },
+    {
+      "id": "cmd.fisher_exact_test",
+      "zh_cn": "Fisher 精确检验",
+      "en_us": "Fisher Exact Test"
+    },
+    {
+      "id": "cmd.friedman_test",
+      "zh_cn": "Friedman 检验",
+      "en_us": "Friedman Test"
+    },
+    {
+      "id": "cmd.g_chart",
+      "zh_cn": "G 图",
+      "en_us": "G Chart"
+    },
+    {
+      "id": "cmd.hexbin",
+      "zh_cn": "Hexbin",
+      "en_us": "Hexbin"
+    },
+    {
+      "id": "cmd.hexbin_2d_binning",
+      "zh_cn": "Hexbin / 二维分箱",
+      "en_us": "Hexbin / 2D Binning"
+    },
+    {
+      "id": "cmd.i_mr_chart",
+      "zh_cn": "I-MR 控制图",
+      "en_us": "I-MR Chart"
+    },
+    {
+      "id": "cmd.interval_censored_km",
+      "zh_cn": "Interval-Censored KM",
+      "en_us": "Interval-Censored KM"
+    },
+    {
+      "id": "cmd.isolation_forest",
+      "zh_cn": "Isolation Forest",
+      "en_us": "Isolation Forest"
+    },
+    {
+      "id": "cmd.mewma",
+      "zh_cn": "MEWMA",
+      "en_us": "MEWMA"
+    },
+    {
+      "id": "cmd.msa_type_1_bias_stability",
+      "zh_cn": "MSA Type 1 / Bias / Stability",
+      "en_us": "MSA Type 1 / Bias / Stability"
+    },
+    {
+      "id": "cmd.mood_median_test",
+      "zh_cn": "Mood 中位数检验",
+      "en_us": "Mood Median Test"
+    },
+    {
+      "id": "cmd.np_chart",
+      "zh_cn": "NP 图",
+      "en_us": "NP Chart"
+    },
+    {
+      "id": "cmd.ordinal_logistic",
+      "zh_cn": "Ordinal Logistic",
+      "en_us": "Ordinal Logistic"
+    },
+    {
+      "id": "cmd.p_chart",
+      "zh_cn": "P 图",
+      "en_us": "P Chart"
+    },
+    {
+      "id": "cmd.plackett_burman_design",
+      "zh_cn": "Plackett-Burman Design",
+      "en_us": "Plackett-Burman Design"
+    },
+    {
+      "id": "cmd.poisson_regression",
+      "zh_cn": "Poisson Regression",
+      "en_us": "Poisson Regression"
+    },
+    {
+      "id": "cmd.reliability_analysis",
+      "zh_cn": "Reliability Analysis",
+      "en_us": "Reliability Analysis"
+    },
+    {
+      "id": "cmd.stepwise_regression",
+      "zh_cn": "Stepwise Regression",
+      "en_us": "Stepwise Regression"
+    },
+    {
+      "id": "cmd.u_chart",
+      "zh_cn": "U 图",
+      "en_us": "U Chart"
+    },
+    {
+      "id": "cmd.warranty_summary",
+      "zh_cn": "Warranty Summary",
+      "en_us": "Warranty Summary"
+    },
+    {
+      "id": "cmd.xbar_r_chart",
+      "zh_cn": "Xbar-R 控制图",
+      "en_us": "Xbar-R Chart"
+    },
+    {
+      "id": "cmd.xbar_s_chart",
+      "zh_cn": "Xbar-S 控制图",
+      "en_us": "Xbar-S Chart"
+    },
+    {
+      "id": "cmd.principal_components",
+      "zh_cn": "主成分分析",
+      "en_us": "Principal Components"
+    },
+    {
+      "id": "cmd.cross_tabulation",
+      "zh_cn": "交叉表",
+      "en_us": "Cross Tabulation"
+    },
+    {
+      "id": "cmd.interval_plot",
+      "zh_cn": "区间散点图",
+      "en_us": "Interval Plot"
+    },
+    {
+      "id": "cmd.one_way_anova",
+      "zh_cn": "单因素 ANOVA",
+      "en_us": "One-Way ANOVA"
+    },
+    {
+      "id": "cmd.1_sample_t_test",
+      "zh_cn": "单样本 t 检验",
+      "en_us": "1-Sample t-Test"
+    },
+    {
+      "id": "cmd.1_proportion_test",
+      "zh_cn": "单比例检验",
+      "en_us": "1-Proportion Test"
+    },
+    {
+      "id": "cmd.two_way_anova",
+      "zh_cn": "双因素 ANOVA",
+      "en_us": "Two-Way ANOVA"
+    },
+    {
+      "id": "cmd.2_sample_t_test",
+      "zh_cn": "双样本 t 检验",
+      "en_us": "2-Sample t-Test"
+    },
+    {
+      "id": "cmd.response_surface_analysis",
+      "zh_cn": "响应曲面分析",
+      "en_us": "Response Surface Analysis"
+    },
+    {
+      "id": "cmd.cause_and_effect_diagram",
+      "zh_cn": "因果图",
+      "en_us": "Cause-and-Effect Diagram"
+    },
+    {
+      "id": "cmd.density_plot",
+      "zh_cn": "密度图",
+      "en_us": "Density Plot"
+    },
+    {
+      "id": "cmd.violin_plot",
+      "zh_cn": "小提琴图",
+      "en_us": "Violin Plot"
+    },
+    {
+      "id": "cmd.attribute_agreement_analysis",
+      "zh_cn": "属性一致性分析",
+      "en_us": "Attribute Agreement Analysis"
+    },
+    {
+      "id": "cmd.parallel_coordinates",
+      "zh_cn": "平行坐标图",
+      "en_us": "Parallel Coordinates"
+    },
+    {
+      "id": "cmd.scatterplot",
+      "zh_cn": "散点图",
+      "en_us": "Scatterplot"
+    },
+    {
+      "id": "cmd.time_series_decomposition",
+      "zh_cn": "时间序列分解",
+      "en_us": "Time Series Decomposition"
+    },
+    {
+      "id": "cmd.time_series_plot",
+      "zh_cn": "时间序列图",
+      "en_us": "Time Series Plot"
+    },
+    {
+      "id": "cmd.bar_chart",
+      "zh_cn": "条形图",
+      "en_us": "Bar Chart"
+    },
+    {
+      "id": "cmd.probability_plot",
+      "zh_cn": "概率图",
+      "en_us": "Probability Plot"
+    },
+    {
+      "id": "cmd.normality_test",
+      "zh_cn": "正态性检验",
+      "en_us": "Normality Test"
+    },
+    {
+      "id": "cmd.normal_probability_plot",
+      "zh_cn": "正态概率图",
+      "en_us": "Normal Probability Plot"
+    },
+    {
+      "id": "cmd.bubble_plot",
+      "zh_cn": "气泡图",
+      "en_us": "Bubble Plot"
+    },
+    {
+      "id": "cmd.heatmap",
+      "zh_cn": "热图",
+      "en_us": "Heatmap"
+    },
+    {
+      "id": "cmd.histogram",
+      "zh_cn": "直方图",
+      "en_us": "Histogram"
+    },
+    {
+      "id": "cmd.correlation",
+      "zh_cn": "相关分析",
+      "en_us": "Correlation"
+    },
+    {
+      "id": "cmd.correlation_plot",
+      "zh_cn": "相关图",
+      "en_us": "Correlation Plot"
+    },
+    {
+      "id": "cmd.matrix_plot",
+      "zh_cn": "矩阵图",
+      "en_us": "Matrix Plot"
+    },
+    {
+      "id": "cmd.sign_test",
+      "zh_cn": "符号检验",
+      "en_us": "Sign Test"
+    },
+    {
+      "id": "cmd.contour_plot",
+      "zh_cn": "等值线图",
+      "en_us": "Contour Plot"
+    },
+    {
+      "id": "cmd.boxplot",
+      "zh_cn": "箱线图",
+      "en_us": "Boxplot"
+    },
+    {
+      "id": "cmd.ecdf_plot",
+      "zh_cn": "经验累积分布图",
+      "en_us": "ECDF Plot"
+    },
+    {
+      "id": "cmd.marginal_plot",
+      "zh_cn": "边际图",
+      "en_us": "Marginal Plot"
+    },
+    {
+      "id": "cmd.run_chart",
+      "zh_cn": "运行图",
+      "en_us": "Run Chart"
+    },
+    {
+      "id": "cmd.stepwise_regression_2",
+      "zh_cn": "逐步回归",
+      "en_us": "Stepwise Regression"
+    },
+    {
+      "id": "cmd.paired_t_test",
+      "zh_cn": "配对 t 检验",
+      "en_us": "Paired t-Test"
+    },
+    {
+      "id": "cmd.nonnormal_capability",
+      "zh_cn": "非正态过程能力",
+      "en_us": "Nonnormal Capability"
+    },
+    {
+      "id": "cmd.pie_chart",
+      "zh_cn": "饼图",
+      "en_us": "Pie Chart"
+    },
+    {
+      "id": "cmd.2_level_full_fractional_factorial_design",
+      "zh_cn": "2 水平全因子 / 部分析因设计",
+      "en_us": "2-Level Full / Fractional Factorial Design"
+    },
+    {
+      "id": "cmd.2_level_factorial_response_analysis",
+      "zh_cn": "2 水平析因响应分析",
+      "en_us": "2-Level Factorial Response Analysis"
+    },
+    {
+      "id": "cmd.2_level_factorial_design_generation",
+      "zh_cn": "2 水平析因设计生成",
+      "en_us": "2-Level Factorial Design Generation"
+    },
+    {
+      "id": "cmd.arima_basic_forecast",
+      "zh_cn": "ARIMA 基础预测",
+      "en_us": "ARIMA Basic Forecast"
+    },
+    {
+      "id": "cmd.cart_single_tree",
+      "zh_cn": "CART 单树",
+      "en_us": "CART Single Tree"
+    },
+    {
+      "id": "cmd.correlogram_correlation_heatmap",
+      "zh_cn": "Correlogram（相关热图）",
+      "en_us": "Correlogram (Correlation Heatmap)"
+    },
+    {
+      "id": "cmd.doe_response_analysis",
+      "zh_cn": "DOE 响应分析",
+      "en_us": "DOE Response Analysis"
+    },
+    {
+      "id": "cmd.eda_four_in_one",
+      "zh_cn": "EDA 四图",
+      "en_us": "EDA Four-in-One"
+    },
+    {
+      "id": "cmd.eda_four_in_one_nist",
+      "zh_cn": "EDA 四图（NIST）",
+      "en_us": "EDA Four-in-One (NIST)"
+    },
+    {
+      "id": "cmd.expanded_gage_r_r_3_factor_balanced",
+      "zh_cn": "Expanded Gage R&R（三因子平衡）",
+      "en_us": "Expanded Gage R&R (3-Factor Balanced)"
+    },
+    {
+      "id": "cmd.g_chart_rare_event_interval",
+      "zh_cn": "G 图（稀有事件间隔）",
+      "en_us": "G Chart (Rare Event Interval)"
+    },
+    {
+      "id": "cmd.hotelling_t",
+      "zh_cn": "Hotelling T²",
+      "en_us": "Hotelling T²"
+    },
+    {
+      "id": "cmd.hotelling_t_multivariate_chart",
+      "zh_cn": "Hotelling T² 多元控制图",
+      "en_us": "Hotelling T² Multivariate Chart"
+    },
+    {
+      "id": "cmd.i_mr_r_s_chart",
+      "zh_cn": "I-MR-R/S 控制图",
+      "en_us": "I-MR-R/S Chart"
+    },
+    {
+      "id": "cmd.k_means_clustering",
+      "zh_cn": "K-Means 聚类",
+      "en_us": "K-Means Clustering"
+    },
+    {
+      "id": "cmd.kruskal_wallis_test",
+      "zh_cn": "Kruskal-Wallis 检验",
+      "en_us": "Kruskal-Wallis Test"
+    },
+    {
+      "id": "cmd.laney_p_chart",
+      "zh_cn": "Laney P' 图",
+      "en_us": "Laney P' Chart"
+    },
+    {
+      "id": "cmd.laney_u_chart",
+      "zh_cn": "Laney U' 图",
+      "en_us": "Laney U' Chart"
+    },
+    {
+      "id": "cmd.mann_whitney_test",
+      "zh_cn": "Mann-Whitney 检验",
+      "en_us": "Mann-Whitney Test"
+    },
+    {
+      "id": "cmd.mcnemar_test",
+      "zh_cn": "McNemar 检验",
+      "en_us": "McNemar Test"
+    },
+    {
+      "id": "cmd.multi_vari_chart",
+      "zh_cn": "Multi-Vari 图",
+      "en_us": "Multi-Vari Chart"
+    },
+    {
+      "id": "cmd.nested_gage_r_r",
+      "zh_cn": "Nested Gage R&R",
+      "en_us": "Nested Gage R&R"
+    },
+    {
+      "id": "cmd.plackett_burman_design_generation",
+      "zh_cn": "Plackett–Burman 设计生成",
+      "en_us": "Plackett-Burman Design Generation"
+    },
+    {
+      "id": "cmd.poisson_regression_2",
+      "zh_cn": "Poisson 回归",
+      "en_us": "Poisson Regression"
+    },
+    {
+      "id": "cmd.t_chart",
+      "zh_cn": "T 图",
+      "en_us": "T Chart"
+    },
+    {
+      "id": "cmd.t_chart_rare_event_interval",
+      "zh_cn": "T 图（稀有事件间隔）",
+      "en_us": "T Chart (Rare Event Interval)"
+    },
+    {
+      "id": "cmd.wilcoxon_signed_rank_test",
+      "zh_cn": "Wilcoxon 符号秩检验",
+      "en_us": "Wilcoxon Signed-Rank Test"
+    },
+    {
+      "id": "cmd.z_mr_chart",
+      "zh_cn": "Z-MR 控制图",
+      "en_us": "Z-MR Chart"
+    },
+    {
+      "id": "cmd.t_power_and_sample_size",
+      "zh_cn": "t 功效与样本量",
+      "en_us": "t Power and Sample Size"
+    },
+    {
+      "id": "cmd.2_proportion_test",
+      "zh_cn": "两比例检验",
+      "en_us": "2-Proportion Test"
+    },
+    {
+      "id": "cmd.2_proportion_equivalence_test",
+      "zh_cn": "两比例等价性检验",
+      "en_us": "2-Proportion Equivalence Test"
+    },
+    {
+      "id": "cmd.individual_distribution_identification",
+      "zh_cn": "个体分布识别",
+      "en_us": "Individual Distribution Identification"
+    },
+    {
+      "id": "cmd.central_composite_design_ccd",
+      "zh_cn": "中心复合设计 CCD",
+      "en_us": "Central Composite Design (CCD)"
+    },
+    {
+      "id": "cmd.binary_logistic_regression",
+      "zh_cn": "二元 Logistic 回归",
+      "en_us": "Binary Logistic Regression"
+    },
+    {
+      "id": "cmd.binomial_capability",
+      "zh_cn": "二项过程能力",
+      "en_us": "Binomial Capability"
+    },
+    {
+      "id": "cmd.binomial_capability_analysis",
+      "zh_cn": "二项过程能力分析",
+      "en_us": "Binomial Capability Analysis"
+    },
+    {
+      "id": "cmd.cross_correlation_ccf",
+      "zh_cn": "互相关（CCF）",
+      "en_us": "Cross Correlation (CCF)"
+    },
+    {
+      "id": "cmd.cross_tabulation_tally",
+      "zh_cn": "交叉表 / Tally",
+      "en_us": "Cross Tabulation / Tally"
+    },
+    {
+      "id": "cmd.warranty_summary_2",
+      "zh_cn": "保修摘要",
+      "en_us": "Warranty Summary"
+    },
+    {
+      "id": "cmd.contingency_table_chi_square",
+      "zh_cn": "列联表卡方",
+      "en_us": "Contingency Table Chi-Square"
+    },
+    {
+      "id": "cmd.area_chart",
+      "zh_cn": "区域图",
+      "en_us": "Area Chart"
+    },
+    {
+      "id": "cmd.interval_censored_kaplan_meier",
+      "zh_cn": "区间删失 Kaplan–Meier",
+      "en_us": "Interval-Censored Kaplan-Meier"
+    },
+    {
+      "id": "cmd.1_sample_z_test",
+      "zh_cn": "单样本 Z 检验",
+      "en_us": "1-Sample Z-Test"
+    },
+    {
+      "id": "cmd.1_sample_poisson_rate",
+      "zh_cn": "单样本泊松率",
+      "en_us": "1-Sample Poisson Rate"
+    },
+    {
+      "id": "cmd.1_sample_poisson_rate_test",
+      "zh_cn": "单样本泊松率检验",
+      "en_us": "1-Sample Poisson Rate Test"
+    },
+    {
+      "id": "cmd.1_sample_equivalence_test",
+      "zh_cn": "单样本等价性检验",
+      "en_us": "1-Sample Equivalence Test"
+    },
+    {
+      "id": "cmd.1_proportion_equivalence_test",
+      "zh_cn": "单比例等价性检验",
+      "en_us": "1-Proportion Equivalence Test"
+    },
+    {
+      "id": "cmd.chi_square_goodness_of_fit",
+      "zh_cn": "卡方拟合优度",
+      "en_us": "Chi-Square Goodness of Fit"
+    },
+    {
+      "id": "cmd.2_sample_mean_ratio_equivalence_test",
+      "zh_cn": "双样本均值比等价性检验",
+      "en_us": "2-Sample Mean Ratio Equivalence Test"
+    },
+    {
+      "id": "cmd.2_sample_poisson_rate",
+      "zh_cn": "双样本泊松率",
+      "en_us": "2-Sample Poisson Rate"
+    },
+    {
+      "id": "cmd.2_sample_poisson_rate_test",
+      "zh_cn": "双样本泊松率检验",
+      "en_us": "2-Sample Poisson Rate Test"
+    },
+    {
+      "id": "cmd.2_sample_equivalence_test",
+      "zh_cn": "双样本等价性检验",
+      "en_us": "2-Sample Equivalence Test"
+    },
+    {
+      "id": "cmd.variability_chart",
+      "zh_cn": "变异性图",
+      "en_us": "Variability Chart"
+    },
+    {
+      "id": "cmd.reliability_analysis_kaplan_meier_weibull",
+      "zh_cn": "可靠性分析（Kaplan-Meier / Weibull）",
+      "en_us": "Reliability Analysis (Kaplan-Meier / Weibull)"
+    },
+    {
+      "id": "cmd.response_surface_analysis_rsm",
+      "zh_cn": "响应曲面分析（RSM）",
+      "en_us": "Response Surface Analysis (RSM)"
+    },
+    {
+      "id": "cmd.cause_and_effect_diagram_fishbone",
+      "zh_cn": "因果图（鱼骨）",
+      "en_us": "Cause-and-Effect Diagram (Fishbone)"
+    },
+    {
+      "id": "cmd.analysis_of_means_anom",
+      "zh_cn": "均值分析 (ANOM)",
+      "en_us": "Analysis of Means (ANOM)"
+    },
+    {
+      "id": "cmd.multivariate_ewma",
+      "zh_cn": "多元 EWMA",
+      "en_us": "Multivariate EWMA"
+    },
+    {
+      "id": "cmd.seasonal_forecast",
+      "zh_cn": "季节性预测",
+      "en_us": "Seasonal Forecast"
+    },
+    {
+      "id": "cmd.tolerance_interval",
+      "zh_cn": "容差区间",
+      "en_us": "Tolerance Interval"
+    },
+    {
+      "id": "cmd.hierarchical_clustering_observations",
+      "zh_cn": "层次聚类（观测）",
+      "en_us": "Hierarchical Clustering (Observations)"
+    },
+    {
+      "id": "cmd.attribute_single_sampling",
+      "zh_cn": "属性一次抽样",
+      "en_us": "Attribute Single Sampling"
+    },
+    {
+      "id": "cmd.generalized_variance_s_multivariate_chart",
+      "zh_cn": "广义方差 |S| 多元控制图",
+      "en_us": "Generalized Variance |S| Multivariate Chart"
+    },
+    {
+      "id": "cmd.generalized_variance_chart",
+      "zh_cn": "广义方差图",
+      "en_us": "Generalized Variance Chart"
+    },
+    {
+      "id": "cmd.outlier_test",
+      "zh_cn": "异常值检验",
+      "en_us": "Outlier Test"
+    },
+    {
+      "id": "cmd.variance_test",
+      "zh_cn": "方差检验",
+      "en_us": "Variance Test"
+    },
+    {
+      "id": "cmd.time_series_smoothing",
+      "zh_cn": "时间序列平滑",
+      "en_us": "Time Series Smoothing"
+    },
+    {
+      "id": "cmd.display_descriptive_statistics",
+      "zh_cn": "显示描述性统计",
+      "en_us": "Display Descriptive Statistics"
+    },
+    {
+      "id": "cmd.ordinal_logistic_regression",
+      "zh_cn": "有序 Logistic 回归",
+      "en_us": "Ordinal Logistic Regression"
+    },
+    {
+      "id": "cmd.pareto_chart",
+      "zh_cn": "柏拉图",
+      "en_us": "Pareto Chart"
+    },
+    {
+      "id": "cmd.normal_capability",
+      "zh_cn": "正态过程能力",
+      "en_us": "Normal Capability"
+    },
+    {
+      "id": "cmd.normal_capability_analysis",
+      "zh_cn": "正态过程能力分析",
+      "en_us": "Normal Capability Analysis"
+    },
+    {
+      "id": "cmd.poisson_goodness_of_fit",
+      "zh_cn": "泊松拟合优度",
+      "en_us": "Poisson Goodness of Fit"
+    },
+    {
+      "id": "cmd.poisson_capability",
+      "zh_cn": "泊松过程能力",
+      "en_us": "Poisson Capability"
+    },
+    {
+      "id": "cmd.poisson_capability_analysis",
+      "zh_cn": "泊松过程能力分析",
+      "en_us": "Poisson Capability Analysis"
+    },
+    {
+      "id": "cmd.runs_test",
+      "zh_cn": "游程检验",
+      "en_us": "Runs Test"
+    },
+    {
+      "id": "cmd.moving_average_chart",
+      "zh_cn": "移动平均控制图",
+      "en_us": "Moving Average Chart"
+    },
+    {
+      "id": "cmd.linear_discriminant_analysis",
+      "zh_cn": "线性判别分析",
+      "en_us": "Linear Discriminant Analysis"
+    },
+    {
+      "id": "cmd.linear_regression",
+      "zh_cn": "线性回归",
+      "en_us": "Linear Regression"
+    },
+    {
+      "id": "cmd.between_within_capability",
+      "zh_cn": "组间/组内过程能力",
+      "en_us": "Between/Within Capability"
+    },
+    {
+      "id": "cmd.between_within_capability_analysis",
+      "zh_cn": "组间/组内过程能力分析",
+      "en_us": "Between/Within Capability Analysis"
+    },
+    {
+      "id": "cmd.acf_and_pacf",
+      "zh_cn": "自相关与偏自相关",
+      "en_us": "ACF and PACF"
+    },
+    {
+      "id": "cmd.capability_sixpack",
+      "zh_cn": "过程能力 Sixpack",
+      "en_us": "Capability Sixpack"
+    },
+    {
+      "id": "cmd.paired_equivalence_test",
+      "zh_cn": "配对等价性检验",
+      "en_us": "Paired Equivalence Test"
+    },
+    {
+      "id": "cmd.nonnormal_capability_analysis",
+      "zh_cn": "非正态过程能力分析",
+      "en_us": "Nonnormal Capability Analysis"
+    },
+    {
+      "id": "dlg.anova_groups_doe_factors_k",
+      "zh_cn": "ANOVA 组数 / DOE 因子数 k",
+      "en_us": "ANOVA groups / DOE factors k"
+    },
+    {
+      "id": "dlg.alpha",
+      "zh_cn": "Alpha",
+      "en_us": "Alpha"
+    },
+    {
+      "id": "dlg.beta",
+      "zh_cn": "Beta",
+      "en_us": "Beta"
+    },
+    {
+      "id": "dlg.by_variable",
+      "zh_cn": "By 变量",
+      "en_us": "By variable"
+    },
+    {
+      "id": "dlg.cusum_does_not_use_shewhart_special_cause_rules_",
+      "zh_cn": "CUSUM 不使用 Shewhart 特殊原因规则（单点超出 3σ 控制限等），改为报告上侧/下侧累计和的首次信号。",
+      "en_us": "CUSUM does not use Shewhart special-cause rules (e.g. one point beyond 3σ); instead report first upper/lower CUSUM signal."
+    },
+    {
+      "id": "dlg.cusum_uses_dedicated_signals_shewhart_special_ca",
+      "zh_cn": "CUSUM 使用专用信号，不勾选 Shewhart 特殊原因规则。",
+      "en_us": "CUSUM uses dedicated signals; Shewhart special-cause rules are not selected."
+    },
+    {
+      "id": "dlg.doe_fraction_p_0_full_factorial",
+      "zh_cn": "DOE 部分析因 p（0=全因子）",
+      "en_us": "DOE fraction p (0 = full factorial)"
+    },
+    {
+      "id": "dlg.gamma",
+      "zh_cn": "Gamma",
+      "en_us": "Gamma"
+    },
+    {
+      "id": "dlg.gamma_double_exponential",
+      "zh_cn": "Gamma（双指数）",
+      "en_us": "Gamma (double exponential)"
+    },
+    {
+      "id": "dlg.kappa_weight",
+      "zh_cn": "Kappa 权重",
+      "en_us": "Kappa Weight"
+    },
+    {
+      "id": "dlg.lsl",
+      "zh_cn": "LSL",
+      "en_us": "LSL"
+    },
+    {
+      "id": "dlg.lsl_optional",
+      "zh_cn": "LSL（可选）",
+      "en_us": "LSL (optional)"
+    },
+    {
+      "id": "dlg.lambda",
+      "zh_cn": "Lambda",
+      "en_us": "Lambda"
+    },
+    {
+      "id": "dlg.lambda_optional",
+      "zh_cn": "Lambda（可选）",
+      "en_us": "Lambda (optional)"
+    },
+    {
+      "id": "dlg.nelson_estimate_0_1",
+      "zh_cn": "Nelson estimate (0/1)",
+      "en_us": "Nelson estimate (0/1)"
+    },
+    {
+      "id": "dlg.other_merge_threshold_optional",
+      "zh_cn": "Other 合并阈值（可选 %）",
+      "en_us": "Other merge threshold (optional %)"
+    },
+    {
+      "id": "dlg.r_t_w",
+      "zh_cn": "R(T_w)",
+      "en_us": "R(T_w)"
+    },
+    {
+      "id": "dlg.target",
+      "zh_cn": "Target",
+      "en_us": "Target"
+    },
+    {
+      "id": "dlg.ucl_optional",
+      "zh_cn": "UCL（可选）",
+      "en_us": "UCL (optional)"
+    },
+    {
+      "id": "dlg.usl",
+      "zh_cn": "USL",
+      "en_us": "USL"
+    },
+    {
+      "id": "dlg.usl_optional",
+      "zh_cn": "USL（可选）",
+      "en_us": "USL (optional)"
+    },
+    {
+      "id": "dlg.x_variable",
+      "zh_cn": "X 变量",
+      "en_us": "X variable"
+    },
+    {
+      "id": "dlg.y_variable",
+      "zh_cn": "Y 变量",
+      "en_us": "Y variable"
+    },
+    {
+      "id": "dlg.z_variable",
+      "zh_cn": "Z 变量",
+      "en_us": "Z variable"
+    },
+    {
+      "id": "dlg.all_applicable_all_applicable_special_cause_rule",
+      "zh_cn": "all_applicable（全部适用特殊原因规则）",
+      "en_us": "all_applicable (all applicable special-cause rules)"
+    },
+    {
+      "id": "dlg.minitab_like_only_1_point_beyond_3_limits",
+      "zh_cn": "minitab_like（仅「单点超出 3σ 控制限」）",
+      "en_us": "minitab_like (only '1 point beyond 3σ limits')"
+    },
+    {
+      "id": "dlg.phase1_phase2",
+      "zh_cn": "phase1 / phase2",
+      "en_us": "phase1 / phase2"
+    },
+    {
+      "id": "dlg.label",
+      "zh_cn": "α",
+      "en_us": "α"
+    },
+    {
+      "id": "dlg.enter",
+      "zh_cn": "α enter",
+      "en_us": "α enter"
+    },
+    {
+      "id": "dlg.remove",
+      "zh_cn": "α remove",
+      "en_us": "α remove"
+    },
+    {
+      "id": "dlg.method",
+      "zh_cn": "σ 方法",
+      "en_us": "σ method"
+    },
+    {
+      "id": "dlg.3_paired_binary_columns",
+      "zh_cn": "≥3 列配对二元",
+      "en_us": "≥3 paired binary columns"
+    },
+    {
+      "id": "dlg.one_or_two_paired_columns",
+      "zh_cn": "一列或两列配对",
+      "en_us": "One or two paired columns"
+    },
+    {
+      "id": "dlg.upper",
+      "zh_cn": "上限",
+      "en_us": "Upper"
+    },
+    {
+      "id": "dlg.upper_empty_observed_max",
+      "zh_cn": "上限（可空，默认观测最大）",
+      "en_us": "Upper (empty = observed max)"
+    },
+    {
+      "id": "dlg.lower",
+      "zh_cn": "下限",
+      "en_us": "Lower"
+    },
+    {
+      "id": "dlg.lower_empty_observed_min",
+      "zh_cn": "下限（可空，默认观测最小）",
+      "en_us": "Lower (empty = observed min)"
+    },
+    {
+      "id": "dlg.nonconforming_count",
+      "zh_cn": "不合格品数",
+      "en_us": "Nonconforming count"
+    },
+    {
+      "id": "dlg.two_categorical_columns_2_2",
+      "zh_cn": "两列分类（2×2）",
+      "en_us": "Two categorical columns (2×2)"
+    },
+    {
+      "id": "dlg.two_independent_sample_columns",
+      "zh_cn": "两列独立样本",
+      "en_us": "Two independent sample columns"
+    },
+    {
+      "id": "dlg.two_paired_binary_outcome_columns",
+      "zh_cn": "两列配对二元结果",
+      "en_us": "Two paired binary outcome columns"
+    },
+    {
+      "id": "dlg.two_paired_sample_columns",
+      "zh_cn": "两列配对样本",
+      "en_us": "Two paired sample columns"
+    },
+    {
+      "id": "dlg.two_variances_equal_variance_method",
+      "zh_cn": "两方差 / 等方差方法",
+      "en_us": "Two-variances / equal-variance method"
+    },
+    {
+      "id": "dlg.center_points",
+      "zh_cn": "中心点数",
+      "en_us": "Center points"
+    },
+    {
+      "id": "dlg.centers_comma_empty_midpoints",
+      "zh_cn": "中心（逗号，可空=中点）",
+      "en_us": "Centers (comma; empty = midpoints)"
+    },
+    {
+      "id": "dlg.event_count",
+      "zh_cn": "事件数",
+      "en_us": "Event count"
+    },
+    {
+      "id": "dlg.event_level",
+      "zh_cn": "事件水平",
+      "en_us": "Event level"
+    },
+    {
+      "id": "dlg.binary_response",
+      "zh_cn": "二元响应",
+      "en_us": "Binary response"
+    },
+    {
+      "id": "dlg.task",
+      "zh_cn": "任务",
+      "en_us": "Task"
+    },
+    {
+      "id": "dlg.optimization_goal",
+      "zh_cn": "优化目标",
+      "en_us": "Optimization goal"
+    },
+    {
+      "id": "dlg.low_levels_comma_separated",
+      "zh_cn": "低水平（逗号分隔）",
+      "en_us": "Low levels (comma-separated)"
+    },
+    {
+      "id": "dlg.low_levels_comma_separated_optional",
+      "zh_cn": "低水平（逗号分隔，可选）",
+      "en_us": "Low levels (comma-separated, optional)"
+    },
+    {
+      "id": "dlg.low_levels_comma_separated_numbers",
+      "zh_cn": "低水平（逗号数值）",
+      "en_us": "Low levels (comma-separated numbers)"
+    },
+    {
+      "id": "dlg.low_levels_comma_may_be_empty",
+      "zh_cn": "低水平（逗号，可空）",
+      "en_us": "Low levels (comma; may be empty)"
+    },
+    {
+      "id": "dlg.warranty_window_t_w",
+      "zh_cn": "保修窗口 T_w",
+      "en_us": "Warranty window T_w"
+    },
+    {
+      "id": "dlg.principal_components_to_keep",
+      "zh_cn": "保留主成分数",
+      "en_us": "Principal components to keep"
+    },
+    {
+      "id": "dlg.candidate_predictors",
+      "zh_cn": "候选预测变量",
+      "en_us": "Candidate predictors"
+    },
+    {
+      "id": "dlg.hypothesized_median_0",
+      "zh_cn": "假设中位数 η0",
+      "en_us": "Hypothesized median η0"
+    },
+    {
+      "id": "dlg.hypothesized_rate",
+      "zh_cn": "假设发生率",
+      "en_us": "Hypothesized rate"
+    },
+    {
+      "id": "dlg.hypothesized_mean",
+      "zh_cn": "假设均值",
+      "en_us": "Hypothesized mean"
+    },
+    {
+      "id": "dlg.hypothesized_variance_1_variance",
+      "zh_cn": "假设方差（一方差）",
+      "en_us": "Hypothesized variance (1-variance)"
+    },
+    {
+      "id": "dlg.hypothesized_proportion",
+      "zh_cn": "假设比例",
+      "en_us": "Hypothesized proportion"
+    },
+    {
+      "id": "dlg.partial_correlation",
+      "zh_cn": "偏相关",
+      "en_us": "Partial correlation"
+    },
+    {
+      "id": "dlg.allow_axial_points_beyond_range_ccc",
+      "zh_cn": "允许超范围星点(CCC)",
+      "en_us": "Allow axial points beyond range (CCC)"
+    },
+    {
+      "id": "dlg.click_a_role_box_on_the_right_then_select_or_dou",
+      "zh_cn": "先点击右侧角色框，再点“选择 >”或双击左侧列。",
+      "en_us": "Click a role box on the right, then Select > or double-click a column."
+    },
+    {
+      "id": "dlg.select_all",
+      "zh_cn": "全选",
+      "en_us": "Select all"
+    },
+    {
+      "id": "dlg.tolerance",
+      "zh_cn": "公差",
+      "en_us": "Tolerance"
+    },
+    {
+      "id": "dlg.decision_interval_h",
+      "zh_cn": "决策间隔 h",
+      "en_us": "Decision interval h"
+    },
+    {
+      "id": "dlg.distribution",
+      "zh_cn": "分布",
+      "en_us": "Distribution"
+    },
+    {
+      "id": "dlg.fractional_quantile_threshold",
+      "zh_cn": "分数分位阈值",
+      "en_us": "Fractional quantile threshold"
+    },
+    {
+      "id": "dlg.analysis_settings",
+      "zh_cn": "分析设置",
+      "en_us": "Analysis settings"
+    },
+    {
+      "id": "dlg.bins_0_automatic",
+      "zh_cn": "分箱数（0=自动）",
+      "en_us": "Bins (0 = automatic)"
+    },
+    {
+      "id": "dlg.categorical",
+      "zh_cn": "分类",
+      "en_us": "Categorical"
+    },
+    {
+      "id": "dlg.categorical_column",
+      "zh_cn": "分类列",
+      "en_us": "Categorical column"
+    },
+    {
+      "id": "dlg.categorical_variable",
+      "zh_cn": "分类变量",
+      "en_us": "Categorical variable"
+    },
+    {
+      "id": "dlg.group",
+      "zh_cn": "分组",
+      "en_us": "Group"
+    },
+    {
+      "id": "dlg.grouping_column",
+      "zh_cn": "分组列",
+      "en_us": "Grouping column"
+    },
+    {
+      "id": "dlg.grouping_column_log_rank_optional",
+      "zh_cn": "分组列（Log-rank，可选）",
+      "en_us": "Grouping column (Log-rank, optional)"
+    },
+    {
+      "id": "dlg.grouping_column_k_group_equal_variances",
+      "zh_cn": "分组列（k 组等方差）",
+      "en_us": "Grouping column (k-group equal variances)"
+    },
+    {
+      "id": "dlg.grouping_column_optional",
+      "zh_cn": "分组列（可选）",
+      "en_us": "Grouping column (optional)"
+    },
+    {
+      "id": "dlg.grouping_variable",
+      "zh_cn": "分组变量",
+      "en_us": "Grouping variable"
+    },
+    {
+      "id": "dlg.grouping_variable_in_plot_color",
+      "zh_cn": "分组变量（图内着色）",
+      "en_us": "Grouping variable (in-plot color)"
+    },
+    {
+      "id": "dlg.facet_variable_multi_panel",
+      "zh_cn": "分面变量（多面板）",
+      "en_us": "Facet variable (multi-panel)"
+    },
+    {
+      "id": "dlg.max_facet_panels",
+      "zh_cn": "分面最大面板数",
+      "en_us": "Max facet panels"
+    },
+    {
+      "id": "dlg.clusters_k",
+      "zh_cn": "切簇数 k",
+      "en_us": "Clusters k"
+    },
+    {
+      "id": "dlg.column_categorical_column",
+      "zh_cn": "列分类列",
+      "en_us": "Column categorical column"
+    },
+    {
+      "id": "dlg.column_category",
+      "zh_cn": "列类别",
+      "en_us": "Column category"
+    },
+    {
+      "id": "dlg.column_type_is_1_which_does_not_fully_match_the_",
+      "zh_cn": "列类型为“%1”，与角色建议的类型（%2）不完全匹配；命令仍会在提交时进行最终校验。",
+      "en_us": "Column type is “%1”, which does not fully match the role suggestion (%2); the command still performs final validation on submit."
+    },
+    {
+      "id": "dlg.censoring_count",
+      "zh_cn": "删失数",
+      "en_us": "Censoring count"
+    },
+    {
+      "id": "dlg.censoring_type_column_exact_right_left_interval_",
+      "zh_cn": "删失类型列（exact/right/left/interval，可选）",
+      "en_us": "Censoring type column (exact/right/left/interval, optional)"
+    },
+    {
+      "id": "dlg.checked_all_applicable_defaults_decided_by_defau",
+      "zh_cn": "勾选=全部适用默认 → 由「规则默认策略」决定（all_applicable 或 minitab_like）。已选 %1 / %2。",
+      "en_us": "Checked = all applicable defaults → decided by Default rule policy (all_applicable or minitab_like). Selected %1 / %2."
+    },
+    {
+      "id": "dlg.block",
+      "zh_cn": "区组",
+      "en_us": "Block"
+    },
+    {
+      "id": "dlg.number_of_blocks",
+      "zh_cn": "区组数",
+      "en_us": "Number of blocks"
+    },
+    {
+      "id": "dlg.interval_right_column_required_for_interval_rows",
+      "zh_cn": "区间右界列（interval 行必填）",
+      "en_us": "Interval right column (required for interval rows)"
+    },
+    {
+      "id": "dlg.interval_right_r_empty_inf_right_censored",
+      "zh_cn": "区间右端 R（空/Inf=右删失）",
+      "en_us": "Interval right R (empty/Inf = right-censored)"
+    },
+    {
+      "id": "dlg.interval_left_column_required_for_interval_rows",
+      "zh_cn": "区间左界列（interval 行必填）",
+      "en_us": "Interval left column (required for interval rows)"
+    },
+    {
+      "id": "dlg.interval_left_l",
+      "zh_cn": "区间左端 L",
+      "en_us": "Interval left L"
+    },
+    {
+      "id": "dlg.interval_direction",
+      "zh_cn": "区间方向",
+      "en_us": "Interval direction"
+    },
+    {
+      "id": "dlg.units_column",
+      "zh_cn": "单位数列",
+      "en_us": "Units column"
+    },
+    {
+      "id": "dlg.units_column_2",
+      "zh_cn": "单位数（列）",
+      "en_us": "Units (column)"
+    },
+    {
+      "id": "dlg.units_comma_may_be_empty",
+      "zh_cn": "单位（逗号，可空）",
+      "en_us": "Units (comma; may be empty)"
+    },
+    {
+      "id": "dlg.historical_sigma",
+      "zh_cn": "历史 Sigma",
+      "en_us": "Historical Sigma"
+    },
+    {
+      "id": "dlg.historical_sigma_z",
+      "zh_cn": "历史 Sigma Z",
+      "en_us": "Historical Sigma Z"
+    },
+    {
+      "id": "dlg.historical_sigma_optional",
+      "zh_cn": "历史 Sigma（可选）",
+      "en_us": "Historical Sigma (optional)"
+    },
+    {
+      "id": "dlg.historical_center_line",
+      "zh_cn": "历史中心线",
+      "en_us": "Historical center line"
+    },
+    {
+      "id": "dlg.historical_mean",
+      "zh_cn": "历史均值",
+      "en_us": "Historical mean"
+    },
+    {
+      "id": "dlg.historical_mean_optional",
+      "zh_cn": "历史均值（可选）",
+      "en_us": "Historical mean (optional)"
+    },
+    {
+      "id": "dlg.cause_column",
+      "zh_cn": "原因列",
+      "en_us": "Cause column"
+    },
+    {
+      "id": "dlg.reference_value_k",
+      "zh_cn": "参考值 k",
+      "en_us": "Reference value k"
+    },
+    {
+      "id": "dlg.reference_column_linearity",
+      "zh_cn": "参考值列（Linearity）",
+      "en_us": "Reference column (Linearity)"
+    },
+    {
+      "id": "dlg.cancel",
+      "zh_cn": "取消",
+      "en_us": "Cancel"
+    },
+    {
+      "id": "dlg.variant_ccf_cci_ccc",
+      "zh_cn": "变体 ccf/cci/ccc",
+      "en_us": "Variant ccf/cci/ccc"
+    },
+    {
+      "id": "dlg.transformation",
+      "zh_cn": "变换",
+      "en_us": "Transformation"
+    },
+    {
+      "id": "dlg.transformation_method",
+      "zh_cn": "变换方法",
+      "en_us": "Transformation method"
+    },
+    {
+      "id": "dlg.variable",
+      "zh_cn": "变量",
+      "en_us": "Variable"
+    },
+    {
+      "id": "dlg.variables_multi",
+      "zh_cn": "变量（多列）",
+      "en_us": "Variables (multi)"
+    },
+    {
+      "id": "dlg.variables_first_response_rest_predictors",
+      "zh_cn": "变量（第一列响应，其余为预测变量）",
+      "en_us": "Variables (first = response; rest = predictors)"
+    },
+    {
+      "id": "dlg.variables_at_least_two",
+      "zh_cn": "变量（至少两列）",
+      "en_us": "Variables (at least two)"
+    },
+    {
+      "id": "dlg.per_response_objectives",
+      "zh_cn": "各响应独立目标",
+      "en_us": "Per-response objectives"
+    },
+    {
+      "id": "dlg.response",
+      "zh_cn": "响应",
+      "en_us": "Response"
+    },
+    {
+      "id": "dlg.response_columns_multi",
+      "zh_cn": "响应列（可多选）",
+      "en_us": "Response columns (multi)"
+    },
+    {
+      "id": "dlg.response_column_optional_for_response_analysis",
+      "zh_cn": "响应列（可选，选择后进行响应分析）",
+      "en_us": "Response column (optional; for response analysis)"
+    },
+    {
+      "id": "dlg.response_variable",
+      "zh_cn": "响应变量",
+      "en_us": "Response variable"
+    },
+    {
+      "id": "dlg.regression_specification",
+      "zh_cn": "回归规格",
+      "en_us": "Regression specification"
+    },
+    {
+      "id": "dlg.factor_a",
+      "zh_cn": "因子 A",
+      "en_us": "Factor A"
+    },
+    {
+      "id": "dlg.factor_b",
+      "zh_cn": "因子 B",
+      "en_us": "Factor B"
+    },
+    {
+      "id": "dlg.factor_grouping_column",
+      "zh_cn": "因子/分组列",
+      "en_us": "Factor / grouping column"
+    },
+    {
+      "id": "dlg.factor_names_comma_separated",
+      "zh_cn": "因子名（逗号分隔）",
+      "en_us": "Factor names (comma-separated)"
+    },
+    {
+      "id": "dlg.factor_coding",
+      "zh_cn": "因子编码",
+      "en_us": "Factor coding"
+    },
+    {
+      "id": "dlg.factors_1_2_columns",
+      "zh_cn": "因子（1～2 列）",
+      "en_us": "Factors (1–2 columns)"
+    },
+    {
+      "id": "dlg.factors_2_4_columns",
+      "zh_cn": "因子（2～4 列）",
+      "en_us": "Factors (2–4 columns)"
+    },
+    {
+      "id": "dlg.factors_2",
+      "zh_cn": "因子（≥2）",
+      "en_us": "Factors (≥2)"
+    },
+    {
+      "id": "dlg.factor_ids_comma",
+      "zh_cn": "因素 ID（逗号）",
+      "en_us": "Factor IDs (comma)"
+    },
+    {
+      "id": "dlg.factor_ids_comma_3",
+      "zh_cn": "因素 ID（逗号，≥3）",
+      "en_us": "Factor IDs (comma, ≥3)"
+    },
+    {
+      "id": "dlg.factor_names_comma_may_be_empty",
+      "zh_cn": "因素名（逗号，可空）",
+      "en_us": "Factor names (comma; may be empty)"
+    },
+    {
+      "id": "dlg.hold_levels_name_value",
+      "zh_cn": "固定水平（name=value;…）",
+      "en_us": "Hold levels (name=value;…)"
+    },
+    {
+      "id": "dlg.treatment",
+      "zh_cn": "处理",
+      "en_us": "Treatment"
+    },
+    {
+      "id": "dlg.alternative_direction",
+      "zh_cn": "备择方向",
+      "en_us": "Alternative direction"
+    },
+    {
+      "id": "dlg.multiple_comparisons",
+      "zh_cn": "多重比较",
+      "en_us": "Multiple comparisons"
+    },
+    {
+      "id": "dlg.failure_indicator_1_fail_0_censor_or_use_censori",
+      "zh_cn": "失效指示（1=失效，0=删失；可与删失类型列二选一）",
+      "en_us": "Failure indicator (1=fail, 0=censor; or use censoring-type column)"
+    },
+    {
+      "id": "dlg.failure_mode_column_optional",
+      "zh_cn": "失效模式列（可选）",
+      "en_us": "Failure mode column (optional)"
+    },
+    {
+      "id": "dlg.subgroup",
+      "zh_cn": "子组",
+      "en_us": "Subgroup"
+    },
+    {
+      "id": "dlg.subgroup_column",
+      "zh_cn": "子组列",
+      "en_us": "Subgroup column"
+    },
+    {
+      "id": "dlg.subgroup_size",
+      "zh_cn": "子组大小",
+      "en_us": "Subgroup size"
+    },
+    {
+      "id": "dlg.subgroup_size_n",
+      "zh_cn": "子组大小 n",
+      "en_us": "Subgroup size n"
+    },
+    {
+      "id": "dlg.seasonal_period",
+      "zh_cn": "季节周期",
+      "en_us": "Seasonal period"
+    },
+    {
+      "id": "dlg.lifetime_time",
+      "zh_cn": "寿命/时间",
+      "en_us": "Lifetime / time"
+    },
+    {
+      "id": "dlg.small_category_merge_threshold",
+      "zh_cn": "小类别合并阈值 %",
+      "en_us": "Small-category merge threshold %"
+    },
+    {
+      "id": "dlg.worksheet_columns",
+      "zh_cn": "工作表列",
+      "en_us": "Worksheet columns"
+    },
+    {
+      "id": "dlg.imported_factor_columns_optional_multi",
+      "zh_cn": "已导入因子列（可选，多选）",
+      "en_us": "Imported factor columns (optional, multi)"
+    },
+    {
+      "id": "dlg.imported_factor_columns_multi",
+      "zh_cn": "已导入因子列（多选）",
+      "en_us": "Imported factor columns (multi)"
+    },
+    {
+      "id": "dlg.explicitly_checked_1_2_overrides_policy_dropdown",
+      "zh_cn": "已显式勾选 %1 / %2 条（覆盖策略下拉）。多规则提高误报风险。",
+      "en_us": "Explicitly checked %1 / %2 (overrides policy dropdown). More rules raise false-alarm risk."
+    },
+    {
+      "id": "dlg.known_standard_deviation",
+      "zh_cn": "已知标准差 σ",
+      "en_us": "Known standard deviation σ"
+    },
+    {
+      "id": "dlg.constant_k_criterion_value",
+      "zh_cn": "常数 K（criterion=value）",
+      "en_us": "Constant K (criterion=value)"
+    },
+    {
+      "id": "dlg.series",
+      "zh_cn": "序列",
+      "en_us": "Series"
+    },
+    {
+      "id": "dlg.series_x",
+      "zh_cn": "序列 X",
+      "en_us": "Series X"
+    },
+    {
+      "id": "dlg.series_y",
+      "zh_cn": "序列 Y",
+      "en_us": "Series Y"
+    },
+    {
+      "id": "dlg.restore_defaults",
+      "zh_cn": "恢复默认",
+      "en_us": "Restore defaults"
+    },
+    {
+      "id": "dlg.acceptance_number_c",
+      "zh_cn": "接收数 c",
+      "en_us": "Acceptance number c"
+    },
+    {
+      "id": "dlg.control_limit_multiplier",
+      "zh_cn": "控制限倍数",
+      "en_us": "Control-limit multiplier"
+    },
+    {
+      "id": "dlg.search_columns",
+      "zh_cn": "搜索列名…",
+      "en_us": "Search columns…"
+    },
+    {
+      "id": "dlg.operator",
+      "zh_cn": "操作员",
+      "en_us": "Operator"
+    },
+    {
+      "id": "dlg.operator_2",
+      "zh_cn": "操作者",
+      "en_us": "Operator"
+    },
+    {
+      "id": "dlg.convergence_threshold",
+      "zh_cn": "收敛阈值",
+      "en_us": "Convergence threshold"
+    },
+    {
+      "id": "dlg.effect_title",
+      "zh_cn": "效应标题",
+      "en_us": "Effect title"
+    },
+    {
+      "id": "dlg.effect_size_coverage_p_equivalence_half_width_un",
+      "zh_cn": "效应量 / 覆盖率 P / 等价半宽(σ单位)",
+      "en_us": "Effect size / coverage P / equivalence half-width (σ units)"
+    },
+    {
+      "id": "dlg.numeric",
+      "zh_cn": "数值",
+      "en_us": "Numeric"
+    },
+    {
+      "id": "dlg.numeric_variable",
+      "zh_cn": "数值变量",
+      "en_us": "Numeric variable"
+    },
+    {
+      "id": "dlg.numeric_variables_multi",
+      "zh_cn": "数值变量（可多选）",
+      "en_us": "Numeric variables (multi)"
+    },
+    {
+      "id": "dlg.numeric_series_one_column",
+      "zh_cn": "数值序列（一列）",
+      "en_us": "Numeric series (one column)"
+    },
+    {
+      "id": "dlg.numeric_observations_one_column",
+      "zh_cn": "数值观测（一列）",
+      "en_us": "Numeric observations (one column)"
+    },
+    {
+      "id": "dlg.numeric_predictors",
+      "zh_cn": "数值预测变量",
+      "en_us": "Numeric predictors"
+    },
+    {
+      "id": "dlg.variance_method",
+      "zh_cn": "方差方法",
+      "en_us": "Variance method"
+    },
+    {
+      "id": "dlg.method_2",
+      "zh_cn": "方法",
+      "en_us": "Method"
+    },
+    {
+      "id": "dlg.family_wise_error_rate",
+      "zh_cn": "族误差率 α",
+      "en_us": "Family-wise error rate α"
+    },
+    {
+      "id": "dlg.time",
+      "zh_cn": "时间",
+      "en_us": "Time"
+    },
+    {
+      "id": "dlg.time_column_optional",
+      "zh_cn": "时间列（可选）",
+      "en_us": "Time column (optional)"
+    },
+    {
+      "id": "dlg.time_unit",
+      "zh_cn": "时间单位",
+      "en_us": "Time unit"
+    },
+    {
+      "id": "dlg.time_variable",
+      "zh_cn": "时间变量",
+      "en_us": "Time variable"
+    },
+    {
+      "id": "dlg.time_series_values",
+      "zh_cn": "时间序列值",
+      "en_us": "Time series values"
+    },
+    {
+      "id": "dlg.prediction_metric_true_false",
+      "zh_cn": "是否预测口径 true/false",
+      "en_us": "Prediction metric true/false"
+    },
+    {
+      "id": "dlg.significance_level",
+      "zh_cn": "显著性水平",
+      "en_us": "Significance level"
+    },
+    {
+      "id": "dlg.significance_level_2",
+      "zh_cn": "显著性水平 α",
+      "en_us": "Significance level α"
+    },
+    {
+      "id": "dlg.exposure_column_optional_column_sum_preferred_ov",
+      "zh_cn": "暴露量列（可选，列求和优先于标量）",
+      "en_us": "Exposure column (optional; column sum preferred over scalar)"
+    },
+    {
+      "id": "dlg.exposure_column_optional_column_sum",
+      "zh_cn": "暴露量列（可选，列求和）",
+      "en_us": "Exposure column (optional; column sum)"
+    },
+    {
+      "id": "dlg.exposure_scalar_used_when_no_column",
+      "zh_cn": "暴露量标量（无列时使用）",
+      "en_us": "Exposure scalar (used when no column)"
+    },
+    {
+      "id": "dlg.maximize",
+      "zh_cn": "最大化",
+      "en_us": "Maximize"
+    },
+    {
+      "id": "dlg.max_depth",
+      "zh_cn": "最大深度",
+      "en_us": "Max depth"
+    },
+    {
+      "id": "dlg.max_lag_empty_automatic",
+      "zh_cn": "最大滞后（可空=自动）",
+      "en_us": "Max lag (empty = automatic)"
+    },
+    {
+      "id": "dlg.max_lag_optional",
+      "zh_cn": "最大滞后（可空）",
+      "en_us": "Max lag (optional)"
+    },
+    {
+      "id": "dlg.max_iterations",
+      "zh_cn": "最大迭代",
+      "en_us": "Max iterations"
+    },
+    {
+      "id": "dlg.max_iterations_2",
+      "zh_cn": "最大迭代次数",
+      "en_us": "Max iterations"
+    },
+    {
+      "id": "dlg.minimize",
+      "zh_cn": "最小化",
+      "en_us": "Minimize"
+    },
+    {
+      "id": "dlg.min_leaf_samples",
+      "zh_cn": "最小叶样本",
+      "en_us": "Min leaf samples"
+    },
+    {
+      "id": "dlg.ordinal_response",
+      "zh_cn": "有序响应",
+      "en_us": "Ordinal response"
+    },
+    {
+      "id": "dlg.ordinal_ratings_compute_kendall_w_when_true",
+      "zh_cn": "有序评级（true 时计算 Kendall W/τ）",
+      "en_us": "Ordinal ratings (compute Kendall W/τ when true)"
+    },
+    {
+      "id": "dlg.effective_observations",
+      "zh_cn": "有效观测数",
+      "en_us": "Effective observations"
+    },
+    {
+      "id": "dlg.expected_proportions_comma_optional",
+      "zh_cn": "期望比例（逗号，可选）",
+      "en_us": "Expected proportions (comma, optional)"
+    },
+    {
+      "id": "dlg.unknown",
+      "zh_cn": "未知",
+      "en_us": "Unknown"
+    },
+    {
+      "id": "dlg.weight",
+      "zh_cn": "权重",
+      "en_us": "Weight"
+    },
+    {
+      "id": "dlg.weight_count",
+      "zh_cn": "权重/计数",
+      "en_us": "Weight / count"
+    },
+    {
+      "id": "dlg.standardize",
+      "zh_cn": "标准化",
+      "en_us": "Standardize"
+    },
+    {
+      "id": "dlg.standard_optional",
+      "zh_cn": "标准（可选）",
+      "en_us": "Standard (optional)"
+    },
+    {
+      "id": "dlg.label_variable",
+      "zh_cn": "标签变量",
+      "en_us": "Label variable"
+    },
+    {
+      "id": "dlg.number_of_trees",
+      "zh_cn": "树数",
+      "en_us": "Number of trees"
+    },
+    {
+      "id": "dlg.sample_size_n",
+      "zh_cn": "样本量 n",
+      "en_us": "Sample size n"
+    },
+    {
+      "id": "dlg.test_column_reference_column",
+      "zh_cn": "检验列 + 参考列",
+      "en_us": "Test column + reference column"
+    },
+    {
+      "id": "dlg.inspections_column",
+      "zh_cn": "检验数列",
+      "en_us": "Inspections column"
+    },
+    {
+      "id": "dlg.inspections_constant",
+      "zh_cn": "检验数常数",
+      "en_us": "Inspections constant"
+    },
+    {
+      "id": "dlg.inspections_column_2",
+      "zh_cn": "检验数（列）",
+      "en_us": "Inspections (column)"
+    },
+    {
+      "id": "dlg.model",
+      "zh_cn": "模型",
+      "en_us": "Model"
+    },
+    {
+      "id": "dlg.model_label",
+      "zh_cn": "模型标签",
+      "en_us": "Model label"
+    },
+    {
+      "id": "dlg.mode",
+      "zh_cn": "模式",
+      "en_us": "Mode"
+    },
+    {
+      "id": "dlg.positive_valued_variable",
+      "zh_cn": "正值变量",
+      "en_us": "Positive-valued variable"
+    },
+    {
+      "id": "dlg.this_rule_does_not_apply_to_the_current_control_",
+      "zh_cn": "此规则不适用于当前控制图，已置灰。",
+      "en_us": "This rule does not apply to the current control chart (disabled)."
+    },
+    {
+      "id": "dlg.this_role_allows_at_most_1_column_s",
+      "zh_cn": "此角色最多只能选择 %1 列。",
+      "en_us": "This role allows at most %1 column(s)."
+    },
+    {
+      "id": "dlg.this_role_requires_at_least_1_column_s",
+      "zh_cn": "此角色至少需要选择 %1 列。",
+      "en_us": "This role requires at least %1 column(s)."
+    },
+    {
+      "id": "dlg.units_per_subgroup",
+      "zh_cn": "每个子组单位数",
+      "en_us": "Units per subgroup"
+    },
+    {
+      "id": "dlg.max_samples_per_tree",
+      "zh_cn": "每树样本上限",
+      "en_us": "Max samples per tree"
+    },
+    {
+      "id": "dlg.proportion_variance",
+      "zh_cn": "比例方差",
+      "en_us": "Proportion variance"
+    },
+    {
+      "id": "dlg.ratio_equivalence_upper",
+      "zh_cn": "比值等价上限",
+      "en_us": "Ratio equivalence upper"
+    },
+    {
+      "id": "dlg.ratio_equivalence_lower",
+      "zh_cn": "比值等价下限",
+      "en_us": "Ratio equivalence lower"
+    },
+    {
+      "id": "dlg.comparison_criterion",
+      "zh_cn": "比较准则",
+      "en_us": "Comparison criterion"
+    },
+    {
+      "id": "dlg.comparison_measure",
+      "zh_cn": "比较量",
+      "en_us": "Comparison measure"
+    },
+    {
+      "id": "dlg.bubble_size_variable",
+      "zh_cn": "气泡大小变量",
+      "en_us": "Bubble size variable"
+    },
+    {
+      "id": "dlg.poisson_observation_length_l",
+      "zh_cn": "泊松观测长度 L",
+      "en_us": "Poisson observation length L"
+    },
+    {
+      "id": "dlg.measurement",
+      "zh_cn": "测量值",
+      "en_us": "Measurement"
+    },
+    {
+      "id": "dlg.clear",
+      "zh_cn": "清空",
+      "en_us": "Clear"
+    },
+    {
+      "id": "dlg.lag_empty_automatic",
+      "zh_cn": "滞后（可空=自动）",
+      "en_us": "Lag (empty = automatic)"
+    },
+    {
+      "id": "dlg.special_cause_tests",
+      "zh_cn": "特殊原因测试",
+      "en_us": "Special-cause tests"
+    },
+    {
+      "id": "dlg.generators_optional",
+      "zh_cn": "生成元（可选）",
+      "en_us": "Generators (optional)"
+    },
+    {
+      "id": "dlg.generators_empty_default_e_g_d_abc",
+      "zh_cn": "生成器（可空=默认；如 D=ABC）",
+      "en_us": "Generators (empty = default; e.g. D=ABC)"
+    },
+    {
+      "id": "dlg.generators_for_design_generation",
+      "zh_cn": "生成器（设计生成用）",
+      "en_us": "Generators (for design generation)"
+    },
+    {
+      "id": "dlg.target_2",
+      "zh_cn": "目标",
+      "en_us": "Target"
+    },
+    {
+      "id": "dlg.target_dpu",
+      "zh_cn": "目标 DPU",
+      "en_us": "Target DPU"
+    },
+    {
+      "id": "dlg.target_nonconforming_rate",
+      "zh_cn": "目标不合格品率",
+      "en_us": "Target nonconforming rate"
+    },
+    {
+      "id": "dlg.target_3",
+      "zh_cn": "目标值",
+      "en_us": "Target"
+    },
+    {
+      "id": "dlg.target_value_for_target_optimization",
+      "zh_cn": "目标值（目标优化时使用）",
+      "en_us": "Target value (for target optimization)"
+    },
+    {
+      "id": "dlg.target_power_or_tolerance_confidence",
+      "zh_cn": "目标功效或容差置信度",
+      "en_us": "Target power or tolerance confidence"
+    },
+    {
+      "id": "dlg.target_proportion",
+      "zh_cn": "目标比例",
+      "en_us": "Target proportion"
+    },
+    {
+      "id": "dlg.histogram_bins_optional",
+      "zh_cn": "直方图组数（可选）",
+      "en_us": "Histogram bins (optional)"
+    },
+    {
+      "id": "dlg.correlation_variables",
+      "zh_cn": "相关变量",
+      "en_us": "Correlation variables"
+    },
+    {
+      "id": "dlg.correlation_method",
+      "zh_cn": "相关方法",
+      "en_us": "Correlation method"
+    },
+    {
+      "id": "dlg.matrix_mode",
+      "zh_cn": "矩阵模式",
+      "en_us": "Matrix mode"
+    },
+    {
+      "id": "dlg.moving_range_length",
+      "zh_cn": "移动极差长度",
+      "en_us": "Moving-range length"
+    },
+    {
+      "id": "dlg.remove_selected",
+      "zh_cn": "移除选中列",
+      "en_us": "Remove selected"
+    },
+    {
+      "id": "dlg.window_width_w",
+      "zh_cn": "窗宽 w",
+      "en_us": "Window width w"
+    },
+    {
+      "id": "dlg.first_hypothesized_proportion_or_poisson_rate_to",
+      "zh_cn": "第一/假设比例或泊松率 / 容差 max k",
+      "en_us": "First/hypothesized proportion or Poisson rate / tolerance max k"
+    },
+    {
+      "id": "dlg.first_sample_measurement_column",
+      "zh_cn": "第一样本 / 测量列",
+      "en_us": "First sample / measurement column"
+    },
+    {
+      "id": "dlg.group_1_event_count",
+      "zh_cn": "第一组事件数",
+      "en_us": "Group 1 event count"
+    },
+    {
+      "id": "dlg.group_1_defect_count",
+      "zh_cn": "第一组缺陷数",
+      "en_us": "Group 1 defect count"
+    },
+    {
+      "id": "dlg.group_1_observation_length",
+      "zh_cn": "第一组观测长度",
+      "en_us": "Group 1 observation length"
+    },
+    {
+      "id": "dlg.group_1_trials",
+      "zh_cn": "第一组试验数",
+      "en_us": "Group 1 trials"
+    },
+    {
+      "id": "dlg.second_alternative_proportion_or_rate_ratio_1_2",
+      "zh_cn": "第二/备择比例或比较率 λ1/λ2",
+      "en_us": "Second/alternative proportion or rate ratio λ1/λ2"
+    },
+    {
+      "id": "dlg.second_sample_two_variances",
+      "zh_cn": "第二样本（两方差）",
+      "en_us": "Second sample (two variances)"
+    },
+    {
+      "id": "dlg.group_2_event_count",
+      "zh_cn": "第二组事件数",
+      "en_us": "Group 2 event count"
+    },
+    {
+      "id": "dlg.group_2_defect_count",
+      "zh_cn": "第二组缺陷数",
+      "en_us": "Group 2 defect count"
+    },
+    {
+      "id": "dlg.group_2_observation_length",
+      "zh_cn": "第二组观测长度",
+      "en_us": "Group 2 observation length"
+    },
+    {
+      "id": "dlg.group_2_trials",
+      "zh_cn": "第二组试验数",
+      "en_us": "Group 2 trials"
+    },
+    {
+      "id": "dlg.equivalence_upper",
+      "zh_cn": "等价上限",
+      "en_us": "Equivalence upper"
+    },
+    {
+      "id": "dlg.equivalence_lower",
+      "zh_cn": "等价下限",
+      "en_us": "Equivalence lower"
+    },
+    {
+      "id": "dlg.true_equivalence_difference_units",
+      "zh_cn": "等价真实差(σ单位)",
+      "en_us": "True equivalence difference (σ units)"
+    },
+    {
+      "id": "dlg.contour_x_factor_name",
+      "zh_cn": "等值线 X 因子名",
+      "en_us": "Contour X factor name"
+    },
+    {
+      "id": "dlg.contour_x_factor_empty_first",
+      "zh_cn": "等值线 X 因子（可空=第1个）",
+      "en_us": "Contour X factor (empty = first)"
+    },
+    {
+      "id": "dlg.contour_y_factor_name",
+      "zh_cn": "等值线 Y 因子名",
+      "en_us": "Contour Y factor name"
+    },
+    {
+      "id": "dlg.contour_y_factor_empty_second",
+      "zh_cn": "等值线 Y 因子（可空=第2个）",
+      "en_us": "Contour Y factor (empty = second)"
+    },
+    {
+      "id": "dlg.contour_levels",
+      "zh_cn": "等值线层数",
+      "en_us": "Contour levels"
+    },
+    {
+      "id": "dlg.clusters_k_2",
+      "zh_cn": "簇数 k",
+      "en_us": "Clusters k"
+    },
+    {
+      "id": "dlg.category",
+      "zh_cn": "类别",
+      "en_us": "Category"
+    },
+    {
+      "id": "dlg.category_column",
+      "zh_cn": "类别列",
+      "en_us": "Category column"
+    },
+    {
+      "id": "dlg.categorical_response",
+      "zh_cn": "类别响应",
+      "en_us": "Categorical response"
+    },
+    {
+      "id": "dlg.groups_optional",
+      "zh_cn": "组数（可选）",
+      "en_us": "Groups (optional)"
+    },
+    {
+      "id": "dlg.defect_count",
+      "zh_cn": "缺陷数",
+      "en_us": "Defect count"
+    },
+    {
+      "id": "dlg.defect_category",
+      "zh_cn": "缺陷类别",
+      "en_us": "Defect category"
+    },
+    {
+      "id": "dlg.confidence_level",
+      "zh_cn": "置信水平",
+      "en_us": "Confidence level"
+    },
+    {
+      "id": "dlg.confidence_level_2",
+      "zh_cn": "置信水平 (%)",
+      "en_us": "Confidence level (%)"
+    },
+    {
+      "id": "dlg.confidence_level_bandwidth",
+      "zh_cn": "置信水平（带宽）",
+      "en_us": "Confidence level (bandwidth)"
+    },
+    {
+      "id": "dlg.row_categorical_column",
+      "zh_cn": "行分类列",
+      "en_us": "Row categorical column"
+    },
+    {
+      "id": "dlg.row_category",
+      "zh_cn": "行类别",
+      "en_us": "Row category"
+    },
+    {
+      "id": "dlg.coverage",
+      "zh_cn": "覆盖率 (%)",
+      "en_us": "Coverage (%)"
+    },
+    {
+      "id": "dlg.observed_failures",
+      "zh_cn": "观察失效数",
+      "en_us": "Observed failures"
+    },
+    {
+      "id": "dlg.observation_length_column",
+      "zh_cn": "观测长度（列）",
+      "en_us": "Observation length (column)"
+    },
+    {
+      "id": "dlg.default_rule_policy",
+      "zh_cn": "规则默认策略",
+      "en_us": "Default rule policy"
+    },
+    {
+      "id": "dlg.count_column",
+      "zh_cn": "计数列",
+      "en_us": "Count column"
+    },
+    {
+      "id": "dlg.count_column_non_negative_integer",
+      "zh_cn": "计数列（非负整数）",
+      "en_us": "Count column (non-negative integer)"
+    },
+    {
+      "id": "dlg.count_response",
+      "zh_cn": "计数响应",
+      "en_us": "Count response"
+    },
+    {
+      "id": "dlg.design_center_comma_optional",
+      "zh_cn": "设计中心（逗号，可选）",
+      "en_us": "Design center (comma, optional)"
+    },
+    {
+      "id": "dlg.design_low_levels_comma_optional",
+      "zh_cn": "设计低水平（逗号，可选）",
+      "en_us": "Design low levels (comma, optional)"
+    },
+    {
+      "id": "dlg.design_family_ccd_bbd_optional",
+      "zh_cn": "设计族 ccd/bbd（可选）",
+      "en_us": "Design family ccd/bbd (optional)"
+    },
+    {
+      "id": "dlg.design_source_id_optional",
+      "zh_cn": "设计来源 ID（可选）",
+      "en_us": "Design source ID (optional)"
+    },
+    {
+      "id": "dlg.design_high_levels_comma_optional",
+      "zh_cn": "设计高水平（逗号，可选）",
+      "en_us": "Design high levels (comma, optional)"
+    },
+    {
+      "id": "dlg.appraiser",
+      "zh_cn": "评估者",
+      "en_us": "Appraiser"
+    },
+    {
+      "id": "dlg.rating",
+      "zh_cn": "评级",
+      "en_us": "Rating"
+    },
+    {
+      "id": "dlg.trials",
+      "zh_cn": "试验数",
+      "en_us": "Trials"
+    },
+    {
+      "id": "dlg.error_model",
+      "zh_cn": "误差模型",
+      "en_us": "Error model"
+    },
+    {
+      "id": "dlg.trend_model",
+      "zh_cn": "趋势模型",
+      "en_us": "Trend model"
+    },
+    {
+      "id": "dlg.process_sigma",
+      "zh_cn": "过程 Sigma",
+      "en_us": "Process Sigma"
+    },
+    {
+      "id": "dlg.process_variation_6_linearity_optional",
+      "zh_cn": "过程变差 6σ（Linearity 可选）",
+      "en_us": "Process variation 6σ (Linearity optional)"
+    },
+    {
+      "id": "dlg.run_analysis",
+      "zh_cn": "运行分析",
+      "en_us": "Run analysis"
+    },
+    {
+      "id": "dlg.connect_across_missing_gaps",
+      "zh_cn": "连接缺失间隔",
+      "en_us": "Connect across missing gaps"
+    },
+    {
+      "id": "dlg.select",
+      "zh_cn": "选择 >",
+      "en_us": "Select >"
+    },
+    {
+      "id": "dlg.after_selecting_multiple_responses_set_a_goal_an",
+      "zh_cn": "选择多个响应后，可为每个响应指定独立目标与权重。",
+      "en_us": "After selecting multiple responses, set a goal and weight for each."
+    },
+    {
+      "id": "dlg.model_selection_criterion",
+      "zh_cn": "选模准则",
+      "en_us": "Model-selection criterion"
+    },
+    {
+      "id": "dlg.part",
+      "zh_cn": "部件",
+      "en_us": "Part"
+    },
+    {
+      "id": "dlg.fraction_p_0_full_factorial",
+      "zh_cn": "部分析因 p（0=全因子）",
+      "en_us": "Fraction p (0 = full factorial)"
+    },
+    {
+      "id": "dlg.fraction_p_for_design_generation",
+      "zh_cn": "部分析因 p（设计生成用）",
+      "en_us": "Fraction p (for design generation)"
+    },
+    {
+      "id": "dlg.paired_variables_two_columns",
+      "zh_cn": "配对变量（两列）",
+      "en_us": "Paired variables (two columns)"
+    },
+    {
+      "id": "dlg.resamples_b",
+      "zh_cn": "重抽样次数 B",
+      "en_us": "Resamples B"
+    },
+    {
+      "id": "dlg.reset_defaults",
+      "zh_cn": "重置默认值",
+      "en_us": "Reset defaults"
+    },
+    {
+      "id": "dlg.interval_column",
+      "zh_cn": "间隔列",
+      "en_us": "Interval column"
+    },
+    {
+      "id": "dlg.stage_column",
+      "zh_cn": "阶段列",
+      "en_us": "Stage column"
+    },
+    {
+      "id": "dlg.additional_factors",
+      "zh_cn": "附加因子",
+      "en_us": "Additional factors"
+    },
+    {
+      "id": "dlg.randomize",
+      "zh_cn": "随机化",
+      "en_us": "Randomize"
+    },
+    {
+      "id": "dlg.random_seed",
+      "zh_cn": "随机种子",
+      "en_us": "Random seed"
+    },
+    {
+      "id": "dlg.part_2",
+      "zh_cn": "零件",
+      "en_us": "Part"
+    },
+    {
+      "id": "dlg.non_axis_factor_hold_levels_name_value_empty_cod",
+      "zh_cn": "非轴因子实际 hold（名=值;…，可空=编码0）",
+      "en_us": "Non-axis factor hold levels (name=value;…; empty = coded 0)"
+    },
+    {
+      "id": "dlg.order_time_variable",
+      "zh_cn": "顺序/时间变量",
+      "en_us": "Order / time variable"
+    },
+    {
+      "id": "dlg.predictor_numeric",
+      "zh_cn": "预测变量（数值）",
+      "en_us": "Predictor (numeric)"
+    },
+    {
+      "id": "dlg.forecast_periods",
+      "zh_cn": "预测期数",
+      "en_us": "Forecast periods"
+    },
+    {
+      "id": "dlg.high_levels_comma_separated",
+      "zh_cn": "高水平（逗号分隔）",
+      "en_us": "High levels (comma-separated)"
+    },
+    {
+      "id": "dlg.high_levels_comma_separated_optional",
+      "zh_cn": "高水平（逗号分隔，可选）",
+      "en_us": "High levels (comma-separated, optional)"
+    },
+    {
+      "id": "dlg.high_levels_comma_separated_numbers",
+      "zh_cn": "高水平（逗号数值）",
+      "en_us": "High levels (comma-separated numbers)"
+    },
+    {
+      "id": "dlg.high_levels_comma_may_be_empty",
+      "zh_cn": "高水平（逗号，可空）",
+      "en_us": "High levels (comma; may be empty)"
+    },
+    {
+      "id": "dlg.advanced_options",
+      "zh_cn": "高级选项",
+      "en_us": "Advanced options"
+    },
+    {
+      "id": "dlg.optional",
+      "zh_cn": "（可选）",
+      "en_us": " (optional)"
+    },
+    {
+      "id": "dlg.default",
+      "zh_cn": "，默认值：",
+      "en_us": ", default: "
+    },
+    {
+      "id": "dlg.log_rank_fine_gray",
+      "zh_cn": "分组列（Log-rank / Fine-Gray 二分类，可选）",
+      "en_us": "分组列（Log-rank / Fine-Gray 二分类，可选）"
+    },
+    {
+      "id": "dlg.fine_gray",
+      "zh_cn": "协变量列（Fine-Gray 连续，可选；优先于二分类）",
+      "en_us": "Covariate column (Fine-Gray continuous, optional; preferred over binary)"
+    },
+    {
+      "id": "dlg.fine_gray_2_ipcw",
+      "zh_cn": "协变量列（Fine-Gray 连续/多列，可选；≥2 列走多协变量 IPCW，优先于二分类）",
+      "en_us": "协变量列（Fine-Gray 连续/多列，可选；≥2 列走多协变量 IPCW，优先于二分类）"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+title_keys=489 header_keys=230 plain_keys=1009 axis_keys=0
+UNMAPPED_TITLES 1
+title	src/application/graph_service.cpp:2109	base=Hexbin	Hexbin（分面）
+UNMAPPED_HEADERS 0
+UNMAPPED_AXES 0
+UNMAPPED_DIAGS_UNIQUE 9
+diag	src/application/analysis_service.cpp:3449	拟合与诊断
+diag	src/application/analysis_service.cpp:3450	标准化残差
+diag	src/application/analysis_service.cpp:12352	T² 与 Q 残差
+diag	src/application/analysis_service.cpp:12353	T² 异常
+diag	src/application/analysis_service.cpp:12353	Q 残差
+diag	src/application/analysis_service.cpp:12353	Q 异常
+diag	src/application/analysis_service.cpp:12353	综合异常
+diag	src/application/doe_pages.cpp:404	纯误差与失拟
+diag	src/application/chart_pages.cpp:187	没有可显示的数据。
+DIAG_PREFIX_CLUSTERS
+  1	拟合与诊断
+  1	标准化残差
+  1	T² 与 Q 残
+  1	T² 异常
+  1	Q 残差
+  1	Q 异常
+  1	综合异常
+  1	纯误差与失拟
+  1	没有可显示的数据
+UNMAPPED_INTERP_UNIQUE 127
+interp	interpretation_service.cpp:69	分析错误，以下结论不可用于决策：
+interp	interpretation_service.cpp:156	等值线/曲面轴为 
+interp	interpretation_service.cpp:168	；其余因子实际单位 hold：
+interp	interpretation_service.cpp:184	；其余因子编码 hold=0：
+interp	interpretation_service.cpp:251	最佳候选总体 Desirability = 
+interp	interpretation_service.cpp:340	量具稳定性图发现 
+interp	interpretation_service.cpp:366	偏倚回归斜率 = 
+interp	interpretation_service.cpp:367	，低/高参考点偏倚 = 
+interp	interpretation_service.cpp:412	偏倚检验 P = 
+interp	interpretation_service.cpp:461	Fine-Gray 多协变量子分布风险：目标原因=
+interp	interpretation_service.cpp:558	Weibull 形状参数 β = 
+interp	interpretation_service.cpp:579	两参数指数估计了阈值 λ = 
+interp	interpretation_service.cpp:590	三参数对数正态估计了阈值 λ = 
+interp	interpretation_service.cpp:689	 下，估计实际功效 = 
+interp	interpretation_service.cpp:695	、目标功效 = 
+interp	interpretation_service.cpp:698	，对应样本量 n = 
+interp	interpretation_service.cpp:722	预测误差指标已计算；
+interp	interpretation_service.cpp:795	最大 VIF = 
+interp	interpretation_service.cpp:832	当前有统计证据的项：
+interp	interpretation_service.cpp:836	Tukey 同时置信水平 = 
+interp	interpretation_service.cpp:837	，显著比较对数 = 
+interp	interpretation_service.cpp:877	RSM 二次模型（编码单位）：因子数 = 
+interp	interpretation_service.cpp:886	当前 |t| 最大项 = 
+interp	interpretation_service.cpp:899	设计来源 ID = 
+interp	interpretation_service.cpp:901	；编码模式 = 
+interp	interpretation_service.cpp:912	失拟检验可用（纯误差 DF = 
+interp	interpretation_service.cpp:914	；失拟 DF = 
+interp	interpretation_service.cpp:977	有效观测 N = 
+interp	interpretation_service.cpp:978	，缺失 N* = 
+interp	interpretation_service.cpp:993	，优势比 OR = 
+interp	interpretation_service.cpp:1018	最大 |调整残差| = 
+interp	interpretation_service.cpp:1034	 分类，N = 
+interp	interpretation_service.cpp:1075	（最小期望频数 = 
+interp	interpretation_service.cpp:1085	缺失 N* = 
+interp	interpretation_service.cpp:1085	，未进入类别计数。
+interp	interpretation_service.cpp:1097	McNemar（Edwards 连续性校正）χ² = 
+interp	interpretation_service.cpp:1100	，配对有效 N = 
+interp	interpretation_service.cpp:1101	，不一致对数 b+c = 
+interp	interpretation_service.cpp:1209	Friedman S（调整后）= 
+interp	interpretation_service.cpp:1216	符号检验（二项精确）P = 
+interp	interpretation_service.cpp:1234	比较准则 K = 
+interp	interpretation_service.cpp:1240	单样本 Wilcoxon 符号秩 P = 
+interp	interpretation_service.cpp:1245	配对 Wilcoxon 符号秩 P = 
+interp	interpretation_service.cpp:1250	Mood 中位数检验 χ² = 
+interp	interpretation_service.cpp:1269	，Hosmer–Lemeshow 未计算
+interp	interpretation_service.cpp:1274	，在 α = 0.05 下拒绝拟合不足（Hosmer–Lemeshow P = 
+interp	interpretation_service.cpp:1276	，在 α = 0.05 下未拒绝拟合不足（Hosmer–Lemeshow P = 
+interp	interpretation_service.cpp:1287	；最大 VIF = 
+interp	interpretation_service.cpp:1332	CART 单树任务 = 
+interp	interpretation_service.cpp:1334	，预测变量 = 
+interp	interpretation_service.cpp:1337	；主导分裂变量 = 
+interp	interpretation_service.cpp:1348	，有效回归行 = 
+interp	interpretation_service.cpp:1363	Poisson 回归（log 链）：N = 
+interp	interpretation_service.cpp:1380	，标记异常 = 
+interp	interpretation_service.cpp:1391	Bootstrap 均值（
+interp	interpretation_service.cpp:1416	有序 Logistic（比例优势 logit）：N = 
+interp	interpretation_service.cpp:1427	线性判别：N = 
+interp	interpretation_service.cpp:1450	）：变量数 = 
+interp	interpretation_service.cpp:1472	区间删失 KM（Turnbull）：N = 
+interp	interpretation_service.cpp:1473	，左/区间/右 = 
+interp	interpretation_service.cpp:1495	Plackett–Burman：因子 = 
+interp	interpretation_service.cpp:1505	Box–Behnken：因子 = 
+interp	interpretation_service.cpp:1531	保修摘要：T_w = 
+interp	interpretation_service.cpp:1589	 个有效测量的均值与标准差
+interp	interpretation_service.cpp:1594	，单元 StDev 平均 = 
+interp	interpretation_service.cpp:1596	。图只用于探索变异结构，不是显著性检验或过程判定。
+interp	interpretation_service.cpp:1610	容差区间方法为 
+interp	interpretation_service.cpp:1631	。区间只描述当前样本覆盖，不是规格覆盖或过程判定。
+interp	interpretation_service.cpp:1663	。未拒绝原假设不能证明方差相等。
+interp	interpretation_service.cpp:1665	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+interp	interpretation_service.cpp:1668	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+interp	interpretation_service.cpp:1672	F 检验依赖正态假设。
+interp	interpretation_service.cpp:1674	Levene（中位数）为稳健默认路径。
+interp	interpretation_service.cpp:1686	两比例检验方法为 
+interp	interpretation_service.cpp:1701	。P 值只描述两组比例差异的证据强度，不是规格判定。
+interp	interpretation_service.cpp:1703	单比例检验方法为 
+interp	interpretation_service.cpp:1715	。P 值只描述与假设比例的证据强度，不是规格判定。
+interp	interpretation_service.cpp:1726	Box-Cox 选定 λ = 
+interp	interpretation_service.cpp:1727	，有效观测 N = 
+interp	interpretation_service.cpp:1729	，变换后标准化 SD = 

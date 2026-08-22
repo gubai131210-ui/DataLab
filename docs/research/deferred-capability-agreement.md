@@ -2,14 +2,17 @@
 
 > 研究日期：2026-08-18（2026-08-21 更新状态）
 > **市场全量对照与完成标记**见 [`minitab-market-algorithm-backlog.md`](minitab-market-algorithm-backlog.md)（含 ✅/🟡/⚪/❌/⏸ 与 §12 优先队列）。
+> **综合图表 / 判断规则 / Track A–D**见 [`comprehensive-analytics-roadmap.md`](comprehensive-analytics-roadmap.md)。
 > 状态：Kendall W/τ、两参数指数、三参数对数正态、**Weighted Kappa（Cohen linear/quadratic）**、
 > **配对 TOST**、**泊松率比**、**Wilson 比例 CI**、**Bonett 等方差**、**泊松功效**、
 > **Tukey 区间表形**、**Agresti–Coull**、**Bartlett**、**DOE 实际单位 hold**、
 > **Tukey Grouping 字母**、**双样本均值比 TOST**、**两比例 Newcombe–Wilson**、
 > **Kruskal Dunn**、**Multi-Vari 第 4 因子**、**TOST 对数变换**、**两比例 Agresti–Coull**、
-> **Steel–Dwass（近似）**、**Friedman**、**Sign CI / Mood 组 CI / Ryan–Joiner / 配对 Walsh CI**
+> **Steel–Dwass（近似）**、**Friedman**、**Sign CI / Mood 组 CI / Ryan–Joiner / 配对 Walsh CI**、
+> **§12 P0+P1 全项**（Runs / Fisher / Dixon / Run Chart / 鱼骨 / Acceptance / Variability / Zone·Z-MR·MA /
+> 容差 method / ANOM / 1-sample Z / Poisson GOF / 协方差偏相关）
 > 公式已实现（非 Minitab golden，除非另有导出）。Blaker /
-> 可旋转 3D / Jackson–Mudholkar 解析限等仍延后。
+> 可旋转 3D / Jackson–Mudholkar 解析限 / Graph Builder 拖拽等仍延后。
 
 ## 1. Johnson / 非正态能力
 
@@ -92,6 +95,8 @@
 - Nemenyi **独立**命令（**Friedman 后比较 Nemenyi 已挂在 `friedman` posthoc**）
 - 精确 studentized-range
 - 重构阶段 5/6（PlotSpec 合一、CI、i18n），除非挡住接线
+- **不平衡 Expanded Gage / 固定效应 φ / 嵌套混合 / >3 因子自动选模**（平衡三因子 `expanded_gage_rr` 已交付）
+- GV 个体观测标准化替代图（子组 \|S\| 已交付）
 ## 6. 下一批接入条件
 
 Johnson / 非正态 / 三参数 Weibull / 两参数指数 / 三参数对数正态 / Fleiss / Kendall：公式已实现，只需从 Minitab 导出对照后写入 golden，禁止猜测数值。

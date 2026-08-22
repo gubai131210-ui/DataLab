@@ -505,13 +505,222 @@ ui → application / infrastructure / reporting → domain
 
 本轮明确不做：Fisher 深化、Runs、Dixon；AD/Sign 主 P/Mood χ²/单样本 Wilcoxon/帮助页签重做；`chi_square`/`chi_square_gof`；假 golden。
 
+## 5k. 2026-08-21 算法扩展（Runs / Fisher / Run Chart / 鱼骨）✅
+
+1. **Runs test** — 命令 `runs_test`；mean/median/指定 K；正态近似双侧 P；`NonparametricFacts.method=runs_test`
+2. **Fisher exact** — 命令 `fisher_exact`；恰 2×2；复用 `fisher_two_sided`；**不改** `two_proportions`
+3. **独立 Run Chart** — 命令 `run_chart`；中位数中心线；clustering/mixtures/trends/oscillation；`RunChartFacts`
+4. **Cause-and-effect** — 命令 `cause_and_effect`；类别+原因表 + 条图；非拖拽画布；`CauseEffectFacts`
+
+公式：[`p1_runs_fisher_runchart_fishbone.md`](research/p1_runs_fisher_runchart_fishbone.md)
+
+本轮明确不做：Dixon；Acceptance sampling；Variability；Zone/Z-MR/MA；假 golden；交互鱼骨编辑器。
+
+## 5l. 2026-08-21 算法扩展（Dixon / Z / Variability / 容差方法）✅
+
+1. **Dixon r10** — 加深 `outlier_test`；`outlier_method=grubbs|dixon_r10`；P 插值近似；不删 Grubbs
+2. **1-sample Z** — 命令 `one_sample_z`；已知 σ；独立于 `one_sample_t`
+3. **Variability chart** — 命令 `variability_chart`；1～2 因子；mean+SD 双面板；非 Multi-Vari
+4. **容差方法显式化** — `tolerance_method=normal|nonparametric`；兼容旧 `variance_method=nonparametric`
+
+公式：[`p1_dixon_z_variability_nptol.md`](research/p1_dixon_z_variability_nptol.md)
+
+本轮明确不做：Dixon r11/r21/r22；Acceptance sampling；Zone/Z-MR/MA；ANOM；Poisson GOF；假 golden。
+
+## 5m. 2026-08-21 算法扩展（Acceptance / ANOM / Poisson GOF / 协方差偏相关）✅
+
+1. **Acceptance sampling** — 命令 `acceptance_sampling`；二项 OC；n/c + 可选 AQL/RQL/N；`AcceptanceSamplingFacts`；不读工作表
+2. **ANOM** — 命令 `anom`；正态均值；响应+分组；Nelson 近似 UDL/LDL；`AnomFacts`；诊断引导二项/泊松
+3. **Poisson GOF** — 命令 `poisson_gof`；单列整数计数；λ̂=均值；`ChiSquareGofFacts.method=poisson`；**不改** `chi_square_gof`
+4. **Correlation 加深** — 协方差矩阵表 + 可选 `partial=yes` 偏相关；`CorrelationFacts.covariance_available/partial_available`
+
+公式：[`p1_acceptance_anom_poisson_gof_cov.md`](research/p1_acceptance_anom_poisson_gof_cov.md)
+
+本轮明确不做：Dixon r11/r21/r22；假 golden。
+
+## 5n. 2026-08-21 算法扩展（Zone / Z-MR / MA 控制图）✅
+
+1. **区域图** — 命令 `zone_chart`；Jaehn 1/2/4 累计计分阈值 8；个体值图 + 累计得分图；`ZoneChartFacts` + `SpcFacts`
+2. **Z-MR** — 命令 `z_mr`；测量 + 可选分组；Z 图 + MR(Z) 双图；`ZmrFacts` + `SpcFacts`；无历史 μ/σ 时样本估计诊断
+3. **移动平均图** — 命令 `moving_average`；`ma_window` 默认 3；完整窗 MA；`MovingAverageChartFacts` + `SpcFacts`
+
+公式：[`p1_zone_zmr_ma_charts.md`](research/p1_zone_zmr_ma_charts.md)
+
+本轮明确不做：自定义 Zone 权重 UI；完整历史参数表导入；加权 MA；假 golden。
+
+## 5o. 2026-08-21 文档：综合轨道与判断规则（无代码竖切）✅
+
+为后续 `/goal` 准备（**本批只改 md，不实现算法**）：
+
+1. **综合路线图** — [`docs/research/comprehensive-analytics-roadmap.md`](research/comprehensive-analytics-roadmap.md)  
+   - §1 进度：P0+P1 已清；P2/P3 剩余  
+   - §2 **判断规则目录**（Nelson Tests 1–8 / WECO / Jaehn / Run Chart / ANOM / 能力解读）  
+   - §4 **通用图表/EDA 缺口**（密度、hexbin、violin、mosaic、通用条形、EDA 四图等）  
+   - §5 Tracks：**A** 质量 P2 · **B** 规则深化 · **C** 综合图表 · **D** 建模加宽（各含禁止偷懒）  
+2. **backlog** — 文首进度句、§11b 规则摘要、§12 重排为「已完成水位 + Track 建议 + P2/P3」  
+3. 来源：Minitab Feature List / Tests / Graph 可视化列表、NIST PMC+EDA、JMP Graph Builder、ggplot2 geom 索引（访问 2026-08-21）
+
+本轮明确不做：不实现 Track A–D 代码；不放开 Graph Builder 拖拽 / 可旋转 3D / Predictive Analytics。
+
+## 5p. 2026-08-21 算法扩展（DOE 设计生成 / ACF-PACF / 功效扩展）✅
+
+1. **DOE 设计生成** — `doe_factorial`：`fraction_p` + 默认/手写生成器；设计信息/生成器/定义关系/别名/矩阵；`DoeFacts`；与 `doe_response` 衔接  
+2. **ACF/PACF** — 命令 `acf_pacf`；白噪声固定带宽 ±z/√n 说明；`AcfPacfFacts`；双图 + Ljung–Box  
+3. **功效扩展** — `t_power`：`equivalence_*` / `doe_factorial_*` / `tolerance_normal_sample_size`；`PowerFacts` + 曲线  
+
+公式：[`p2_doe_design_acf_power.md`](research/p2_doe_design_acf_power.md)  
+测试：`p2_doe_acf_power_test`
+
+本轮明确不做：RSM；PB/DSD；Expanded Gage；多元 T²；Track B/C/D；假 golden。
+
+**Qt Creator 手工验收：**
+
+1. 质量工具 → 析因设计生成：因子 `A,B,C,D`，`fraction_p=1` → 8 行矩阵 + 别名；D 列=A×B×C。  
+2. 统计 → ACF/PACF：导入单列序列 → 双图与带宽诊断。  
+3. 统计 → 功效：`equivalence_one_sample_power`、`doe_factorial_power`、`tolerance_normal_sample_size` 各跑一次见表/曲线。  
+4. 本地 `tools/check_layering.ps1`；本 agent **不**跑 cmake/ctest。
+
+## 5q. 2026-08-21 算法扩展（RSM / 特殊原因 Catalog / 默认策略）✅
+
+1. **RSM** — 命令 `rsm_response`：二次模型（线性+交互+纯二次）；系数/ANOVA；残差四图；前两因子等值线+静态曲面；`RsmFacts`  
+2. **B1 规则 Catalog** — help 条目 `special_cause_rules`：Tests 1–8 + 图种适用 + 策略差异 + WECO/Zone 边界  
+3. **B2 默认策略** — `rule_policy=all_applicable|minitab_like`（可序列化）；空 tests 按策略；`SpcFacts.rule_policy`；诊断写误报风险  
+
+公式：[`p2_rsm_special_cause_rules.md`](research/p2_rsm_special_cause_rules.md)  
+测试：`p2_rsm_special_cause_test`（+ `special_cause_rule_test` 策略用例）
+
+本轮明确不做：CCD/BBD 设计生成；Expanded Gage；多元 T²；B3 Nelson estimate；Track C/D；假 golden。
+
+**Qt Creator 手工验收：**
+
+1. 质量工具 → 响应曲面分析：响应 + ≥2 因子 → 系数表、残差四图、等值线/曲面；解读无「过程已失控/已证明稳定」。  
+2. 帮助 → 算法：搜索「特殊原因」打开 `special_cause_rules`；正文无「见 md」。  
+3. 控制图 → I-MR：规则默认策略选 `minitab_like` 且 tests 保持默认全选态 → 仅 Test 1；选 `all_applicable` → 1–8；诊断含误报风险说明。  
+4. 本 agent **不**跑 cmake/ctest。
+
+## 5r. 2026-08-21 算法扩展（密度 / Hexbin / Violin / 通用条形）✅
+
+1. **密度图** — `density_plot`：高斯 KDE + Silverman h；`PlotKind::density`；`EdaPlotFacts`  
+2. **Hexbin** — `hexbin_plot`：矩形二维分箱（Binned Scatter）；诊断标明非正六边形  
+3. **小提琴图** — `violin_plot`：分组镜像 KDE + 箱线；专用 renderer  
+4. **条形图** — `bar_chart`：保持出现顺序、无 Cum%（与 `pareto` 分流）  
+
+公式：[`p2_eda_density_hexbin_violin_bar.md`](research/p2_eda_density_hexbin_violin_bar.md)  
+测试：`p2_eda_plots_test`
+
+本轮明确不做：C5 EDA 四图打包；正六边形镶嵌；Graph Builder；多元 T²；Expanded Gage。
+
+**Qt Creator 手工验收：**
+
+1. 图形 → 密度图：单列 → 面积曲线；诊断含 Silverman。  
+2. 图形 → Hexbin：X/Y → 彩色分箱；解读无「分布已正态」。  
+3. 图形 → 小提琴图：响应±分组 → 镜像密度+箱线。  
+4. 图形 → 条形图 vs 柏拉图：条形不排序无 Cum%；柏拉图仍排序+Cum%。  
+
+## 5s. 2026-08-21 算法扩展（EDA 四图 / 交叉表 / 卡方残差深化）✅
+
+1. **C5 EDA 四图** — 命令 `eda_4plot`：同页 Run Sequence / Lag-1 / Histogram / Normal Probability；`EdaPlotFacts.kind=eda_4plot`  
+2. **D2 交叉表** — 命令 `cross_tabulation`：观察频数 + 行%/列%/合计% + 热图；**不做**卡方；`CrossTabFacts`；与 `chi_square` 分流  
+3. **D3 卡方残差深化** — 现有 `chi_square` 增：百分比表、调整残差热图、`max_abs_adjusted_residual` / `largest_contribution_cell`；**不改** `chi_square_gof`  
+
+公式：[`p2_eda4_crosstab_chi_resid.md`](research/p2_eda4_crosstab_chi_resid.md)  
+测试：`p2_eda4_crosstab_chi_resid_test`
+
+本轮明确不做：mosaic；有序 Logistic；GLM；多元 T²；Expanded Gage；B3 Nelson estimate；假 golden。
+
+**Qt Creator 手工验收：**
+
+1. 图形 → EDA 四图：单列 → 四图同页；解读无「过程已失控/分布已正态」。  
+2. 统计 → 交叉表：两分类列 → 频数+三百分比；无 Pearson 表；诊断提示改用列联表卡方。  
+3. 统计 → 列联表卡方：同一数据 → 百分比表 + 观察热图 + 调整残差热图；GOF 菜单行为不变。  
+4. 本 agent **不**跑 cmake/ctest。
+
+## 5t. 2026-08-21 算法扩展（Nelson/MSSD · T² · MEWMA · EMP）✅
+
+1. **B3** — I-MR：`sigma_method=average_moving_range|median_moving_range|mssd`；`use_nelson_estimate` 剔除过大 MR 后重估；诊断/表列剔除数  
+2. **Hotelling T²** — 命令 `hotelling_t2`：个体 Phase I Tracy–Young–Mason Beta UCL（可选 phase2 F）；`MultivariateSpcFacts`  
+3. **MEWMA** — 命令 `mewma`：λ 可配；精确 Σ_Zi；默认渐近 χ² UCL（披露非 ARL）；可手工 UCL  
+4. **EMP Crossed（窄化）** — 命令 `emp_crossed`：复用交叉 Gage ANOVA；ICC/PE/First–Fourth；**非**全量 Expanded GLM  
+
+公式：[`p2_t2_mewma_nelson_emp.md`](research/p2_t2_mewma_nelson_emp.md)  
+测试：`p2_t2_mewma_nelson_emp_test`
+
+本轮明确不做：全量 Expanded Gage；GV 图；Jackson–Mudholkar；ARL 仿真 UCL 表；假 golden。
+
+**Qt Creator 手工验收：**
+
+1. 控制图 → I-MR：`use_nelson_estimate=1` 对比默认 σ；试 `mssd`。  
+2. 控制图 → Hotelling T²：≥2 列 → T² 图与 UCL；解读无「过程已失控」。  
+3. 控制图 → MEWMA：λ=0.1；诊断含非 ARL 校准。  
+4. 质量工具 → EMP Crossed：与 Gage 相同三列 → ICC 分级；不写量具合格。  
+
+### 5u. §5u 批次（2026-08-21）：GV · Expanded(3因子) · B4/B5
+
+研究底稿：`docs/research/p2_gv_expanded_b4b5.md`  
+测试：`tests/p2_gv_expanded_b4b5_test.cpp`
+
+1. **广义方差图** — 命令 `generalized_variance`：Montgomery \|S\| 等量子组；n>p；个体路径不做假 \|S\|  
+2. **Expanded Gage（窄化）** — 命令 `expanded_gage_rr`：平衡 Part×Operator×附加因子随机 ANOVA；不平衡/固定/嵌套 GLM → ⚪ 延后  
+3. **B4 Historical** — I-MR 表「历史参数与分阶段估计」；`SpcFacts.historical_parameters_used` / `stage_count`  
+4. **B5 交叉链接** — `special_cause_rules` 正文交叉 Run Chart / ANOM / Zone  
+
+本轮明确不做：不平衡 Expanded GLM；>3 因子自动选模；GV 个体标准化替代；假 golden。
+
 ## 5b. 以后再计划的项（不要从本节当成本轮任务）
 
-不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h、§5i、§5j 已完成项。帮助中心壳已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、重构阶段 5/6）。
+不要重做 §4、§5、§5a、§5c、§5d、§5e、§5f、§5g、§5h、§5i、§5j、§5k、§5l、§5m、§5n、§5o、§5p、§5q、§5r、§5s、§5t、§5u 已完成项。帮助中心壳已有，不要重做。延后项见 `docs/research/deferred-capability-agreement.md`（Blaker、Kalman/TSERIES、可旋转 3D、Nemenyi 独立命令、Jackson–Mudholkar 解析限、重构阶段 5/6、Graph Builder 全量拖拽、不平衡 Expanded GLM）。
 
-**市场算法完成状态与未实现优先队列（权威）**：`docs/research/minitab-market-algorithm-backlog.md`（对照 Minitab Feature List；§12 为 /goal 消耗队列；§13 延后不算失败）。下一批默认从该文件 P0 起选：Runs test、Fisher 表形深化、Dixon（可选）、独立 Run Chart、Pareto 等。
+**市场算法完成状态与未实现优先队列（权威）**：`docs/research/minitab-market-algorithm-backlog.md`。  
+**综合图表 / 判断规则 / Track 队列（权威）**：`docs/research/comprehensive-analytics-roadmap.md`。  
+
+§12 **P0+P1+P2 产品范围主项已清空到 ✅/⚪**（含 T²/GV/MEWMA、Expanded 三因子窄化、B1–B5、C1–C5、D2/D3）。下一批：
+
+- **下一波 Track E–H 批次 1（已闭环）**：`kmeans` ✅、`cart_tree` ✅、`matrix_plot` ✅、`adf_test` ✅  
+- **批次 2（已闭环）**：`poisson_regression` ✅、`isolation_forest` ✅、`bootstrap_mean` ✅、`cluster_observations` ✅  
+- **批次 3（已闭环）**：`ordinal_logistic` ✅、`discriminant` ✅、`ccf` ✅、`correlogram` ✅  
+- **Track H 滚动（已闭环约定项）**：`stepwise_regression` ✅、`km_interval` ✅、`doe_plackett_burman` ✅  
+- **仍保留 ❌/⏸**：Best subsets、CCD/BBD 生成、TreeNet/AutoML、名义 Logistic、F2/F3 等  
+- **候选池**：[`docs/research/next-wave-algorithms-charts-ml-oss.md`](research/next-wave-algorithms-charts-ml-oss.md)
+
+**禁止重做** 已闭环命令（含批次 1–3 与 Track H 本轮三项）。
+
+### §5v Track E–H 批次 1（2026-08-21）
+
+| 命令 | Facts | 测试 | 备注 |
+|---|---|---|---|
+| `kmeans` | `KMeansFacts` | `p3_batch1_kmeans_cart_adf_test` | 欧氏 Lloyd |
+| `cart_tree` | `CartTreeFacts` | 同上 | 非 TreeNet/RF |
+| `matrix_plot` | — | `graph_service_test` | 既有 |
+| `adf_test` | `AdfFacts` | 同上 | CCF 见批次 3 |
+
+### §5w Track E–H 批次 2（2026-08-21）
+
+| 命令 | Facts | 测试 | 备注 |
+|---|---|---|---|
+| `poisson_regression` | `PoissonRegressionFacts` | `p3_batch2_*` | log 链 IRLS |
+| `isolation_forest` | `IsolationForestFacts` | 同上 | 与 outlier_test 分流 |
+| `bootstrap_mean` | `BootstrapMeanFacts` | 同上 | 百分位 |
+| `cluster_observations` | `HierarchicalClusterFacts` | 同上 | complete |
+
+### §5x Track E–H 批次 3（2026-08-21）
+
+| 命令 | Facts | 测试 | 备注 |
+|---|---|---|---|
+| `ordinal_logistic` | `OrdinalLogisticFacts` | `p3_batch3_ordinal_lda_ccf_correlogram_test` | 比例优势 logit |
+| `discriminant` | `DiscriminantFacts` | 同上 | LDA；非 QDA |
+| `ccf` | `CcfFacts` | 同上 | 配 ACF |
+| `correlogram` | `CorrelogramFacts` | 同上 | 相关热图 |
+
+### §5y Track H 滚动（2026-08-21）
+
+| 命令 | Facts | 测试 | 备注 |
+|---|---|---|---|
+| `stepwise_regression` | `StepwiseRegressionFacts` | `p3_track_h_stepwise_km_pb_test` | α 逐步；非 Best subsets |
+| `km_interval` | `KmIntervalFacts` | 同上 | Turnbull |
+| `doe_plackett_burman` | `PlackettBurmanFacts` | 同上 | PB；CCD 仍 ❌ |
 
 ## 6. 硬约束
+
 
 - 解释层只陈述证据与假设状态，不写过程合格、量具通过、分布已证明、已证明一致。
 - 未从 Minitab 导出的结果不得写入 `tests/fixtures/minitab/VALIDATION_MATRIX.md`。公式参考测试标注 `# source: formula_reference`。
@@ -527,36 +736,41 @@ ui → application / infrastructure / reporting → domain
 
 ```text
 ## 项目
-DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具。
+DataLab：对标 Minitab 的汽车质量 Qt/C++ 桌面工具，并扩展综合 EDA/图表。
 分层：ui → application / infrastructure / reporting → domain。
 新/深化算法必须闭环：research md → domain → *Facts → AnalysisService → analysis_commands → interpretation → output_serialization → tests（# source: formula_reference）→ algorithm_help.json → acceptance。
 
 ## 必读（按序）
-1. docs/algorithm-session-brief.md（尤其 §5j 已完成、§5b/§6 硬约束；禁止重做 §4–§5j）
-2. docs/research/minitab-market-algorithm-backlog.md（市场对照+完成标记+§12 队列）
-3. docs/research/deferred-capability-agreement.md
-4. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
-5. docs/quality-algorithms-acceptance.md
-6. docs/algorithm-wiring-index.md、docs/statistical-methodology.md、CONTEXT.md
-7. ADR 0001 / 0003 / 0004；session-handoff 只读踩坑，不当任务
+1. docs/algorithm-session-brief.md（§5o 文档批次、§5b Tracks、§6 硬约束；禁止重做 §4–§5o）
+2. docs/research/minitab-market-algorithm-backlog.md（算法完成标记 + §11b 规则摘要 + §12 队列）
+3. docs/research/comprehensive-analytics-roadmap.md（Track A–D、判断规则详表、通用图表缺口）
+4. docs/research/deferred-capability-agreement.md
+5. docs/research/algorithm-chart-gap-matrix.md（§3 导入契约）
+6. docs/quality-algorithms-acceptance.md
+7. docs/algorithm-wiring-index.md、docs/statistical-methodology.md、CONTEXT.md
+8. ADR 0001 / 0003 / 0004；session-handoff 只读踩坑，不当任务
 
 ## Skills
 - research（公式：Minitab methods + NIST/教材，URL+访问日期；对照表形不填未导出数）
 - codebase-design（加深现有 seam，不新架构）
 - tdd + cpp-coding
-- 计划里必须写「禁止偷懒做 XXX」清单
+- 计划里必须写「禁止偷懒做 XXX」清单（roadmap §5 各 Track 已有模板）
 
 ## 本轮目标（一次性多做，但每项竖切闭环）
-从 docs/research/minitab-market-algorithm-backlog.md §12（及 gap-matrix / deferred）选 3～4 项「深化已有 + 高杠杆新缺口」。
-实现前每项先写 docs/research/p1_*.md；做完把 backlog 对应行改为 ✅/⚪ 并更新 acceptance。
-你研究后可调整优先级，但必须在计划里锁定选型与「明确不做」。
-对照 Minitab：输出表名/列/诊断；学习其「方法选项可切换、小样本警告、表+图同页」优势，禁止假 golden。
+从 backlog §12.1 / roadmap §5 锁定 **一条 Track** 的 3～4 项：
+- Track A 质量 P2（DOE 设计生成 / ACF-PACF / RSM / 多元 T²…）
+- Track B 判断规则（规则 catalog / 默认仅 Test 1 / Nelson estimate…）
+- Track C 综合图表（密度·KDE / Hexbin / Violin / 通用条形 / EDA 四图…）
+- Track D 建模加宽（交叉表 / 卡方残差 / 有序 Logistic…）
+实现前每项先写 docs/research/p*.md；做完更新 backlog + roadmap + acceptance。
+对照 Minitab：输出表名/列/诊断；学习「方法选项可切换、小样本警告、表+图同页」；禁止假 golden。
+不做 Graph Builder 拖拽全量、可旋转 3D、Predictive Analytics。
 
 ## 硬约束
 - complete-case / align_complete_rows / parse_numeric_cell / source_row / dataset_id；导入 A→B 旧输出失效
-- 解释只读 Facts，不写合格/已证明等价或一致/已证明等方差/样本量足够
+- 解释只读 Facts；规则触发≠失控/合格/已证明稳定
 - 禁止假 Minitab golden；禁止碰 chi_square 与 chi_square_gof 边界除非本轮明确包含
-- 禁止重做：§5a–§5j（含 Mood、Sign CI、RJ、配对 Walsh、Cochran Q、Wilcoxon、帮助公式页签等）
+- 禁止重做：§5a–§5o（含 Mood、Sign CI、RJ、配对 Walsh、Cochran Q、Wilcoxon、帮助公式页签、§5k–§5n 算法竖切、§5o 文档）
 - 待修改.md 是给人看的旧笔记，不当任务（除非用户本轮明确点名其中某条）
 - 中文路径：agent 不跑 cmake/ctest；改完列 Qt Creator 手工验收项
 - 帮助：改 generate_algorithm_help_catalog.py + help_catalog_families.py 再生成 JSON，正文禁止「见 md」

@@ -214,6 +214,61 @@ TTestResult one_sample_t_test(
     return result;
 }
 
+ZTestResult one_sample_z_test(
+    const std::vector<double>& observations,
+    double hypothesized_mean,
+    double known_sigma,
+    double confidence_level,
+    TestAlternative alternative)
+{
+    ZTestResult result;
+    result.hypothesized_mean = hypothesized_mean;
+    result.known_sigma = known_sigma;
+    result.confidence_level = confidence_level;
+    if (observations.empty()) {
+        add_error(result.diagnostics, "insufficient_observations",
+                  "单样本 Z 检验至少需要一个有效观测。");
+        return result;
+    }
+    if (!(known_sigma > 0.0) || !std::isfinite(known_sigma)) {
+        add_error(result.diagnostics, "invalid_sigma",
+                  "已知标准差必须为正有限值。");
+        return result;
+    }
+    if (!valid_confidence(confidence_level)) {
+        add_error(result.diagnostics, "invalid_confidence_level",
+                  "置信水平必须大于 0 且小于 1。");
+        return result;
+    }
+    result.count = observations.size();
+    result.mean = std::accumulate(observations.begin(), observations.end(), 0.0)
+        / static_cast<double>(observations.size());
+    result.standard_error = known_sigma
+        / std::sqrt(static_cast<double>(observations.size()));
+    result.difference = result.mean - hypothesized_mean;
+    result.z_statistic = result.difference / result.standard_error;
+    const double cdf = standard_normal_cdf(result.z_statistic);
+    if (alternative == TestAlternative::less) {
+        result.p_value = cdf;
+    } else if (alternative == TestAlternative::greater) {
+        result.p_value = 1.0 - cdf;
+    } else {
+        result.p_value = std::clamp(2.0 * std::min(cdf, 1.0 - cdf), 0.0, 1.0);
+    }
+    const double zcrit = standard_normal_quantile(0.5 + confidence_level / 2.0);
+    if (alternative == TestAlternative::two_sided) {
+        result.confidence_lower = result.difference - zcrit * result.standard_error;
+        result.confidence_upper = result.difference + zcrit * result.standard_error;
+    } else if (alternative == TestAlternative::less) {
+        result.confidence_upper = result.difference
+            + standard_normal_quantile(confidence_level) * result.standard_error;
+    } else {
+        result.confidence_lower = result.difference
+            - standard_normal_quantile(confidence_level) * result.standard_error;
+    }
+    return result;
+}
+
 TwoSampleTTestResult two_sample_t_test(
     const std::vector<double>& first,
     const std::vector<double>& second,

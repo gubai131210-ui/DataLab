@@ -1,0 +1,7 @@
+candidates=322 covered=322 uncovered=0
+kinds={'starts_with': 136, 'exact': 141, 'find': 13, 'ends_with': 26, 'exact_clause': 6}
+sw=142 finds=116 ends=135 exact_zh=2219
+FAMILY
+UNCOVERED
+
+PARAM_LIKELY_UNMAPPED sample n=0

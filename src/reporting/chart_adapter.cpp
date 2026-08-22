@@ -201,6 +201,18 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
     case datalab::domain::PlotKind::surface:
         model.kind = ChartKind::Surface;
         break;
+    case datalab::domain::PlotKind::density:
+        model.kind = ChartKind::Density;
+        break;
+    case datalab::domain::PlotKind::hexbin:
+        model.kind = ChartKind::Hexbin;
+        break;
+    case datalab::domain::PlotKind::violin:
+        model.kind = ChartKind::Violin;
+        break;
+    case datalab::domain::PlotKind::bar:
+        model.kind = ChartKind::Bar;
+        break;
     case datalab::domain::PlotKind::control:
     default:
         model.kind = ChartKind::Control;
@@ -261,6 +273,7 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
         model.series.push_back(std::move(series));
     }
     model.source_rows = plot.source_rows;
+    model.member_source_rows = plot.member_source_rows;
     model.special_cause_points = plot.special_cause_points;
     model.triggered_tests = plot.triggered_tests;
     model.primary_test_by_point = plot.primary_test_by_point;
@@ -340,6 +353,10 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
     case ChartKind::Contour: plot.kind = datalab::domain::PlotKind::contour; break;
     case ChartKind::Pie: plot.kind = datalab::domain::PlotKind::pie; break;
     case ChartKind::Surface: plot.kind = datalab::domain::PlotKind::surface; break;
+    case ChartKind::Density: plot.kind = datalab::domain::PlotKind::density; break;
+    case ChartKind::Hexbin: plot.kind = datalab::domain::PlotKind::hexbin; break;
+    case ChartKind::Violin: plot.kind = datalab::domain::PlotKind::violin; break;
+    case ChartKind::Bar: plot.kind = datalab::domain::PlotKind::bar; break;
     case ChartKind::Control:
     default: plot.kind = datalab::domain::PlotKind::control; break;
     }
@@ -381,6 +398,7 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
         plot.series.push_back(std::move(series));
     }
     plot.source_rows = model.source_rows;
+    plot.member_source_rows = model.member_source_rows;
     plot.special_cause_points = model.special_cause_points;
     plot.triggered_tests = model.triggered_tests;
     plot.primary_test_by_point = model.primary_test_by_point;

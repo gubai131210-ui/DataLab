@@ -11,7 +11,8 @@ namespace datalab::domain::statistics {
 
 enum class SigmaEstimateMethod {
     average_moving_range,
-    median_moving_range
+    median_moving_range,
+    mssd
 };
 
 enum class ControlChartKind {
@@ -25,12 +26,16 @@ enum class ControlChartKind {
     ewma,
     cusum,
     g,
-    t
+    t,
+    zone,
+    z_mr,
+    moving_average
 };
 
 struct SpecialCauseTestSpec {
     int number = 0;
     int default_k = 0;
+    const char* rule_id = "";
     const char* short_name = "";
     const char* description = "";
 };
@@ -62,6 +67,7 @@ struct ControlChartResult {
 struct IndividualsMovingRangeOptions {
     int moving_range_length = 2;
     SigmaEstimateMethod method = SigmaEstimateMethod::average_moving_range;
+    bool use_nelson_estimate = false;
     std::vector<std::size_t> omit_from_estimate;
     std::optional<double> historical_mean;
     std::optional<double> historical_sigma;
@@ -74,6 +80,8 @@ struct DualControlChartResult {
     ControlChartResult secondary;
     double sigma = 0.0;
     double average_moving_range = 0.0;
+    std::size_t nelson_excluded_ranges = 0;
+    std::string sigma_method_label = "average_moving_range";
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -113,6 +121,47 @@ struct CusumOptions {
     double k = 0.5;
     double h = 4.0;
     bool fast_initial_response = false;
+};
+
+struct ZoneChartOptions {
+    int moving_range_length = 2;
+    double signal_threshold = 8.0;
+    std::optional<double> historical_mean;
+    std::optional<double> historical_sigma;
+};
+
+struct ZoneChartResult {
+    ControlChartResult individuals;
+    std::vector<double> zone_scores;
+    std::vector<int> zone_band;  // 0=within1,1=1-2,2=2-3,3=>3 (signed via signal_direction)
+    std::vector<std::size_t> signal_points;
+    double center = 0.0;
+    double sigma = 0.0;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+struct ZmrOptions {
+    int moving_range_length = 2;
+    std::vector<std::string> group_labels;  // optional; empty = single process
+    // Parallel historical params per unique group order of first appearance; empty = sample est.
+    std::vector<double> historical_means;
+    std::vector<double> historical_sigmas;
+};
+
+struct ZmrChartResult {
+    ControlChartResult z_chart;
+    ControlChartResult mr_chart;
+    std::vector<double> z_values;
+    double average_mr = 0.0;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+struct MovingAverageOptions {
+    int window = 3;
+    double limit_sigma = 3.0;
+    int moving_range_length = 2;
+    std::optional<double> historical_mean;
+    std::optional<double> historical_sigma;
 };
 
 struct TimeWeightedControlChartResult {
@@ -184,6 +233,18 @@ public:
     static TimeWeightedControlChartResult cusum_chart(
         const std::vector<double>& observations,
         const CusumOptions& options = {});
+
+    static ZoneChartResult zone_chart(
+        const std::vector<double>& observations,
+        const ZoneChartOptions& options = {});
+
+    static ZmrChartResult z_mr_chart(
+        const std::vector<double>& observations,
+        const ZmrOptions& options = {});
+
+    static ControlChartResult moving_average_chart(
+        const std::vector<double>& observations,
+        const MovingAverageOptions& options = {});
 
     static ControlChartResult g_chart(
         const std::vector<double>& intervals,

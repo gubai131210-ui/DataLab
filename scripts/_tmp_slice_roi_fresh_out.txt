@@ -1,0 +1,36 @@
+exact=1583 sw=228 uniq_unmapped_diags=6 uniq_titles=1 uniq_interp_push=6 pct_tmpl=0
+
+=== DIAG FAMILIES ===
+  2	capability
+  1	doe_rsm
+  1	other
+  1	app_service
+  1	chart_app
+
+=== DIAG BY FILE ===
+  2	process_capability.cpp
+  1	doe_factorial.cpp
+  1	special_cause_rule_catalog.cpp
+  1	analysis_service.cpp
+  1	chart_pages.cpp
+
+=== UNMAPPED DIAGS ===
+diag	doe_rsm	src/domain/statistics/doe_factorial.cpp:427	部分析因分辨度 
+diag	capability	src/domain/statistics/process_capability.cpp:988	，Uniform 零假设 MC p≈
+diag	capability	src/domain/statistics/process_capability.cpp:991	；提示偏离单峰，单一分布能力指数仅供调查，
+diag	other	src/domain/statistics/special_cause_rule_catalog.cpp:242	 当前未触发。
+diag	app_service	src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。
+diag	chart_app	src/application/chart_pages.cpp:187	没有可显示的数据。
+
+=== UNMAPPED TITLES (sample 40) ===
+title	src/application/graph_service.cpp:2109	Hexbin（分面）
+
+=== UNMAPPED INTERP DIRECT PUSH ===
+interp	L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+interp	L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+interp	L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+interp	L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+interp	L2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+interp	L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+
+=== UNMAPPED %N TEMPLATES ===

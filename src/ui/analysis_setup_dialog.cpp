@@ -35,6 +35,7 @@
 #include <QVBoxLayout>
 
 #include "domain/statistics/control_charts.h"
+#include "ui/app_ui_tr.h"
 
 #include <algorithm>
 #include <functional>
@@ -77,8 +78,9 @@ QWidget* make_field_label(
     const bool optional,
     QWidget* parent)
 {
+    // `text` is already locale-resolved (ui_tr); optional suffix is translated separately.
     const QString caption = optional
-        ? text + QStringLiteral("（可选）")
+        ? text + datalab::ui::ui_tr("（可选）")
         : text;
     auto* container = new QWidget(parent);
     auto* layout = new QHBoxLayout(container);
@@ -98,6 +100,7 @@ QWidget* make_field_label(
     return container;
 }
 
+// Stable zh_CN tokens used for type matching (do not translate these values).
 QString column_type_label(const datalab::domain::ColumnType type)
 {
     switch (type) {
@@ -113,6 +116,16 @@ QString column_type_label(const datalab::domain::ColumnType type)
     return QStringLiteral("未知");
 }
 
+QString column_type_display(const datalab::domain::ColumnType type)
+{
+    return datalab::ui::ui_tr(column_type_label(type));
+}
+
+QString translate_type_token(const QString& token)
+{
+    return datalab::ui::ui_tr(token);
+}
+
 class SpecialCauseTestsEditor final : public QWidget {
 public:
     SpecialCauseTestsEditor(const QString& chart_kind, QWidget* parent)
@@ -126,9 +139,9 @@ public:
         summary_ = new QLabel(this);
         layout->addWidget(summary_);
         auto* buttons = new QHBoxLayout();
-        auto* select_all = new QPushButton(QStringLiteral("全选"), this);
-        auto* clear_all = new QPushButton(QStringLiteral("清空"), this);
-        auto* restore = new QPushButton(QStringLiteral("恢复默认"), this);
+        auto* select_all = new QPushButton(datalab::ui::ui_tr("全选"), this);
+        auto* clear_all = new QPushButton(datalab::ui::ui_tr("清空"), this);
+        auto* restore = new QPushButton(datalab::ui::ui_tr("恢复默认"), this);
         buttons->addWidget(select_all);
         buttons->addWidget(clear_all);
         buttons->addWidget(restore);
@@ -142,8 +155,7 @@ public:
             datalab::domain::statistics::applicable_special_cause_tests(kind_);
         for (const auto& spec : datalab::domain::statistics::all_special_cause_tests()) {
             auto* check = new QCheckBox(
-                QStringLiteral("Test %1  %2").arg(spec.number)
-                    .arg(QString::fromUtf8(spec.short_name)),
+                QString::fromUtf8(spec.short_name),
                 list);
             const bool allowed = std::find(applicable.begin(), applicable.end(), spec.number)
                 != applicable.end();
@@ -155,7 +167,8 @@ public:
             if (!allowed) {
                 check->setToolTip(
                     QString::fromUtf8(spec.description)
-                    + QStringLiteral("\n此规则不适用于当前控制图，已置灰。"));
+                    + QLatin1Char('\n')
+                    + datalab::ui::ui_tr("此规则不适用于当前控制图，已置灰。"));
             }
             list_layout->addWidget(check);
             checks_.push_back(check);
@@ -169,7 +182,9 @@ public:
         layout->addWidget(scroll);
         if (kind_ == datalab::domain::statistics::ControlChartKind::cusum) {
             auto* note = new QLabel(
-                QStringLiteral("CUSUM 不使用 Tests 1–8，改为报告上侧/下侧累计和的首次信号。"),
+                datalab::ui::ui_tr(
+                    "CUSUM 不使用 Shewhart 特殊原因规则（单点超出 3σ 控制限等），"
+                    "改为报告上侧/下侧累计和的首次信号。"),
                 this);
             note->setWordWrap(true);
             layout->addWidget(note);
@@ -186,6 +201,22 @@ public:
     {
         if (kind_ == datalab::domain::statistics::ControlChartKind::cusum) {
             return QStringLiteral("none");
+        }
+        // 勾选与「全部适用」默认一致时返回空，由 rule_policy 决定默认策略。
+        bool matches_all_applicable = true;
+        bool any_enabled = false;
+        for (const QCheckBox* check : checks_) {
+            if (!check->isEnabled()) {
+                continue;
+            }
+            any_enabled = true;
+            if (check->isChecked() != check->property("defaultValue").toBool()) {
+                matches_all_applicable = false;
+                break;
+            }
+        }
+        if (any_enabled && matches_all_applicable) {
+            return {};
         }
         QStringList selected;
         for (const QCheckBox* check : checks_) {
@@ -227,13 +258,21 @@ private:
             selected += check->isChecked() ? 1 : 0;
         }
         if (kind_ == datalab::domain::statistics::ControlChartKind::cusum) {
-            summary_->setText(QStringLiteral("CUSUM 使用专用信号，不勾选 Tests 1–8。"));
+            summary_->setText(datalab::ui::ui_tr(
+                "CUSUM 使用专用信号，不勾选 Shewhart 特殊原因规则。"));
             return;
         }
+        const bool uses_policy = selected_text().isEmpty();
         summary_->setText(
-            QStringLiteral("已选 %1 / %2 条适用规则（DataLab 默认全选适用规则，不同于 Minitab 只启用 Test 1）。")
-                .arg(selected)
-                .arg(enabled));
+            uses_policy
+                ? datalab::ui::ui_tr(
+                      "勾选=全部适用默认 → 由「规则默认策略」决定"
+                      "（all_applicable 或 minitab_like）。已选 %1 / %2。")
+                      .arg(selected).arg(enabled)
+                : datalab::ui::ui_tr(
+                      "已显式勾选 %1 / %2 条（覆盖策略下拉）。"
+                      "多规则提高误报风险。")
+                      .arg(selected).arg(enabled));
     }
 
     datalab::domain::statistics::ControlChartKind kind_;
@@ -250,14 +289,14 @@ public:
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(6);
         auto* hint = new QLabel(
-            QStringLiteral("选择多个响应后，可为每个响应指定独立目标与权重。"), this);
+            datalab::ui::ui_tr("选择多个响应后，可为每个响应指定独立目标与权重。"), this);
         hint->setWordWrap(true);
         layout->addWidget(hint);
         table_ = new QTableWidget(this);
         table_->setColumnCount(6);
         table_->setHorizontalHeaderLabels({
-            QStringLiteral("响应"), QStringLiteral("目标"), QStringLiteral("下限"),
-            QStringLiteral("上限"), QStringLiteral("目标值"), QStringLiteral("权重")});
+            datalab::ui::ui_tr("响应"), datalab::ui::ui_tr("目标"), datalab::ui::ui_tr("下限"),
+            datalab::ui::ui_tr("上限"), datalab::ui::ui_tr("目标值"), datalab::ui::ui_tr("权重")});
         table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
         table_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
         table_->verticalHeader()->setVisible(false);
@@ -334,9 +373,9 @@ private:
             name->setFlags(name->flags() & ~Qt::ItemIsEditable);
             table_->setItem(row, 0, name);
             auto* combo = new QComboBox(table_);
-            combo->addItem(QStringLiteral("最大化"), QStringLiteral("maximize"));
-            combo->addItem(QStringLiteral("最小化"), QStringLiteral("minimize"));
-            combo->addItem(QStringLiteral("目标值"), QStringLiteral("target"));
+            combo->addItem(datalab::ui::ui_tr("最大化"), QStringLiteral("maximize"));
+            combo->addItem(datalab::ui::ui_tr("最小化"), QStringLiteral("minimize"));
+            combo->addItem(datalab::ui::ui_tr("目标值"), QStringLiteral("target"));
             auto* lower = new QLineEdit(table_);
             auto* upper = new QLineEdit(table_);
             auto* target = new QLineEdit(table_);
@@ -445,19 +484,19 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     auto* left = new QVBoxLayout(left_panel);
     left->setContentsMargins(16, 16, 16, 16);
     left->setSpacing(8);
-    auto* source_title = new QLabel(QStringLiteral("工作表列"), this);
+    auto* source_title = new QLabel(datalab::ui::ui_tr("工作表列"), this);
     source_title->setStyleSheet(QStringLiteral(
         "font-size: 15px; font-weight: 600; color: #29434e;"));
     left->addWidget(source_title);
     auto* search = new QLineEdit(this);
-    search->setPlaceholderText(QStringLiteral("搜索列名…"));
+    search->setPlaceholderText(datalab::ui::ui_tr("搜索列名…"));
     search->setClearButtonEnabled(true);
     left->addWidget(search);
     available_ = new QListWidget(this);
     for (int index = 0; index < column_labels_.size(); ++index) {
         QString label = column_labels_.at(index);
         if (index >= 0 && index < static_cast<int>(column_types_.size())) {
-            label += QStringLiteral("  [") + column_type_label(
+            label += QStringLiteral("  [") + column_type_display(
                 column_types_[static_cast<std::size_t>(index)]) + QStringLiteral("]");
         }
         auto* item = new QListWidgetItem(label, available_);
@@ -465,21 +504,21 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     }
     available_->setSelectionMode(QAbstractItemView::ExtendedSelection);
     left->addWidget(available_);
-    auto* select = new QPushButton(QStringLiteral("选择 >"), this);
+    auto* select = new QPushButton(datalab::ui::ui_tr("选择 >"), this);
     select->setIcon(QIcon(QStringLiteral(":/icons/import-data.svg")));
     left->addWidget(select);
-    auto* remove = new QPushButton(QStringLiteral("移除选中列"), this);
+    auto* remove = new QPushButton(datalab::ui::ui_tr("移除选中列"), this);
     remove->setIcon(QIcon(QStringLiteral(":/icons/error.svg")));
     left->addWidget(remove);
     left->addWidget(new QLabel(
-        QStringLiteral("先点击右侧角色框，再点“选择 >”或双击左侧列。"), this));
+        datalab::ui::ui_tr("先点击右侧角色框，再点“选择 >”或双击左侧列。"), this));
 
     auto* right_panel = new QFrame(this);
     right_panel->setObjectName(QStringLiteral("dialog_card"));
     auto* right = new QVBoxLayout(right_panel);
     right->setContentsMargins(16, 16, 16, 16);
     right->setSpacing(8);
-    auto* settings_title = new QLabel(QStringLiteral("分析设置"), this);
+    auto* settings_title = new QLabel(datalab::ui::ui_tr("分析设置"), this);
     settings_title->setStyleSheet(QStringLiteral(
         "font-size: 15px; font-weight: 600; color: #29434e;"));
     right->addWidget(settings_title);
@@ -494,7 +533,7 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     roles_layout_->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
     settings_layout->addLayout(roles_layout_);
     advanced_toggle_ = new QToolButton(this);
-    advanced_toggle_->setText(QStringLiteral("高级选项"));
+    advanced_toggle_->setText(datalab::ui::ui_tr("高级选项"));
     advanced_toggle_->setCheckable(true);
     advanced_toggle_->setObjectName(QStringLiteral("advanced_toggle"));
     advanced_toggle_->setChecked(false);
@@ -522,7 +561,7 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     root->addLayout(content, 1);
 
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    auto* reset = new QPushButton(QStringLiteral("重置默认值"), this);
+    auto* reset = new QPushButton(datalab::ui::ui_tr("重置默认值"), this);
     buttons->addButton(reset, QDialogButtonBox::ResetRole);
     root->addWidget(buttons);
 
@@ -530,11 +569,11 @@ AnalysisSetupDialog::AnalysisSetupDialog(
     const auto cancel_button = buttons->button(QDialogButtonBox::Cancel);
     if (ok_button != nullptr) {
         ok_button->setObjectName(QStringLiteral("run_button"));
-        ok_button->setText(QStringLiteral("运行分析"));
+        ok_button->setText(datalab::ui::ui_tr("运行分析"));
         ok_button->setIcon(QIcon(QStringLiteral(":/icons/success.svg")));
     }
     if (cancel_button != nullptr) {
-        cancel_button->setText(QStringLiteral("取消"));
+        cancel_button->setText(datalab::ui::ui_tr("取消"));
         cancel_button->setIcon(QIcon(QStringLiteral(":/icons/error.svg")));
     }
 
@@ -629,11 +668,12 @@ void AnalysisSetupDialog::add_role(const analysis_commands::RoleSpec& spec)
         list->setStyleSheet(
             QStringLiteral("QListWidget { border: 1px solid #cbd9de; background: #ffffff; }"));
     }
+    const QString display_label = datalab::ui::ui_tr(spec.label);
     const QString caption = spec.optional
-        ? spec.label + QStringLiteral("（可选）")
-        : spec.label;
+        ? display_label + datalab::ui::ui_tr("（可选）")
+        : display_label;
     roles_layout_->addRow(
-        make_field_label(spec.label, QStringLiteral(":/icons/data-table.svg"),
+        make_field_label(display_label, QStringLiteral(":/icons/data-table.svg"),
                          spec.optional, this),
         list);
     list->setToolTip(caption);
@@ -678,7 +718,7 @@ QWidget* AnalysisSetupDialog::add_input(const analysis_commands::InputSpec& spec
                && !spec.choices.empty()) {
         auto* combo = new QComboBox(this);
         for (const auto& [value, label] : spec.choices) {
-            combo->addItem(label, value);
+            combo->addItem(datalab::ui::ui_tr(label), value);
         }
         combo->setCurrentIndex(std::max(0, combo->findData(spec.placeholder)));
         combo->setProperty("defaultIndex", combo->currentIndex());
@@ -723,15 +763,16 @@ QWidget* AnalysisSetupDialog::add_input(const analysis_commands::InputSpec& spec
         editor = line;
     }
 
+    const QString display_label = datalab::ui::ui_tr(spec.label);
     editor->setObjectName(spec.id);
     editor->setToolTip(spec.help.isEmpty()
-                           ? spec.label + QStringLiteral("，默认值：") + spec.placeholder
+                           ? display_label + datalab::ui::ui_tr("，默认值：") + spec.placeholder
                            : spec.help);
-    editor->setAccessibleName(spec.label);
+    editor->setAccessibleName(display_label);
     editor->setMinimumHeight(34);
     QFormLayout* target_layout = spec.advanced ? advanced_layout_ : roles_layout_;
     target_layout->addRow(
-        make_field_label(spec.label, QStringLiteral(":/icons/settings.svg"), optional, this),
+        make_field_label(display_label, QStringLiteral(":/icons/settings.svg"), optional, this),
         editor);
     if (spec.id == QStringLiteral("historical_center")) {
         if (auto* sigma = findChild<QWidget*>(QStringLiteral("historical_sigma_z"))) {
@@ -798,10 +839,17 @@ void AnalysisSetupDialog::select_into_role()
                 column_types_[static_cast<std::size_t>(column)]);
             if (!allowed.contains(actual)) {
                 copy->setForeground(QColor(QStringLiteral("#a15c00")));
+                QStringList allowed_display;
+                for (const QString& token : allowed) {
+                    allowed_display.push_back(translate_type_token(token));
+                }
+                const QString type_join = QStringLiteral(", ");
                 copy->setToolTip(
-                    QStringLiteral("列类型为“%1”，与角色建议的类型（%2）不完全匹配；"
-                                   "命令仍会在提交时进行最终校验。")
-                        .arg(actual, allowed.join(QStringLiteral("、"))));
+                    datalab::ui::ui_tr(
+                        "列类型为“%1”，与角色建议的类型（%2）不完全匹配；"
+                        "命令仍会在提交时进行最终校验。")
+                        .arg(translate_type_token(actual),
+                             allowed_display.join(type_join)));
             }
         }
         target->addItem(copy);
@@ -958,13 +1006,13 @@ void AnalysisSetupDialog::validate_and_accept()
         if (role->count() < minimum) {
             set_field_error(
                 role->objectName(),
-                QStringLiteral("此角色至少需要选择 %1 列。").arg(minimum));
+                datalab::ui::ui_tr("此角色至少需要选择 %1 列。").arg(minimum));
             return;
         }
         if (maximum > 0 && role->count() > maximum) {
             set_field_error(
                 role->objectName(),
-                QStringLiteral("此角色最多只能选择 %1 列。").arg(maximum));
+                datalab::ui::ui_tr("此角色最多只能选择 %1 列。").arg(maximum));
             return;
         }
     }

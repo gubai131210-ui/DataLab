@@ -1,0 +1,145 @@
+exact=1481 dyn_frags=298 catalog_zh=1782
+titles=0 headers=0 axes=0 diags_u=28 interp_u=82 dyn_interp=65 static_interp=17
+
+=== UNMAPPED TITLES ===
+
+=== UNMAPPED HEADERS ===
+
+=== UNMAPPED AXES ===
+
+=== DIAG FAMILY ===
+  25	misc
+  2	capability
+  1	spc
+
+=== DYN INTERP FAMILY ===
+  46	misc
+  6	doe_msa
+  4	tables
+  3	spc
+  2	inference
+  2	regression
+  1	capability
+  1	eda_graph
+
+=== STATIC INTERP FAMILY ===
+  6	misc
+  5	inference
+  4	doe_msa
+  2	regression
+
+=== UNMAPPED DIAGS ===
+diag	misc	src/domain/statistics/control_charts.cpp:1189	过程 σ 必须大于 0。
+diag	misc	src/domain/statistics/control_charts.cpp:1295	无法估计 σ。
+diag	misc	src/domain/statistics/control_charts.cpp:1375	无法估计过程 σ。
+diag	misc	src/domain/statistics/control_charts.cpp:1708	组内 σ 至少需要两个子组。
+diag	misc	src/domain/statistics/control_charts.cpp:1720	各子组必须具有相同观测数。
+diag	misc	src/domain/statistics/control_charts.cpp:1726	子组不允许 NaN 或无穷观测。
+diag	misc	src/domain/statistics/control_charts.cpp:1735	子组大小超出无偏常数表范围。
+diag	misc	src/domain/statistics/control_charts.cpp:1752	无法计算该子组大小的 c4。
+diag	misc	src/domain/statistics/doe_factorial.cpp:427	部分析因分辨度 
+diag	misc	src/domain/statistics/process_capability.cpp:60	LSL 必须为有限数。
+diag	misc	src/domain/statistics/process_capability.cpp:65	USL 必须为有限数。
+diag	misc	src/domain/statistics/process_capability.cpp:81	过程均值必须为有限数。
+diag	capability	src/domain/statistics/process_capability.cpp:611	组间/组内能力需要有效数值观测。
+diag	misc	src/domain/statistics/quality_extensions.cpp:115	样本量 n 必须 ≥ 1。
+diag	misc	src/domain/statistics/quality_extensions.cpp:190	无法估计组内方差。
+diag	misc	src/domain/statistics/quality_extensions.cpp:196	组内标准差为 0。
+diag	misc	src/domain/statistics/response_surface_design.cpp:44	因素 ID 不能为空。
+diag	misc	src/domain/statistics/response_surface_design.cpp:58	因素低/高水平必须有限。
+diag	misc	src/domain/statistics/response_surface_design.cpp:201	alpha 必须为正有限数。
+diag	misc	src/application/analysis_service.cpp:2170	相关分析：
+diag	misc	src/application/analysis_service.cpp:2230	单样本 t：
+diag	misc	src/application/analysis_service.cpp:2313	单样本 Z：
+diag	misc	src/application/analysis_service.cpp:2423	双样本 t：
+diag	capability	src/application/analysis_service.cpp:4682	能力分析: 
+diag	misc	src/application/analysis_service.cpp:9665	响应优化预测：
+diag	misc	src/application/analysis_service.cpp:14034	设计生成失败。
+diag	spc	src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。
+diag	misc	src/application/chart_pages.cpp:187	没有可显示的数据。
+
+=== UNMAPPED DYN INTERP ===
+dyn	capability	L2092	，组间 σ = 
+dyn	doe_msa	L168	；其余因子实际单位 hold：
+dyn	doe_msa	L184	；其余因子编码 hold=0：
+dyn	doe_msa	L367	，低/高参考点偏倚 = 
+dyn	doe_msa	L914	；失拟 DF = 
+dyn	doe_msa	L1497	，中心点 = 
+dyn	doe_msa	L1514	）：因子 = 
+dyn	eda_graph	L2471	；Silverman 带宽 h = 
+dyn	inference	L689	 下，估计实际功效 = 
+dyn	inference	L695	、目标功效 = 
+dyn	misc	L126	 下显著的项：
+dyn	misc	L218	；运行数 = 
+dyn	misc	L220	；分辨度 = 
+dyn	misc	L287	，分级 = 
+dyn	misc	L698	，对应样本量 n = 
+dyn	misc	L837	，显著比较对数 = 
+dyn	misc	L879	；项数 = 
+dyn	misc	L901	；编码模式 = 
+dyn	misc	L1100	，配对有效 N = 
+dyn	misc	L1101	，不一致对数 b+c = 
+dyn	misc	L1311	，变量数 = 
+dyn	misc	L1312	，迭代 = 
+dyn	misc	L1334	，预测变量 = 
+dyn	misc	L1335	，结点 = 
+dyn	misc	L1347	，滞后 = 
+dyn	misc	L1378	，变量 = 
+dyn	misc	L1379	，树数 = 
+dyn	misc	L1380	，标记异常 = 
+dyn	misc	L1407	，合并步 = 
+dyn	misc	L1417	，水平 = 
+dyn	misc	L1428	，类数 = 
+dyn	misc	L1450	）：变量数 = 
+dyn	misc	L1452	，成对数 = 
+dyn	misc	L1460	，候选 = 
+dyn	misc	L1461	，选入 = 
+dyn	misc	L1473	，左/区间/右 = 
+dyn	misc	L1496	，运行 = 
+dyn	misc	L1506	，边中点 = 
+dyn	misc	L1508	，总运行 = 
+dyn	misc	L1516	，立方点 = 
+dyn	misc	L1517	，星点 = 
+dyn	misc	L1532	，暴露量 = 
+dyn	misc	L1534	（口径 = 
+dyn	misc	L1591	，总均值 = 
+dyn	misc	L1693	，差值 = 
+dyn	misc	L1729	，变换后标准化 SD = 
+dyn	misc	L1745	，比较量=率比 ρ=λ1/λ2
+dyn	misc	L2254	 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = 
+dyn	misc	L2287	，判定区 = 
+dyn	misc	L2323	，子组数 = 
+dyn	misc	L2396	，中位数 = 
+dyn	misc	L2397	；关于中位数游程 = 
+dyn	misc	L2398	，上升/下降游程 = 
+dyn	misc	L2424	，组数 = 
+dyn	misc	L2450	，最大滞后 = 
+dyn	misc	L2451	；默认置信带方法 = 
+dyn	regression	L1287	；最大 VIF = 
+dyn	regression	L1348	，有效回归行 = 
+dyn	spc	L2325	，超限 = 
+dyn	spc	L2425	，Z 图超限 = 
+dyn	spc	L2439	，「单点超出 3σ 控制限」触发 = 
+dyn	tables	L978	，缺失 N* = 
+dyn	tables	L993	，优势比 OR = 
+dyn	tables	L1034	 分类，N = 
+dyn	tables	L1075	（最小期望频数 = 
+
+=== UNMAPPED STATIC INTERP ===
+static	doe_msa	L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+static	doe_msa	L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+static	doe_msa	L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+static	doe_msa	L1587	 个因子汇总 
+static	inference	L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+static	inference	L1665	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+static	inference	L1668	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+static	inference	L2159	 正态性检验判定为 
+static	inference	L2192	。在 α 下拒绝“无异常值”假设，嫌疑观测需工程调查，
+static	misc	L1230	 未计算出 P
+static	misc	L1589	 个有效测量的均值与标准差
+static	misc	L1619	，置信水平 
+static	misc	L1663	。未拒绝原假设不能证明方差相等。
+static	misc	L1793	 双单侧 P 值分别为 
+static	misc	L2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+static	regression	L1269	，Hosmer–Lemeshow 未计算
+static	regression	L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；

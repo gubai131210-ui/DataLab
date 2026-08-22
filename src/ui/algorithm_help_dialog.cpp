@@ -134,10 +134,12 @@ AlgorithmHelpDialog::AlgorithmHelpDialog(QWidget* parent)
     copy_formula_button_ = new QPushButton(QStringLiteral("复制公式纯文本"), this);
     copy_summary_button_ = new QPushButton(QStringLiteral("复制条目摘要"), this);
     open_reference_button_ = new QPushButton(QStringLiteral("打开参考网站"), this);
+    formula_registry_button_ = new QPushButton(QStringLiteral("在公式注册表中打开"), this);
     toolbar->addWidget(search_edit_, 1);
     toolbar->addWidget(copy_formula_button_);
     toolbar->addWidget(copy_summary_button_);
     toolbar->addWidget(open_reference_button_);
+    toolbar->addWidget(formula_registry_button_);
     root_layout->addLayout(toolbar);
 
     auto* splitter = new QSplitter(Qt::Horizontal, this);
@@ -168,6 +170,8 @@ AlgorithmHelpDialog::AlgorithmHelpDialog(QWidget* parent)
     connect(copy_formula_button_, &QPushButton::clicked, this, &AlgorithmHelpDialog::copy_formula_plain_text);
     connect(copy_summary_button_, &QPushButton::clicked, this, &AlgorithmHelpDialog::copy_entry_summary);
     connect(open_reference_button_, &QPushButton::clicked, this, &AlgorithmHelpDialog::open_selected_reference);
+    connect(formula_registry_button_, &QPushButton::clicked, this,
+            &AlgorithmHelpDialog::emit_open_in_formula_registry);
 
     rebuild_tree(QString());
     if (tree_->topLevelItemCount() > 0) {
@@ -249,6 +253,7 @@ void AlgorithmHelpDialog::on_tree_selection_changed()
 
 void AlgorithmHelpDialog::show_entry(const AlgorithmHelpEntry& entry)
 {
+    current_entry_id_ = entry.id;
     detail_browser_->setHtml(build_entry_html(entry));
     formula_browser_->setHtml(build_formula_sources_html(entry));
     QStringList formula_texts;
@@ -484,4 +489,12 @@ void AlgorithmHelpDialog::open_selected_reference()
         return;
     }
     QDesktopServices::openUrl(url);
+}
+
+void AlgorithmHelpDialog::emit_open_in_formula_registry()
+{
+    if (current_entry_id_.isEmpty()) {
+        return;
+    }
+    emit open_in_formula_registry(current_entry_id_);
 }

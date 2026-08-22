@@ -17,6 +17,8 @@ private slots:
     void rejectsSmallSampleAndZeroVariance();
     void buildsServiceCompleteCaseContract();
     void interpretationDoesNotClaimDeletion();
+    void dixonR10MatchesHandCalculation();
+    void dixonServiceBranchesFromMethod();
 };
 
 void GrubbsTest::statisticMatchesHandCalculation()
@@ -106,6 +108,62 @@ void GrubbsTest::interpretationDoesNotClaimDeletion()
         [](const auto& section) { return section.heading == "统计结论"; });
     QVERIFY(conclusion != page.interpretation.cend());
     QVERIFY(conclusion->bullets.front().find("工程调查") != std::string::npos);
+}
+
+void GrubbsTest::dixonR10MatchesHandCalculation()
+{
+    // # source: formula_reference — Dixon r10 high: (yn−y_{n−1})/(yn−y1)
+    // Sample {1,2,3,4,10}: r_high=(10−4)/(10−1)=6/9.
+    const auto result = datalab::domain::statistics::dixon_r10_outlier_test(
+        {1.0, 2.0, 3.0, 4.0, 10.0}, {10, 11, 12, 13, 14});
+    QCOMPARE(result.n, std::size_t{5});
+    QVERIFY(result.r_statistic.has_value());
+    QVERIFY(qAbs(*result.r_statistic - 6.0 / 9.0) < 1.0e-12);
+    QCOMPARE(result.direction, std::string{"largest"});
+    QCOMPARE(*result.outlier_value, 10.0);
+    QCOMPARE(*result.source_row, std::size_t{14});
+    QVERIFY(result.critical_value.has_value());
+    QVERIFY(result.p_value.has_value());
+    QVERIFY(std::any_of(
+        result.diagnostics.cbegin(), result.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "dixon_p_interpolated"
+                || diagnostic.code == "dixon_p_approx_or_table";
+        }));
+}
+
+void GrubbsTest::dixonServiceBranchesFromMethod()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"Y"};
+    table.rows = {{"1"}, {"2"}, {"3"}, {"4"}, {"10"}};
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.variable_columns = {0};
+    configuration.selection.measurement_column = 0;
+    configuration.inference.confidence_level = 0.95;
+    configuration.inference.alternative = "two_sided";
+    configuration.inference.outlier_method = "dixon_r10";
+    const auto page =
+        datalab::application::AnalysisService::outlier_test(table, configuration);
+    QCOMPARE(page.title, std::string{"异常值检验"});
+    QVERIFY(page.facts.outlier_test.has_value());
+    QCOMPARE(page.facts.outlier_test->method, std::string{"dixon_r10"});
+    QVERIFY(page.facts.outlier_test->dixon_r.has_value());
+    QVERIFY(qAbs(*page.facts.outlier_test->dixon_r - 6.0 / 9.0) < 1.0e-12);
+    QVERIFY(!page.facts.outlier_test->g_statistic.has_value());
+    QVERIFY(std::any_of(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table_out) {
+            return table_out.title == "方法"
+                && !table_out.rows.empty()
+                && table_out.rows.front().front() == "Dixon r10";
+        }));
+
+    configuration.inference.outlier_method = "grubbs";
+    const auto grubbs_page =
+        datalab::application::AnalysisService::outlier_test(table, configuration);
+    QCOMPARE(grubbs_page.facts.outlier_test->method, std::string{"grubbs"});
+    QVERIFY(grubbs_page.facts.outlier_test->g_statistic.has_value());
 }
 
 QTEST_APPLESS_MAIN(GrubbsTest)

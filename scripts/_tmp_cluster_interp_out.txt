@@ -1,0 +1,287 @@
+plain_keys=1476 sw_prefixes=0 unmapped_unique=118
+
+=== FAMILY COUNTS ===
+ 44  other_dynamic
+ 24  other_static
+ 10  doe_rsm_msa
+  9  equiv_var_prop_boxcox
+  7  tables_mcnemar_chi
+  6  reliability_warranty
+  6  corr_anova_dw
+  5  nonparam_stats
+  3  ml_models
+  3  spc_honesty
+  1  capability_gates
+
+=== TOP PREFIX CLUSTERS ===
+
+--- n=2 pref='，在 α = '
+  L1274	，在 α = 0.05 下拒绝拟合不足（Hosmer–Lemeshow P = 
+  L1276	，在 α = 0.05 下未拒绝拟合不足（Hosmer–Lemeshow P = 
+
+--- n=1 pref='Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；'
+  L1665	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+
+--- n=1 pref=' 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = '
+  L2254	 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = 
+
+--- n=1 pref='有序 Logistic（比例优势 logit）：N = '
+  L1416	有序 Logistic（比例优势 logit）：N = 
+
+--- n=1 pref='相关分析使用 complete-case 对齐（N = '
+  L2216	相关分析使用 complete-case 对齐（N = 
+
+--- n=1 pref='McNemar（Edwards 连续性校正）χ² = '
+  L1097	McNemar（Edwards 连续性校正）χ² = 
+
+--- n=1 pref='。图只用于探索变异结构，不是显著性检验或过程判定。'
+  L1596	。图只用于探索变异结构，不是显著性检验或过程判定。
+
+--- n=1 pref='最佳候选总体 Desirability = '
+  L251	最佳候选总体 Desirability = 
+
+--- n=1 pref='区间删失 KM（Turnbull）：N = '
+  L1472	区间删失 KM（Turnbull）：N = 
+
+--- n=1 pref='RSM 二次模型（编码单位）：因子数 = '
+  L877	RSM 二次模型（编码单位）：因子数 = 
+
+--- n=1 pref='单样本 Wilcoxon 符号秩 P = '
+  L1240	单样本 Wilcoxon 符号秩 P = 
+
+--- n=1 pref='Fine-Gray 多协变量子分布风险：'
+  L461	Fine-Gray 多协变量子分布风险：目标原因=
+
+--- n=1 pref='配对 Wilcoxon 符号秩 P = '
+  L1245	配对 Wilcoxon 符号秩 P = 
+
+--- n=1 pref='，Hosmer–Lemeshow 未计算'
+  L1269	，Hosmer–Lemeshow 未计算
+
+--- n=1 pref='。P 值只描述两组比例差异的证据强度，'
+  L1701	。P 值只描述两组比例差异的证据强度，不是规格判定。
+
+--- n=1 pref='。概率图只是诊断，不能写成数据已正态。'
+  L1732	。概率图只是诊断，不能写成数据已正态。
+
+--- n=1 pref='。P 值只描述与假设发生率的证据强度，'
+  L1766	。P 值只描述与假设发生率的证据强度，不是规格判定。
+
+--- n=1 pref='这只陈述界限关系，不能写成已证明等价。'
+  L1796	这只陈述界限关系，不能写成已证明等价。
+
+--- n=1 pref='。P 值与置信区间只描述当前样本证据，'
+  L2141	。P 值与置信区间只描述当前样本证据，统计显著不等于工程差异具有实际重要性，也不是过程合格判定。
+
+--- n=1 pref='，「单点超出 3σ 控制限」触发 = '
+  L2439	，「单点超出 3σ 控制限」触发 = 
+
+--- n=1 pref='。P 值只描述与假设比例的证据强度，'
+  L1715	。P 值只描述与假设比例的证据强度，不是规格判定。
+
+--- n=1 pref='。在 alpha 下未拒绝正态假设，'
+  L2167	。在 alpha 下未拒绝正态假设，不能写成数据已正态。
+
+--- n=1 pref='。证据反对正态假设，这不是规格判定。'
+  L2169	。证据反对正态假设，这不是规格判定。
+
+--- n=1 pref='。统计量未计算，不能写成数据已正态。'
+  L2171	。统计量未计算，不能写成数据已正态。
+
+--- n=1 pref='；Silverman 带宽 h = '
+  L2471	；Silverman 带宽 h = 
+
+--- n=1 pref='Weibull 形状参数 β = '
+  L558	Weibull 形状参数 β = 
+
+--- n=1 pref='三参数对数正态估计了阈值 λ = '
+  L590	三参数对数正态估计了阈值 λ = 
+
+--- n=1 pref='Box–Behnken：因子 = '
+  L1505	Box–Behnken：因子 = 
+
+--- n=1 pref='Bartlett 对正态偏离敏感；'
+  L1668	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+
+--- n=1 pref='。在 α 下拒绝“无异常值”假设，'
+  L2192	。在 α 下拒绝“无异常值”假设，嫌疑观测需工程调查，
+
+--- n=1 pref='分析错误，以下结论不可用于决策：'
+  L69	分析错误，以下结论不可用于决策：
+
+--- n=1 pref='失拟检验可用（纯误差 DF = '
+  L912	失拟检验可用（纯误差 DF = 
+
+--- n=1 pref='。未拒绝原假设不能证明方差相等。'
+  L1663	。未拒绝原假设不能证明方差相等。
+
+--- n=1 pref='。这些标准差只描述当前子组分解，'
+  L2100	。这些标准差只描述当前子组分解，不是规格判定。
+
+--- n=1 pref='已按阶段列汇总估计（阶段数 = '
+  L2305	已按阶段列汇总估计（阶段数 = 
+
+--- n=1 pref='ACF/PACF 基于 N = '
+  L2449	ACF/PACF 基于 N = 
+
+--- n=1 pref='NIST EDA 四图：N = '
+  L2489	NIST EDA 四图：N = 
+
+--- n=1 pref='；其余因子实际单位 hold：'
+  L168	；其余因子实际单位 hold：
+
+--- n=1 pref='；其余因子编码 hold=0：'
+  L184	；其余因子编码 hold=0：
+
+--- n=1 pref='两参数指数估计了阈值 λ = '
+  L579	两参数指数估计了阈值 λ = 
+
+--- n=1 pref='Tukey 同时置信水平 = '
+  L836	Tukey 同时置信水平 = 
+
+--- n=1 pref='，单元 StDev 平均 = '
+  L1594	，单元 StDev 平均 = 
+
+--- n=1 pref='Box-Cox 选定 λ = '
+  L1726	Box-Cox 选定 λ = 
+
+--- n=1 pref='独立二项试验与大样本正态近似（'
+  L1803	独立二项试验与大样本正态近似（Wald z-TOST）
+
+--- n=1 pref='符号检验（二项精确）P = '
+  L1216	符号检验（二项精确）P = 
+
+--- n=1 pref='I-MR σ 估计方法 = '
+  L2294	I-MR σ 估计方法 = 
+
+--- n=1 pref='当前 |t| 最大项 = '
+  L886	当前 |t| 最大项 = 
+
+--- n=1 pref='，不一致对数 b+c = '
+  L1101	，不一致对数 b+c = 
+
+--- n=1 pref=' 个有效测量的均值与标准差'
+  L1589	 个有效测量的均值与标准差
+
+--- n=1 pref='。区间只描述当前样本覆盖，'
+  L1631	。区间只描述当前样本覆盖，不是规格覆盖或过程判定。
+
+=== FULL UNIQUE (line, text) ===
+69	other_dynamic	分析错误，以下结论不可用于决策：
+156	doe_rsm_msa	等值线/曲面轴为 
+168	other_dynamic	；其余因子实际单位 hold：
+184	other_dynamic	；其余因子编码 hold=0：
+251	doe_rsm_msa	最佳候选总体 Desirability = 
+340	doe_rsm_msa	量具稳定性图发现 
+366	doe_rsm_msa	偏倚回归斜率 = 
+367	doe_rsm_msa	，低/高参考点偏倚 = 
+412	doe_rsm_msa	偏倚检验 P = 
+461	reliability_warranty	Fine-Gray 多协变量子分布风险：目标原因=
+558	reliability_warranty	Weibull 形状参数 β = 
+579	reliability_warranty	两参数指数估计了阈值 λ = 
+590	reliability_warranty	三参数对数正态估计了阈值 λ = 
+689	corr_anova_dw	 下，估计实际功效 = 
+695	corr_anova_dw	、目标功效 = 
+698	other_dynamic	，对应样本量 n = 
+722	other_static	预测误差指标已计算；
+795	corr_anova_dw	最大 VIF = 
+832	other_dynamic	当前有统计证据的项：
+836	corr_anova_dw	Tukey 同时置信水平 = 
+837	other_dynamic	，显著比较对数 = 
+877	doe_rsm_msa	RSM 二次模型（编码单位）：因子数 = 
+886	other_dynamic	当前 |t| 最大项 = 
+899	other_dynamic	设计来源 ID = 
+901	other_dynamic	；编码模式 = 
+912	doe_rsm_msa	失拟检验可用（纯误差 DF = 
+914	doe_rsm_msa	；失拟 DF = 
+977	other_dynamic	有效观测 N = 
+978	tables_mcnemar_chi	，缺失 N* = 
+993	tables_mcnemar_chi	，优势比 OR = 
+1018	tables_mcnemar_chi	最大 |调整残差| = 
+1034	tables_mcnemar_chi	 分类，N = 
+1075	tables_mcnemar_chi	（最小期望频数 = 
+1085	tables_mcnemar_chi	缺失 N* = 
+1085	other_static	，未进入类别计数。
+1097	tables_mcnemar_chi	McNemar（Edwards 连续性校正）χ² = 
+1100	other_dynamic	，配对有效 N = 
+1101	other_dynamic	，不一致对数 b+c = 
+1209	nonparam_stats	Friedman S（调整后）= 
+1216	nonparam_stats	符号检验（二项精确）P = 
+1234	nonparam_stats	比较准则 K = 
+1240	nonparam_stats	单样本 Wilcoxon 符号秩 P = 
+1245	nonparam_stats	配对 Wilcoxon 符号秩 P = 
+1269	other_static	，Hosmer–Lemeshow 未计算
+1274	other_dynamic	，在 α = 0.05 下拒绝拟合不足（Hosmer–Lemeshow P = 
+1276	other_dynamic	，在 α = 0.05 下未拒绝拟合不足（Hosmer–Lemeshow P = 
+1287	corr_anova_dw	；最大 VIF = 
+1332	ml_models	CART 单树任务 = 
+1334	other_dynamic	，预测变量 = 
+1337	other_dynamic	；主导分裂变量 = 
+1348	other_dynamic	，有效回归行 = 
+1380	other_dynamic	，标记异常 = 
+1416	ml_models	有序 Logistic（比例优势 logit）：N = 
+1427	ml_models	线性判别：N = 
+1450	other_dynamic	）：变量数 = 
+1472	reliability_warranty	区间删失 KM（Turnbull）：N = 
+1473	other_dynamic	，左/区间/右 = 
+1505	doe_rsm_msa	Box–Behnken：因子 = 
+1531	reliability_warranty	保修摘要：T_w = 
+1589	other_static	 个有效测量的均值与标准差
+1594	other_dynamic	，单元 StDev 平均 = 
+1596	other_static	。图只用于探索变异结构，不是显著性检验或过程判定。
+1610	equiv_var_prop_boxcox	容差区间方法为 
+1631	other_static	。区间只描述当前样本覆盖，不是规格覆盖或过程判定。
+1663	other_static	。未拒绝原假设不能证明方差相等。
+1665	equiv_var_prop_boxcox	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+1668	equiv_var_prop_boxcox	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+1672	equiv_var_prop_boxcox	F 检验依赖正态假设。
+1674	equiv_var_prop_boxcox	Levene（中位数）为稳健默认路径。
+1686	equiv_var_prop_boxcox	两比例检验方法为 
+1701	other_static	。P 值只描述两组比例差异的证据强度，不是规格判定。
+1703	equiv_var_prop_boxcox	单比例检验方法为 
+1715	other_static	。P 值只描述与假设比例的证据强度，不是规格判定。
+1726	equiv_var_prop_boxcox	Box-Cox 选定 λ = 
+1727	other_dynamic	，有效观测 N = 
+1729	other_dynamic	，变换后标准化 SD = 
+1732	other_static	。概率图只是诊断，不能写成数据已正态。
+1743	other_static	双样本泊松率方法为 
+1745	other_static	，比较量=率比 ρ=λ1/λ2
+1756	other_static	单样本泊松率方法为 
+1766	other_static	。P 值只描述与假设发生率的证据强度，不是规格判定。
+1793	other_static	 双单侧 P 值分别为 
+1796	equiv_var_prop_boxcox	这只陈述界限关系，不能写成已证明等价。
+1803	other_static	独立二项试验与大样本正态近似（Wald z-TOST）
+1809	other_static	独立正态样本与正参考均值（均值比 TOST，非对数）
+2063	spc_honesty	特殊原因策略 = 
+2092	other_dynamic	，组间 σ = 
+2100	other_static	。这些标准差只描述当前子组分解，不是规格判定。
+2141	capability_gates	。P 值与置信区间只描述当前样本证据，统计显著不等于工程差异具有实际重要性，也不是过程合格判定。
+2159	other_static	 正态性检验判定为 
+2167	other_static	。在 alpha 下未拒绝正态假设，不能写成数据已正态。
+2169	other_static	。证据反对正态假设，这不是规格判定。
+2171	other_static	。统计量未计算，不能写成数据已正态。
+2192	other_static	。在 α 下拒绝“无异常值”假设，嫌疑观测需工程调查，
+2195	other_static	。未拒绝“无异常值”假设，不能证明数据中没有异常值。
+2216	corr_anova_dw	相关分析使用 complete-case 对齐（N = 
+2246	other_dynamic	批大小 N = 
+2254	other_dynamic	 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = 
+2258	other_dynamic	决策限方法 = 
+2294	other_dynamic	I-MR σ 估计方法 = 
+2305	other_dynamic	已按阶段列汇总估计（阶段数 = 
+2394	other_dynamic	运行图 N = 
+2397	other_dynamic	；关于中位数游程 = 
+2398	other_dynamic	，上升/下降游程 = 
+2423	other_dynamic	Z-MR 图 N = 
+2425	spc_honesty	，Z 图超限 = 
+2438	spc_honesty	移动平均图窗宽 w = 
+2439	other_dynamic	，「单点超出 3σ 控制限」触发 = 
+2449	other_dynamic	ACF/PACF 基于 N = 
+2450	other_dynamic	，最大滞后 = 
+2451	other_dynamic	；默认置信带方法 = 
+2469	other_dynamic	密度图：N = 
+2471	other_dynamic	；Silverman 带宽 h = 
+2476	other_dynamic	二维分箱：N = 
+2481	other_dynamic	小提琴图：组数 = 
+2485	other_dynamic	通用条形图：类别数 = 
+2489	other_dynamic	NIST EDA 四图：N = 
+2495	other_dynamic	受控分面：面板 = 

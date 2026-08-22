@@ -1,0 +1,133 @@
+mapped=1262 unmapped=138
+FAMILY
+  131	misc
+  4	doe_rsm
+  2	inference
+  1	attrib_spc
+BY_KIND
+  76	param_like
+  32	header
+  27	title
+  2	series
+  1	status_diag
+ITEMS
+src/application/analysis_service.cpp:2187	title	 与 
+src/application/analysis_service.cpp:2428	param_like	双样本 t 检验跳过缺失或非法单元格；组 1 = 
+src/application/analysis_service.cpp:2429	param_like	，组 2 = 
+src/application/analysis_service.cpp:5633	param_like	Fisher 精确检验要求恰好 2×2 水平；当前行水平数 = 
+src/application/analysis_service.cpp:5635	header	，列水平数 = 
+src/application/analysis_service.cpp:7208	title	 逐点统计
+src/application/analysis_service.cpp:7240	series	时间序列没有有效数值观测。
+src/application/analysis_service.cpp:8682	series	时间序列没有有效数值观测。
+src/application/analysis_service.cpp:9133	title	（编码）
+src/application/analysis_service.cpp:9134	title	（编码）
+src/application/analysis_service.cpp:14275	status_diag	无法计算 I-MR-R/S 控制图。
+src/application/analysis_service.cpp:14684	title	需要单位数列。
+src/application/analysis_service.cpp:15461	title	效应
+src/application/graph_service.cpp:412	param_like	    显示 N = 
+src/application/graph_service.cpp:413	param_like	    分析 N = 
+src/application/graph_service.cpp:444	title	散点图（分面）
+src/application/graph_service.cpp:484	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:485	param_like	    显示 N = 
+src/application/graph_service.cpp:499	header	    分面 = 
+src/application/graph_service.cpp:503	param_like	    显示 N = 
+src/application/graph_service.cpp:504	param_like	    分析 N = 
+src/application/graph_service.cpp:568	param_like	    显示 N = 
+src/application/graph_service.cpp:569	header	    分析 N = 
+src/application/graph_service.cpp:587	title	区间散点图（分面）
+src/application/graph_service.cpp:610	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:618	header	    分面 = 
+src/application/graph_service.cpp:622	param_like	    显示 N = 
+src/application/graph_service.cpp:623	header	    分析 N = 
+src/application/graph_service.cpp:693	param_like	    显示 N = 
+src/application/graph_service.cpp:694	param_like	    分析 N = 
+src/application/graph_service.cpp:708	title	相关图（分面）
+src/application/graph_service.cpp:717	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:724	header	    分面 = 
+src/application/graph_service.cpp:728	param_like	    显示 N = 
+src/application/graph_service.cpp:729	param_like	    分析 N = 
+src/application/graph_service.cpp:782	param_like	    显示 N = 
+src/application/graph_service.cpp:783	param_like	    分析 N = 
+src/application/graph_service.cpp:797	title	气泡图（分面）
+src/application/graph_service.cpp:806	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:814	header	    分面 = 
+src/application/graph_service.cpp:818	param_like	    显示 N = 
+src/application/graph_service.cpp:819	header	    分析 N = 
+src/application/graph_service.cpp:877	param_like	    显示 N = 
+src/application/graph_service.cpp:878	param_like	    分析 N = 
+src/application/graph_service.cpp:892	title	正态概率图（分面）
+src/application/graph_service.cpp:901	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:908	header	    分面 = 
+src/application/graph_service.cpp:912	param_like	    显示 N = 
+src/application/graph_service.cpp:913	header	    分析 N = 
+src/application/graph_service.cpp:967	param_like	    显示 N = 
+src/application/graph_service.cpp:968	header	    分析 N = 
+src/application/graph_service.cpp:982	title	经验累积分布图（分面）
+src/application/graph_service.cpp:991	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:996	header	    分面 = 
+src/application/graph_service.cpp:1000	param_like	    显示 N = 
+src/application/graph_service.cpp:1001	header	    分析 N = 
+src/application/graph_service.cpp:1056	param_like	    显示 N = 
+src/application/graph_service.cpp:1057	param_like	    分析 N = 
+src/application/graph_service.cpp:1071	title	矩阵图（分面）
+src/application/graph_service.cpp:1080	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1085	header	    分面 = 
+src/application/graph_service.cpp:1089	param_like	    显示 N = 
+src/application/graph_service.cpp:1090	param_like	    分析 N = 
+src/application/graph_service.cpp:1152	param_like	    显示 N = 
+src/application/graph_service.cpp:1153	param_like	    分析 N = 
+src/application/graph_service.cpp:1167	title	边际图（分面）
+src/application/graph_service.cpp:1176	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1183	header	    分面 = 
+src/application/graph_service.cpp:1187	param_like	    显示 N = 
+src/application/graph_service.cpp:1188	header	    分析 N = 
+src/application/graph_service.cpp:1245	param_like	    显示 N = 
+src/application/graph_service.cpp:1246	param_like	    分析 N = 
+src/application/graph_service.cpp:1261	title	平行坐标图（分面）
+src/application/graph_service.cpp:1270	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1275	header	    分面 = 
+src/application/graph_service.cpp:1279	param_like	    显示 N = 
+src/application/graph_service.cpp:1280	param_like	    分析 N = 
+src/application/graph_service.cpp:1359	param_like	    显示 N = 
+src/application/graph_service.cpp:1360	param_like	    分析 N = 
+src/application/graph_service.cpp:1374	title	热图（分面）
+src/application/graph_service.cpp:1383	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1390	header	    分面 = 
+src/application/graph_service.cpp:1394	param_like	    显示 N = 
+src/application/graph_service.cpp:1395	param_like	    分析 N = 
+src/application/graph_service.cpp:1501	param_like	    显示 N = 
+src/application/graph_service.cpp:1502	param_like	    分析 N = 
+src/application/graph_service.cpp:1519	title	热图（分面）
+src/application/graph_service.cpp:1534	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1539	header	    分面 = 
+src/application/graph_service.cpp:1543	param_like	    显示 N = 
+src/application/graph_service.cpp:1544	param_like	    分析 N = 
+src/application/graph_service.cpp:1609	param_like	    显示 N = 
+src/application/graph_service.cpp:1610	header	    分析 N = 
+src/application/graph_service.cpp:1624	title	时间序列图（分面）
+src/application/graph_service.cpp:1655	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1661	header	    分面 = 
+src/application/graph_service.cpp:1665	param_like	    显示 N = 
+src/application/graph_service.cpp:1666	header	    分析 N = 
+src/application/graph_service.cpp:1757	param_like	    显示 N = 
+src/application/graph_service.cpp:1758	header	    分析 N = 
+src/application/graph_service.cpp:1772	title	等值线图（分面）
+src/application/graph_service.cpp:1797	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1804	header	    分面 = 
+src/application/graph_service.cpp:1808	param_like	    显示 N = 
+src/application/graph_service.cpp:1809	header	    分析 N = 
+src/application/graph_service.cpp:1866	param_like	    显示 N = 
+src/application/graph_service.cpp:1867	param_like	    分析 N = 
+src/application/graph_service.cpp:1949	param_like	    显示 N = 
+src/application/graph_service.cpp:1950	param_like	    分析 N = 
+src/application/graph_service.cpp:1973	title	密度图（分面）
+src/application/graph_service.cpp:1994	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:1995	param_like	    显示 N = 
+src/application/graph_service.cpp:2007	header	    分面 = 
+src/application/graph_service.cpp:2011	param_like	    显示 N = 
+src/application/graph_service.cpp:2012	param_like	    分析 N = 
+src/application/graph_service.cpp:2084	param_like	    显示 N = 
+src/application/graph_service.cpp:2085	param_like	    分析 N = 
+src/application/graph_service.cpp:2109	title	Hexbin（分面）
+src/application/graph_service.cpp:2131	param_like	    分析 N(水平) = 
+src/application/graph_service.cpp:2138	header	    分面 = 

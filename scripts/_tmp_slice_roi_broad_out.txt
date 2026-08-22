@@ -1,0 +1,54 @@
+exact=1910 sw=234 titles_u=4 headers_u=15 domain_diag_u=8 interp_full_u=5 interp_partial_u=0 svc_pref_u=2
+
+=== TITLE UNMAPPED ===
+title	src/application/analysis_service.cpp:2187	 与 
+title	src/application/analysis_service.cpp:7208	 逐点统计
+title	src/application/analysis_service.cpp:9133	（编码）
+title	src/application/graph_service.cpp:2109	Hexbin（分面）
+
+=== HEADER UNMAPPED ===
+header	src/application/analysis_service.cpp:2097	    有效变量数 = 
+header	src/application/analysis_service.cpp:2851	    事件 = 
+header	src/application/analysis_service.cpp:2852	    试验 = 
+header	src/application/analysis_service.cpp:2964	    因子 = 
+header	src/application/analysis_service.cpp:4133	    列: 
+header	src/application/analysis_service.cpp:4800	    零件 = 
+header	src/application/analysis_service.cpp:4801	    操作员 = 
+header	src/application/analysis_service.cpp:5635	，列水平数 = 
+header	src/application/analysis_service.cpp:7048	    分组 = 
+header	src/application/analysis_service.cpp:7616	    因子 A = 
+header	src/application/analysis_service.cpp:7617	    因子 B = 
+header	src/application/graph_service.cpp:499	    分面 = 
+header	src/application/graph_service.cpp:569	    分析 N = 
+header	src/application/graph_service.cpp:781	    大小 = 
+header	src/application/graph_service.cpp:1608	    数值 = 
+
+=== DOMAIN DIAG BY FILE ===
+  6	censoring_contract.cpp
+  1	analysis_rules.cpp
+  1	doe_factorial.cpp
+
+=== DOMAIN DIAG UNMAPPED ===
+diag	src/domain/statistics/analysis_rules.cpp:174	同一时刻多个失效应合并，并报告 at-risk/failures/censored。
+diag	src/domain/statistics/censoring_contract.cpp:501	分层 kind 必须为 failure_mode 或 group。
+diag	src/domain/statistics/censoring_contract.cpp:509	同一次分层摘要不得混用 failure_mode 与 group。
+diag	src/domain/statistics/censoring_contract.cpp:540	分层暴露量之和与总体暴露量不一致；分层 expected_failures 使用各层自身暴露量，
+diag	src/domain/statistics/censoring_contract.cpp:600	部分 failure_mode 层使用 cause-specific R(T_w)，其余仍用池化 R；
+diag	src/domain/statistics/censoring_contract.cpp:605	分层 expected_failures = 层暴露量 * F_mode(T_w)，
+diag	src/domain/statistics/censoring_contract.cpp:611	分层 expected_failures = 层暴露量 * F(T_w)，F 来自总体池化 R(T_w)；
+diag	src/domain/statistics/doe_factorial.cpp:427	部分析因分辨度 
+
+=== INTERP FULL UNMAPPED ===
+full	L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+full	L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+full	L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+full	L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+full	L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+
+=== INTERP PARTIAL FN CLUSTER ===
+
+=== INTERP PARTIAL SAMPLE (by fn) ===
+
+=== SVC PREFIXES ===
+pref	analysis_service.cpp:2899	第一组：
+pref	analysis_service.cpp:2903	第二组：

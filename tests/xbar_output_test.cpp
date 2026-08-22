@@ -84,9 +84,10 @@ void XbarOutputTest::secondaryRangeFailureAppearsInTriggeredTests()
         });
     QVERIFY(subgroup_table != page.tables.cend());
     const std::string& triggered = subgroup_table->rows.back()[12];
-    QVERIFY2(triggered.find("R: Test 1") != std::string::npos,
+    QVERIFY2(triggered.find("R: 单点超出 3σ 控制限") != std::string::npos,
              triggered.c_str());
-    QCOMPARE(subgroup_table->rows.back()[13], std::string("R: Test 1"));
+    QCOMPARE(subgroup_table->rows.back()[13],
+             std::string("R: 单点超出 3σ 控制限"));
 }
 
 void XbarOutputTest::spcFactsExposeSigmaWithinAndUnionCount()

@@ -1,0 +1,50 @@
+{
+  "dataset_id": "phase0_doe_bbd_k3",
+  "design_type": "bbd",
+  "evidence_type": "formula_reference",
+  "formula_source": "https://itl.nist.gov/div898/handbook/pri/section3/pri3362.htm",
+  "notes": "Minimal 3-factor BBD contract. Corner points (±1,±1,±1) must be absent. Not a frozen golden.",
+  "factors": [
+    {
+      "id": "X1",
+      "name": "Factor1",
+      "unit": "1",
+      "type": "continuous",
+      "low": -1.0,
+      "high": 1.0,
+      "center": 0.0
+    },
+    {
+      "id": "X2",
+      "name": "Factor2",
+      "unit": "1",
+      "type": "continuous",
+      "low": -1.0,
+      "high": 1.0,
+      "center": 0.0
+    },
+    {
+      "id": "X3",
+      "name": "Factor3",
+      "unit": "1",
+      "type": "continuous",
+      "low": -1.0,
+      "high": 1.0,
+      "center": 0.0
+    }
+  ],
+  "center_points": 1,
+  "randomization_seed": 7,
+  "expected_point_counts": {
+    "edge_midpoints": 12,
+    "center": 1,
+    "total": 13,
+    "forbidden_corners": 0
+  },
+  "acceptance": [
+    "no run with all factors at extreme coded levels simultaneously",
+    "each factor uses three levels only",
+    "same seed => identical run order",
+    "reference_implementation comparison requires pinned R rsm version + input hash"
+  ]
+}

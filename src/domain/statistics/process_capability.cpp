@@ -3,11 +3,12 @@
 #include "domain/quality_diagnostics.h"
 #include "domain/statistics/control_charts.h"
 #include "domain/statistics/descriptive_statistics.h"
+#include "domain/statistics/hartigan_dip.h"
+#include "domain/statistics/gaussian_mixture_2.h"
 #include "domain/statistics/johnson_transform.h"
 #include "domain/statistics/normal_distribution.h"
 #include "domain/statistics/reliability.h"
 #include "domain/statistics/spc_constants.h"
-#include "domain/statistics/normal_distribution.h"
 
 #include <algorithm>
 #include <cmath>
@@ -804,6 +805,268 @@ void fill_capability_index_intervals(
         result.ppk, n, result.overall_degrees_of_freedom, z,
         result.ppk_lower, result.ppk_upper);
     result.capability_ci_method = "chi_square_cp_pp_bissell_cpk_ppk";
+}
+
+void apply_capability_stability_screen(
+    ProcessCapabilityResult& result,
+    const std::vector<double>& observations)
+{
+    if (observations.size() < 2) {
+        result.stability_screen_status = "insufficient_n";
+        result.stability_out_of_control_count = 0;
+        add_warning(result.diagnostics, "capability_stability_insufficient_n",
+                    "观测不足，无法做能力分析前的 I-MR 稳定性初筛。");
+        return;
+    }
+
+    IndividualsMovingRangeOptions options;
+    options.moving_range_length = 2;
+    options.special_causes.enabled_tests = {1};  // Rule 1 only: preliminary screen
+    options.special_causes.policy = "capability_stability_prerequisite";
+    const DualControlChartResult dual =
+        ControlCharts::individuals_moving_range_dual(observations, options);
+
+    std::size_t ooc = 0;
+    if (!dual.primary.test1_points.empty()) {
+        ooc = dual.primary.test1_points.size();
+    } else {
+        for (const auto& tests : dual.primary.triggered_tests) {
+            if (!tests.empty()) {
+                ++ooc;
+            }
+        }
+    }
+    result.stability_out_of_control_count = ooc;
+    if (ooc > 0) {
+        result.stability_screen_status = "signals";
+        // Always demote on Rule-1 signals; never preserve a phantom "verified".
+        result.evidence.assumption_status = "evidence_against";
+        add_warning(result.diagnostics, "capability_stability_screen_signals",
+                    "I-MR Rule-1 初筛检出 "
+                        + std::to_string(ooc)
+                        + " 个超限点；能力指数仅供调查，不得写成过程合格。");
+    } else {
+        result.stability_screen_status = "clear";
+        add_warning(result.diagnostics, "capability_stability_screen_clear_not_verified",
+                    "I-MR Rule-1 初筛未检出超限点；这不是完整控制图验收，"
+                    "也不等于已验证稳定性/正态性，不得自动开放合格判定。");
+    }
+    add_warning(result.diagnostics, "capability_stability_prerequisite",
+                "能力分析稳定性前置：当前仅做公式参考级 I-MR Rule-1 初筛；"
+                "合格判定保持关闭，直至独立稳定性与正态性验收工作流落地。");
+}
+
+void apply_capability_bimodality_screen(
+    ProcessCapabilityResult& result,
+    const std::vector<double>& observations)
+{
+    std::vector<double> finite;
+    finite.reserve(observations.size());
+    for (double value : observations) {
+        if (std::isfinite(value)) {
+            finite.push_back(value);
+        }
+    }
+    if (finite.size() < 30) {
+        result.bimodality_screen_status = "insufficient_n";
+        result.bimodality_peak_count = 0;
+        add_warning(result.diagnostics, "capability_bimodality_insufficient_n",
+                    "观测不足（n<30），无法做能力分析前的双峰直方图初筛；"
+                    "不得把不足样本写成已排除双峰。");
+        return;
+    }
+
+    const auto [min_it, max_it] = std::minmax_element(finite.begin(), finite.end());
+    const double x_min = *min_it;
+    const double x_max = *max_it;
+    if (!(x_max > x_min)) {
+        result.bimodality_screen_status = "clear";
+        result.bimodality_peak_count = 1;
+        add_warning(result.diagnostics, "capability_bimodality_clear_not_verified",
+                    "直方图双峰初筛未检出可分离峰；这不是单峰证明，"
+                    "不得据此开放过程合格判定。");
+        return;
+    }
+
+    const std::size_t bins = static_cast<std::size_t>(std::clamp(
+        std::ceil(std::sqrt(static_cast<double>(finite.size()))), 8.0, 40.0));
+    std::vector<std::size_t> counts(bins, 0);
+    const double span = x_max - x_min;
+    for (double value : finite) {
+        std::size_t index = static_cast<std::size_t>(
+            std::floor((value - x_min) / span * static_cast<double>(bins)));
+        if (index >= bins) {
+            index = bins - 1;
+        }
+        ++counts[index];
+    }
+
+    std::vector<std::size_t> peaks;
+    for (std::size_t i = 1; i + 1 < bins; ++i) {
+        if (counts[i] >= counts[i - 1] && counts[i] >= counts[i + 1]
+            && counts[i] > 0
+            && (counts[i] > counts[i - 1] || counts[i] > counts[i + 1])) {
+            peaks.push_back(i);
+        }
+    }
+    // End bins as peaks only if strictly higher than neighbor.
+    if (bins >= 2 && counts[0] > counts[1] && counts[0] > 0) {
+        peaks.insert(peaks.begin(), 0);
+    }
+    if (bins >= 2 && counts[bins - 1] > counts[bins - 2] && counts[bins - 1] > 0) {
+        peaks.push_back(bins - 1);
+    }
+
+    result.bimodality_peak_count = peaks.size();
+    bool suspected = false;
+    if (peaks.size() >= 2) {
+        for (std::size_t a = 0; a + 1 < peaks.size() && !suspected; ++a) {
+            for (std::size_t b = a + 1; b < peaks.size(); ++b) {
+                if (peaks[b] < peaks[a] + 2) {
+                    continue;
+                }
+                const std::size_t left = peaks[a];
+                const std::size_t right = peaks[b];
+                const std::size_t peak_min = std::min(counts[left], counts[right]);
+                if (peak_min == 0) {
+                    continue;
+                }
+                std::size_t valley = counts[left];
+                for (std::size_t i = left; i <= right; ++i) {
+                    valley = std::min(valley, counts[i]);
+                }
+                // Valley must be clearly below both peaks (≤ 60% of the smaller peak).
+                if (valley * 5 <= peak_min * 3) {
+                    suspected = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (suspected) {
+        result.bimodality_screen_status = "suspected";
+        result.evidence.assumption_status = "evidence_against";
+        add_warning(result.diagnostics, "capability_bimodality_suspected",
+                    "直方图双峰初筛检出约 "
+                        + std::to_string(result.bimodality_peak_count)
+                        + " 个可分离峰；单一分布能力指数仅供调查，"
+                          "不得写成过程合格（直方图初筛 ≠ Hartigan；≠ 混合模型证明）。");
+    } else {
+        result.bimodality_screen_status = "clear";
+        add_warning(result.diagnostics, "capability_bimodality_clear_not_verified",
+                    "直方图双峰初筛未检出可分离峰；这不是单峰证明，"
+                    "不得据此开放过程合格判定。");
+    }
+    add_warning(result.diagnostics, "capability_bimodality_screen_note",
+                "能力分析双峰前置：当前为公式参考级直方图峰谷初筛；"
+                "Hartigan dip 与二维高斯混合另有门禁筛查；合格判定保持关闭。");
+}
+
+void apply_capability_hartigan_dip_screen(
+    ProcessCapabilityResult& result,
+    const std::vector<double>& observations)
+{
+    const HartiganDipResult dip = compute_hartigan_dip(observations, 199, 20260821ull);
+    result.hartigan_dip_status = dip.status;
+    result.hartigan_dip_statistic = dip.dip;
+    result.hartigan_dip_p_value = dip.p_value;
+
+    if (dip.status == "insufficient_n") {
+        add_warning(result.diagnostics, "capability_hartigan_dip_insufficient_n",
+                    "观测不足（n<8），无法做 Hartigan dip 单峰门禁筛查；"
+                    "不得把不足样本写成已证明单峰。");
+        return;
+    }
+
+    if (dip.status == "evidence_against") {
+        result.evidence.assumption_status = "evidence_against";
+        std::string message =
+            "Hartigan dip 门禁筛查（formula_reference / hartigan_dip_1985）："
+            "dip=" + std::to_string(dip.dip);
+        if (dip.p_value.has_value()) {
+            message += "，Uniform 零假设 MC p≈" + std::to_string(*dip.p_value)
+                + "（reps=" + std::to_string(dip.mc_reps) + "）";
+        }
+        message += "；提示偏离单峰，单一分布能力指数仅供调查，"
+                   "不得写成过程合格（非 vendor_oracle；二维高斯混合另有门禁）。";
+        add_warning(result.diagnostics, "capability_hartigan_dip_evidence_against",
+                    message);
+    } else {
+        add_warning(result.diagnostics, "capability_hartigan_dip_consistent_not_proof",
+                    "Hartigan dip 门禁筛查未拒绝 Uniform 零假设下的单峰（formula_reference）；"
+                    "这不是过程单峰证明，也不得开放合格判定。");
+    }
+    add_warning(result.diagnostics, "capability_hartigan_dip_screen_note",
+                "能力分析 Hartigan dip 前置：公式参考级研究筛查（Uniform 零假设 MC）；"
+                "不是商业软件对齐；二维高斯混合另有门禁；合格判定保持关闭。");
+}
+
+void apply_capability_mixture_screen(
+    ProcessCapabilityResult& result,
+    const std::vector<double>& observations)
+{
+    const GaussianMixtureSearchResult mix = fit_gaussian_mixture_search(observations, 4);
+    result.mixture_status = mix.status;
+    result.mixture_k_selected = mix.k_selected;
+    result.mixture_k_max = mix.k_max;
+    result.mixture_delta_bic = mix.delta_bic;
+    result.mixture_algorithm_id = mix.algorithm_id;
+    result.mixture_evidence_type = mix.evidence_type;
+    result.mixture_components.clear();
+    for (const auto& c : mix.components) {
+        CapabilityMixtureComponent item;
+        item.weight = c.weight;
+        item.mean = c.mean;
+        item.sd = c.sd;
+        result.mixture_components.push_back(item);
+    }
+    if (mix.components.size() >= 1) {
+        result.mixture_weight1 = mix.components[0].weight;
+        result.mixture_mean1 = mix.components[0].mean;
+        result.mixture_sd1 = mix.components[0].sd;
+    }
+    if (mix.components.size() >= 2) {
+        result.mixture_mean2 = mix.components[1].mean;
+        result.mixture_sd2 = mix.components[1].sd;
+        if (mix.components.size() == 2) {
+            result.mixture_weight1 = mix.components[0].weight;
+        }
+    }
+    result.diagnostics.insert(
+        result.diagnostics.end(), mix.diagnostics.begin(), mix.diagnostics.end());
+
+    if (mix.status == "insufficient_n") {
+        add_warning(result.diagnostics, "capability_mixture_insufficient_n",
+                    "观测不足（n<30），无法做多 k 高斯混合门禁；"
+                    "不得把不足样本写成已排除混合。");
+        return;
+    }
+    if (mix.status == "failed") {
+        add_warning(result.diagnostics, "capability_mixture_failed",
+                    "多 k 高斯混合门禁未得到可用拟合；不得伪造混合结论或开放合格判定。");
+        return;
+    }
+    if (mix.status == "preferred_2comp" || mix.status == "preferred_kcomp") {
+        result.evidence.assumption_status = "evidence_against";
+        add_warning(
+            result.diagnostics,
+            mix.status == "preferred_kcomp" ? "capability_mixture_preferred_kcomp"
+                                            : "capability_mixture_preferred_2comp",
+            "高斯混合门禁（formula_reference / gaussian_mixture_k_bic）："
+            "BIC 更支持 k=" + std::to_string(mix.k_selected)
+                + "（ΔBIC≈" + std::to_string(mix.delta_bic)
+                + "；k_max=" + std::to_string(mix.k_max)
+                + "）；单一分布能力指数仅供调查，不得写成过程合格（非 vendor_oracle）。");
+    } else {
+        add_warning(
+            result.diagnostics, "capability_mixture_not_preferred",
+            "多 k 高斯混合门禁未优选多成分（formula_reference / gaussian_mixture_k_bic）；"
+            "这不是单峰/单成分证明，也不得开放合格判定。");
+    }
+    add_warning(result.diagnostics, "capability_mixture_screen_note",
+                "能力分析混合模型前置：高斯 EM + BIC 搜索 k=1..k_max（formula_reference / "
+                "gaussian_mixture_k_bic）；不是非高斯混合，不是商业软件对齐，合格判定保持关闭。");
 }
 
 }  // namespace datalab::domain::statistics

@@ -1,0 +1,146 @@
+UNIQ_UNMAPPED 539
+  189	domain_diag
+  86	misc_param_chrome
+  69	inference
+  65	reliability
+  41	doe_rsm
+  18	attrib_spc_oc
+  14	msa
+  14	capability
+  14	graph_eda_facet
+  12	forecast_ts
+  10	spc
+  5	ml
+  2	gate_qing
+
+=== #1 FAMILY domain_diag n=189 ===
+subclusters:
+  4	不可识别时只输出
+  3	不是
+  3	不要输出伪造的或
+  2	不能为空
+  2	长度必须与一致
+  2	不是非高斯混合不
+  2	不得写成过程合格
+  2	检验要求每组至少
+  1	导入结果的列类型
+  1	导入结果的数量与
+  1	导入结果的单元格
+  1	导入元数据中的原
+  1	导入元数据中的列
+  1	第
+  1	导入结果包含重复
+samples:
+  src/domain/statistics/gaussian_mixture_2.cpp:271	二维高斯混合 = formula_reference / gaussian_mixture_2_em（EM + BIC vs 单正态）；
+  src/domain/statistics/gaussian_mixture_2.cpp:375	多 k 高斯混合 = formula_reference / gaussian_mixture_k_bic（EM + BIC，k=1..
+  src/domain/statistics/process_capability.cpp:1064	多 k 高斯混合门禁未优选多成分（formula_reference / gaussian_mixture_k_bic）；
+  src/domain/statistics/gaussian_mixture_2.cpp:272	多 k 搜索见 gaussian_mixture_k_bic；不是 vendor_oracle，不得写成过程合格判定。
+  src/domain/statistics/censoring_contract.cpp:761	cause_specific_right_censored_competing；不是 vendor_oracle。
+  src/domain/statistics/grubbs_test.cpp:272	Dixon P 由临界值插值近似（formula_reference），不是 Minitab 积分 golden。
+  src/domain/statistics/process_capability.cpp:985	Hartigan dip 门禁筛查（formula_reference / hartigan_dip_1985）：
+  src/domain/statistics/censoring_contract.cpp:534	这不是实测分母，报告须标注 exposure_attribution=proportional_scalar。
+  src/domain/statistics/censoring_contract.cpp:600	部分 failure_mode 层使用 cause-specific R(T_w)，其余仍用池化 R；
+  src/domain/statistics/process_capability.cpp:1056	高斯混合门禁（formula_reference / gaussian_mixture_k_bic）：
+  src/domain/statistics/reliability.cpp:915	三参数对数正态使用剖面似然估计阈值；这不是 Minitab 无界似然 bias-correction。
+  src/domain/statistics/process_capability.cpp:1069	gaussian_mixture_k_bic）；不是非高斯混合，不是商业软件对齐，合格判定保持关闭。
+  src/domain/statistics/reliability.cpp:706	两参数指数使用剖面似然估计阈值；这不是 Minitab 无界似然 bias-correction。
+  src/domain/statistics/normality_test.cpp:108	Ryan–Joiner：R 不高于 α=0.01 临界，报告 p<0.01（存储 0.01）。
+  src/domain/statistics/gage_rr.cpp:225	Part×Operator 交互 p>0.25，传统 AIAG 流程可考虑将交互并入重复性；
+  src/domain/statistics/normality_test.cpp:104	Ryan–Joiner：R 高于 α=0.10 临界，报告 p>0.10（存储 0.10）。
+  src/domain/database/import_plan_validation.cpp:77	column_order 必须与 selected_columns 是同一集合。
+  src/domain/statistics/response_optimization.cpp:412	target 目标的 target 必须位于 lower 和 upper 之间。
+  src/domain/database/import_plan_validation.cpp:72	column_order 长度必须与 selected_columns 一致。
+  src/domain/statistics/fine_gray.cpp:247	。不是 cause-specific Cox，不是 vendor_oracle
+  src/domain/statistics/reliability.cpp:898	不可识别时只输出诊断，不要填写伪造 Location 或 Threshold。
+  src/domain/statistics/gaussian_mixture_2.cpp:377	）；不是非高斯混合，不是 vendor_oracle，不得写成过程合格判定。
+  src/domain/statistics/reliability.cpp:579	不可识别时只输出诊断，不要填写 Shape=1 或伪造 Threshold。
+  src/domain/statistics/reliability.cpp:657	不可识别时只输出诊断，不要填写 Scale=1 或伪造 Threshold。
+  src/domain/statistics/variance_tests.cpp:244	Levene/Brown-Forsythe 检验要求每组至少有两个有效观测。
+
+=== #2 FAMILY misc_param_chrome n=86 ===
+subclusters:
+  5	至少需要两个数值
+  2	图
+  2	未计算
+  2	不得写成过程合格
+  1	中心
+  1	但不得输出过程合
+  1	临界值
+  1	嫌疑值
+  1	是区间不含
+  1	否区间含
+  1	异常
+  1	高杠杆
+  1	影响
+  1	有效交叉分类观测
+  1	列水平数
+samples:
+  src/application/interpretation_service.cpp:2003	不得写成过程合格（formula_reference / gaussian_mixture_k_bic；非 vendor_oracle）。
+  src/application/interpretation_service.cpp:2403	对照 P clustering / mixtures / trends / oscillation 与现场时序，
+  src/application/interpretation_service.cpp:452	不是 Fine-Gray 回归，也不是 cause-specific 可靠度或 vendor_oracle。
+  src/application/interpretation_service.cpp:441	不是 vendor_oracle / golden；阈值模型与 pinned R 对齐仍未冻结。
+  src/application/analysis_service.cpp:13933	分模式可靠度拟合与 pinned R/商业对齐仍未冻结，不得宣称 vendor_oracle。
+  src/application/interpretation_service.cpp:2009	不得写成过程合格（formula_reference；非 vendor_oracle）。
+  src/application/interpretation_service.cpp:2001	gaussian_mixture_k_bic；非 vendor_oracle）。
+  src/application/interpretation_service.cpp:2200	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  src/application/interpretation_service.cpp:204	也可按实际单位 hold；二水平模型无平方项，不能把曲面曲率当成已估计。
+  src/application/analysis_service.cpp:1196	但不得输出过程合格判定（门禁：缺 golden/尾部/人工解释验收）。
+  src/application/analysis_service.cpp:10964	可写回活动表以便审计或再导入；不是 vendor_oracle。
+  src/application/interpretation_service.cpp:1093	McNemar 未计算出统计量（非二元、无不一致对或输入不足）。
+  src/application/interpretation_service.cpp:265	多响应冲突时优先核对各响应 Desirability 与权重；
+  src/application/analysis_service.cpp:10832	不与二分类 group Fine-Gray 同时运行。
+  src/application/analysis_service.cpp:9156	曲面图为静态栅格可视化，不得解读为可旋转交互 3D。
+  src/application/interpretation_service.cpp:1545	cause-specific 分模式 R(T_w)。
+  src/application/interpretation_service.cpp:2414	不能将统计信号直接等同于过程失控判定或稳定结论。
+  src/application/analysis_service.cpp:10231	Log-rank 分组目前只支持两个非空水平。
+  src/application/analysis_service.cpp:6581	complete-case 多元观测不足。
+  src/application/interpretation_service.cpp:593	exp(μ + σ Φ⁻¹(p)) 给出。
+  src/application/interpretation_service.cpp:1269	，Hosmer–Lemeshow 未计算
+  src/application/analysis_service.cpp:14912	Sixpack 至少需要两个数值观测。
+  src/application/doe_pages.cpp:677	UI 可一键替换活动工作表以录入响应。
+  src/application/interpretation_service.cpp:2404	小 P 只表示该模式方向上的偏离证据。
+  src/application/analysis_service.cpp:9459	没有可用于优化的有效 DOE 运行。
+
+=== #3 FAMILY inference n=69 ===
+subclusters:
+  3	不得把不足样本写
+  2	均值
+  1	相关分析
+  1	组
+  1	在下未拒绝残差正
+  1	总均值
+  1	仅支持两样本组请
+  1	互相关
+  1	检查残差随机性异
+  1	这只说明当前配对
+  1	非参数容差依赖序
+  1	只说明样本量不足
+  1	为连续分布下的标
+  1	极偏重尾小样本时
+  1	对正态偏离敏感稳
+samples:
+  src/domain/statistics/process_capability.cpp:997	Hartigan dip 门禁筛查未拒绝 Uniform 零假设下的单峰（formula_reference）；
+  src/domain/statistics/t_power.cpp:1161	容差样本量按 NIST Howe 双侧 k(n)≤max_k 求解；非 Minitab 精确积分。
+  src/application/interpretation_service.cpp:1637	非参数容差依赖序统计与连续分布假设；achieved confidence 低于目标时，
+  src/domain/statistics/adf_test.cpp:241	临界值为大样本 MacKinnon 风格常数表；非 Minitab 导出 golden。
+  src/domain/statistics/seasonal_forecasting.cpp:854	已使用固定参数 SARIMA 递推；未来创新项按零处理，区间为创新方差的正态近似。
+  src/application/interpretation_service.cpp:2491	四图用于检查位置/散布/随机性/分布形态假设，不能写成受控结论或正态已成立。
+  src/domain/statistics/t_power.cpp:1048	DOE 功效需要 k≥2、p<k、replicates≥1 且效应/σ≠0。
+  src/application/interpretation_service.cpp:1665	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+  src/domain/statistics/grubbs_test.cpp:54	Grubbs 检验假设观测近似正态且至多一个异常值；本分析未验证正态性。
+  src/application/analysis_service.cpp:8508	Bonett 仅支持两样本；k>2 组请改用 Levene（中位数）。
+  src/application/interpretation_service.cpp:1668	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+  src/application/interpretation_service.cpp:2193	P 值只描述与正态假设下的一致性，勿当作删点依据，也勿当成异常已核实。
+  src/application/interpretation_service.cpp:2041	未拒绝变换后正态假设不等于原始数据服从正态分布，也不能写成过程合格。
+  src/domain/statistics/grubbs_test.cpp:194	Dixon r10 产品锁定 n≤30；更大样本请用 Grubbs。
+  src/application/interpretation_service.cpp:1094	这只说明当前配对表不支持该检验，不能写成前后比例已证明相同或不同。
+  src/application/interpretation_service.cpp:2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+  src/application/analysis_service.cpp:3584	，在 alpha 下未拒绝残差正态假设，不能据此宣称模型合格。
+  src/domain/statistics/normality_test.cpp:91	Ryan–Joiner 统计量无法计算（方差或正态得分为零）。
+  src/domain/statistics/t_power.cpp:568	两组比例、样本量和 alpha 必须有效，且两组比例必须不同。
+  src/domain/statistics/t_power.cpp:963	等价功效使用已知 σ 的正态规划近似，不是精确二元非中心 t。
+  src/domain/statistics/analysis_rules.cpp:134	Anderson-Darling 只能拒绝或未拒绝正态假设。
+  src/domain/statistics/equivalence_test.cpp:305	对数均值比 TOST 要求检验列与参考列的全部观测均为正值。
+  src/domain/statistics/seasonal_forecasting.cpp:278	SARIMA 固定参数必须全部为有限数值，创新方差不得为负。
+  src/domain/statistics/analysis_rules.cpp:149	用残差 Anderson-Darling 作为假设证据。
+  src/domain/statistics/equivalence_test.cpp:412	标准误为 0 或自由度不可用，无法计算均值比 TOST。

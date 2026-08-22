@@ -21,6 +21,12 @@
 | Type 1 / Bias Linearity | [`research/type1-bias-twoprop-boxcox-formulas.md`](research/type1-bias-twoprop-boxcox-formulas.md) §2–§3 |
 | 能力 CI / 拟合优度 / G·T / 功效 | [`research/capability-ci-gof-rare-event-power-formulas.md`](research/capability-ci-gof-rare-event-power-formulas.md)、[`adr/0008-capability-index-confidence-intervals.md`](adr/0008-capability-index-confidence-intervals.md) |
 | 导入 / 分层 | [`algorithm-session-brief.md`](algorithm-session-brief.md) §3、ADR 0001 / 0003 / 0004 / 0007 |
+| 报告可读性 / 数据库导入研究 | [`research/report-format-database-import-research.md`](research/report-format-database-import-research.md) |
+| 算法竖切 + 报告产品化计划 | [`research/vertical-slice-algorithms-and-report-product-plan.md`](research/vertical-slice-algorithms-and-report-product-plan.md) |
+| Phase 0 报告证据契约 | [`research/phase0-report-evidence-contracts.md`](research/phase0-report-evidence-contracts.md)、`src/domain/report_types.h` |
+| 验证矩阵（formula/reference/vendor/golden） | [`research/VALIDATION_MATRIX.md`](research/VALIDATION_MATRIX.md) |
+| Phase 2 PDF/A·UA 评估 | [`research/phase2-pdfa-pdfua-assessment.md`](research/phase2-pdfa-pdfua-assessment.md) |
+| 特殊原因规则目录 | `src/domain/statistics/special_cause_rule_catalog.*`（8 稳定 ID） |
 | P0 控制图规则扩展 | [`research/p0_control_chart_special_cause_rules.md`](research/p0_control_chart_special_cause_rules.md) |
 | P0 TOST 输出统一 | [`research/p0_equivalence_tost_minitab_alignment.md`](research/p0_equivalence_tost_minitab_alignment.md) |
 | P0 GOF 有效性提示 | [`research/p0_chi_square_gof_validity_guidance.md`](research/p0_chi_square_gof_validity_guidance.md) |
@@ -38,6 +44,9 @@
 | P1 泊松率功效 | [`research/p1_poisson_rate_power.md`](research/p1_poisson_rate_power.md) |
 | P1 ANOVA Tukey 区间表形 | [`research/p1_anova_tukey_interval_table.md`](research/p1_anova_tukey_interval_table.md) |
 | P1 Agresti–Coull 比例 CI | [`research/p1_agresti_coull_proportion_ci.md`](research/p1_agresti_coull_proportion_ci.md) |
+| P2 EDA 四图 / 交叉表 / 卡方残差 | [`research/p2_eda4_crosstab_chi_resid.md`](research/p2_eda4_crosstab_chi_resid.md) |
+| P2 T² / MEWMA / Nelson / EMP | [`research/p2_t2_mewma_nelson_emp.md`](research/p2_t2_mewma_nelson_emp.md) |
+| P2 GV / Expanded / B4–B5 | [`research/p2_gv_expanded_b4b5.md`](research/p2_gv_expanded_b4b5.md) |
 | P1 Bartlett 等方差 | [`research/p1_bartlett_equal_variance.md`](research/p1_bartlett_equal_variance.md) |
 | P1 DOE 实际单位 hold | [`research/p1_doe_actual_unit_hold.md`](research/p1_doe_actual_unit_hold.md) |
 | P1 ANOVA Tukey Grouping | [`research/p1_anova_tukey_grouping_letters.md`](research/p1_anova_tukey_grouping_letters.md) |
@@ -60,8 +69,10 @@
 | P1 Sign CI | [`research/p1_sign_confidence_interval.md`](research/p1_sign_confidence_interval.md) |
 | P1 Mood 组 Sign CI | [`research/p1_mood_group_sign_ci.md`](research/p1_mood_group_sign_ci.md) |
 | P1 配对 Wilcoxon Walsh CI | [`research/p1_paired_wilcoxon_walsh_ci.md`](research/p1_paired_wilcoxon_walsh_ci.md) |
-| P1 Ryan–Joiner | [`research/p1_ryan_joiner_normality.md`](research/p1_ryan_joiner_normality.md) |
+| P1 Runs / Fisher / Run Chart / 鱼骨 | [`research/p1_runs_fisher_runchart_fishbone.md`](research/p1_runs_fisher_runchart_fishbone.md) |
 | P1 Multi-Vari 第 4 因子 | [`research/p1_multi_vari_fourth_factor.md`](research/p1_multi_vari_fourth_factor.md) |
+| P1 Dixon / 1-Sample Z / Variability / 非参数容差 | [`research/p1_dixon_z_variability_nptol.md`](research/p1_dixon_z_variability_nptol.md) |
+| P2 DOE 设计生成 / ACF-PACF / 等价·DOE·容差功效 | [`research/p2_doe_design_acf_power.md`](research/p2_doe_design_acf_power.md) |
 
 ## 2. 命令 id → 服务 → Facts
 
@@ -69,9 +80,10 @@
 |---|---|---|---|
 | descriptive | descriptive | descriptive | descriptive_statistics_test |
 | normality_test | normality_test | normality | quality_statistics_test |
-| outlier_test | outlier_test | outlier_test | grubbs_test |
-| correlation | correlation | correlation | quality_statistics_test |
+| outlier_test | outlier_test | outlier_test（method=grubbs\|dixon_r10） | grubbs_test |
+| correlation | correlation | correlation（含 covariance_available、partial_available） | quality_statistics_test |
 | one_sample_t / two_sample_t / paired_t | one_sample_t / two_sample_t / paired_t | t_test | quality_statistics_test |
+| one_sample_z | one_sample_z | t_test（kind=one_sample_z） | quality_statistics_test |
 | one_proportion / two_proportions | one_proportion / two_proportions | proportion（含 agresti_coull；两比例含 newcombe_wilson / agresti_coull_diff） | proportion_test |
 | one_proportion_equivalence / two_proportion_equivalence | one_proportion_equivalence / two_proportion_equivalence | equivalence | equivalence_test |
 | one_poisson_rate / two_poisson_rate | one_poisson_rate / two_poisson_rate | poisson_rate | poisson_rate_test |
@@ -80,14 +92,59 @@
 | regression | regression | regression | regression_output_test |
 | mann_whitney / wilcoxon_signed_rank / sign_test / mood_median / kruskal_wallis / friedman | 同名 | nonparametric（含 dunn/steel_dwass/nemenyi/sign_test/friedman/mood/wilcoxon_one_sample） | quality_statistics_test |
 | mcnemar / cochran_q | mcnemar / cochran_q | mcnemar / cochran_q | quality_statistics_test |
-| chi_square | chi_square | chi_square（含 plot_available） | quality_statistics_test |
+| chi_square | chi_square | chi_square（含 percent_tables / residual_heatmap / max_abs_adjusted_residual） | quality_statistics_test / p2_eda4_crosstab_chi_resid_test |
+| cross_tabulation | cross_tabulation | cross_tab | p2_eda4_crosstab_chi_resid_test |
 | chi_square_gof | chi_square_gof | chi_square_gof（含 validity_status、minimum_expected_count、recommendation） | capability_ci_gof_rare_event_power_test |
+| poisson_gof | poisson_goodness_of_fit | chi_square_gof（method=poisson、lambda_hat） | quality_statistics_test |
+| acceptance_sampling | acceptance_sampling_binomial | acceptance_sampling | quality_statistics_test |
+| anom | analysis_of_means | anom | quality_statistics_test |
 | variance_test | variance_test | variance（含 bartlett） | quality_statistics_test |
 | logistic_regression | logistic_regression | logistic（含 leverage_threshold、maximum_leverage、maximum_vif） | quality_statistics_test |
 | pca | pca | pca | quality_statistics_test |
+| kmeans | kmeans | kmeans | p3_batch1_kmeans_cart_adf_test |
+| cart_tree | cart_tree | cart_tree | p3_batch1_kmeans_cart_adf_test |
+| adf_test | adf_test | adf | p3_batch1_kmeans_cart_adf_test |
+| poisson_regression | poisson_regression | poisson_regression | p3_batch2_poisson_iforest_bootstrap_hclust_test |
+| isolation_forest | isolation_forest | isolation_forest | p3_batch2_poisson_iforest_bootstrap_hclust_test |
+| bootstrap_mean | bootstrap_mean | bootstrap_mean | p3_batch2_poisson_iforest_bootstrap_hclust_test |
+| bootstrap_two_sample | bootstrap_two_sample | bootstrap_two_sample | algorithm_wave3_track_test |
+| probit_reliability | probit_reliability | probit_reliability | algorithm_wave3_track_test |
+| cluster_observations | cluster_observations | hierarchical_cluster | p3_batch2_poisson_iforest_bootstrap_hclust_test |
+| ordinal_logistic | ordinal_logistic | ordinal_logistic | p3_batch3_ordinal_lda_ccf_correlogram_test |
+| nominal_logistic | nominal_logistic | nominal_logistic | algorithm_wave2_track_test |
+| nonparametric_capability | nonparametric_capability | nonparametric_capability | algorithm_wave4_track_test |
+| cox_regression | cox_regression | cox_regression | algorithm_wave4_track_test |
+| accelerated_life | accelerated_life | accelerated_life | algorithm_wave2_track_test |
+| discriminant | discriminant | discriminant | p3_batch3_ordinal_lda_ccf_correlogram_test |
+| ccf | ccf | ccf | p3_batch3_ordinal_lda_ccf_correlogram_test |
+| correlogram | correlogram | correlogram | p3_batch3_ordinal_lda_ccf_correlogram_test |
+| stepwise_regression | stepwise_regression | stepwise_regression | p3_track_h_stepwise_km_pb_test |
+| best_subsets_regression | best_subsets_regression | best_subsets_regression | algorithm_batch_2026_08_test |
+| batch_capability | batch_capability | batch_capability | algorithm_batch_2026_08_test |
+| logistic_regression | logistic_regression | logistic（含 leverage_threshold、maximum_leverage、maximum_vif、stepwise） | quality_statistics_test, algorithm_wave4_track_test |
+| km_interval | km_interval | km_interval | p3_track_h_stepwise_km_pb_test |
+| doe_plackett_burman | doe_plackett_burman | plackett_burman | p3_track_h_stepwise_km_pb_test |
+| doe_ccd | doe_response_surface_design | design_generation | response_surface_design_phase4_test |
+| doe_bbd | doe_response_surface_design | design_generation | response_surface_design_phase4_test |
 | multi_vari | multi_vari | multi_vari | multi_vari_test |
-| reliability | reliability | reliability | reliability_msa_power_test |
-| t_power | t_power | power（含 actual_power；支持 one_variance_* / two_variance_*） | capability_ci_gof_rare_event_power_test / reliability_msa_power_test |
+| reliability | reliability | reliability（含 evidence_type、log_rank K 组、CIF/Gray） | reliability_msa_power_test / algorithm_wave4_track_test |
+| reliability_warranty | reliability_warranty | warranty | reliability_phase5_test |
+| t_power | t_power | power（含 actual_power；equivalence / doe_factorial / tolerance mode） | p2_doe_acf_power_test / capability_ci_gof_rare_event_power_test |
+| acf_pacf | acf_pacf | acf_pacf | p2_doe_acf_power_test |
+| rsm_response | rsm_response | rsm（含 design_source_id / coding_mode / surface_is_static） | p2_rsm_special_cause_test / response_surface_design_phase4_test |
+| special_cause_rules（help） | SpecialCauseRuleCatalog / SpcFacts.rules | spc.rules + enabled_special_cause_rule_ids | special_cause_rule_catalog_test / special_cause_rule_test / p2_rsm_special_cause_test |
+| import_database（菜单） | DatabaseImportService + SQLite Provider | ConnectionInfo / TableMetadata / ImportPlan / ImportedTable | database_provider_registry_test / database_import_test |
+| density_plot | GraphService::density | eda | p2_eda_plots_test |
+| hexbin_plot | GraphService::hexbin | eda | p2_eda_plots_test |
+| violin_plot | GraphService::violin | eda | p2_eda_plots_test |
+| bar_chart | GraphService::bar | eda | p2_eda_plots_test |
+| eda_4plot | eda_4plot | eda（kind=eda_4plot） | p2_eda4_crosstab_chi_resid_test |
+| hotelling_t2 | hotelling_t2 | multivariate_spc | p2_t2_mewma_nelson_emp_test |
+| mewma | mewma | multivariate_spc | p2_t2_mewma_nelson_emp_test |
+| generalized_variance | generalized_variance | multivariate_spc | p2_gv_expanded_b4b5_test |
+| emp_crossed | emp_crossed | msa（emp_*） | p2_t2_mewma_nelson_emp_test |
+| expanded_gage_rr | expanded_gage_rr | msa | p2_gv_expanded_b4b5_test |
+| imr | individuals_moving_range | spc（rules / rule_ids / sigma_method / nelson / historical+stage） | special_cause_rule_catalog_test / p2_t2_mewma_nelson_emp_test / p2_gv_expanded_b4b5_test / special_cause_rule_test |
 | time_series_smoothing / decomposition / seasonal_forecasting / arima | 同名 | forecast | seasonal_forecasting_output_test |
 | imr | individuals_moving_range | spc | special_cause_rule_test / imr_rs_test / xbar_output_test |
 | xbar_r / xbar_s | xbar_range / xbar_s | spc | xbar_output_test / quality_statistics_test |
@@ -95,6 +152,7 @@
 | p_chart / np_chart / c_chart / u_chart | 同名 | spc | quality_statistics_test |
 | laney_p_chart / laney_u_chart | laney_p_chart / laney_u_chart | spc | quality_statistics_test |
 | ewma / cusum | ewma / cusum | spc | ewma_cusum_output_test / special_cause_rule_test |
+| zone_chart / z_mr / moving_average | zone_chart / z_mr / moving_average | zone_chart / z_mr / moving_average + spc | zone_zmr_ma_output_test |
 | g_chart / t_chart | g_chart / t_chart | spc | capability_ci_gof_rare_event_power_test |
 | capability / nonnormal_capability | capability | capability | quality_statistics_test |
 | between_within_capability | between_within_capability | capability | quality_statistics_test |
@@ -102,13 +160,13 @@
 | capability_sixpack | capability_sixpack | capability | quality_statistics_test |
 | box_cox | box_cox | box_cox | quality_statistics_test |
 | distribution_identification | distribution_identification | distribution_identification | quality_statistics_test |
-| multi_vari | multi_vari | multi_vari | multi_vari_test |
-| tolerance_intervals | tolerance_intervals | tolerance（含 method_family、achieved_confidence） | tolerance_interval_test |
+| variability_chart | variability_chart | variability | quality_statistics_test |
+| tolerance_intervals | tolerance_intervals | tolerance（含 method_family、achieved_confidence；显式 tolerance_method） | tolerance_interval_test |
 | gage_rr | gage_rr | msa | gage_rr_output_test |
 | nested_gage_rr | nested_gage_rr | msa | gage_rr_output_test |
 | msa_type1（含 bias_linearity / stability） | msa_type1 | msa | reliability_msa_power_test |
 | attribute_agreement | attribute_agreement | msa | reliability_msa_power_test |
-| doe_factorial / doe_response | doe_factorial | doe（含 contour_*、held_actual/coded） | doe_factorial_output_test |
+| doe_factorial / doe_response | doe_factorial | doe（含 design_kind/fraction_p/resolution/run_count、contour_*） | p2_doe_acf_power_test / doe_factorial_output_test |
 | response_optimization | response_optimization | doe（含 prediction_interval_available） | doe_response_test |
 | 图形族 scatter_plot…pie_plot | GraphService::run | — | graph_service_test |
 
@@ -121,6 +179,7 @@ complete-case 行主序 `align_complete_rows`；`parse_numeric_cell` / `is_missi
 ## 4. 算法与公式帮助中心
 
 - 菜单：**帮助 → 算法、公式与参考资料**（`AlgorithmHelpDialog`）。
+- 菜单：**帮助 → 公式注册表**（`FormulaRegistryDialog`）：按命令 id 搜索公式块、Primary URL、research md 路径；可从帮助中心「在公式注册表中打开」跳转。
 - 详情区分页签：**方法说明** | **公式与来源**（后者仅公式块 + 官方链接，不含仓库 md / wiring）。
 - 内置资源：`resources/help/algorithm_help.json`（`:/help/algorithm_help.json`）。**最终用户不需要仓库或 Markdown 文件**：每条命令都内置用途、输入、缺失值规则、计算步骤、公式、符号、判定条件、不可计算边界和解释限制。
 - 官方网页仅作延伸阅读；核心方法说明在程序内离线可读。
@@ -128,3 +187,17 @@ complete-case 行主序 `align_complete_rows`；`parse_numeric_cell` / `is_missi
 - `formula_reference` 表示公式参考，**不是** Minitab golden；延后/诊断能力不得标为已实现。
 - 自动化：`algorithm_help_catalog_test`（用户字段完整性、命令覆盖、禁止把说明写成“见 md”、公式节点、https 链接）；`algorithm_help_dialog_test`（树、搜索、步骤/符号/判定、复制摘要）。
 - 手工验收：无 `docs/` 目录、断网仍能读懂计算方法；100%/150% 缩放与深色主题下公式可读。
+
+## 5. Track G1+G2：公式注册表与输出复制（2026-08-22）
+
+> 研究：[`research/g1-g2-formula-registry-chart-copy.md`](research/g1-g2-formula-registry-chart-copy.md)  
+> 验收：[`../samples/product_evolution/g1_g2_manual_acceptance.md`](../samples/product_evolution/g1_g2_manual_acceptance.md)
+
+| 能力 | UI / 模块 | 数据 / 契约 | 测试 |
+|---|---|---|---|
+| **G1** 公式注册表 | `FormulaRegistryDialog`；菜单 帮助→公式注册表；`AlgorithmHelpDialog`「在公式注册表中打开」 | `resources/help/algorithm_help.json` → `AlgorithmHelpCatalogLoader` | `formula_registry_dialog_test`、`algorithm_help_dialog_test` |
+| **G2** 图表复制 PNG+BMP+脚注 | `AnalysisChartWidget::copy_to_clipboard` → `row_visibility_clipboard` | `excluded_count_` / `hidden_count_` / `analysis_n_` / `display_n_`（Phase 7 语义，hidden≠excluded） | `analysis_chart_widget_test`、`row_visibility_clipboard_test` |
+| **G2** 表格 TSV/CSV+`#` 注释 | `page_renderer` 右键复制 / Ctrl+C / 导出 CSV | `append_clipboard_footnote_comments` | `row_visibility_clipboard_test` |
+| **G2** 多图焦点与 Ctrl+C 路由 | `OutputWorkspace::chart_for_copy`、`QShortcut(Ctrl+C)` → `copy_chart_requested`；`MainWindow::copy_chart` / `copy_selection`（输出表优先 TSV） | 输出页 ScrollArea / 图表 surface 焦点追踪 | `output_workspace_test` |
+
+批量测试：`powershell -File tools/run_g1g2_tests.ps1`（Qt Creator 构建后）。

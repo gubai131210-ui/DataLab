@@ -1,0 +1,74 @@
+exact=1834 sw=226 ew=198
+fixed_diag_unique=58 unmapped=12
+interp_starts_unique=127 uncovered=12
+
+=== DIAG BY FAMILY (unmapped) ===
+## append_prefix n=6
+  src/application/analysis_service.cpp:2170	相关分析：
+  src/application/analysis_service.cpp:2230	单样本 t：
+  src/application/analysis_service.cpp:2313	单样本 Z：
+  src/application/analysis_service.cpp:2423	双样本 t：
+  src/application/analysis_service.cpp:4682	能力分析: 
+  src/application/analysis_service.cpp:9665	响应优化预测：
+
+## rsm_design n=3
+  src/domain/statistics/response_surface_design.cpp:44	因素 ID 不能为空。
+  src/domain/statistics/response_surface_design.cpp:58	因素低/高水平必须有限。
+  src/domain/statistics/response_surface_design.cpp:201	alpha 必须为正有限数。
+
+## capability n=1
+  src/domain/statistics/quality_extensions.cpp:115	样本量 n 必须 ≥ 1。
+
+## analysis_service n=1
+  src/application/analysis_service.cpp:14034	设计生成失败。
+
+## chart_graph n=1
+  src/application/chart_pages.cpp:187	没有可显示的数据。
+
+=== RSM DESIGN ALL ZH ===
+  OK L38	至少需要一个连续因素。
+  UN L44	因素 ID 不能为空。
+  OK L48	因素 ID 必须唯一。
+  OK L54	第一阶段只接受连续因素；分类因素不得静默编码。
+  UN L58	因素低/高水平必须有限。
+  OK L63	因素低水平必须严格小于高水平。
+  UN L69	中心值必须有限且落在 [low, high] 内。
+  OK L187	CCD 至少需要 2 个连续因素。
+  UN L201	alpha 必须为正有限数。
+  OK L212	CCC 星点超出原始因素范围；请允许超范围星点，或改用 CCI/CCF。
+  OK L217	CCC 星点超出原始 low/high；已按允许超范围策略生成，实验可行性需人工确认。
+  UN L266	CCD 点集按 NIST Response Surface / CCD 定义生成；证据类型 formula_reference，
+  UN L267	非 vendor_oracle，未冻结为商业软件对齐 golden。
+  OK L289	BBD 第一阶段支持 3–7 个连续因素；2 因素不接受。
+  OK L314	BBD 不包含所有因素同时处于极端水平的角点；这是设计空间边界，不是实现缺陷。
+  UN L328	BBD 点集按 NIST Box–Behnken 定义生成；证据类型 formula_reference，
+  UN L329	非 vendor_oracle。
+
+=== APPEND PREFIXES ===
+  UN L2170	相关分析：
+  UN L2230	单样本 t：
+  UN L2313	单样本 Z：
+  UN L2423	双样本 t：
+  UN L4682	能力分析: 
+  UN L9665	响应优化预测：
+
+=== ACCEPTANCE/OC HITS ===
+  OK L2230	二项 OC 曲线描述在 n=
+  UN L2233	OC 用于评估抽样方案风险，不能替代对具体批次的接收判定。
+  OK L2237	 只反映 AQL 风险点，不是生产判定结论。
+  OK L2242	 只反映 RQL 风险点，不是拒收证明。
+  OK L2247	 仅作摘要；本轮 OC 仍用二项（无限批）近似。
+
+=== UNCOVERED INTERP STARTS (first 60) ===
+  L126	 下显著的项：
+  L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+  L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+  L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+  L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+  L689	 下，估计实际功效 = 
+  L1075	（最小期望频数 = 
+  L1534	（口径 = 
+  L2254	 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = 
+  L2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+  L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+  L2316	广义方差 |S|

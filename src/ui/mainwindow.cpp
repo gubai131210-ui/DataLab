@@ -2,9 +2,14 @@
 
 #include "application/analysis_service.h"
 #include "application/interpretation_service.h"
+#include "application/report_assembly_service.h"
+#include "application/report_export_service.h"
+#include "application/report_localization.h"
 #include "infrastructure/data_import_service.h"
 #include "infrastructure/pdf_report_writer.h"
 #include "infrastructure/project_repository.h"
+#include "infrastructure/report_export_writer.h"
+#include "infrastructure/report_serialization.h"
 #include "ui/analysis_commands.h"
 #include "ui/analysis_setup_dialog.h"
 #include "ui/analysis_chart_widget.h"
@@ -12,26 +17,35 @@
 #include "ui/output_workspace.h"
 #include "ui/project_navigator.h"
 #include "ui/worksheet_model.h"
+#include "ui/worksheet_sort_filter_proxy.h"
 #include "ui/worksheet_view.h"
 #include "ui/report_preview_dialog.h"
+#include "ui/report_template_dialog.h"
 #include "ui/algorithm_help_dialog.h"
+#include "ui/formula_registry_dialog.h"
+#include "ui/database_import_wizard.h"
+#include "ui/app_ui_tr.h"
 
 #include <QAction>
 #include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QDateTime>
 #include <QDockWidget>
 #include <QEvent>
 #include <QFileDialog>
 #include <QFile>
+#include <QFileInfo>
 #include <QFrame>
+#include <QJsonDocument>
 #include <QHash>
 #include <QHeaderView>
 #include <QIcon>
 #include <QItemSelectionModel>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QKeyEvent>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -49,8 +63,9 @@
 
 #include <algorithm>
 #include <optional>
+#include <set>
 #include <utility>
-
+#include <vector>
 namespace {
 
 AnalysisChartWidget* chart_widget_from_focus()
@@ -65,10 +80,52 @@ AnalysisChartWidget* chart_widget_from_focus()
     return nullptr;
 }
 
-AnalysisChartWidget* chart_widget_on_page(QWidget* page)
+QTableView* output_table_view_from_focus(OutputWorkspace* workspace)
 {
+    if (workspace == nullptr) {
+        return nullptr;
+    }
+    QWidget* widget = QApplication::focusWidget();
+    while (widget != nullptr && widget != workspace) {
+        if (auto* table = qobject_cast<QTableView*>(widget)) {
+            if (workspace->isAncestorOf(table)) {
+                return table;
+            }
+        }
+        widget = widget->parentWidget();
+    }
+    return nullptr;
+}
+
+bool trigger_output_table_copy(QTableView* table_view)
+{
+    if (table_view == nullptr) {
+        return false;
+    }
+    static const QString k_copy_table_action = QStringLiteral("复制表格（TSV）");
+    for (QAction* action : table_view->actions()) {
+        if (action->text() == k_copy_table_action) {
+            action->trigger();
+            return true;
+        }
+    }
+    return false;
+}
+
+AnalysisChartWidget* chart_widget_on_page(QWidget* page, OutputWorkspace* workspace = nullptr)
+{
+    if (workspace != nullptr && page == workspace->currentWidget()) {
+        if (AnalysisChartWidget* preferred = workspace->chart_for_copy()) {
+            return preferred;
+        }
+    }
     if (page == nullptr) {
         return nullptr;
+    }
+    if (AnalysisChartWidget* focused = chart_widget_from_focus()) {
+        if (page->isAncestorOf(focused)) {
+            return focused;
+        }
     }
     const auto charts = page->findChildren<AnalysisChartWidget*>();
     return charts.isEmpty() ? nullptr : charts.front();
@@ -84,8 +141,6 @@ bool data_tables_equal(
         && left.rows == right.rows
         && left.import_warnings == right.import_warnings
         && left.import_metadata.schema_version == right.import_metadata.schema_version
-        && left.import_metadata.source_path == right.import_metadata.source_path
-        && left.import_metadata.file_type == right.import_metadata.file_type
         && left.import_metadata.sheet_name == right.import_metadata.sheet_name
         && left.import_metadata.sheet_index == right.import_metadata.sheet_index
         && left.import_metadata.original_row_count == right.import_metadata.original_row_count
@@ -127,6 +182,7 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
         || id == QStringLiteral("normality_test")
         || id == QStringLiteral("outlier_test")
         || id == QStringLiteral("one_sample_t")
+        || id == QStringLiteral("one_sample_z")
         || id == QStringLiteral("two_sample_t")
         || id == QStringLiteral("paired_t")
         || id == QStringLiteral("correlation")
@@ -142,7 +198,8 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
         return QStringLiteral("基础统计");
     }
     if (id == QStringLiteral("one_way_anova")
-        || id == QStringLiteral("two_factor_anova")) {
+        || id == QStringLiteral("two_factor_anova")
+        || id == QStringLiteral("anom")) {
         return QStringLiteral("ANOVA");
     }
     if (id == QStringLiteral("regression")
@@ -166,14 +223,23 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
     }
     if (id == QStringLiteral("two_proportions")
         || id == QStringLiteral("chi_square")
+        || id == QStringLiteral("chi_square_gof")
+        || id == QStringLiteral("poisson_gof")
+        || id == QStringLiteral("fisher_exact")
         || id == QStringLiteral("variance_test")
         || id == QStringLiteral("mann_whitney")
         || id == QStringLiteral("wilcoxon_signed_rank")
         || id == QStringLiteral("sign_test")
+        || id == QStringLiteral("runs_test")
         || id == QStringLiteral("mcnemar")
+        || id == QStringLiteral("cochran_q")
+        || id == QStringLiteral("mood_median")
         || id == QStringLiteral("kruskal_wallis")
         || id == QStringLiteral("friedman")) {
         return QStringLiteral("假设检验");
+    }
+    if (id == QStringLiteral("cross_tabulation")) {
+        return QStringLiteral("表格");
     }
     if (id == QStringLiteral("capability")
         || id == QStringLiteral("nonnormal_capability")
@@ -183,7 +249,13 @@ QString analysis_menu_group(const analysis_commands::AnalysisCommand& command)
         || id == QStringLiteral("msa_type1")
         || id == QStringLiteral("nested_gage_rr")
         || id == QStringLiteral("attribute_agreement")
-        || id == QStringLiteral("pareto")) {
+        || id == QStringLiteral("pareto")
+        || id == QStringLiteral("run_chart")
+        || id == QStringLiteral("cause_and_effect")
+        || id == QStringLiteral("multi_vari")
+        || id == QStringLiteral("variability_chart")
+        || id == QStringLiteral("acceptance_sampling")
+        || id == QStringLiteral("tolerance_intervals")) {
         return QStringLiteral("质量工具");
     }
     if (command.menu_path == QStringLiteral("图形")) {
@@ -335,43 +407,47 @@ void MainWindow::create_commands()
         }
     };
 
-    connect_action(QStringLiteral("new"), QStringLiteral("新建项目"), &MainWindow::new_project);
-    connect_action(QStringLiteral("open"), QStringLiteral("打开项目"), &MainWindow::open_project);
-    connect_action(QStringLiteral("save"), QStringLiteral("保存项目"), &MainWindow::save_project);
-    connect_action(QStringLiteral("export_pdf"), QStringLiteral("导出 PDF"), &MainWindow::export_pdf);
-    commands_->add(QStringLiteral("exit"), QStringLiteral("退出"));
+    connect_action(QStringLiteral("new"), datalab::ui::ui_tr("新建项目"), &MainWindow::new_project);
+    connect_action(QStringLiteral("open"), datalab::ui::ui_tr("打开项目"), &MainWindow::open_project);
+    connect_action(QStringLiteral("save"), datalab::ui::ui_tr("保存项目"), &MainWindow::save_project);
+    connect_action(QStringLiteral("export_pdf"), datalab::ui::ui_tr("导出 PDF"), &MainWindow::export_pdf);
+    commands_->add(QStringLiteral("exit"), datalab::ui::ui_tr("退出"));
     connect(commands_->get(QStringLiteral("exit")), &QAction::triggered, this, &QWidget::close);
 
-    QAction* undo_action = commands_->add(QStringLiteral("undo"), QStringLiteral("撤销"), false);
-    QAction* redo_action = commands_->add(QStringLiteral("redo"), QStringLiteral("重做"), false);
+    QAction* undo_action = commands_->add(QStringLiteral("undo"), datalab::ui::ui_tr("撤销"), false);
+    QAction* redo_action = commands_->add(QStringLiteral("redo"), datalab::ui::ui_tr("重做"), false);
     connect(undo_action, &QAction::triggered, undo_stack_, &QUndoStack::undo);
     connect(redo_action, &QAction::triggered, undo_stack_, &QUndoStack::redo);
     connect(undo_stack_, &QUndoStack::canUndoChanged, undo_action, &QAction::setEnabled);
     connect(undo_stack_, &QUndoStack::canRedoChanged, redo_action, &QAction::setEnabled);
 
-    connect_action(QStringLiteral("import"), QStringLiteral("导入数据"), &MainWindow::import_data);
-    QAction* copy_action = commands_->add(QStringLiteral("copy"), QStringLiteral("复制"));
+    connect_action(QStringLiteral("import"), datalab::ui::ui_tr("导入数据"), &MainWindow::import_data);
+    connect_action(QStringLiteral("import_database"), datalab::ui::ui_tr("数据库导入…"),
+                   &MainWindow::import_database);
+    QAction* copy_action = commands_->add(QStringLiteral("copy"), datalab::ui::ui_tr("复制"));
     copy_action->setShortcut(QKeySequence::Copy);
     copy_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(copy_action, &QAction::triggered, this, &MainWindow::copy_selection);
-    QAction* copy_chart_action = commands_->add(QStringLiteral("copy_chart"), QStringLiteral("复制图形"));
+    QAction* copy_chart_action = commands_->add(QStringLiteral("copy_chart"), datalab::ui::ui_tr("复制图形"));
     copy_chart_action->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
     copy_chart_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(copy_chart_action, &QAction::triggered, this, &MainWindow::copy_chart);
-    QAction* cut_action = commands_->add(QStringLiteral("cut"), QStringLiteral("剪切"));
+    QAction* cut_action = commands_->add(QStringLiteral("cut"), datalab::ui::ui_tr("剪切"));
     cut_action->setShortcut(QKeySequence::Cut);
     cut_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(cut_action, &QAction::triggered, this, &MainWindow::cut_selection);
-    QAction* clear_action = commands_->add(QStringLiteral("clear_cells"), QStringLiteral("清除单元格"));
+    QAction* clear_action = commands_->add(QStringLiteral("clear_cells"), datalab::ui::ui_tr("清除单元格"));
     clear_action->setShortcut(QKeySequence::Delete);
     clear_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(clear_action, &QAction::triggered, this, &MainWindow::clear_selection);
-    QAction* paste_action = commands_->add(QStringLiteral("paste"), QStringLiteral("粘贴"));
+    QAction* paste_action = commands_->add(QStringLiteral("paste"), datalab::ui::ui_tr("粘贴"));
     paste_action->setShortcut(QKeySequence::Paste);
     paste_action->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(paste_action, &QAction::triggered, this, &MainWindow::paste_clipboard);
-    connect_action(QStringLiteral("exclude"), QStringLiteral("排除选中行"), &MainWindow::exclude_selected_row);
-    connect_action(QStringLiteral("clear_exclude"), QStringLiteral("清除排除标记"), &MainWindow::clear_exclusions);
+    connect_action(QStringLiteral("exclude"), datalab::ui::ui_tr("排除选中行"), &MainWindow::exclude_selected_row);
+    connect_action(QStringLiteral("clear_exclude"), datalab::ui::ui_tr("清除排除标记"), &MainWindow::clear_exclusions);
+    connect_action(QStringLiteral("hide_row"), datalab::ui::ui_tr("隐藏选中行（仅显示）"), &MainWindow::hide_selected_row);
+    connect_action(QStringLiteral("clear_hide"), datalab::ui::ui_tr("清除隐藏标记"), &MainWindow::clear_hidden_rows);
 
     set_icon(QStringLiteral("new"), QStringLiteral("new"));
     set_icon(QStringLiteral("open"), QStringLiteral("open"));
@@ -382,14 +458,14 @@ void MainWindow::create_commands()
     set_icon(QStringLiteral("export_pdf"), QStringLiteral("export-pdf"));
     // 分析命令：注册动作 + 连接通用 run_from_spec + 由命令表提供图标。
     for (const auto& command : analysis_commands::all()) {
-        QAction* action = commands_->add(command.id, command.menu_label);
+        QAction* action = commands_->add(command.id, datalab::ui::ui_tr(command.menu_label));
         connect(action, &QAction::triggered, this, [this, id = command.id] {
             run_from_spec(id);
         });
         set_icon(command.id, command.icon_file);
     }
 
-    auto* file_menu = menuBar()->addMenu(QStringLiteral("文件"));
+    auto* file_menu = menuBar()->addMenu(datalab::ui::ui_tr("文件"));
     commands_->add_to_menu(file_menu, QStringLiteral("new"));
     commands_->add_to_menu(file_menu, QStringLiteral("open"));
     commands_->add_to_menu(file_menu, QStringLiteral("save"));
@@ -398,7 +474,7 @@ void MainWindow::create_commands()
     file_menu->addSeparator();
     commands_->add_to_menu(file_menu, QStringLiteral("exit"));
 
-    auto* edit_menu = menuBar()->addMenu(QStringLiteral("编辑"));
+    auto* edit_menu = menuBar()->addMenu(datalab::ui::ui_tr("编辑"));
     commands_->add_to_menu(edit_menu, QStringLiteral("undo"));
     commands_->add_to_menu(edit_menu, QStringLiteral("redo"));
     edit_menu->addSeparator();
@@ -408,28 +484,32 @@ void MainWindow::create_commands()
     commands_->add_to_menu(edit_menu, QStringLiteral("paste"));
     commands_->add_to_menu(edit_menu, QStringLiteral("clear_cells"));
 
-    auto* data_menu = menuBar()->addMenu(QStringLiteral("数据"));
+    auto* data_menu = menuBar()->addMenu(datalab::ui::ui_tr("数据"));
     commands_->add_to_menu(data_menu, QStringLiteral("import"));
+    commands_->add_to_menu(data_menu, QStringLiteral("import_database"));
     commands_->add_to_menu(data_menu, QStringLiteral("exclude"));
     commands_->add_to_menu(data_menu, QStringLiteral("clear_exclude"));
+    commands_->add_to_menu(data_menu, QStringLiteral("hide_row"));
+    commands_->add_to_menu(data_menu, QStringLiteral("clear_hide"));
 
     // 分析菜单：按 Minitab 风格的顶层菜单和子菜单生成。
+    // Hash keys stay zh_CN source strings so language does not split menus.
     QHash<QString, QMenu*> analysis_menus;
     QHash<QString, QMenu*> analysis_submenus;
     for (const auto& command : analysis_commands::all()) {
-        const QString top_menu = primary_analysis_menu(command);
-        QMenu* menu = analysis_menus.value(top_menu, nullptr);
+        const QString top_menu_src = primary_analysis_menu(command);
+        QMenu* menu = analysis_menus.value(top_menu_src, nullptr);
         if (menu == nullptr) {
-            menu = menuBar()->addMenu(top_menu);
-            analysis_menus.insert(top_menu, menu);
+            menu = menuBar()->addMenu(datalab::ui::ui_tr(top_menu_src));
+            analysis_menus.insert(top_menu_src, menu);
         }
-        const QString group = analysis_menu_group(command);
+        const QString group_src = analysis_menu_group(command);
         QMenu* target = menu;
-        if (!group.isEmpty()) {
-            const QString submenu_key = top_menu + QStringLiteral("/") + group;
+        if (!group_src.isEmpty()) {
+            const QString submenu_key = top_menu_src + QStringLiteral("/") + group_src;
             target = analysis_submenus.value(submenu_key, nullptr);
             if (target == nullptr) {
-                target = menu->addMenu(group);
+                target = menu->addMenu(datalab::ui::ui_tr(group_src));
                 analysis_submenus.insert(submenu_key, target);
             }
         }
@@ -438,28 +518,58 @@ void MainWindow::create_commands()
         }
         commands_->add_to_menu(target, command.id);
     }
-    menuBar()->addMenu(QStringLiteral("查看"));
+    menuBar()->addMenu(datalab::ui::ui_tr("查看"));
 
-    auto* help_menu = menuBar()->addMenu(QStringLiteral("帮助"));
-    help_menu->addAction(QStringLiteral("算法、公式与参考资料"), this, [this] {
+    auto* help_menu = menuBar()->addMenu(datalab::ui::ui_tr("帮助"));
+    help_menu->addAction(datalab::ui::ui_tr("算法、公式与参考资料"), this, [this] {
         if (algorithm_help_dialog_ == nullptr) {
             algorithm_help_dialog_ = new AlgorithmHelpDialog(this);
             algorithm_help_dialog_->setAttribute(Qt::WA_DeleteOnClose);
             connect(algorithm_help_dialog_, &QObject::destroyed, this, [this] {
                 algorithm_help_dialog_ = nullptr;
             });
+            connect(
+                algorithm_help_dialog_,
+                &AlgorithmHelpDialog::open_in_formula_registry,
+                this,
+                [this](const QString& id) {
+                    if (formula_registry_dialog_ == nullptr) {
+                        formula_registry_dialog_ = new FormulaRegistryDialog(this);
+                        formula_registry_dialog_->setAttribute(Qt::WA_DeleteOnClose);
+                        connect(formula_registry_dialog_, &QObject::destroyed, this, [this] {
+                            formula_registry_dialog_ = nullptr;
+                        });
+                    }
+                    formula_registry_dialog_->select_entry(id);
+                    formula_registry_dialog_->show();
+                    formula_registry_dialog_->raise();
+                    formula_registry_dialog_->activateWindow();
+                });
         }
         algorithm_help_dialog_->show();
         algorithm_help_dialog_->raise();
         algorithm_help_dialog_->activateWindow();
     });
-    help_menu->addAction(QStringLiteral("关于 DataLab"), this, [this] {
+    help_menu->addAction(datalab::ui::ui_tr("公式注册表"), this, [this] {
+        if (formula_registry_dialog_ == nullptr) {
+            formula_registry_dialog_ = new FormulaRegistryDialog(this);
+            formula_registry_dialog_->setAttribute(Qt::WA_DeleteOnClose);
+            connect(formula_registry_dialog_, &QObject::destroyed, this, [this] {
+                formula_registry_dialog_ = nullptr;
+            });
+        }
+        formula_registry_dialog_->show();
+        formula_registry_dialog_->raise();
+        formula_registry_dialog_->activateWindow();
+    });
+    help_menu->addAction(datalab::ui::ui_tr("关于 DataLab"), this, [this] {
         QMessageBox::about(
             this,
-            QStringLiteral("关于 DataLab"),
-            QStringLiteral("DataLab 品质工作站：按 Minitab 方式选择数据、计算并输出质量分析报告。"));
+            datalab::ui::ui_tr("关于 DataLab"),
+            datalab::ui::ui_tr(
+                "DataLab 品质工作站：按 Minitab 方式选择数据、计算并输出质量分析报告。"));
     });
-    help_menu->addAction(QStringLiteral("统计口径"), this, [this] {
+    help_menu->addAction(datalab::ui::ui_tr("统计口径"), this, [this] {
         QMessageBox::information(
             this,
             QStringLiteral("统计口径"),
@@ -547,9 +657,16 @@ void MainWindow::create_layout()
     layout->setContentsMargins(12, 10, 12, 12);
     layout->setSpacing(8);
     worksheet_model_ = new WorksheetModel(this);
+    worksheet_sort_proxy_ = new datalab::ui::WorksheetSortFilterProxyModel(this);
+    worksheet_sort_proxy_->setSourceModel(worksheet_model_);
     connect(worksheet_model_, &WorksheetModel::table_changed, this,
             [this](const datalab::domain::DataTable& table) {
                 table_ = table;
+                std::set<int> sortable;
+                for (int column = 0; column < static_cast<int>(table.columns.size()); ++column) {
+                    sortable.insert(column);
+                }
+                worksheet_sort_proxy_->set_sortable_columns(sortable);
                 refresh_context_dock();
             });
     connect(worksheet_model_, &QAbstractItemModel::dataChanged, this,
@@ -568,7 +685,8 @@ void MainWindow::create_layout()
                 push_table_change(before, after, QStringLiteral("编辑列名"), true);
             });
     data_table_ = new WorksheetView(central);
-    data_table_->setModel(worksheet_model_);
+    data_table_->setModel(worksheet_sort_proxy_);
+    data_table_->setSortingEnabled(true);
     data_table_->setEditTriggers(
         QAbstractItemView::DoubleClicked
         | QAbstractItemView::EditKeyPressed
@@ -579,36 +697,77 @@ void MainWindow::create_layout()
     data_table_->addAction(commands_->get(QStringLiteral("cut")));
     data_table_->addAction(commands_->get(QStringLiteral("paste")));
     data_table_->addAction(commands_->get(QStringLiteral("clear_cells")));
+    auto* hide_column_action = new QAction(QStringLiteral("隐藏当前列"), data_table_);
+    connect(hide_column_action, &QAction::triggered, this, [this]() {
+        const QModelIndex current = data_table_->currentIndex();
+        if (!current.isValid()) {
+            return;
+        }
+        const int column = worksheet_sort_proxy_->mapToSource(current).column();
+        data_table_->setColumnHidden(current.column(), true);
+        auto flags = worksheet_model_->column_hidden_flags();
+        if (static_cast<std::size_t>(column) >= flags.size()) {
+            flags.resize(static_cast<std::size_t>(column) + 1, false);
+        }
+        flags[static_cast<std::size_t>(column)] = true;
+        worksheet_model_->set_column_hidden_flags(flags);
+        statusBar()->showMessage(QStringLiteral("已隐藏列 C%1（不改变导入列顺序）。").arg(column + 1));
+    });
+    data_table_->addAction(hide_column_action);
+    auto* show_columns_action = new QAction(QStringLiteral("显示全部列"), data_table_);
+    connect(show_columns_action, &QAction::triggered, this, [this]() {
+        for (int column = 0; column < worksheet_sort_proxy_->columnCount(); ++column) {
+            data_table_->setColumnHidden(column, false);
+        }
+        worksheet_model_->set_column_hidden_flags(
+            std::vector<bool>(worksheet_model_->table().columns.size(), false));
+        statusBar()->showMessage(QStringLiteral("已显示全部列。"));
+    });
+    data_table_->addAction(show_columns_action);
     connect(static_cast<WorksheetView*>(data_table_), &WorksheetView::active_cell_changed,
             this, [this](const QModelIndex& index) {
                 if (index.isValid() && cell_address_ != nullptr) {
-                    cell_address_->setText(QStringLiteral("C%1 · %2")
-                        .arg(index.column() + 1)
-                        .arg(index.row() + 1));
+                    const QModelIndex source = worksheet_sort_proxy_->mapToSource(index);
+                    const QVariant row_id =
+                        worksheet_model_->data(source, datalab::ui::RowIdRole);
+                    cell_address_->setText(
+                        QStringLiteral("C%1 · 源行 %2 · RowId %3")
+                            .arg(source.column() + 1)
+                            .arg(source.row() + 1)
+                            .arg(row_id.isValid() ? row_id.toString() : QStringLiteral("-")));
                 }
             });
     output_workspace_ = new OutputWorkspace(central);
     output_workspace_->installEventFilter(this);
+    connect(output_workspace_, &OutputWorkspace::copy_chart_requested, this, &MainWindow::copy_chart);
     connect(output_workspace_, &OutputWorkspace::rows_selected, this,
             [this](const std::vector<std::size_t>& rows) {
-                if (data_table_ == nullptr || data_table_->selectionModel() == nullptr) {
+                if (data_table_ == nullptr || data_table_->selectionModel() == nullptr
+                    || worksheet_model_ == nullptr || worksheet_sort_proxy_ == nullptr) {
                     return;
                 }
                 data_table_->selectionModel()->clearSelection();
                 for (const std::size_t row : rows) {
-                    const QModelIndex index = worksheet_model_->index(static_cast<int>(row), 0);
-                    if (index.isValid()) {
+                    const QModelIndex source =
+                        worksheet_model_->index(static_cast<int>(row), 0);
+                    const QModelIndex proxy = worksheet_sort_proxy_->mapFromSource(source);
+                    if (proxy.isValid()) {
                         data_table_->selectionModel()->select(
-                            index, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+                            proxy, QItemSelectionModel::Select | QItemSelectionModel::Rows);
                     }
                 }
             });
     connect(data_table_->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, [this] {
                 std::vector<std::size_t> rows;
-                if (data_table_ != nullptr && data_table_->selectionModel() != nullptr) {
-                    for (const QModelIndex& index : data_table_->selectionModel()->selectedRows()) {
-                        rows.push_back(static_cast<std::size_t>(index.row()));
+                if (data_table_ != nullptr && data_table_->selectionModel() != nullptr
+                    && worksheet_sort_proxy_ != nullptr) {
+                    for (const QModelIndex& index :
+                         data_table_->selectionModel()->selectedRows()) {
+                        const QModelIndex source = worksheet_sort_proxy_->mapToSource(index);
+                        if (source.isValid()) {
+                            rows.push_back(static_cast<std::size_t>(source.row()));
+                        }
                     }
                 }
                 if (output_workspace_ != nullptr) {
@@ -662,6 +821,16 @@ void MainWindow::create_layout()
     worksheet_heading->addStretch(1);
     worksheet_heading->addWidget(cell_address_);
     worksheet_layout->addLayout(worksheet_heading);
+    worksheet_filter_edit_ = new QLineEdit(worksheet_pane);
+    worksheet_filter_edit_->setPlaceholderText(
+        QStringLiteral("筛选工作表（白名单列本地过滤，不改动原始行映射）"));
+    connect(worksheet_filter_edit_, &QLineEdit::textChanged, this,
+            [this](const QString& text) {
+                if (worksheet_sort_proxy_ != nullptr) {
+                    worksheet_sort_proxy_->set_text_filter(text);
+                }
+            });
+    worksheet_layout->addWidget(worksheet_filter_edit_);
     worksheet_layout->addWidget(data_table_, 1);
     output_pane->setMinimumHeight(280);
     worksheet_pane->setMinimumHeight(280);
@@ -694,6 +863,12 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
     if (watched == output_workspace_ && event->type() == QEvent::KeyPress) {
         auto* key_event = static_cast<QKeyEvent*>(event);
         if (key_event->matches(QKeySequence::Copy)) {
+            if (QTableView* table = output_table_view_from_focus(output_workspace_)) {
+                if (trigger_output_table_copy(table)) {
+                    statusBar()->showMessage(QStringLiteral("已复制表格到剪贴板。"));
+                    return true;
+                }
+            }
             if (AnalysisChartWidget* chart = chart_widget_from_focus()) {
                 statusBar()->showMessage(chart->copy_to_clipboard()
                         ? QStringLiteral("已复制图形到剪贴板。")
@@ -701,7 +876,7 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
                 return true;
             }
             if (AnalysisChartWidget* chart =
-                    chart_widget_on_page(output_workspace_->currentWidget())) {
+                    chart_widget_on_page(output_workspace_->currentWidget(), output_workspace_)) {
                 statusBar()->showMessage(chart->copy_to_clipboard()
                         ? QStringLiteral("已复制图形到剪贴板。")
                         : QStringLiteral("当前图形暂时无法复制。"));
@@ -753,6 +928,14 @@ void MainWindow::copy_selection()
     const bool worksheet_focused = data_table_ != nullptr
         && (focus == data_table_ || data_table_->isAncestorOf(focus));
     if (!worksheet_focused) {
+        if (output_workspace_ != nullptr) {
+            if (QTableView* table = output_table_view_from_focus(output_workspace_)) {
+                if (trigger_output_table_copy(table)) {
+                    statusBar()->showMessage(QStringLiteral("已复制表格到剪贴板。"));
+                    return;
+                }
+            }
+        }
         if (AnalysisChartWidget* chart = chart_widget_from_focus()) {
             statusBar()->showMessage(chart->copy_to_clipboard()
                     ? QStringLiteral("已复制图形到剪贴板。")
@@ -761,7 +944,7 @@ void MainWindow::copy_selection()
         }
         if (output_workspace_ != nullptr) {
             if (AnalysisChartWidget* chart =
-                    chart_widget_on_page(output_workspace_->currentWidget())) {
+                    chart_widget_on_page(output_workspace_->currentWidget(), output_workspace_)) {
                 statusBar()->showMessage(chart->copy_to_clipboard()
                         ? QStringLiteral("已复制图形到剪贴板。")
                         : QStringLiteral("当前图形暂时无法复制。"));
@@ -776,36 +959,24 @@ void MainWindow::copy_selection()
     if (indexes.isEmpty()) {
         return;
     }
-    int min_row = indexes.front().row();
-    int max_row = min_row;
-    int min_column = indexes.front().column();
-    int max_column = min_column;
+    QModelIndexList source_indexes;
+    source_indexes.reserve(indexes.size());
     for (const QModelIndex& index : indexes) {
-        min_row = std::min(min_row, index.row());
-        max_row = std::max(max_row, index.row());
-        min_column = std::min(min_column, index.column());
-        max_column = std::max(max_column, index.column());
+        source_indexes.push_back(
+            worksheet_sort_proxy_ != nullptr
+                ? worksheet_sort_proxy_->mapToSource(index)
+                : index);
     }
-    QStringList lines;
-    for (int row = min_row; row <= max_row; ++row) {
-        QStringList cells;
-        for (int column = min_column; column <= max_column; ++column) {
-            cells.push_back(worksheet_model_->data(
-                worksheet_model_->index(row, column), Qt::DisplayRole).toString());
-        }
-        lines.push_back(cells.join(QLatin1Char('\t')));
-    }
-    QApplication::clipboard()->setText(lines.join(QLatin1Char('\n')));
-    statusBar()->showMessage(QStringLiteral("已复制 %1 行 × %2 列。")
-                                 .arg(max_row - min_row + 1)
-                                 .arg(max_column - min_column + 1));
+    const QString text = worksheet_model_->selection_tsv(source_indexes, true);
+    QApplication::clipboard()->setText(text);
+    statusBar()->showMessage(QStringLiteral("已复制选区（含表头）。"));
 }
 
 void MainWindow::copy_chart()
 {
     AnalysisChartWidget* chart = chart_widget_from_focus();
     if (chart == nullptr && output_workspace_ != nullptr) {
-        chart = chart_widget_on_page(output_workspace_->currentWidget());
+        chart = chart_widget_on_page(output_workspace_->currentWidget(), output_workspace_);
     }
     if (chart == nullptr) {
         statusBar()->showMessage(QStringLiteral("当前输出页没有可复制的图形。"));
@@ -825,8 +996,12 @@ void MainWindow::cut_selection()
     copy_selection();
     const datalab::domain::DataTable before = table_;
     const QModelIndexList indexes = data_table_->selectionModel()->selectedIndexes();
+    QModelIndexList source_indexes;
+    for (const QModelIndex& index : indexes) {
+        source_indexes.push_back(worksheet_sort_proxy_->mapToSource(index));
+    }
     suppress_table_edit_undo_ = true;
-    if (!worksheet_model_->clear_cells(indexes)) {
+    if (!worksheet_model_->clear_cells(source_indexes)) {
         suppress_table_edit_undo_ = false;
         return;
     }
@@ -852,9 +1027,13 @@ void MainWindow::clear_selection()
     if (indexes.isEmpty()) {
         return;
     }
+    QModelIndexList source_indexes;
+    for (const QModelIndex& index : indexes) {
+        source_indexes.push_back(worksheet_sort_proxy_->mapToSource(index));
+    }
     const datalab::domain::DataTable before = table_;
     suppress_table_edit_undo_ = true;
-    if (!worksheet_model_->clear_cells(indexes)) {
+    if (!worksheet_model_->clear_cells(source_indexes)) {
         suppress_table_edit_undo_ = false;
         statusBar()->showMessage(QStringLiteral("所选单元格已为空。"));
         return;
@@ -927,6 +1106,7 @@ void MainWindow::new_project()
     undo_stack_->clear();
     worksheet_model_->set_table(table_);
     worksheet_model_->set_excluded_rows({});
+    worksheet_model_->set_hidden_rows({});
     output_workspace_->clear_pages();
     output_workspace_->set_selected_source_rows({});
     navigator_->clear_contents();
@@ -965,6 +1145,33 @@ void MainWindow::open_project()
     }
     refresh_context_dock();
     statusBar()->showMessage(QStringLiteral("项目已打开。"));
+}
+
+void MainWindow::import_database()
+{
+    datalab::ui::DatabaseImportWizard wizard(this);
+    if (wizard.exec() != QDialog::Accepted) {
+        return;
+    }
+    const auto imported = wizard.imported_table();
+    if (!imported.has_value()) {
+        return;
+    }
+    if (!confirm_discard_output()) {
+        return;
+    }
+    cleaning_operations_.clear();
+    undo_stack_->clear();
+    output_workspace_->clear_pages();
+    output_workspace_->set_selected_source_rows({});
+    navigator_->clear_contents();
+    table_ = *imported;
+    display_table();
+    navigator_->add_worksheet(QString::fromStdString(table_.name));
+    statusBar()->showMessage(
+        QStringLiteral("已从数据库导入 %1 行：%2。")
+            .arg(static_cast<qulonglong>(table_.rows.size()))
+            .arg(QString::fromStdString(table_.name)));
 }
 
 void MainWindow::import_data()
@@ -1027,6 +1234,7 @@ void MainWindow::display_table()
 {
     worksheet_model_->set_table(table_);
     worksheet_model_->set_excluded_rows(excluded_rows());
+    worksheet_model_->set_hidden_rows(hidden_rows());
     data_table_->resizeColumnsToContents();
     refresh_context_dock();
 }
@@ -1073,6 +1281,7 @@ datalab::domain::AnalysisConfiguration MainWindow::base_configuration() const
 {
     datalab::domain::AnalysisConfiguration configuration;
     configuration.excluded_rows = excluded_rows();
+    configuration.hidden_rows = hidden_rows();
     return configuration;
 }
 
@@ -1081,6 +1290,22 @@ std::vector<std::size_t> MainWindow::excluded_rows() const
     std::vector<std::size_t> rows;
     for (const auto& operation : cleaning_operations_) {
         if (operation.operation != "exclude_row") {
+            continue;
+        }
+        for (const std::size_t row : operation.affected_rows) {
+            if (std::find(rows.begin(), rows.end(), row) == rows.end()) {
+                rows.push_back(row);
+            }
+        }
+    }
+    return rows;
+}
+
+std::vector<std::size_t> MainWindow::hidden_rows() const
+{
+    std::vector<std::size_t> rows;
+    for (const auto& operation : cleaning_operations_) {
+        if (operation.operation != "hide_row") {
             continue;
         }
         for (const std::size_t row : operation.affected_rows) {
@@ -1103,6 +1328,44 @@ void MainWindow::publish_page(const datalab::domain::OutputPage& page)
                              QString::fromStdString(enriched_page.diagnostics.front().message));
         return;
     }
+    if (enriched_page.worksheet_export.has_value()) {
+        const bool censoring_sheet =
+            enriched_page.worksheet_export->name == "censoring_observations";
+        const QString title = censoring_sheet
+            ? QStringLiteral("写入删失状态工作表")
+            : QStringLiteral("写入设计工作表");
+        const QString body = censoring_sheet
+            ? QStringLiteral(
+                  "已生成逐观测删失状态工作表（%1 行，含 censoring_type）。"
+                  "是否替换当前活动工作表以便审计/再分析？")
+                  .arg(static_cast<qulonglong>(
+                      enriched_page.worksheet_export->rows.size()))
+            : QStringLiteral(
+                  "已生成设计矩阵工作表（%1 行）。是否替换当前活动工作表以便录入 Response？")
+                  .arg(static_cast<qulonglong>(
+                      enriched_page.worksheet_export->rows.size()));
+        const auto answer = QMessageBox::question(
+            this,
+            title,
+            body,
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::Yes);
+        if (answer == QMessageBox::Yes) {
+            const datalab::domain::DataTable before = table_;
+            table_ = *enriched_page.worksheet_export;
+            worksheet_model_->set_table(table_);
+            worksheet_model_->set_excluded_rows({});
+            worksheet_model_->set_hidden_rows({});
+            push_table_change(
+                before,
+                table_,
+                censoring_sheet ? QStringLiteral("删失状态写入工作表")
+                                : QStringLiteral("DOE 设计写入工作表"),
+                true);
+            navigator_->add_worksheet(QString::fromStdString(table_.name));
+            refresh_context_dock();
+        }
+    }
     output_workspace_->add_page(enriched_page);
     navigator_->add_analysis(QString::fromStdString(enriched_page.id), QString::fromStdString(enriched_page.title));
     statusBar()->showMessage(QStringLiteral("分析完成：") + QString::fromStdString(enriched_page.title));
@@ -1118,7 +1381,9 @@ void MainWindow::run_from_spec(const QString& id)
         return;
     }
     AnalysisSetupDialog dialog(
-        command->dialog_title,
+        command->dialog_title.isEmpty()
+            ? datalab::ui::ui_tr(command->menu_label)
+            : datalab::ui::ui_tr(command->dialog_title),
         column_labels(),
         this,
         QStringLiteral(":/icons/%1.svg").arg(command->icon_file),
@@ -1219,11 +1484,58 @@ void MainWindow::clear_exclusions()
     statusBar()->showMessage(QStringLiteral("已清除排除标记，原始数据未修改。"));
 }
 
+void MainWindow::hide_selected_row()
+{
+    const QModelIndexList selected_rows = data_table_->selectionModel()->selectedRows();
+    if (selected_rows.isEmpty()) {
+        QMessageBox::information(this, QStringLiteral("未选择行"),
+                                 QStringLiteral("请先在工作表中选择要隐藏的行（仅影响显示，不排除分析）。"));
+        return;
+    }
+    std::vector<std::size_t> rows;
+    for (const QModelIndex& index : selected_rows) {
+        const std::size_t row = static_cast<std::size_t>(index.row());
+        if (std::find(rows.begin(), rows.end(), row) == rows.end()) {
+            rows.push_back(row);
+        }
+    }
+    const std::vector<datalab::domain::CleaningOperation> before = cleaning_operations_;
+    std::vector<datalab::domain::CleaningOperation> after = before;
+    after.push_back({"hide_row", "用户隐藏选中行（仅显示；分析仍纳入）。", rows});
+    undo_stack_->push(new CleaningChangeCommand(
+        [this](const std::vector<datalab::domain::CleaningOperation>& operations) {
+            restore_cleaning_operations(operations);
+        },
+        before, std::move(after), QStringLiteral("隐藏行")));
+    statusBar()->showMessage(
+        QStringLiteral("已标记隐藏 %1 行（仅显示；分析仍纳入）。")
+            .arg(static_cast<qulonglong>(rows.size())));
+}
+
+void MainWindow::clear_hidden_rows()
+{
+    const std::vector<datalab::domain::CleaningOperation> before = cleaning_operations_;
+    std::vector<datalab::domain::CleaningOperation> after = before;
+    after.erase(
+        std::remove_if(after.begin(), after.end(),
+                       [](const datalab::domain::CleaningOperation& operation) {
+                           return operation.operation == "hide_row";
+                       }),
+        after.end());
+    undo_stack_->push(new CleaningChangeCommand(
+        [this](const std::vector<datalab::domain::CleaningOperation>& operations) {
+            restore_cleaning_operations(operations);
+        },
+        before, std::move(after), QStringLiteral("清除隐藏标记")));
+    statusBar()->showMessage(QStringLiteral("已清除隐藏标记，原始数据未修改。"));
+}
+
 void MainWindow::restore_cleaning_operations(
     const std::vector<datalab::domain::CleaningOperation>& operations)
 {
     cleaning_operations_ = operations;
     worksheet_model_->set_excluded_rows(excluded_rows());
+    worksheet_model_->set_hidden_rows(hidden_rows());
     refresh_context_dock();
 }
 
@@ -1234,13 +1546,14 @@ void MainWindow::refresh_context_dock()
     }
     const bool has_data = !table_.columns.empty();
     const std::size_t excluded = excluded_rows().size();
+    const std::size_t hidden = hidden_rows().size();
     if (!has_data) {
         context_status_->setText(QStringLiteral("尚未导入数据"));
         context_status_->setStyleSheet(QStringLiteral(
             "background: #fff8e6; color: #8a5a00; padding: 12px;"
             " border: 1px solid #ead7a0; border-radius: 7px;"));
         context_detail_->setText(QStringLiteral(
-            "导入 CSV 或 Excel 后，这里显示当前工作表的行数、列数和排除状态。"));
+            "导入 CSV 或 Excel 后，这里显示当前工作表的行数、列数、排除与隐藏状态。"));
         context_next_->setText(QStringLiteral(
             "下一步\n导入数据后，从“统计 / 图形 / 质量工具”菜单选择方法。"));
         return;
@@ -1255,9 +1568,10 @@ void MainWindow::refresh_context_dock()
         ? QStringLiteral("未命名工作表")
         : QString::fromStdString(table_.name);
     context_detail_->setText(
-        QStringLiteral("当前工作表「%1」。已排除 %2 行。")
+        QStringLiteral("当前工作表「%1」。已排除 %2 行；已隐藏 %3 行（仅显示，分析仍纳入）。")
             .arg(sheet_name)
-            .arg(static_cast<qulonglong>(excluded)));
+            .arg(static_cast<qulonglong>(excluded))
+            .arg(static_cast<qulonglong>(hidden)));
     if (output_workspace_ != nullptr && output_workspace_->has_pages()) {
         context_next_->setText(QStringLiteral(
             "下一步\n查看分析输出，或从“文件”导出 PDF 报告。"));
@@ -1287,7 +1601,27 @@ void MainWindow::export_pdf()
         QMessageBox::information(this, QStringLiteral("没有分析"), QStringLiteral("请先运行分析。"));
         return;
     }
-    ReportPreviewDialog preview(output_workspace_->pages(), this);
+
+    ReportTemplateDialog template_dialog(this);
+    if (template_dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    datalab::application::ReportAssemblyOptions options;
+    options.software_version = "DataLab";
+    options.generated_at_utc =
+        QDateTime::currentDateTimeUtc().toString(Qt::ISODate).toStdString();
+    const datalab::domain::ReportDocument assembled =
+        datalab::application::build_report_document(
+            table_,
+            output_workspace_->pages(),
+            template_dialog.selected_profile(),
+            options);
+    const datalab::application::ReportLocalizationResult localized =
+        datalab::application::localize_report_document(assembled);
+    const datalab::domain::ReportDocument& document = localized.document;
+
+    ReportPreviewDialog preview(document, this);
     if (preview.exec() != QDialog::Accepted) {
         return;
     }
@@ -1299,12 +1633,67 @@ void MainWindow::export_pdf()
     if (file_path.isEmpty()) {
         return;
     }
-    QString error_message;
-    if (!datalab::infrastructure::PdfReportWriter::write(
-            file_path, table_, output_workspace_->pages(), &error_message)) {
-        QMessageBox::critical(this, QStringLiteral("导出失败"), error_message);
+
+    const datalab::application::ReportExportPaths paths =
+        datalab::application::make_report_export_paths(
+            QFileInfo(file_path).fileName().toStdString());
+    datalab::domain::ReportExportManifest manifest =
+        datalab::application::build_export_manifest(document, paths);
+    std::string mismatch;
+    if (!datalab::application::manifest_matches_document(manifest, document, &mismatch)) {
+        QMessageBox::critical(
+            this,
+            QStringLiteral("导出失败"),
+            QStringLiteral("报告与 manifest 一致性校验失败：%1")
+                .arg(QString::fromStdString(mismatch)));
         return;
     }
+    manifest.consistency_status = "ok";
+
+    const datalab::infrastructure::ReportExportResult exported =
+        datalab::infrastructure::export_report_package(
+            file_path,
+            document,
+            manifest,
+            [&document](datalab::domain::ReportExportManifest& mutable_manifest,
+                        const QString& temp_pdf) {
+                const datalab::domain::ExternalPdfaValidatorResult external =
+                    datalab::infrastructure::run_optional_verapdf(temp_pdf);
+                auto assessment = datalab::application::merge_external_pdfa_validator_result(
+                    datalab::application::assess_pdf_export_pipeline(),
+                    external);
+                const datalab::domain::ExternalPdfaValidatorResult pac =
+                    datalab::infrastructure::run_optional_pac(temp_pdf);
+                assessment = datalab::application::merge_optional_pac_result(
+                    std::move(assessment), pac);
+                datalab::application::apply_pdf_compliance_assessment(
+                    mutable_manifest, assessment);
+                std::string post_reason;
+                if (!datalab::application::manifest_matches_document(
+                        mutable_manifest, document, &post_reason)) {
+                    // Force honest fallback rather than writing a forbidden claim.
+                    datalab::application::apply_pdf_compliance_assessment(
+                        mutable_manifest,
+                        datalab::application::assess_pdf_export_pipeline());
+                    mutable_manifest.validator_notes +=
+                        " Post-validator manifest rejected (" + post_reason
+                        + "); reset to not_validated/unsupported.";
+                }
+            });
+    if (!exported.ok) {
+        QMessageBox::critical(
+            this,
+            QStringLiteral("导出失败"),
+            exported.error_message.isEmpty() ? QStringLiteral("导出失败。")
+                                             : exported.error_message);
+        return;
+    }
+
     navigator_->add_report(QStringLiteral("PDF 报告"));
-    statusBar()->showMessage(QStringLiteral("PDF 报告已导出。"));
+    statusBar()->showMessage(
+        QStringLiteral("PDF / audit JSON / manifest 已导出（PDF/A=%1，PDF/UA=%2）。")
+            .arg(QString::fromStdString(
+                datalab::domain::pdf_compliance_status_id(exported.manifest.pdfa_status)))
+            .arg(QString::fromStdString(
+                datalab::domain::pdf_compliance_status_id(exported.manifest.pdfua_status))));
 }

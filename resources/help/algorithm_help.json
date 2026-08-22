@@ -1,6 +1,6 @@
 {
-  "catalog_version": "2026-08-20.2",
-  "last_reviewed": "2026-08-20",
+  "catalog_version": "2026-08-21.2",
+  "last_reviewed": "2026-08-21",
   "entries": [
     {
       "id": "descriptive",
@@ -230,23 +230,23 @@
     },
     {
       "id": "outlier_test",
-      "title": "异常值检验（Grubbs）",
+      "title": "异常值检验",
       "category": "基础统计",
       "menu_path": "统计 > 基础统计",
       "aliases": [
         "outlier_test",
-        "异常值检验（Grubbs）"
+        "异常值检验"
       ],
       "implemented_status": "implemented",
-      "purpose": "检验单个最极端观测是否能被看作异常值。",
-      "method_overview": "Grubbs 用离均值最远的点除以样本标准差。P 由 t_{n−2} 反解。检出不等于必须删除。",
-      "input_description": "一个数值列；置信水平默认 95%；备择 two_sided / less / greater。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "purpose": "检验单个最极端观测是否能被看作异常值（Grubbs 或 Dixon r10）。",
+      "method_overview": "默认 Grubbs：G=max|y−x̄|/s，P 由 t_{n−2} 反解。可选 Dixon r10：r=(y₂−y₁)/(yₙ−y₁) 或高端对称式；本产品 P 为临界值插值近似（诊断 dixon_p_interpolated），不是 Minitab 积分 golden。检出不等于必须删除。",
+      "input_description": "一个数值列；方法 grubbs（默认）或 dixon_r10；置信水平默认 95%；备择 two_sided / less / greater。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
-        "取有限值，计算均值与 s。",
-        "找使 |y−x̄| 最大的点（或单侧最大/最小）。",
-        "G=max|y−x̄|/s，由 t 分布得到 p。",
-        "与 α=1−置信水平 比较。"
+        "取有限值。",
+        "按 method 选 Grubbs 或 Dixon r10。",
+        "报告统计量、p、嫌疑值与 source_row。",
+        "画个体值图并高亮嫌疑点。"
       ],
       "symbol_definitions": [
         {
@@ -254,22 +254,27 @@
           "meaning": "Grubbs 统计量"
         },
         {
+          "symbol": "r",
+          "meaning": "Dixon r10 统计量"
+        },
+        {
           "symbol": "s",
           "meaning": "样本标准差"
         },
         {
-          "symbol": "t_{n−2}",
-          "meaning": "用于反解 p 的 t 分布"
+          "symbol": "α",
+          "meaning": "显著性水平"
         }
       ],
       "decision_rules": [
         "p<α 提示最极端点与其余点不一致。",
-        "不得据此自动删点或写已确认异常。"
+        "不得据此自动删点或写已确认异常。",
+        "Dixon P 插值不得写成 exact Minitab P。"
       ],
-      "invalid_input_conditions": "n<3、s=0 或未选列时不计算。",
-      "output_description": "G、p 与个体值图，异常候选点可识别。",
+      "invalid_input_conditions": "n<3、s=0、Dixon n>30 或未选列时不计算。",
+      "output_description": "方法表、检验表与个体值图；异常候选点可识别。",
       "output_interpretation": "结合专业知识和测量过程判断，而不是只看 p。",
-      "assumptions_and_boundaries": "一次只针对一个最极端值。",
+      "assumptions_and_boundaries": "一次只针对一个最极端值；Grubbs 为默认，Dixon 为 method 开关。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
@@ -308,6 +313,13 @@
               ]
             }
           ]
+        },
+        {
+          "title": "Dixon r10",
+          "plain_text": "低端 r=(y₂−y₁)/(yₙ−y₁)，高端 r=(yₙ−y_{n−1})/(yₙ−y₁)；双侧取较大端。",
+          "explanation": "",
+          "conditions": "method=dixon_r10；P 为临界值插值近似（formula_reference）。",
+          "note": ""
         }
       ],
       "reference_links": [
@@ -342,37 +354,39 @@
         "相关分析"
       ],
       "implemented_status": "implemented",
-      "purpose": "度量两列数值的线性（Pearson）或单调（Spearman）相关。",
-      "method_overview": "每一对变量用 pairwise 有效观测。H0: ρ=0。Pearson 区间用 Fisher z 变换。",
-      "input_description": "至少两列数值。方法 pearson（默认）或 spearman。置信水平默认 95%。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "purpose": "度量两列及以上数值的线性（Pearson）或单调（Spearman）相关，并给出协方差矩阵与可选偏相关。",
+      "method_overview": "多列 complete-case 对齐后算相关矩阵；协方差为样本协方差（complete-case）；偏相关仅 Pearson 且 ≥3 列，用精度矩阵法。H0: ρ=0。",
+      "input_description": "至少两列数值。方法 pearson（默认）或 spearman。置信水平默认 95%。可选 partial=yes 求偏相关。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
-        "对每一对列取同时有效的行。",
-        "Pearson 直接用原值；Spearman 先转平均秩再套 Pearson。",
-        "计算 r、t、DF、p 和 Fisher z 区间。"
+        "对所有列 complete-case 对齐。",
+        "Pearson/Spearman 相关矩阵与成对 p/CI。",
+        "输出协方差矩阵表。",
+        "partial=yes 且 Pearson 时输出偏相关矩阵。"
       ],
       "symbol_definitions": [
         {
           "symbol": "r",
-          "meaning": "相关系数，∈[−1,1]"
+          "meaning": "相关系数"
         },
         {
-          "symbol": "z",
-          "meaning": "atanh(r)"
+          "symbol": "Cov",
+          "meaning": "样本协方差"
         },
         {
-          "symbol": "SE(z)",
-          "meaning": "1/√(n−3)"
+          "symbol": "r_ij·rest",
+          "meaning": "偏相关系数"
         }
       ],
       "decision_rules": [
         "p 小只说明与 0 相关的证据强，不是因果。",
+        "偏相关不能写成已排除混杂。",
         "常量列或配对数不足则诊断。"
       ],
-      "invalid_input_conditions": "少于两列、有效配对数不足、任一列为常量或置信水平非法时返回诊断。",
-      "output_description": "相关矩阵/表 + 散点或矩阵图。",
-      "output_interpretation": "同时看 r 的大小、区间是否含 0 和散点形态。",
-      "assumptions_and_boundaries": "Spearman 用平均秩处理并列。",
+      "invalid_input_conditions": "少于两列、有效配对数不足、偏相关 n 不足或相关矩阵奇异时返回诊断。",
+      "output_description": "相关矩阵、协方差矩阵、可选偏相关矩阵、成对详细结果、散点/矩阵图。",
+      "output_interpretation": "同时看 r、协方差尺度、偏相关与散点形态。",
+      "assumptions_and_boundaries": "Spearman 用平均秩；偏相关本轮仅 Pearson。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
@@ -402,6 +416,20 @@
               ]
             }
           ]
+        },
+        {
+          "title": "协方差",
+          "plain_text": "Cov(X,Y)=Σ(x−x̄)(y−ȳ)/(n−1)；对角为方差。",
+          "explanation": "",
+          "conditions": "complete-case。",
+          "note": ""
+        },
+        {
+          "title": "偏相关",
+          "plain_text": "r_ij·rest=−Ω_ij/√(Ω_ii Ω_jj)，Ω 为相关矩阵逆。",
+          "explanation": "",
+          "conditions": "Pearson；n≥p+2。",
+          "note": ""
         },
         {
           "title": "Fisher z 区间",
@@ -528,6 +556,104 @@
       "wiring": {
         "command_id": "one_sample_t",
         "service_method": "one_sample_t",
+        "facts_type": "t_test",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "one_sample_z",
+      "title": "单样本 Z 检验",
+      "category": "基础统计",
+      "menu_path": "统计 > 基础统计",
+      "aliases": [
+        "one_sample_z",
+        "单样本 Z 检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "在已知总体标准差 σ 时，检验一列均值是否等于给定 μ₀。",
+      "method_overview": "独立于单样本 t。Z=(x̄−μ₀)/(σ/√n)，SE=σ/√n；样本 StDev 只展示不参与 Z/CI。禁止用样本 s 冒充 σ。",
+      "input_description": "一个数值列、假设均值、已知 σ>0、置信水平、备择方向。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "取有限值，计算 x̄ 与 SE=σ/√n。",
+        "Z=(x̄−μ₀)/SE，按备择用 Φ 得 p。",
+        "双侧/单侧给出均值置信区间。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "μ₀",
+          "meaning": "假设均值"
+        },
+        {
+          "symbol": "σ",
+          "meaning": "已知总体标准差"
+        },
+        {
+          "symbol": "SE",
+          "meaning": "σ/√n"
+        },
+        {
+          "symbol": "Z",
+          "meaning": "检验统计量"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明均值等于假设值。",
+        "不得用样本 SD 代替 Known σ。"
+      ],
+      "invalid_input_conditions": "未选列、未给 μ₀、σ≤0 或无有效观测时诊断。",
+      "output_description": "描述表（含 Known σ 与样本 StDev）、Z/P、置信区间；双侧可有区间图。",
+      "output_interpretation": "先确认 σ 来源可信，再看 Z 与区间。",
+      "assumptions_and_boundaries": "与 one_sample_t 命令独立；不改 t 核行为。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "单样本 Z",
+          "plain_text": "Z=(x̄−μ₀)/(σ/√n)；双侧 p=2(1−Φ(|Z|))；双侧 CI：x̄±z_{α/2}·SE。",
+          "explanation": "",
+          "conditions": "formula_reference；σ 必须来自配置。",
+          "note": "",
+          "nodes": [
+            {
+              "type": "text",
+              "value": "Z = "
+            },
+            {
+              "type": "frac",
+              "num": [
+                {
+                  "type": "text",
+                  "value": "x̄ − μ₀"
+                }
+              ],
+              "den": [
+                {
+                  "type": "text",
+                  "value": "σ / √n"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 t 检验方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "one_sample_z",
+        "service_method": "one_sample_z",
         "facts_type": "t_test",
         "primary_test": "quality_statistics_test"
       }
@@ -1945,7 +2071,7 @@
       ],
       "implemented_status": "implemented",
       "purpose": "用对数几率模型预测二元事件概率。",
-      "method_overview": "IRLS 拟合。Hosmer–Lemeshow 只在分组可行（通常 n≥20）时计算。输出拟合与残差表、最大杠杆与阈值 `min(3p/n,0.99)`，系数表附 VIF。",
+      "method_overview": "IRLS 拟合。Hosmer–Lemeshow 只在分组可行（通常 n≥20）时计算。输出配对一致率、阈值 0.5 分类表、拟合与残差表、最大杠杆与阈值 `min(3p/n,0.99)`，系数表附 VIF。",
       "input_description": "二元响应列与一个或多个预测列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
@@ -2003,20 +2129,27 @@
           "explanation": "",
           "conditions": "",
           "note": ""
+        },
+        {
+          "title": "Logistic Stepwise",
+          "plain_text": "Forward/Backward/Stepwise（α）或 forward_aicc / forward_bic；每步记录 Deviance、AIC、AICc、BIC。",
+          "explanation": "",
+          "conditions": "≥2 候选预测变量；stepwise=on。",
+          "note": "formula_reference"
         }
       ],
       "reference_links": [
         {
-          "label": "官方回归 ANOVA",
-          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-regression-model/methods-and-formulas/analysis-of-variance/",
-          "accessed": "2026-08-20",
+          "label": "Minitab Binary Logistic Stepwise",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-binary-logistic-model/methods-and-formulas/stepwise/",
+          "accessed": "2026-08-22",
           "kind": "minitab"
         }
       ],
       "source_documents": [
         {
-          "label": "维护用公式底稿",
-          "path": "docs/statistical-methodology.md",
+          "label": "P4 logistic deepen",
+          "path": "docs/research/p4_logistic_regression_deepen.md",
           "section": ""
         }
       ],
@@ -2024,7 +2157,7 @@
         "command_id": "logistic_regression",
         "service_method": "logistic_regression",
         "facts_type": "logistic",
-        "primary_test": "quality_statistics_test"
+        "primary_test": "algorithm_wave4_track_test"
       }
     },
     {
@@ -2038,14 +2171,15 @@
       ],
       "implemented_status": "implemented",
       "purpose": "检验两个分类变量是否独立。",
-      "method_overview": "Pearson χ²、似然比 χ²、期望频数、残差和单元贡献。期望<1 时不显示近似 P。",
+      "method_overview": "Pearson χ²、似然比 χ²、期望频数、残差和单元贡献；行%/列%/合计%；观察频数热图与调整残差热图。期望<1 时不显示近似 P。与交叉表命令分流：本命令做关联检验。",
       "input_description": "两个分类列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "complete-case 交叉分类。",
         "期望=行合计×列合计/总计。",
         "Pearson 与似然比。",
-        "热图展示观察频数。"
+        "标准化残差=r/√E；调整残差=r/√[E(1−n_i+/n)(1−n_+j/n)]。",
+        "输出百分比表与调整残差热图。"
       ],
       "symbol_definitions": [
         {
@@ -2059,16 +2193,21 @@
         {
           "symbol": "χ²",
           "meaning": "Pearson 统计量"
+        },
+        {
+          "symbol": "Adj residual",
+          "meaning": "调整残差"
         }
       ],
       "decision_rules": [
         "p 小不等于有因果关系。",
-        "期望<1 时近似失效。"
+        "期望<1 时近似失效。",
+        "最大 |调整残差| 只定位偏离，不证明因果。"
       ],
       "invalid_input_conditions": "任一类无有效水平或表退化时诊断。",
-      "output_description": "观察表、检验表、单元格统计、热图。",
-      "output_interpretation": "先看期望是否过小，再看 p 和残差。",
-      "assumptions_and_boundaries": "不合并稀疏格子。",
+      "output_description": "观察表、检验表、单元格统计、百分比表、观察热图、调整残差热图。",
+      "output_interpretation": "先看期望是否过小，再看 p、残差热图与贡献最大单元格。",
+      "assumptions_and_boundaries": "不合并稀疏格子；不改 chi_square_gof。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
@@ -2102,8 +2241,8 @@
       ],
       "reference_links": [
         {
-          "label": "官方单因素 ANOVA",
-          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/one-way-anova/methods-and-formulas/methods-and-formulas/",
+          "label": "官方交叉表与卡方",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/how-to/cross-tabulation-and-chi-square/interpret-the-results/all-statistics-and-graphs/tabulated-statistics/",
           "accessed": "2026-08-20",
           "kind": "minitab"
         }
@@ -2120,6 +2259,90 @@
         "service_method": "chi_square",
         "facts_type": "chi_square",
         "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "cross_tabulation",
+      "title": "交叉表",
+      "category": "描述统计",
+      "menu_path": "统计 > 表格",
+      "aliases": [
+        "cross_tabulation",
+        "交叉表"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "独立交叉表：观察频数与行%/列%/合计%，不做卡方检验。",
+      "method_overview": "complete-case 交叉分类；输出频数表、三类百分比与观察频数热图。独立性检验请用列联表卡方。不替代 chi_square / chi_square_gof。",
+      "input_description": "两个分类列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case 交叉分类。",
+        "边际合计。",
+        "行%=O/行合计；列%=O/列合计；合计%=O/N。",
+        "信息诊断提示改用 chi_square 做检验。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "O",
+          "meaning": "观察频数"
+        },
+        {
+          "symbol": "row%",
+          "meaning": "行百分比"
+        },
+        {
+          "symbol": "col%",
+          "meaning": "列百分比"
+        },
+        {
+          "symbol": "total%",
+          "meaning": "合计百分比"
+        }
+      ],
+      "decision_rules": [
+        "不得写成已证明存在或不存在关联。",
+        "不做 Pearson/LR 检验。"
+      ],
+      "invalid_input_conditions": "无有效交叉观测时诊断。",
+      "output_description": "观察频数表、百分比表、热图。",
+      "output_interpretation": "先看边际与百分比结构；若要检验独立性，改用列联表卡方。",
+      "assumptions_and_boundaries": "不破坏 chi_square 命令；本命令不做检验。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "百分比",
+          "plain_text": "描述性比例，不是检验统计量。",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "text",
+              "value": "row% = 100 · O / n_{i+}；col% = 100 · O / n_{+j}；total% = 100 · O / n"
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方交叉表与卡方",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/how-to/cross-tabulation-and-chi-square/interpret-the-results/all-statistics-and-graphs/tabulated-statistics/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "cross_tabulation",
+        "service_method": "cross_tabulation",
+        "facts_type": "cross_tab",
+        "primary_test": "p2_eda4_crosstab_chi_resid_test"
       }
     },
     {
@@ -2903,6 +3126,313 @@
       }
     },
     {
+      "id": "runs_test",
+      "title": "游程检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "runs_test",
+        "游程检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "检验一列数值按行序相对比较准则 K 是否随机（Wald–Wolfowitz / Minitab Runs）。",
+      "method_overview": "默认 K=均值；可选中位数或常数。A=#(X>K)，B=#(X≤K)；等号归 B。正态近似双侧 P，无连续性校正。中间缺失不出检验。",
+      "input_description": "一列数值序列；比较准则 mean/median/value（value 时填 K）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按行序抽取有限值。",
+        "中间缺失则诊断并中止。",
+        "计算 K、A、B、游程数。",
+        "正态近似 Z 与双侧 P。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "K",
+          "meaning": "比较准则"
+        },
+        {
+          "symbol": "A",
+          "meaning": "大于 K 的个数"
+        },
+        {
+          "symbol": "B",
+          "meaning": "小于等于 K 的个数"
+        },
+        {
+          "symbol": "R",
+          "meaning": "观察游程数"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明过程受控/失控。",
+        "不与运行图四模式检验合并。"
+      ],
+      "invalid_input_conditions": "N<2、全同侧、中间缺失、方差不可算时诊断。",
+      "output_description": "比较准则表、Runs检验表、带中心线 K 的序列控制图式图。",
+      "output_interpretation": "先看两侧计数与正态近似警告，再看 P。",
+      "assumptions_and_boundaries": "需要关于中位数的四模式 P 时用运行图。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Runs 正态近似",
+          "plain_text": "Expected=2AB/N+1，Var=2AB(2AB−N)/(N²(N−1))，Z=(R−Expected)/√Var，p=2(1−Φ(|Z|))。",
+          "explanation": "",
+          "conditions": "formula_reference；min(A,B)<10 时警告近似偏弱。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 t 检验方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "runs_test",
+        "service_method": "runs_test",
+        "facts_type": "wilcoxon_signed_rank",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "fisher_exact",
+      "title": "Fisher 精确检验",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "fisher_exact",
+        "Fisher 精确检验"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "对恰好 2×2 的分类交叉表做 Fisher 双侧精确检验，并报告可选优势比。",
+      "method_overview": "两列分类 complete-case 计数；复用与两比例相同的超几何双侧求和核。不改 two_proportions 行为。",
+      "input_description": "正好两列分类，且各恰有 2 个水平。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case 交叉计数。",
+        "校验 2×2。",
+        "调用 fisher_exact_2x2。",
+        "输出交叉表、P、可选 OR 与热图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "a,b,c,d",
+          "meaning": "2×2 计数"
+        },
+        {
+          "symbol": "OR",
+          "meaning": "ad/bc（bc>0）"
+        },
+        {
+          "symbol": "P",
+          "meaning": "双侧精确概率和"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明关联存在或不存在。",
+        "禁止因本命令改 two_proportions。"
+      ],
+      "invalid_input_conditions": "非 2×2、空表时诊断。",
+      "output_description": "交叉表、Fisher精确检验表、观察频数热图。",
+      "output_interpretation": "先确认 2×2 水平，再看精确 P 与 OR。",
+      "assumptions_and_boundaries": "一般 r×c 关联用列联表卡方；配对二元用 McNemar。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Fisher 双侧",
+          "plain_text": "固定边际下对所有 P(a')≤P(a) 的可行格求和；与 two_proportions 的 fisher_two_sided 一致。",
+          "explanation": "",
+          "conditions": "formula_reference；不做 r×c / mid-p / Blaker。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 t 检验方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/1-sample-t/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "fisher_exact",
+        "service_method": "fisher_exact",
+        "facts_type": "chi_square",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "run_chart",
+      "title": "运行图",
+      "category": "质量工具",
+      "menu_path": "质量工具",
+      "aliases": [
+        "run_chart",
+        "运行图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "按行序画个体运行图（中位数中心线），并给出聚类/混合/趋势/振荡四模式近似 P。",
+      "method_overview": "子组大小=1；中间缺失不出四模式检验。不跑 SPC Test 1–8，不做控制限。独立于 Gage 内嵌 run chart。",
+      "input_description": "一列数值观测。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "抽取连续有限值。",
+        "中位数为中心。",
+        "关于中位数游程与上升/下降游程。",
+        "四模式单侧正态近似 P。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "M",
+          "meaning": "中位数"
+        },
+        {
+          "symbol": "R",
+          "meaning": "关于中位数游程数"
+        },
+        {
+          "symbol": "V",
+          "meaning": "上升/下降游程数"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明过程受控或失控。",
+        "不与游程检验命令合并。"
+      ],
+      "invalid_input_conditions": "空序列、中间缺失、一侧为空时诊断。",
+      "output_description": "关于中位数的游程表、上升/下降游程表、中位数中心运行图。",
+      "output_interpretation": "先看图上聚集/交替形态，再对照四个 P。",
+      "assumptions_and_boundaries": "只要相对常数 K 的随机性用游程检验。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "关于中位数",
+          "plain_text": "E=1+2mn/N，Z=(R−E)/√Var；clustering=Φ(Z)，mixtures=1−Φ(Z)。点落在中位数上归下侧。",
+          "explanation": "",
+          "conditions": "formula_reference。",
+          "note": ""
+        },
+        {
+          "title": "上升/下降",
+          "plain_text": "E=(2N−1)/3，Var=(16N−29)/90；trends=Φ(Z)，oscillation=1−Φ(Z)。平坦差分归下行。",
+          "explanation": "",
+          "conditions": "formula_reference。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方正态能力方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/normal-capability-analysis/methods-and-formulas/methods/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "run_chart",
+        "service_method": "run_chart",
+        "facts_type": "time_series",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "cause_and_effect",
+      "title": "因果图",
+      "category": "质量工具",
+      "menu_path": "质量工具",
+      "aliases": [
+        "cause_and_effect",
+        "因果图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "按类别汇总原因条目，输出结构摘要与类别计数图（鱼骨/因果头脑风暴）。",
+      "method_overview": "无 P 值、无分布假设。效应标题可配置；跳过空类别/空原因。不与柏拉图合并。",
+      "input_description": "类别列 + 原因列；可选效应标题（默认“效应”）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "读取类别-原因对。",
+        "按类别分组计数。",
+        "结构摘要表。",
+        "类别原因计数条/Pareto 式图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "effect",
+          "meaning": "效应标题"
+        },
+        {
+          "symbol": "category",
+          "meaning": "分支类别"
+        },
+        {
+          "symbol": "cause",
+          "meaning": "原因文本"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明根因。",
+        "禁止重做或拆坏 pareto。"
+      ],
+      "invalid_input_conditions": "无有效类别-原因对时诊断。",
+      "output_description": "结构摘要表、类别原因计数图。",
+      "output_interpretation": "用于组织原因清单；频次优先级请转柏拉图并现场验证。",
+      "assumptions_and_boundaries": "需要统计排序时用柏拉图。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "结构摘要",
+          "plain_text": "仅分组计数与展示；不做权重、排序检验或根因判定。",
+          "explanation": "",
+          "conditions": "非统计检验；formula_reference 仅指产品合同。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "cause_and_effect",
+        "service_method": "cause_and_effect",
+        "facts_type": "pareto",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
       "id": "variance_test",
       "title": "等方差检验",
       "category": "假设检验",
@@ -3149,6 +3679,309 @@
       }
     },
     {
+      "id": "variability_chart",
+      "title": "变异性图",
+      "category": "质量工具",
+      "menu_path": "质量工具",
+      "aliases": [
+        "variability_chart",
+        "变异性图"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "按 1～2 个因子展示各单元均值（含极差）与标准差双面板。",
+      "method_overview": "与 Multi-Vari 独立：输出均值+range 与 SD 两图，不做交互均值连线探索。单元 mean/SD 按因子水平组合聚合；SD 中心线为有 SD 的单元平均。",
+      "input_description": "一个测量列和 1～2 个因子列（每因子建议 ≥2 水平）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case。",
+        "按因子格子算 N/Mean/StDev/Min/Max。",
+        "画均值+极差面板与标准差面板。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "格子",
+          "meaning": "因子水平组合"
+        },
+        {
+          "symbol": "s̄",
+          "meaning": "各单元样本 SD 的平均"
+        }
+      ],
+      "decision_rules": [
+        "不是 Multi-Vari redo。",
+        "不是 ANOVA 显著性检验。",
+        "不得写过程已受控。"
+      ],
+      "invalid_input_conditions": "因子不是 1～2 个、测量非有限或全单元 n=1（SD 图空）时诊断。",
+      "output_description": "单元统计表 + 均值/极差图 + 标准差图。",
+      "output_interpretation": "先看哪一单元均值偏移，再看哪一单元离散度偏大。",
+      "assumptions_and_boundaries": "不做 3～8 因子；不并入 multi_vari 命令。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "单元均值与 SD",
+          "plain_text": "ȳ_c=平均，s_c=√[Σ(y−ȳ_c)²/(n_c−1)]（n_c≥2）；极差条为 [min,max]。",
+          "explanation": "",
+          "conditions": "formula_reference；本轮锁定 1～2 因子。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "variability_chart",
+        "service_method": "variability_chart",
+        "facts_type": "variability",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "acceptance_sampling",
+      "title": "属性一次抽样",
+      "category": "质量工具",
+      "menu_path": "质量工具",
+      "aliases": [
+        "acceptance_sampling",
+        "属性一次抽样"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "按样本量 n 与接收数 c 给出二项 OC 曲线与可选 AQL/RQL 风险点。",
+      "method_overview": "Pa(p)=P(X≤c)，X~Bin(n,p)。批大小 N 可选且仅摘要；有限批超几何本轮不做，仍用二项 OC。",
+      "input_description": "不读工作表。输入 n、c；可选 AQL、RQL、批大小 N。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "校验 n≥1、c≤n。",
+        "在 p 网格上算 Pa(p)。",
+        "可选标记 Pa(AQL)/Pa(RQL)。",
+        "输出计划表、OC 表与 OC 曲线图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "n",
+          "meaning": "样本量"
+        },
+        {
+          "symbol": "c",
+          "meaning": "接收数"
+        },
+        {
+          "symbol": "Pa(p)",
+          "meaning": "接收概率"
+        },
+        {
+          "symbol": "p",
+          "meaning": "不合格品率"
+        }
+      ],
+      "decision_rules": [
+        "不得写批次合格或必须接收/拒收。",
+        "N 仅信息，不改变本轮二项 OC。",
+        "不做 ANSI 全表 golden。"
+      ],
+      "invalid_input_conditions": "n=0、c>n 或 AQL/RQL 越界时诊断。",
+      "output_description": "抽样计划表、OC 曲线表、OC 曲线图。",
+      "output_interpretation": "先看 OC 形状，再看 AQL/RQL 风险点是否可接受。",
+      "assumptions_and_boundaries": "不做超几何有限批 OC；不做多次抽样链。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "二项 OC",
+          "plain_text": "Pa(p)=Σ_{k=0}^{c} C(n,k) p^k (1−p)^{n−k}。",
+          "explanation": "",
+          "conditions": "formula_reference；p=0 时 Pa=1。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方正态能力方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/normal-capability-analysis/methods-and-formulas/methods/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "acceptance_sampling",
+        "service_method": "acceptance_sampling",
+        "facts_type": "interval",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "anom",
+      "title": "均值分析 (ANOM)",
+      "category": "ANOVA",
+      "menu_path": "统计 > ANOVA",
+      "aliases": [
+        "anom",
+        "均值分析 (ANOM)"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "在正态均值假定下，比较各组均值是否偏离总体均值（Analysis of Means）。",
+      "method_overview": "总体均值与 pooled SD；决策限用 Nelson 正态/多重比较近似。本轮仅正态均值，不做二项/泊松 ANOM。",
+      "input_description": "一个数值响应列与一个分组列；α 默认 0.05。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按组 complete-case。",
+        "算组均值、pooled SD 与 UDL/LDL。",
+        "标记超出决策限的组。",
+        "输出决策限表、组均值表与 ANOM 图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "ȳ̄",
+          "meaning": "总体均值"
+        },
+        {
+          "symbol": "s_p",
+          "meaning": "组内 pooled SD"
+        },
+        {
+          "symbol": "UDL/LDL",
+          "meaning": "决策限"
+        },
+        {
+          "symbol": "α",
+          "meaning": "族误差率"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明同均值或必须删除组。",
+        "二项/泊松计数请用其他工具。",
+        "近似限不是 Minitab exact h golden。"
+      ],
+      "invalid_input_conditions": "组数<2、某组 n<2、s_p=0 时诊断。",
+      "output_description": "决策限表、组均值表、带中心线与 UDL/LDL 的 ANOM 图。",
+      "output_interpretation": "先看哪些组超出限，再结合工程背景调查。",
+      "assumptions_and_boundaries": "不做二项/泊松 ANOM 变体。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "ANOM 决策限",
+          "plain_text": "UDL/LDL=ȳ̄± z_{1−α/(2k)}·s_p·√((k−1)/N)。",
+          "explanation": "",
+          "conditions": "formula_reference；不等 n 时仍用总 N 近似并警告。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方单因素 ANOVA",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/one-way-anova/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "anom",
+        "service_method": "anom",
+        "facts_type": "anova",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
+      "id": "poisson_gof",
+      "title": "泊松拟合优度",
+      "category": "假设检验",
+      "menu_path": "统计 > 假设检验",
+      "aliases": [
+        "poisson_gof",
+        "泊松拟合优度"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "检验一列非负整数计数是否服从泊松分布（估计 λ=样本均值）。",
+      "method_overview": "Pearson χ² 合并小期望格；DF=合并后类别数−1−1。与列联表卡方 GOF 命令独立。",
+      "input_description": "一列非负整数计数。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case 读取整数计数。",
+        "λ̂=均值。",
+        "按观察值合并期望<1 的格。",
+        "输出 λ̂、χ²、DF、p 与有效性提示。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "λ̂",
+          "meaning": "泊松率估计"
+        },
+        {
+          "symbol": "χ²",
+          "meaning": "Pearson 统计量"
+        },
+        {
+          "symbol": "DF",
+          "meaning": "自由度"
+        }
+      ],
+      "decision_rules": [
+        "不得写已证明服从泊松。",
+        "不修改 chi_square_gof 命令。",
+        "非整数计数诊断。"
+      ],
+      "invalid_input_conditions": "n<2、非整数、合并后类别<2 或 DF<1 时诊断。",
+      "output_description": "泊松参数表、卡方检验表。",
+      "output_interpretation": "先看期望<5 警告，再看 P。",
+      "assumptions_and_boundaries": "分类列比例 GOF 仍用 chi_square_gof。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "泊松 GOF",
+          "plain_text": "E_k≈n·P(X=k|λ̂)；χ²=Σ(O−E)²/E，DF=#bins−2。",
+          "explanation": "",
+          "conditions": "formula_reference；全同计数时 P 应偏大。",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方卡方拟合优度",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/how-to/chi-square-goodness-of-fit-test/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "poisson_gof",
+        "service_method": "poisson_gof",
+        "facts_type": "chi_square_gof",
+        "primary_test": "quality_statistics_test"
+      }
+    },
+    {
       "id": "t_power",
       "title": "t 功效与样本量",
       "category": "功效与样本量",
@@ -3157,15 +3990,15 @@
         "t_power",
         "t 功效与样本量"
       ],
-      "implemented_status": "implemented",
-      "purpose": "在给定效应、α 和功效目标下，估计样本量或可检测效应。mode 覆盖单/双样本 t、ANOVA、单/两比例、单/双方差、单/双泊松率。",
-      "method_overview": "不使用工作表。不同 mode 复用非中心 t、非中心 F、χ² / F 方差检验、比例或泊松率正态近似。可给逗号分隔的多个 n 或效应。",
-      "input_description": "mode、效应大小、α、功效或样本量；ANOVA 另给组数；比例/泊松另给假设与比较率；泊松另给观测长度 L；方差把 effect 解释为标准差比。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "implemented_status": "formula_reference",
+      "purpose": "在给定效应、α 和功效目标下，估计样本量或可检测效应。mode 覆盖 t/ANOVA/比例/方差/泊松，以及等价 TOST、2 水平 DOE、正态容差样本量。",
+      "method_overview": "不使用工作表。等价功效为已知 σ 正态规划近似；DOE 按主效应高低对比复用双样本非中心 t；容差按 Howe k(n)≤max_k 求最小 n。",
+      "input_description": "mode、效应、α、功效或样本量；DOE 用 groups=k、observation_length=p；等价半宽用 effect（σ 单位）；容差覆盖率用 effect、置信用 target、max k 用 null_proportion。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "本命令不读取工作表，因此没有 N/N*。",
       "calculation_steps": [
         "读取 mode、效应、α、功效或 n。",
         "按 mode 选择公式。",
-        "输出 Actual Power 与功效曲线。"
+        "输出 Actual Power / n 与功效曲线。"
       ],
       "symbol_definitions": [
         {
@@ -3177,20 +4010,16 @@
           "meaning": "1−β"
         },
         {
-          "symbol": "effect",
-          "meaning": "标准化差异、比例差、标准差比或率差"
+          "symbol": "δ",
+          "meaning": "等价界（σ 单位）"
         },
         {
-          "symbol": "λ0/λ1",
-          "meaning": "泊松假设率与比较率"
+          "symbol": "k,p,r",
+          "meaning": "DOE 因子数/部分析因/重复"
         },
         {
-          "symbol": "L",
-          "meaning": "泊松观测长度"
-        },
-        {
-          "symbol": "mode",
-          "meaning": "one_sample / two_sample / anova / one_proportion / two_proportion / one_variance / two_variance / one_poisson / two_poisson"
+          "symbol": "Howe k",
+          "meaning": "双侧正态容差因子"
         }
       ],
       "decision_rules": [
@@ -3198,23 +4027,30 @@
         "不得写成样本量足够。"
       ],
       "invalid_input_conditions": "α 或功效越界、效应为 0、率≤0 或非有限时诊断。",
-      "output_description": "功效与样本量表（Sample Size、Target Power、Actual Power）和功效曲线。",
-      "output_interpretation": "先核对 mode，再看 σ、比例或泊松率假设是否来自历史数据/工程要求。",
-      "assumptions_and_boundaries": "不做泊松 Blaker；不重做已有方差功效路径。",
+      "output_description": "功效与样本量表和功效曲线。",
+      "output_interpretation": "先核对 mode，再看 σ/等价界/DOE 参数是否来自工程要求。",
+      "assumptions_and_boundaries": "不做 crossover 等价功效、PB 功效、非参数容差样本量；不做泊松 Blaker。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
           "title": "功效",
-          "plain_text": "功效 = P(拒绝 H0 | 真实效应=δ)。t 用非中心 t，ANOVA 用非中心 F，单方差用 χ²，双方差用 F，比例与泊松率用正态近似。",
+          "plain_text": "功效 = P(拒绝 H0 | 真实效应=δ)。t 用非中心 t；等价用正态 TOST 规划近似。",
           "explanation": "",
           "conditions": "",
           "note": ""
         },
         {
-          "title": "泊松率功效",
-          "plain_text": "暴露 E=n·L；σ0=√(λ0/E)，σA=√(λ1/E)；双侧用标准正态临界值与 Φ 计算功效。字段：null_proportion→λ0，second_proportion→λ1，observation_length→L。",
+          "title": "DOE 功效",
+          "plain_text": "n₊=n₋=r·2^(k-p-1)，效应=|ȳ₊−ȳ₋|/σ，复用双样本 t 功效。",
           "explanation": "",
-          "conditions": "mode=one_poisson_* / two_poisson_*。",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "容差样本量",
+          "plain_text": "求最小 n 使 Howe k(n;P,γ) ≤ max_k。",
+          "explanation": "",
+          "conditions": "",
           "note": ""
         }
       ],
@@ -3243,7 +4079,94 @@
         "command_id": "t_power",
         "service_method": "t_power",
         "facts_type": "t_power",
-        "primary_test": "capability_ci_gof_rare_event_power_test"
+        "primary_test": "p2_doe_acf_power_test"
+      }
+    },
+    {
+      "id": "acf_pacf",
+      "title": "ACF/PACF",
+      "category": "时间序列",
+      "menu_path": "统计 > 时间序列",
+      "aliases": [
+        "acf_pacf",
+        "ACF/PACF"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "计算单列序列的自相关与偏自相关，并画带置信限的 ACF/PACF 图。",
+      "method_overview": "ACF 为样本自相关；PACF 用 Durbin–Levinson。默认置信带为 NIST 白噪声固定带宽 ±z/√n（独立性检验），不是 Bartlett 变带宽。",
+      "input_description": "一个数值序列列；可选 max_lag 与置信水平。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按行序读取有限值。",
+        "计算 ACF/PACF 与 Ljung–Box。",
+        "输出表与双图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "r_k",
+          "meaning": "滞后 k 的 ACF"
+        },
+        {
+          "symbol": "φ_kk",
+          "meaning": "PACF"
+        },
+        {
+          "symbol": "带宽",
+          "meaning": "±z_{1−α/2}/√n"
+        }
+      ],
+      "decision_rules": [
+        "越过带宽不是过程已失控。",
+        "Ljung–Box 小 P 不是已证明模型错误。"
+      ],
+      "invalid_input_conditions": "n<3 或零方差时诊断。",
+      "output_description": "ACF/PACF 表、Ljung–Box、ACF 图、PACF 图。",
+      "output_interpretation": "先看 lag1–几阶是否持续越带，再结合工艺时序。",
+      "assumptions_and_boundaries": "不做 CCF；ADF 见独立命令 `adf_test`；不自动改 ARIMA 阶。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "ACF",
+          "plain_text": "r_k = Σ(x_t−x̄)(x_{t+k}−x̄) / Σ(x_t−x̄)²，含 lag0=1。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "PACF",
+          "plain_text": "Durbin–Levinson 递推得到 φ_kk。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "置信带",
+          "plain_text": "默认 white_noise_fixed：±z/√n；诊断中说明非 ARIMA 识别变带宽。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 ARIMA 方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/time-series/how-to/arima/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "acf_pacf",
+        "service_method": "acf_pacf",
+        "facts_type": "acf_pacf",
+        "primary_test": "p2_doe_acf_power_test"
       }
     },
     {
@@ -3649,20 +4572,41 @@
           "explanation": "",
           "conditions": "",
           "note": "formula_reference ≠ Minitab golden"
+        },
+        {
+          "title": "Aalen–Johansen CIF",
+          "plain_text": "ĈIF_k(t)=Σ_{t_j≤t} (d_{kj}/Y_j) S(t_j−)。",
+          "explanation": "竞争风险累计发生率；不是 Fine-Gray 回归。",
+          "conditions": "exact+right；标注 failure_mode。",
+          "note": "formula_reference / aalen_johansen_cif"
+        },
+        {
+          "title": "Gray CIF test",
+          "plain_text": "组间 CIF 比较加权卡方（Gray 1988 思路，窄化）。",
+          "explanation": "需要 group 列与 ≥2 失效模式。",
+          "conditions": "每组至少 1 次标注失效。",
+          "note": "formula_reference / gray_cif_group_test；Minitab 无菜单项"
+        },
+        {
+          "title": "Log-rank K groups",
+          "plain_text": "Kaplan–Meier 分组比较；不用于竞争风险 CIF。",
+          "explanation": "",
+          "conditions": "≥2 组。",
+          "note": ""
         }
       ],
       "reference_links": [
         {
-          "label": "官方可靠性分析",
+          "label": "Minitab Reliability analyses",
           "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/supporting-topics/basics/reliability-analyses-in-minitab/",
-          "accessed": "2026-08-20",
+          "accessed": "2026-08-22",
           "kind": "minitab"
         }
       ],
       "source_documents": [
         {
-          "label": "维护用公式底稿",
-          "path": "docs/statistical-methodology.md",
+          "label": "P4 CIF deepen",
+          "path": "docs/research/p4_reliability_competing_risks_cif.md",
           "section": ""
         }
       ],
@@ -3670,8 +4614,40 @@
         "command_id": "reliability",
         "service_method": "reliability",
         "facts_type": "reliability",
-        "primary_test": "reliability_msa_power_test"
+        "primary_test": "algorithm_wave4_track_test"
       }
+    },
+    {
+      "id": "accelerated_life",
+      "title": "加速寿命分析",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": ["accelerated_life", "ALT", "Arrhenius"],
+      "implemented_status": "formula_reference",
+      "purpose": "用 Weibull+Arrhenius 拟合应力加速下的寿命数据。",
+      "method_overview": "log(Y)=β0+β1·x+(1/shape)·Φ⁻¹(p)；x=11604.83/(T+273.16)。",
+      "input_description": "寿命 + 失效指示 + 摄氏应力；≥2 应力水平。",
+      "missing_value_policy": "无效寿命或事件跳过。",
+      "calculation_steps": ["Arrhenius 变换", "Weibull MLE", "回归表"],
+      "symbol_definitions": [{"symbol": "β1", "meaning": "应力系数"}],
+      "decision_rules": ["参数只描述拟合关联证据。"],
+      "invalid_input_conditions": "失效不足或应力水平不足。",
+      "output_description": "Regression Table 与 Shape。",
+      "output_interpretation": "先看收敛与 Shape，再读 Stress 系数符号。",
+      "assumptions_and_boundaries": "窄化 ALT；非试验计划；非 Minitab golden。",
+      "interpretation_limits": "禁止写成产品寿命已达标。",
+      "formula_blocks": [
+        {
+          "title": "Arrhenius + Weibull",
+          "plain_text": "log(Y)=β0+β1·x+(1/shape)·Φ⁻¹(p)；x=11604.83/(T+273.16)。",
+          "explanation": "使用应力百分位与 B10/B50/B90 at use stress。",
+          "conditions": "≥2 应力水平",
+          "note": "Newton 观测信息矩阵；formula_reference"
+        }
+      ],
+      "reference_links": [{"label": "Minitab ALT equations", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/accelerated-life-testing/methods-and-formulas/equations/", "accessed": "2026-08-22", "kind": "minitab"}],
+      "source_documents": [{"label": "P3 research", "path": "docs/research/p3_accelerated_life.md", "section": ""}],
+      "wiring": {"command_id": "accelerated_life", "service_method": "accelerated_life", "facts_type": "accelerated_life", "primary_test": "algorithm_wave2_track_test"}
     },
     {
       "id": "imr",
@@ -3684,14 +4660,14 @@
       ],
       "implemented_status": "implemented",
       "purpose": "用控制图监视过程：I-MR 控制图。",
-      "method_overview": "单值图用 X̄ 作中心线；移动极差默认 w=2。σ_within=MR̄/d2(2)，d2(2)=1.128。",
+      "method_overview": "单值图用 X̄ 作中心线；移动极差默认 w=2。σ 方法可选：平均 MR/d2、中位 MR、MSSD；可选 Nelson estimate（剔除 MR>D4·MR̄ 后重估）。",
       "input_description": "测量列或计数/分母列；可选子组、阶段、历史中心线/σ、特殊原因测试集合。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -3708,16 +4684,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -3727,8 +4702,8 @@
       "formula_blocks": [
         {
           "title": "组内标准差",
-          "plain_text": "σ_within = MR̄ / d2(w)\n默认 w=2，d2(2)=1.128，MR_i=|x_i−x_{i−1}|",
-          "explanation": "移动极差长度默认 w=2。",
+          "plain_text": "σ_within = MR̄ / d2(w)\n默认 w=2，d2(2)=1.128，MR_i=|x_i−x_{i−1}|。Nelson：剔除过大 MR 后重算 MR̄。MSSD：√(Σd²/(2(N−1)))/c4'。",
+          "explanation": "移动极差长度默认 w=2；Nelson/MSSD 见参数页。",
           "conditions": "",
           "note": "",
           "nodes": [
@@ -4062,6 +5037,255 @@
       }
     },
     {
+      "id": "hotelling_t2",
+      "title": "Hotelling T²",
+      "category": "控制图",
+      "menu_path": "控制图",
+      "aliases": [
+        "hotelling_t2",
+        "Hotelling T²"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "多元个体 Hotelling T² 控制图。",
+      "method_overview": "Phase I 用 Tracy–Young–Mason Beta UCL；可选 Phase II F 限。不是 PCA 经验分位 T²。",
+      "input_description": "至少两个数值变量列；complete-case。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "估计均值向量与协方差。",
+        "计算逐点 T²。",
+        "按 phase 计算 UCL。",
+        "超限计数。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "T²",
+          "meaning": "马氏距离平方"
+        },
+        {
+          "symbol": "UCL",
+          "meaning": "上控制限"
+        },
+        {
+          "symbol": "m,p",
+          "meaning": "观测数与变量数"
+        }
+      ],
+      "decision_rules": [
+        "超限不是过程失控证明。",
+        "不要与 PCA 经验 T² 混淆。"
+      ],
+      "invalid_input_conditions": "m≤p+1 或协方差奇异时诊断。",
+      "output_description": "T² 图、摘要表、逐点表。",
+      "output_interpretation": "先看 UCL 方法与超限点，再结合工艺。",
+      "assumptions_and_boundaries": "默认 α=0.05。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "T²",
+          "plain_text": "Q=(x−x̄)'S⁻¹(x−x̄)。",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "text",
+              "value": "Q = (x − x̄)' S⁻¹ (x − x̄)"
+            }
+          ]
+        },
+        {
+          "title": "Phase I UCL",
+          "plain_text": "UCL=((m−1)²/m)·B_{1−α}(p/2,(m−p−1)/2)。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方特殊原因测试",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "hotelling_t2",
+        "service_method": "hotelling_t2",
+        "facts_type": "multivariate_spc",
+        "primary_test": "p2_t2_mewma_nelson_emp_test"
+      }
+    },
+    {
+      "id": "mewma",
+      "title": "MEWMA",
+      "category": "控制图",
+      "menu_path": "控制图",
+      "aliases": [
+        "mewma",
+        "MEWMA"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "多元 EWMA（MEWMA）控制图。",
+      "method_overview": "Z_i=λX_i+(1−λ)Z_{i−1}；T²=Z'Σ_Z⁻¹Z。默认 UCL 为渐近 χ² 近似（非 ARL 仿真），可手工指定。",
+      "input_description": "至少两个数值变量；λ 默认 0.1。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "估计协方差。",
+        "递推 Z。",
+        "每步精确 Σ_Z。",
+        "画 T² 与 UCL。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "λ",
+          "meaning": "平滑常数"
+        },
+        {
+          "symbol": "T²",
+          "meaning": "MEWMA 统计量"
+        },
+        {
+          "symbol": "UCL",
+          "meaning": "上控制限"
+        }
+      ],
+      "decision_rules": [
+        "超限不是过程失控证明。",
+        "默认 UCL 不是 ARL 校准常数。"
+      ],
+      "invalid_input_conditions": "观测过少或协方差奇异时诊断。",
+      "output_description": "MEWMA T² 图与摘要。",
+      "output_interpretation": "先看诊断是否提示 UCL 近似，再解释信号。",
+      "assumptions_and_boundaries": "可手工输入 UCL。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "MEWMA",
+          "plain_text": "Z_i = λ X_i + (1−λ) Z_{i−1}。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "T²",
+          "plain_text": "T_i² = Z_i' Σ_{Z_i}⁻¹ Z_i。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方特殊原因测试",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "mewma",
+        "service_method": "mewma",
+        "facts_type": "multivariate_spc",
+        "primary_test": "p2_t2_mewma_nelson_emp_test"
+      }
+    },
+    {
+      "id": "generalized_variance",
+      "title": "广义方差图",
+      "category": "控制图",
+      "menu_path": "控制图",
+      "aliases": [
+        "generalized_variance",
+        "广义方差图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "多元广义方差 |S| 子组控制图（Montgomery）。",
+      "method_overview": "等量子组 n>p：点为 det(S_i)；b1/b2 常数；CL=平均|S|；UCL/LCL=|Σ̂|(b1±3√b2)，LCL≥0。个体观测不做假 |S|。NIST 指出多元变差图存在争议，本输出作探索信号。",
+      "input_description": "至少两个数值变量；子组大小 n>p；观测数可被 n 整除。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按顺序切等量子组。",
+        "算各子组协方差行列式。",
+        "估 |Σ| 与控制限。",
+        "画 |S| 图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "|S|",
+          "meaning": "子组协方差行列式"
+        },
+        {
+          "symbol": "b1,b2",
+          "meaning": "期望/方差常数"
+        },
+        {
+          "symbol": "CL/UCL/LCL",
+          "meaning": "中心与控制限"
+        }
+      ],
+      "decision_rules": [
+        "超限不是过程失控证明。",
+        "不要把个体路径当成子组 |S|。"
+      ],
+      "invalid_input_conditions": "n≤p、不等子组或奇异协方差时诊断。",
+      "output_description": "|S| 图、摘要与逐子组表。",
+      "output_interpretation": "与 Hotelling T² / MEWMA 联读：T² 看均值向量，|S| 看联合变差。",
+      "assumptions_and_boundaries": "本命令不提供个体标准化替代图。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "b1",
+          "plain_text": "b1=Π(n−i)/(n−1)^p，i=1…p。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "限",
+          "plain_text": "UCL=|Σ̂|(b1+3√b2)；LCL=max(0,|Σ̂|(b1−3√b2))。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方特殊原因测试",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "generalized_variance",
+        "service_method": "generalized_variance",
+        "facts_type": "multivariate_spc",
+        "primary_test": "p2_gv_expanded_b4b5_test"
+      }
+    },
+    {
       "id": "xbar_r",
       "title": "Xbar-R 控制图",
       "category": "控制图",
@@ -4079,7 +5303,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -4096,16 +5320,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -4647,7 +5870,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -4664,16 +5887,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -5285,7 +6507,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -5302,16 +6524,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -5502,7 +6723,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -5519,16 +6740,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -5852,7 +7072,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -5869,16 +7089,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -6103,7 +7322,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -6120,16 +7339,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -6298,7 +7516,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -6315,16 +7533,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -6610,7 +7827,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -6627,16 +7844,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -7027,7 +8243,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -7044,16 +8260,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -7389,7 +8604,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -7406,16 +8621,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -7601,7 +8815,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -7618,16 +8832,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -7840,6 +9053,627 @@
       }
     },
     {
+      "id": "zone_chart",
+      "title": "区域图",
+      "category": "控制图",
+      "menu_path": "控制图",
+      "aliases": [
+        "zone_chart",
+        "区域图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "用控制图监视过程：区域图。",
+      "method_overview": "Jaehn 区域计分：同侧连续进入 1σ/2σ/3σ 区分别记 1/2/4 分，累计 ≥8 报警。个体值图 CL=均值，σ=MR̄/d2。不是完整 Tests 1–8。",
+      "input_description": "测量列或计数/分母列；可选子组、阶段、历史中心线/σ、特殊原因测试集合。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按输入规则筛行与子组。",
+        "估计中心线与 σ（或使用历史参数）。",
+        "计算每个点的 LCL/UCL。",
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "CL",
+          "meaning": "中心线"
+        },
+        {
+          "symbol": "LCL/UCL",
+          "meaning": "控制下限/上限"
+        },
+        {
+          "symbol": "σ_within",
+          "meaning": "组内标准差估计"
+        }
+      ],
+      "decision_rules": [
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
+      ],
+      "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
+      "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+      "output_interpretation": "出限是统计信号，需要结合工艺调查；不是自动判不合格批。",
+      "assumptions_and_boundaries": "新分析默认启用该图适用的全部测试；旧项目 JSON 若只存 [1] 则仍只跑 Test 1。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Jaehn 区域计分",
+          "plain_text": "Z=(x−CL)/σ\n1σ→1, 2σ→2, >3σ→4；换侧或中心带内重置；累计≥8 信号",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "stack",
+              "content": [
+                {
+                  "type": "line",
+                  "content": [
+                    {
+                      "type": "text",
+                      "value": "Z = (x − CL) / σ"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "value": "区域权重（formula_reference）"
+                },
+                {
+                  "type": "piecewise",
+                  "content": [
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "1σ ≤ |Z| < 2σ → 权重 1"
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "2σ ≤ |Z| < 3σ → 权重 2"
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "|Z| ≥ 3σ → 权重 4"
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "累计得分 ≥ 8 → 信号"
+                        }
+                      ],
+                      "when": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 I-MR 估计选项",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-individuals/i-mr-chart/perform-the-analysis/i-mr-options/specify-estimation-options/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "zone_chart",
+        "service_method": "zone_chart",
+        "facts_type": "spc",
+        "primary_test": "zone_zmr_ma_output_test"
+      }
+    },
+    {
+      "id": "z_mr",
+      "title": "Z-MR 控制图",
+      "category": "控制图",
+      "menu_path": "控制图",
+      "aliases": [
+        "z_mr",
+        "Z-MR 控制图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "用控制图监视过程：Z-MR 控制图。",
+      "method_overview": "短流程/多产品：Z=(x−μ_i)/σ_i；Z 图 CL=0、±3；MR(Z) 标准 MR 限。无完整历史参数表时用样本估计并诊断。",
+      "input_description": "测量列或计数/分母列；可选子组、阶段、历史中心线/σ、特殊原因测试集合。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按输入规则筛行与子组。",
+        "估计中心线与 σ（或使用历史参数）。",
+        "计算每个点的 LCL/UCL。",
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "CL",
+          "meaning": "中心线"
+        },
+        {
+          "symbol": "LCL/UCL",
+          "meaning": "控制下限/上限"
+        },
+        {
+          "symbol": "σ_within",
+          "meaning": "组内标准差估计"
+        }
+      ],
+      "decision_rules": [
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
+      ],
+      "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
+      "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+      "output_interpretation": "出限是统计信号，需要结合工艺调查；不是自动判不合格批。",
+      "assumptions_and_boundaries": "新分析默认启用该图适用的全部测试；旧项目 JSON 若只存 [1] 则仍只跑 Test 1。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "Z-MR",
+          "plain_text": "Z_i=(x_i−μ_g)/σ_g\nZ 图：CL=0, UCL/LCL=±3\nMR(Z)：标准 MR 控制限",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "stack",
+              "content": [
+                {
+                  "type": "line",
+                  "content": [
+                    {
+                      "type": "text",
+                      "value": "Z"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "i"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "value": " = (x"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "i"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "value": " − μ"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "g"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "value": ")/σ"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "g"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "value": "Z 图"
+                },
+                {
+                  "type": "piecewise",
+                  "content": [
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "CL = 0"
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "UCL = +3"
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "LCL = −3"
+                        }
+                      ],
+                      "when": []
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "value": "MR(Z) 图"
+                },
+                {
+                  "type": "piecewise",
+                  "content": [
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "UCL"
+                        },
+                        {
+                          "type": "sub",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "MR"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "value": " = D"
+                        },
+                        {
+                          "type": "sub",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "4"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "bar",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "MR"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "value": "(Z)"
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "CL = "
+                        },
+                        {
+                          "type": "bar",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "MR"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "value": "(Z)"
+                        }
+                      ],
+                      "when": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 I-MR 估计选项",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-individuals/i-mr-chart/perform-the-analysis/i-mr-options/specify-estimation-options/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "官方特殊原因测试",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "z_mr",
+        "service_method": "z_mr",
+        "facts_type": "spc",
+        "primary_test": "zone_zmr_ma_output_test"
+      }
+    },
+    {
+      "id": "moving_average",
+      "title": "移动平均控制图",
+      "category": "控制图",
+      "menu_path": "控制图",
+      "aliases": [
+        "moving_average",
+        "移动平均控制图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "用控制图监视过程：移动平均控制图。",
+      "method_overview": "窗宽 w 的简单移动平均；从第 w 点起画。CL=均值；UCL/LCL=CL±L·σ/√w；σ=MR̄/d2。与 EWMA 独立。",
+      "input_description": "测量列或计数/分母列；可选子组、阶段、历史中心线/σ、特殊原因测试集合。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按输入规则筛行与子组。",
+        "估计中心线与 σ（或使用历史参数）。",
+        "计算每个点的 LCL/UCL。",
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "CL",
+          "meaning": "中心线"
+        },
+        {
+          "symbol": "LCL/UCL",
+          "meaning": "控制下限/上限"
+        },
+        {
+          "symbol": "σ_within",
+          "meaning": "组内标准差估计"
+        }
+      ],
+      "decision_rules": [
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
+      ],
+      "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
+      "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+      "output_interpretation": "出限是统计信号，需要结合工艺调查；不是自动判不合格批。",
+      "assumptions_and_boundaries": "新分析默认启用该图适用的全部测试；旧项目 JSON 若只存 [1] 则仍只跑 Test 1。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "移动平均图",
+          "plain_text": "MA_t=(x_{t−w+1}+…+x_t)/w\nUCL/LCL=CL±L σ/√w",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "stack",
+              "content": [
+                {
+                  "type": "line",
+                  "content": [
+                    {
+                      "type": "text",
+                      "value": "MA"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "t"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "value": " = (x"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "t−w+1"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "value": " + … + x"
+                    },
+                    {
+                      "type": "sub",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "t"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "value": ") / w"
+                    }
+                  ]
+                },
+                {
+                  "type": "heading",
+                  "value": "控制限（固定 w，仅完整窗）"
+                },
+                {
+                  "type": "piecewise",
+                  "content": [
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "UCL = CL + L σ / "
+                        },
+                        {
+                          "type": "sqrt",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "w"
+                            }
+                          ]
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "CL = "
+                        },
+                        {
+                          "type": "bar",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "x"
+                            }
+                          ]
+                        }
+                      ],
+                      "when": []
+                    },
+                    {
+                      "type": "case",
+                      "content": [
+                        {
+                          "type": "text",
+                          "value": "LCL = CL − L σ / "
+                        },
+                        {
+                          "type": "sqrt",
+                          "content": [
+                            {
+                              "type": "text",
+                              "value": "w"
+                            }
+                          ]
+                        }
+                      ],
+                      "when": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 I-MR 估计选项",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-individuals/i-mr-chart/perform-the-analysis/i-mr-options/specify-estimation-options/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "官方特殊原因测试",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "moving_average",
+        "service_method": "moving_average",
+        "facts_type": "spc",
+        "primary_test": "zone_zmr_ma_output_test"
+      }
+    },
+    {
       "id": "g_chart",
       "title": "G 图",
       "category": "控制图",
@@ -7857,7 +9691,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -7874,16 +9708,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -8000,7 +9833,7 @@
         "按输入规则筛行与子组。",
         "估计中心线与 σ（或使用历史参数）。",
         "计算每个点的 LCL/UCL。",
-        "按启用的 Test 打标。"
+        "按启用的特殊原因规则打标（显示规则名称与 rule_id，不使用裸 Test 编号）。"
       ],
       "symbol_definitions": [
         {
@@ -8017,16 +9850,15 @@
         }
       ],
       "decision_rules": [
-        "Test 1：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
-        "Test 2：连续 9 点严格在中心线同一侧。",
-        "Test 3：连续 6 点持续上升或持续下降。",
-        "Test 4：连续 14 点上下交替。",
-        "Test 5：连续 3 点中至少 2 点位于同侧 2σ 外。",
-        "Test 6：连续 5 点中至少 4 点位于同侧 1σ 外。",
-        "Test 7：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
-        "Test 8：连续 8 点都在 1σ 外（两侧都算，不要求交替）。",
-        "同一点触发多个测试时，图上标签用最小测试编号；表格列出全部失败测试。",
-        "R/S/MR 图只适用 Test 1–4；EWMA 只适用 Test 1。"
+        "beyond_control_limit（单点超出 3σ 控制限）：一点超出该点子组的控制限（y < LCL 或 y > UCL）。",
+        "nine_same_side（连续 9 点位于中心线同侧）：连续 9 点严格在中心线同一侧。",
+        "six_point_trend（连续 6 点持续单调趋势）：连续 6 点持续上升或持续下降。",
+        "fourteen_alternating（连续 14 点上下交替）：连续 14 点上下交替。",
+        "two_of_three_beyond_2sigma（3 点中至少 2 点同侧超过 2σ）：连续 3 点中至少 2 点位于同侧 2σ 外。",
+        "four_of_five_beyond_1sigma（5 点中至少 4 点同侧超过 1σ）：连续 5 点中至少 4 点位于同侧 1σ 外。",
+        "fifteen_within_1sigma（连续 15 点全部落在 1σ 内）：连续 15 点都严格落在中心线两侧 1σ 以内；恰在 1σ 上的点不触发。",
+        "eight_beyond_1sigma（连续 8 点全部位于 1σ 外且同侧）：连续 8 点都严格落在 ±1σ 以外且同侧。",
+        "R/S/MR 图只适用前四条规则；EWMA 只适用 beyond_control_limit。"
       ],
       "invalid_input_conditions": "测量值必须为有限数。子组图：缺失/非法值、固定子组尾部不完整、标签子组大小不一致时只诊断不计算。属性图：计数与分母必须是非负整数，分母不能为 0；P/NP 还要求不合格品数 ≤ 检验数。未提供历史参数且无法估计 σ 或 Sigma Z 时中止。",
       "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
@@ -8955,23 +10787,23 @@
     },
     {
       "id": "tolerance_intervals",
-      "title": "正态容差区间",
+      "title": "容差区间",
       "category": "质量工具",
       "menu_path": "质量工具",
       "aliases": [
         "tolerance_intervals",
-        "正态容差区间"
+        "容差区间"
       ],
       "implemented_status": "formula_reference",
       "purpose": "给出以指定置信覆盖总体至少 P 比例的区间。",
-      "method_overview": "支持 normal 与 nonparametric 两族。双侧 normal 用 Howe 近似；单侧 normal 用 Natrella；非参数法同时报告 `achieved_confidence`。公式参考，不是 Minitab golden。",
-      "input_description": "测量列、覆盖率（如 95%）、置信水平、双侧或单侧。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "method_overview": "显式 method=normal|nonparametric（兼容旧 variance_method=nonparametric）。双侧 normal 用 Howe；单侧 normal 用 Natrella；非参数序统计并报告 achieved_confidence。公式参考，不是 Minitab golden。",
+      "input_description": "测量列、方法 normal/nonparametric、覆盖率、置信水平、双侧或单侧。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "取有限值算 x̄、s。",
-        "按 `method_family` 选择 normal 或 nonparametric。",
+        "按 method / method_family 选择 normal 或 nonparametric。",
         "normal 双侧/单侧分别用 Howe 或 Natrella。",
-        "nonparametric 输出 `achieved_confidence` 与样本量提示。"
+        "nonparametric 输出 achieved_confidence 与样本量提示。"
       ],
       "symbol_definitions": [
         {
@@ -8993,11 +10825,11 @@
       ],
       "decision_rules": [
         "不是规格限，也不是过程合格。",
-        "nonparametric 的 `achieved_confidence` 低于目标时，只说明样本量不足，不是计算错误。"
+        "nonparametric 的 achieved_confidence 低于目标时，只说明样本量不足，不是计算错误。"
       ],
       "invalid_input_conditions": "n 不足、s=0 或覆盖/置信越界时诊断。",
-      "output_description": "过程数据 N/N*、容差区间表、`method_family` 与 `achieved_confidence`。",
-      "output_interpretation": "核对 P 与 γ 是否来自标准/客户要求，再看 `method_family` 是否适合当前样本。",
+      "output_description": "过程数据 N/N*、按 method 主表、method_family 与 achieved_confidence。",
+      "output_interpretation": "核对 P 与 γ 是否来自标准/客户要求，再看 method 是否适合当前样本。",
       "assumptions_and_boundaries": "formula_reference；normal 与 nonparametric 输出口径保持一致。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
@@ -9017,7 +10849,7 @@
         },
         {
           "title": "非参数顺序统计",
-          "plain_text": "当样本量不足以达到目标 γ 时，输出 `achieved_confidence`，提醒当前样本真正达到的置信度。",
+          "plain_text": "当样本量不足以达到目标 γ 时，输出 achieved_confidence，提醒当前样本真正达到的置信度。",
           "explanation": "",
           "conditions": "",
           "note": ""
@@ -9149,6 +10981,175 @@
         "service_method": "gage_rr",
         "facts_type": "msa",
         "primary_test": "gage_rr_output_test"
+      }
+    },
+    {
+      "id": "emp_crossed",
+      "title": "EMP Crossed",
+      "category": "MSA",
+      "menu_path": "质量工具",
+      "aliases": [
+        "emp_crossed",
+        "EMP Crossed"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "Wheeler EMP Crossed：用交叉 Gage 方差分量做 ICC 分级。",
+      "method_overview": "复用交叉 ANOVA 分量。ICC(no bias / with bias / with interaction)；PE=0.67449√Repeatability；First–Fourth 按 ICC(with interaction)。不是 AIAG 合格判定；不是全量 Expanded Gage GLM。",
+      "input_description": "测量、零件、操作者（平衡交叉）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "交叉 ANOVA 方差分量。",
+        "计算三种 ICC。",
+        "Probable Error。",
+        "按 ICC 分级。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "ICC",
+          "meaning": "零件方差 / 相关总方差"
+        },
+        {
+          "symbol": "PE",
+          "meaning": "Probable Error"
+        },
+        {
+          "symbol": "First–Fourth",
+          "meaning": "Wheeler 监控能力分级"
+        }
+      ],
+      "decision_rules": [
+        "不得写量具合格/不合格。",
+        "与 AIAG %Study Var 阈值不同。"
+      ],
+      "invalid_input_conditions": "设计不平衡或分量不可估时诊断。",
+      "output_description": "分量表 + EMP 统计表。",
+      "output_interpretation": "先看分级与衰减%，再决定是否需要改进测量过程。",
+      "assumptions_and_boundaries": "本命令不替代 Crossed Gage R&R 的完整图序。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "ICC (with interaction)",
+          "plain_text": "Part / (Part + Repeat + Operator + Part×Operator)。",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "text",
+              "value": "ICC = "
+            },
+            {
+              "type": "frac",
+              "num": [
+                {
+                  "type": "text",
+                  "value": "σ²_part"
+                }
+              ],
+              "den": [
+                {
+                  "type": "text",
+                  "value": "σ²_part+σ²_e+σ²_op+σ²_int"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方交叉 Gage R&R",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/measurement-system-analysis/how-to/gage-study/crossed-gage-r-r-study/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "emp_crossed",
+        "service_method": "emp_crossed",
+        "facts_type": "msa",
+        "primary_test": "p2_t2_mewma_nelson_emp_test"
+      }
+    },
+    {
+      "id": "expanded_gage_rr",
+      "title": "Expanded Gage R&R",
+      "category": "MSA",
+      "menu_path": "质量工具",
+      "aliases": [
+        "expanded_gage_rr",
+        "Expanded Gage R&R"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "Expanded Gage：平衡 Part×Operator×附加因子三因子随机 ANOVA。",
+      "method_overview": "主效应 + 全部二阶交互；重复≥2 时有纯误差，否则三阶交互作重复性。Reproducibility=Operator+附加因子+相关交互（不含 Part）。不平衡/固定效应/嵌套混合 GLM 仍延后。",
+      "input_description": "测量、零件、操作员、附加因子（各≥2 水平，完整平衡交叉）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "检查平衡。",
+        "三因子 ANOVA。",
+        "EMS 方差分量。",
+        "汇总 Total Gage R&R / Part-To-Part。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Additional",
+          "meaning": "第 3 随机因子"
+        },
+        {
+          "symbol": "Reproducibility",
+          "meaning": "操作员+附加+交互"
+        },
+        {
+          "symbol": "Repeatability",
+          "meaning": "残差或三阶交互"
+        }
+      ],
+      "decision_rules": [
+        "不得写量具合格/不合格。",
+        "不平衡设计请用交叉 Gage 或等待后续 GLM。"
+      ],
+      "invalid_input_conditions": "缺失格子、不等重复、水平不足时诊断。",
+      "output_description": "ANOVA 表 + 分量表。",
+      "output_interpretation": "先看附加因子与交互是否主导再现性。",
+      "assumptions_and_boundaries": "与 EMP Crossed / 交叉 Gage 互补，不互相替代。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "范围",
+          "plain_text": "仅平衡三因子随机；不是 Minitab 全量 Expanded GLM。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方交叉 Gage R&R",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/measurement-system-analysis/how-to/gage-study/crossed-gage-r-r-study/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "expanded_gage_rr",
+        "service_method": "expanded_gage_rr",
+        "facts_type": "msa",
+        "primary_test": "p2_gv_expanded_b4b5_test"
       }
     },
     {
@@ -9424,22 +11425,22 @@
     },
     {
       "id": "doe_factorial",
-      "title": "2 水平全因子设计",
+      "title": "2 水平析因设计生成",
       "category": "DOE",
       "menu_path": "统计 > DOE",
       "aliases": [
         "doe_factorial",
-        "2 水平全因子设计"
+        "2 水平析因设计生成"
       ],
-      "implemented_status": "implemented",
-      "purpose": "生成或分析 2 水平全因子试验，估计主效应与交互。",
-      "method_overview": "编码 ±1。Pareto 用 |t|；df=0 时用 Lenth PSE。2 因子响应页 11 图固定顺序。",
-      "input_description": "因子名与低/高水平，或已有设计表的响应与因子列；中心点、区组、随机种子可选；等值线可指定 x_factor/y_factor 与 hold=名=实际值。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "implemented_status": "formula_reference",
+      "purpose": "生成 2^k 全因子或 2^(k-p) 部分析因设计矩阵，也可对已有设计表做响应分析。",
+      "method_overview": "编码 ±1。p=0 为全因子；p>0 用默认最高分辨度生成器或手写 D=ABC;E=ABD。输出设计信息、生成器、定义关系、别名结构与设计矩阵。响应分析 Pareto 用 |t|；df=0 时用 Lenth PSE。",
+      "input_description": "因子名与低/高水平，或已有设计表的响应与因子列；fraction_p、generators、中心点、区组、随机种子可选。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
       "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
       "calculation_steps": [
         "创建设计或读取已有表。",
-        "编码后回归/ANOVA。",
-        "标准化效应 Pareto、立方图、主效应、交互、等值线/曲面、残差 4 图。"
+        "编码后（响应分析时）回归/ANOVA。",
+        "设计生成：矩阵+别名；响应分析：Pareto、立方、主效应、交互、等值线/曲面、残差 4 图。"
       ],
       "symbol_definitions": [
         {
@@ -9447,42 +11448,42 @@
           "meaning": "高−低的编码效应"
         },
         {
-          "symbol": "PSE",
-          "meaning": "Lenth 伪标准误"
+          "symbol": "p",
+          "meaning": "部分析因生成器个数"
         },
         {
-          "symbol": "D",
-          "meaning": "响应优化 desirability，见另一命令"
+          "symbol": "Resolution",
+          "meaning": "定义关系最短非 I 字长"
         }
       ],
       "decision_rules": [
         "最大效应不是过程合格。",
-        "残差图不写已正态。",
-        "≥4 因子无立方图。"
+        "别名链不是已证实混淆因果。",
+        "≥4 因子响应分析无立方图。"
       ],
-      "invalid_input_conditions": "因子水平无法编码、响应缺失过多或设计不可估计时诊断。",
-      "output_description": "设计表或响应分析表+图。",
-      "output_interpretation": "先看 Pareto 哪项最大，再用残差检查；hold 变更会改变等值线切片。",
-      "assumptions_and_boundaries": "等值线在编码 −1~+1；未选轴因子默认 hold 0，可用实际单位 hold。",
+      "invalid_input_conditions": "因子水平无法编码、p≥k、无默认生成器且未手写、响应缺失过多时诊断。",
+      "output_description": "设计信息/生成器/定义关系/别名/设计矩阵；或响应分析表+图。",
+      "output_interpretation": "先生成矩阵写入工作表，再选响应列做 doe_response。",
+      "assumptions_and_boundaries": "不做 PB/DSD/RSM 设计生成；不做可旋转 3D。",
       "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
       "formula_blocks": [
         {
-          "title": "标准化效应",
-          "plain_text": "通常 t=效应/SE。纯饱和无误差 DF 时用 Lenth PSE 作参考线。",
+          "title": "全因子",
+          "plain_text": "2^k 运行；每因子独立 ±1。",
           "explanation": "",
           "conditions": "",
           "note": ""
         },
         {
-          "title": "2 因子图序",
-          "plain_text": "Pareto → 立方 → 主效应 → 交互 → 等值线 → 曲面 → 残差四图（拟合 y=0 / 顺序 / 正态 / 直方图）。",
+          "title": "部分析因",
+          "plain_text": "基设计 2^(k-p)，附加因子由生成器乘积定义；默认表覆盖常见 (k,p)。",
           "explanation": "",
           "conditions": "",
           "note": ""
         },
         {
-          "title": "等值线轴与 hold",
-          "plain_text": "可选 X/Y 因子名；其余因子默认编码 hold=0，也可写 hold=名=实际值;… 转编码。数值水平用线性编码；非数值须精确匹配低/高。越界 clamp 到 [-1,1]。不做可旋转 3D。",
+          "title": "别名",
+          "plain_text": "用定义关系把效应乘到各词上得到混淆链；不是显著性检验。",
           "explanation": "",
           "conditions": "",
           "note": ""
@@ -9507,7 +11508,7 @@
         "command_id": "doe_factorial",
         "service_method": "doe_factorial",
         "facts_type": "doe",
-        "primary_test": "doe_factorial_output_test"
+        "primary_test": "p2_doe_acf_power_test"
       }
     },
     {
@@ -9575,6 +11576,195 @@
         "service_method": "doe_factorial",
         "facts_type": "doe",
         "primary_test": "doe_factorial_output_test"
+      }
+    },
+    {
+      "id": "rsm_response",
+      "title": "响应曲面分析",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": [
+        "rsm_response",
+        "响应曲面分析"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对已有连续因子设计表拟合二次响应曲面（线性+交互+纯二次）。",
+      "method_overview": "因子按列内 min/max 或设计 low/high/center 编码到 [-1,1]（已在区间内则视为已编码）。系数、ANOVA（含重复编码点时的纯误差/失拟）、残差四图；前两因子等值线与静态曲面，其余因子编码 hold=0。",
+      "input_description": "响应列 + ≥2 连续因子列（complete-case）。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "complete-case 对齐。",
+        "编码因子。",
+        "构造二次设计矩阵并 OLS。",
+        "若存在重复编码点：按点组估计纯误差，并分解失拟（formula_reference；无重复则不报告失拟，不用残差 MS 冒充纯误差）。",
+        "输出系数/ANOVA/残差图与等值线曲面。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Coef",
+          "meaning": "编码单位系数"
+        },
+        {
+          "symbol": "R²",
+          "meaning": "决定系数"
+        },
+        {
+          "symbol": "纯误差",
+          "meaning": "相同编码点重复响应的组内平方和"
+        },
+        {
+          "symbol": "失拟",
+          "meaning": "残差平方和减去纯误差后的模型不足分量"
+        },
+        {
+          "symbol": "残差",
+          "meaning": "观测−拟合"
+        }
+      ],
+      "decision_rules": [
+        "R² 高不是工艺已验证。",
+        "显著项不是工程最优设定。",
+        "等值线是探索图，不是可旋转 3D。",
+        "失拟 P 小提示二次模型可能不足；无重复点时不得声称已检验失拟。"
+      ],
+      "invalid_input_conditions": "因子不足两个、无变异、观测少于参数时诊断。",
+      "output_description": "模型摘要、系数表、ANOVA（含可选失拟/纯误差）、残差四图、等值线与曲面。",
+      "output_interpretation": "先看残差是否随机与失拟是否可用，再解读系数与等值线形状。",
+      "assumptions_and_boundaries": "不做混合物、Box–Cox 自动；失拟证据为 formula_reference，不是 vendor_oracle。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "二次模型",
+          "plain_text": "y=β0+Σβi xi+Σβij xi xj+Σβii xi²+ε（编码单位）。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "编码",
+          "plain_text": "xi' = 2(xi−min)/(max−min)−1；已在 [-1,1] 则不改。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "等值线",
+          "plain_text": "在编码网格上评估拟合曲面；非轴因子 hold=0。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方析因 ANOVA 方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/factorial/analyze-factorial-design/methods-and-formulas/analysis-of-variance/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "官方响应曲面模型信息",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/response-surface/analyze-response-surface-design/methods-and-formulas/model-information/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "rsm_response",
+        "service_method": "rsm_response",
+        "facts_type": "rsm",
+        "primary_test": "p2_rsm_special_cause_test"
+      }
+    },
+    {
+      "id": "special_cause_rules",
+      "title": "特殊原因规则 Catalog",
+      "category": "控制图",
+      "menu_path": "帮助 > 算法",
+      "aliases": [
+        "special_cause_rules",
+        "特殊原因规则 Catalog"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "Minitab Tests 1–8 与 DataLab 图种适用表、默认策略说明。",
+      "method_overview": "Test 1：1 点超 ±3σ。Test 2：连续 9 点同侧。Test 3：连续 6 点升降。Test 4：连续 14 点交替上下。Test 5：连续 3 点中 2 点超 ±2σ 同侧。Test 6：连续 5 点中 4 点超 ±1σ 同侧。Test 7：连续 15 点在 ±1σ 内。Test 8：连续 8 点在 ±1σ 外。适用：I/Xbar/属性/Laney=1–8；R/S/MR/Z-MR=1–4；EWMA/MA/G/T=仅 1；CUSUM=无 Tests；Zone 图用 Jaehn 分区，不是 Tests 1–8。默认策略 all_applicable=启用该图种全部适用 Tests；minitab_like=仅 Test 1。DataLab 默认 all_applicable，与 Minitab 常见仅 Test 1 不同；多规则提高误报风险。WECO 四规则与 Tests 1/5/6/2 部分重叠，不可一一等同。交叉链接：Run Chart（游程/聚类/混合）不是控制图 Tests；ANOM 决策限用于组均值比较，不是 Shewhart Tests；Zone 图用 Jaehn 分区计分，明确不是 Tests 1–8。",
+      "input_description": "控制图对话框的规则默认策略与特殊原因测试勾选。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "选择策略或显式勾选 Tests。",
+        "按图种过滤不适用规则。",
+        "触发点写入图与表。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Test k",
+          "meaning": "第 k 条特殊原因规则"
+        },
+        {
+          "symbol": "rule_policy",
+          "meaning": "all_applicable / minitab_like / explicit"
+        }
+      ],
+      "decision_rules": [
+        "规则触发是调查信号，不是过程已失控、合格或已证明稳定。",
+        "Zone≠Tests 1–8。",
+        "CUSUM 用专用信号逻辑。",
+        "Run Chart / ANOM / Zone 见各自命令帮助，勿与 Tests 混读。"
+      ],
+      "invalid_input_conditions": "CUSUM 与 Zone 不套用 Tests 1–8。",
+      "output_description": "本条目为规则百科；实际输出见各控制图命令；Run Chart/ANOM/Zone 交叉说明见上文。",
+      "output_interpretation": "先确认策略，再解读触发点。",
+      "assumptions_and_boundaries": "正文不得引用外部公式底稿路径。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "策略",
+          "plain_text": "空 tests 时：all_applicable→全部适用；minitab_like→仅 Test 1（若适用）。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "显式",
+          "plain_text": "勾选或文本列出 Tests 时 policy=explicit，覆盖策略默认。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方特殊原因测试",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        },
+        {
+          "label": "官方控制图测试默认选项",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/minitab-environment/settings-and-defaults/control-charts-and-quality-tools/tests/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "special_cause_rules",
+        "service_method": "imr",
+        "facts_type": "spc",
+        "primary_test": "special_cause_rule_test"
       }
     },
     {
@@ -10873,6 +13063,1978 @@
         "facts_type": "—",
         "primary_test": "graph_service_test"
       }
+    },
+    {
+      "id": "density_plot",
+      "title": "密度图",
+      "category": "探索性图形",
+      "menu_path": "图形",
+      "aliases": [
+        "density_plot",
+        "density",
+        "密度图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "高斯核密度估计曲线（Silverman 带宽）。",
+      "method_overview": "h=0.9·min(s,IQR/1.34)·n^(-1/5)；曲线是平滑估计，不是分布检验。 图形命令不写质量 Facts，也不做合格判定。",
+      "input_description": "按对话框选择 x/y/z 或类别列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按角色读取列。",
+        "complete-case 过滤。",
+        "按该图几何规则计算坐标/频数/分箱。",
+        "生成 ChartModel，可编辑属性并复制 PNG。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "source_row",
+          "meaning": "点对应的原始工作表行"
+        },
+        {
+          "symbol": "complete-case",
+          "meaning": "该图用到的列在该行都有效"
+        }
+      ],
+      "decision_rules": [
+        "悬停应能回到原始行。",
+        "编辑颜色/线型不改变底层数据。",
+        "复制图形走渲染器，而不是截取窗口像素。"
+      ],
+      "invalid_input_conditions": "缺必要列、非数值被当作数值轴、或网格不规则（等值线）时诊断或空图。",
+      "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+      "output_interpretation": "把它当数据浏览工具。统计结论以分析输出页为准。",
+      "assumptions_and_boundaries": "不附加推断表。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "绘图规则",
+          "plain_text": "h=0.9·min(s,IQR/1.34)·n^(-1/5)；曲线是平滑估计，不是分布检验。",
+          "explanation": "本图是探索性展示。若需要推断（p 值、控制限、能力指数），请使用对应分析命令。",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "density_plot",
+        "service_method": "GraphService::run",
+        "facts_type": "—",
+        "primary_test": "graph_service_test"
+      }
+    },
+    {
+      "id": "hexbin_plot",
+      "title": "Hexbin",
+      "category": "探索性图形",
+      "menu_path": "图形",
+      "aliases": [
+        "hexbin_plot",
+        "hexbin",
+        "Hexbin"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "二维矩形分箱计数着色（Binned Scatter）。",
+      "method_overview": "complete-case (x,y) 落入矩形格；产品名 Hexbin，非正六边形镶嵌。 图形命令不写质量 Facts，也不做合格判定。",
+      "input_description": "按对话框选择 x/y/z 或类别列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按角色读取列。",
+        "complete-case 过滤。",
+        "按该图几何规则计算坐标/频数/分箱。",
+        "生成 ChartModel，可编辑属性并复制 PNG。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "source_row",
+          "meaning": "点对应的原始工作表行"
+        },
+        {
+          "symbol": "complete-case",
+          "meaning": "该图用到的列在该行都有效"
+        }
+      ],
+      "decision_rules": [
+        "悬停应能回到原始行。",
+        "编辑颜色/线型不改变底层数据。",
+        "复制图形走渲染器，而不是截取窗口像素。"
+      ],
+      "invalid_input_conditions": "缺必要列、非数值被当作数值轴、或网格不规则（等值线）时诊断或空图。",
+      "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+      "output_interpretation": "把它当数据浏览工具。统计结论以分析输出页为准。",
+      "assumptions_and_boundaries": "不附加推断表。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "绘图规则",
+          "plain_text": "complete-case (x,y) 落入矩形格；产品名 Hexbin，非正六边形镶嵌。",
+          "explanation": "本图是探索性展示。若需要推断（p 值、控制限、能力指数），请使用对应分析命令。",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "hexbin_plot",
+        "service_method": "GraphService::run",
+        "facts_type": "—",
+        "primary_test": "graph_service_test"
+      }
+    },
+    {
+      "id": "violin_plot",
+      "title": "小提琴图",
+      "category": "探索性图形",
+      "menu_path": "图形",
+      "aliases": [
+        "violin_plot",
+        "violin",
+        "小提琴图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "分组镜像 KDE + 箱线五数。",
+      "method_overview": "每组独立 Silverman 带宽；形状与箱线同页。 图形命令不写质量 Facts，也不做合格判定。",
+      "input_description": "按对话框选择 x/y/z 或类别列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按角色读取列。",
+        "complete-case 过滤。",
+        "按该图几何规则计算坐标/频数/分箱。",
+        "生成 ChartModel，可编辑属性并复制 PNG。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "source_row",
+          "meaning": "点对应的原始工作表行"
+        },
+        {
+          "symbol": "complete-case",
+          "meaning": "该图用到的列在该行都有效"
+        }
+      ],
+      "decision_rules": [
+        "悬停应能回到原始行。",
+        "编辑颜色/线型不改变底层数据。",
+        "复制图形走渲染器，而不是截取窗口像素。"
+      ],
+      "invalid_input_conditions": "缺必要列、非数值被当作数值轴、或网格不规则（等值线）时诊断或空图。",
+      "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+      "output_interpretation": "把它当数据浏览工具。统计结论以分析输出页为准。",
+      "assumptions_and_boundaries": "不附加推断表。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "绘图规则",
+          "plain_text": "每组独立 Silverman 带宽；形状与箱线同页。",
+          "explanation": "本图是探索性展示。若需要推断（p 值、控制限、能力指数），请使用对应分析命令。",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "violin_plot",
+        "service_method": "GraphService::run",
+        "facts_type": "—",
+        "primary_test": "graph_service_test"
+      }
+    },
+    {
+      "id": "bar_chart",
+      "title": "条形图",
+      "category": "探索性图形",
+      "menu_path": "图形",
+      "aliases": [
+        "bar_chart",
+        "bar",
+        "条形图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "分类计数条形；保持出现顺序。",
+      "method_overview": "无按计数排序、无累积百分比；与柏拉图分流。 图形命令不写质量 Facts，也不做合格判定。",
+      "input_description": "按对话框选择 x/y/z 或类别列。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按角色读取列。",
+        "complete-case 过滤。",
+        "按该图几何规则计算坐标/频数/分箱。",
+        "生成 ChartModel，可编辑属性并复制 PNG。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "source_row",
+          "meaning": "点对应的原始工作表行"
+        },
+        {
+          "symbol": "complete-case",
+          "meaning": "该图用到的列在该行都有效"
+        }
+      ],
+      "decision_rules": [
+        "悬停应能回到原始行。",
+        "编辑颜色/线型不改变底层数据。",
+        "复制图形走渲染器，而不是截取窗口像素。"
+      ],
+      "invalid_input_conditions": "缺必要列、非数值被当作数值轴、或网格不规则（等值线）时诊断或空图。",
+      "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+      "output_interpretation": "把它当数据浏览工具。统计结论以分析输出页为准。",
+      "assumptions_and_boundaries": "不附加推断表。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "绘图规则",
+          "plain_text": "无按计数排序、无累积百分比；与柏拉图分流。",
+          "explanation": "本图是探索性展示。若需要推断（p 值、控制限、能力指数），请使用对应分析命令。",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "bar_chart",
+        "service_method": "GraphService::run",
+        "facts_type": "—",
+        "primary_test": "graph_service_test"
+      }
+    },
+    {
+      "id": "eda_4plot",
+      "title": "EDA 四图",
+      "category": "探索性图形",
+      "menu_path": "图形",
+      "aliases": [
+        "eda_4plot",
+        "4-plot",
+        "EDA 四图"
+      ],
+      "implemented_status": "implemented",
+      "purpose": "NIST 单变量四图打包：run sequence、lag-1、histogram、normal probability。",
+      "method_overview": "同页四个 PlotSpec；用于检查位置/散布/随机性/分布形态假设。不能写成过程受控或分布已正态。与单独直方图/正态概率图命令并存。",
+      "input_description": "一个连续变量列；可选直方图组数。 默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。错位缺失不会拿上一行的值去填补。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效数值个数，N* 为缺失个数。分析跳过缺失单元格，不从工作表删除行。图上保留原始行号 source_row。重导入另一份数据后，旧排除行、旧输出页与旧撤销记录全部失效。",
+      "calculation_steps": [
+        "按观测顺序画 run sequence。",
+        "lag-1：Y(i-1) vs Y(i)。",
+        "直方图（Sturges 或手工组数）。",
+        "正态概率图（理论分位数 vs 有序值）。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "i",
+          "meaning": "观测顺序"
+        },
+        {
+          "symbol": "Y(i)",
+          "meaning": "第 i 个观测"
+        },
+        {
+          "symbol": "lag-1",
+          "meaning": "相邻对"
+        }
+      ],
+      "decision_rules": [
+        "不得写过程已失控、已证明稳定、分布已正态。",
+        "不是假设检验替代。"
+      ],
+      "invalid_input_conditions": "有效观测 < 2 时诊断。",
+      "output_description": "四图 + 说明表；EdaPlotFacts.kind=eda_4plot。",
+      "output_interpretation": "先扫四图形态，再决定是否做正态性/控制图等正式分析。",
+      "assumptions_and_boundaries": "不做合格判定；不冒充 mosaic。",
+      "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "NIST 4-Plot",
+          "plain_text": "四图并列探索四类假设。",
+          "explanation": "",
+          "conditions": "",
+          "note": "",
+          "nodes": [
+            {
+              "type": "text",
+              "value": "run sequence / lag-1 / histogram / normal probability"
+            }
+          ]
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方图形编辑说明",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/general-graph-options/graph-editing-basics/edit-graphs/",
+          "accessed": "2026-08-20",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "维护用公式底稿",
+          "path": "docs/statistical-methodology.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "eda_4plot",
+        "service_method": "eda_4plot",
+        "facts_type": "eda",
+        "primary_test": "p2_eda4_crosstab_chi_resid_test"
+      }
+    },
+    {
+      "id": "kmeans",
+      "title": "K-Means 聚类",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": [
+        "kmeans",
+        "K-Means",
+        "聚类"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "把多维数值观测分成 k 个簇，并报告质心与簇内平方和。",
+      "method_overview": "欧氏距离 Lloyd 迭代：分配到最近质心后更新质心，直至无移动或达最大迭代。初始质心取前 k 个有效观测。可选列标准化。",
+      "input_description": "至少两列数值；参数 k、最大迭代、是否标准化。默认 complete-case：同一分析用到的各列在同一行都必须有效，才进入计算。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行，不从工作表删除行。分配表保留原始行号。",
+      "calculation_steps": [
+        "complete-case 多列对齐。",
+        "可选标准化后取前 k 行作初始质心。",
+        "Lloyd 迭代得到分配、质心、簇内 SS。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "k",
+          "meaning": "簇数"
+        },
+        {
+          "symbol": "d",
+          "meaning": "欧氏距离"
+        },
+        {
+          "symbol": "WSS",
+          "meaning": "簇内平方和"
+        }
+      ],
+      "decision_rules": [
+        "簇标签只描述相对邻近，不是工艺判定。",
+        "未收敛时只报告迭代诊断。"
+      ],
+      "invalid_input_conditions": "列数<2、有效行<k、k<2。",
+      "output_description": "簇摘要、质心、分配表、前两列散点。",
+      "output_interpretation": "看簇大小与 WSS；结合工艺变量解释邻近结构。",
+      "assumptions_and_boundaries": "不做层次聚类或自动选 k；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "欧氏距离",
+          "plain_text": "d(x,c)=√Σ(x_j−c_j)²。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "Lloyd",
+          "plain_text": "分配到最近质心 → 按成员均值更新质心 → 重复。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 Cluster K-Means 方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/how-to/cluster-k-means/methods-and-formulas/cluster-k-means/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_kmeans.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "kmeans",
+        "service_method": "kmeans",
+        "facts_type": "kmeans",
+        "primary_test": "p3_batch1_kmeans_cart_adf_test"
+      }
+    },
+    {
+      "id": "cart_tree",
+      "title": "CART 单树",
+      "category": "预测 / 经典 ML",
+      "menu_path": "统计 > 预测辅助",
+      "aliases": [
+        "cart_tree",
+        "CART",
+        "决策树"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "用自研二叉递归划分做分类或回归单树，输出结点表与变量重要性。",
+      "method_overview": "分类用 Gini，回归用 SSE；按候选阈值选最大不纯度下降。深度/叶样本停。非 TreeNet/Random Forests 对齐。",
+      "input_description": "响应列 + 至少一个数值预测列；task=classification|regression；max_depth、min_leaf。complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "对齐响应与预测列。",
+        "递归分裂直至停止条件。",
+        "汇总树表、重要性、混淆矩阵或 RMSE。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Gini",
+          "meaning": "1−Σp_c²"
+        },
+        {
+          "symbol": "SSE",
+          "meaning": "Σ(y−ȳ)²"
+        }
+      ],
+      "decision_rules": [
+        "训练集准确率/RMSE 不能外推为工艺合格。",
+        "不得声称等同 Minitab TreeNet/RF。"
+      ],
+      "invalid_input_conditions": "无响应、无预测列、分类类别不足。",
+      "output_description": "树结点、变量重要性、混淆矩阵（分类）或观测-拟合图（回归）。",
+      "output_interpretation": "先看主导分裂变量与叶纯度，再回查工艺。",
+      "assumptions_and_boundaries": "本轮无成本复杂度剪枝；无随机森林；无 Python/sklearn 运行时。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "分类分裂",
+          "plain_text": "增益 = 父 Gini − 加权子 Gini。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "回归分裂",
+          "plain_text": "增益 = 父 SSE − (左 SSE + 右 SSE)。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab CART 节点分裂",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/predictive-analytics/how-to/cart-regression/methods-and-formulas/node-splitting-methods/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        },
+        {
+          "label": "sklearn DecisionTree（公式参考）",
+          "url": "https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html",
+          "accessed": "2026-08-21",
+          "kind": "secondary"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_cart_tree.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "cart_tree",
+        "service_method": "cart_tree",
+        "facts_type": "cart_tree",
+        "primary_test": "p3_batch1_kmeans_cart_adf_test"
+      }
+    },
+    {
+      "id": "adf_test",
+      "title": "ADF 单位根检验",
+      "category": "时间序列",
+      "menu_path": "统计 > 时间序列",
+      "aliases": [
+        "adf_test",
+        "ADF",
+        "单位根"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对单列序列做 Augmented Dickey–Fuller 检验，报告 τ 与临界值。",
+      "method_overview": "对 Δy 回归 y(t−1) 与滞后差分，可选漂移/趋势。τ=γ̂/se(γ̂)。临界值为大样本 MacKinnon 风格常数。",
+      "input_description": "一个数值序列；regression=none|drift|trend；lags 可空自动。按行序；跳过非有限。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。N 为有效个数。",
+      "calculation_steps": [
+        "读有限值并差分。",
+        "OLS 估计 ADF 回归。",
+        "输出 τ、临界值、系数表与序列图。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "γ",
+          "meaning": "y(t−1) 系数"
+        },
+        {
+          "symbol": "τ",
+          "meaning": "γ̂ / se(γ̂)"
+        }
+      ],
+      "decision_rules": [
+        "τ 低于 5% 临界值只提示拒绝单位根的证据。",
+        "宜与 ACF/PACF 一并阅读。"
+      ],
+      "invalid_input_conditions": "有效观测过少或设计矩阵奇异。",
+      "output_description": "检验表、系数表、序列图。",
+      "output_interpretation": "先看回归规格与滞后，再解释 τ 相对临界值。",
+      "assumptions_and_boundaries": "不做 KPSS/PP/CCF；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。",
+      "formula_blocks": [
+        {
+          "title": "ADF（漂移）",
+          "plain_text": "Δy_t = α + γ y_{t−1} + Σ δ_i Δy_{t−i} + ε_t。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "临界值",
+          "plain_text": "使用大样本 MacKinnon 风格 1%/5%/10% 常数表。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Feature List",
+          "url": "https://www.minitab.com/en-us/products/minitab/features/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_adf.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "adf_test",
+        "service_method": "adf_test",
+        "facts_type": "adf",
+        "primary_test": "p3_batch1_kmeans_cart_adf_test"
+      }
+    },
+    {
+      "id": "poisson_regression",
+      "title": "Poisson 回归",
+      "category": "回归",
+      "menu_path": "统计 > 回归",
+      "aliases": [
+        "poisson_regression",
+        "Poisson"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对非负计数响应拟合 log 链 Poisson GLM，并报告系数与偏差。",
+      "method_overview": "IRLS 最大似然；μ=exp(xβ)；权重=μ。",
+      "input_description": "计数响应 + ≥1 数值预测列；complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "对齐 complete-case",
+        "IRLS 估计",
+        "输出系数与 Pearson 残差"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "μ",
+          "meaning": "均值"
+        },
+        {
+          "symbol": "D",
+          "meaning": "偏差"
+        }
+      ],
+      "decision_rules": [
+        "系数显著性只描述关联证据。",
+        "未收敛时不外推解释。"
+      ],
+      "invalid_input_conditions": "响应负值、观测不足或奇异设计。",
+      "output_description": "模型摘要、系数、拟合残差、残差散点。",
+      "output_interpretation": "先看收敛与偏差，再读系数方向。",
+      "assumptions_and_boundaries": "本轮无负二项/零膨胀/偏移列；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "log 链",
+          "plain_text": "log μ = xβ。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "偏差",
+          "plain_text": "D=2Σ[y log(y/μ)-(y-μ)]（y=0 时 y log 项为 0）。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方 Fit Poisson Model methods",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-poisson-model/methods-and-formulas/methods/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_poisson_regression.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "poisson_regression",
+        "service_method": "poisson_regression",
+        "facts_type": "poisson_regression",
+        "primary_test": "p3_batch2_poisson_iforest_bootstrap_hclust_test"
+      }
+    },
+    {
+      "id": "isolation_forest",
+      "title": "Isolation Forest",
+      "category": "预测 / 经典 ML",
+      "menu_path": "统计 > 预测辅助",
+      "aliases": [
+        "isolation_forest",
+        "孤立森林"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对多维数值观测计算孤立分数，标记相对孤立点。",
+      "method_overview": "随机划分树平均路径长度；分数 s=2^(-E(h)/c(n))。与单变量 outlier_test 分流。",
+      "input_description": "≥2 数值列；tree/max_samples/分位阈值/seed。complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "complete-case",
+        "建树并估计路径",
+        "按分数分位标记"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "s",
+          "meaning": "异常分数"
+        },
+        {
+          "symbol": "c(n)",
+          "meaning": "平均路径修正"
+        }
+      ],
+      "decision_rules": [
+        "高分只提示相对孤立。",
+        "不得声称等同 TreeNet/RF。"
+      ],
+      "invalid_input_conditions": "列数<2 或有效行不足。",
+      "output_description": "分数表、异常标记、分数图。",
+      "output_interpretation": "结合工艺变量回查高分行。",
+      "assumptions_and_boundaries": "自研 C++；无 sklearn 运行时。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "分数",
+          "plain_text": "s = 2^(-E(h(x))/c(n))。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "sklearn IsolationForest（次级）",
+          "url": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html",
+          "accessed": "2026-08-21",
+          "kind": "secondary"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_isolation_forest.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "isolation_forest",
+        "service_method": "isolation_forest",
+        "facts_type": "isolation_forest",
+        "primary_test": "p3_batch2_poisson_iforest_bootstrap_hclust_test"
+      }
+    },
+    {
+      "id": "bootstrap_mean",
+      "title": "Bootstrap 均值 CI",
+      "category": "推断 / 仿真",
+      "menu_path": "统计 > 基本统计",
+      "aliases": [
+        "bootstrap_mean",
+        "Bootstrap"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对单列样本均值做百分位 bootstrap 置信区间。",
+      "method_overview": "B 次有放回重抽样；取经验分位 α/2 与 1−α/2。非 BCa。",
+      "input_description": "一个数值列；B、置信水平、seed。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。",
+      "calculation_steps": [
+        "读有限值",
+        "重抽样均值",
+        "百分位区间"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "B",
+          "meaning": "重抽样次数"
+        },
+        {
+          "symbol": "x̄*",
+          "meaning": "bootstrap 均值"
+        }
+      ],
+      "decision_rules": [
+        "区间只描述重抽样不确定性。"
+      ],
+      "invalid_input_conditions": "n<2 或 B 过小。",
+      "output_description": "摘要表与 bootstrap 均值直方图。",
+      "output_interpretation": "看区间宽度与样本均值位置。",
+      "assumptions_and_boundaries": "本轮百分位法；非 BCa；非两样本。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "百分位 CI",
+          "plain_text": "取 {x̄*} 的经验分位 α/2 与 1−α/2。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Feature List",
+          "url": "https://www.minitab.com/en-us/products/minitab/features/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_bootstrap_mean.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "bootstrap_mean",
+        "service_method": "bootstrap_mean",
+        "facts_type": "bootstrap_mean",
+        "primary_test": "p3_batch2_poisson_iforest_bootstrap_hclust_test"
+      }
+    },
+    {
+      "id": "bootstrap_two_sample",
+      "title": "Bootstrap 双样本均值差 CI",
+      "category": "推断 / 仿真",
+      "menu_path": "统计 > 基本统计",
+      "aliases": [
+        "bootstrap_two_sample",
+        "Bootstrap Two-Sample"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对两独立样本均值差做百分位 bootstrap 置信区间。",
+      "method_overview": "两组各自有放回重抽样；每次计算均值差；取经验分位 α/2 与 1−α/2。非 BCa。",
+      "input_description": "两个数值列；B、置信水平、seed。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失；各列独立 complete-case。",
+      "calculation_steps": [
+        "读各组有限值",
+        "独立重抽样均值差",
+        "百分位区间"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "B",
+          "meaning": "重抽样次数"
+        },
+        {
+          "symbol": "x̄₁* − x̄₂*",
+          "meaning": "bootstrap 均值差"
+        }
+      ],
+      "decision_rules": [
+        "区间只描述重抽样不确定性。"
+      ],
+      "invalid_input_conditions": "任一组 n<2 或 B 过小。",
+      "output_description": "摘要表与 bootstrap 均值差直方图。",
+      "output_interpretation": "看均值差点估计与区间宽度。",
+      "assumptions_and_boundaries": "本轮百分位法；两组独立重抽样；非 BCa。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "百分位 CI",
+          "plain_text": "取 {x̄₁* − x̄₂*} 的经验分位 α/2 与 1−α/2。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Bootstrap methods",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/how-to/bootstrapping/methods-and-formulas/",
+          "accessed": "2026-08-22",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_bootstrap_two_sample.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "bootstrap_two_sample",
+        "service_method": "bootstrap_two_sample",
+        "facts_type": "bootstrap_two_sample",
+        "primary_test": "algorithm_wave3_track_test"
+      }
+    },
+    {
+      "id": "probit_reliability",
+      "title": "Probit 可靠性",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性/生存",
+      "aliases": [
+        "probit_reliability",
+        "Probit Reliability"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "用 logit 链接拟合二项失效比例与应力/剂量关系，并估计 LD50。",
+      "method_overview": "IRLS 拟合 logit(p)=β₀+β₁·应力；输出系数、拟合表、LD50 与应力-概率散点图。",
+      "input_description": "事件数列、试验数列、应力/剂量列；最大迭代次数与收敛阈值。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失；三列 complete-case 对齐。",
+      "calculation_steps": [
+        "对齐事件/试验/应力",
+        "加权 IRLS 拟合 logit",
+        "计算 LD50 与 delta 法 SE"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "LD50",
+          "meaning": "拟合失效概率 0.5 时的应力/剂量"
+        }
+      ],
+      "decision_rules": [
+        "系数与 LD50 只描述关联证据，不作可靠性合格判定。"
+      ],
+      "invalid_input_conditions": "有效行 n<3；事件数超过试验数；应力非有限值。",
+      "output_description": "模型摘要、系数表、LD50 表、拟合表与散点图。",
+      "output_interpretation": "看应力系数符号、LD50 位置与拟合偏差。",
+      "assumptions_and_boundaries": "本轮 logit 链接；非 Minitab probit golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写产品已满足可靠性目标。",
+      "formula_blocks": [
+        {
+          "title": "Logit 链接",
+          "plain_text": "logit(p)=β₀+β₁·应力；LD50=−β₀/β₁。",
+          "explanation": "",
+          "conditions": "β₁≠0",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Probit analysis",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/probit-analysis/methods-and-formulas/",
+          "accessed": "2026-08-22",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_probit_reliability.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "probit_reliability",
+        "service_method": "probit_reliability",
+        "facts_type": "probit_reliability",
+        "primary_test": "algorithm_wave3_track_test"
+      }
+    },
+    {
+      "id": "cluster_observations",
+      "title": "层次聚类（观测）",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": [
+        "cluster_observations",
+        "层次聚类"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对多维观测做 complete linkage 凝聚层次聚类，并按 k 切簇。",
+      "method_overview": "欧氏距离；簇间最大两两距离；输出合并历程与分配。",
+      "input_description": "≥2 数值列；k；可选标准化。complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "complete-case",
+        "凝聚合并",
+        "切 k 分配"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "height",
+          "meaning": "合并时 complete 距离"
+        }
+      ],
+      "decision_rules": [
+        "簇标签只描述邻近结构。"
+      ],
+      "invalid_input_conditions": "列数<2 或 n<k。",
+      "output_description": "合并历程、分配表、前两列散点。",
+      "output_interpretation": "结合 height 跳跃与散点阅读。",
+      "assumptions_and_boundaries": "本轮仅 complete；非 single/Ward；非 K-Means。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "Complete linkage",
+          "plain_text": "D(A,B)=max_{i∈A,j∈B} d(i,j)。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方多元分析总览",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/supporting-topics/basics/multivariate-analyses-in-minitab/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_hierarchical_cluster.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "cluster_observations",
+        "service_method": "cluster_observations",
+        "facts_type": "hierarchical_cluster",
+        "primary_test": "p3_batch2_poisson_iforest_bootstrap_hclust_test"
+      }
+    },
+    {
+      "id": "ordinal_logistic",
+      "title": "有序 Logistic 回归",
+      "category": "回归",
+      "menu_path": "统计 > 回归",
+      "aliases": [
+        "ordinal_logistic",
+        "有序Logistic"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对有序多水平响应拟合比例优势 logit 模型。",
+      "method_overview": "logit P(Y≤k)=θ_k+xβ；共享斜率；数值差分 Newton。",
+      "input_description": "有序响应（≥3 水平）+ ≥1 数值预测；complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "编码有序水平",
+        "MLE 估计阈值与斜率",
+        "输出系数与 AIC"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "θ_k",
+          "meaning": "累积阈值"
+        },
+        {
+          "symbol": "β",
+          "meaning": "共享斜率"
+        }
+      ],
+      "decision_rules": [
+        "系数描述累积对数优势关联证据。"
+      ],
+      "invalid_input_conditions": "水平不足、观测不足或奇异信息矩阵。",
+      "output_description": "模型摘要与系数表。",
+      "output_interpretation": "先看收敛与 AIC，再读斜率方向。",
+      "assumptions_and_boundaries": "本轮仅 logit；非名义 Logistic；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "比例优势",
+          "plain_text": "logit P(Y≤k)=θ_k+xβ。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方有序 Logistic 方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/ordinal-logistic-regression/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_ordinal_logistic.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "ordinal_logistic",
+        "service_method": "ordinal_logistic",
+        "facts_type": "ordinal_logistic",
+        "primary_test": "p3_batch3_ordinal_lda_ccf_correlogram_test"
+      }
+    },
+    {
+      "id": "nominal_logistic",
+      "title": "名义 Logistic 回归",
+      "category": "回归",
+      "menu_path": "统计 > 回归",
+      "aliases": ["nominal_logistic", "名义Logistic"],
+      "implemented_status": "formula_reference",
+      "purpose": "对名义（无序）多水平响应拟合广义 logit 模型。",
+      "method_overview": "K−1 条 logit；基线=末水平；MLE + 系数/OR 表。",
+      "input_description": "名义响应（≥3 水平）+ ≥1 数值预测；complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": ["编码水平", "MLE 估计", "输出 Logistic 回归表与 G 检验"],
+      "symbol_definitions": [{"symbol": "η_k", "meaning": "第 k 条 logit 线性预测量"}],
+      "decision_rules": ["系数描述相对参考类别的对数优势证据。"],
+      "invalid_input_conditions": "水平不足、观测不足或 Hessian 奇异。",
+      "output_description": "模型摘要、Logistic 回归表。",
+      "output_interpretation": "先看收敛与 G 检验，再读 OR 与 CI。",
+      "assumptions_and_boundaries": "非有序 Logistic；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。",
+      "formula_blocks": [{"title": "广义 logit", "plain_text": "log(P(Y=k)/P(Y=ref))=η_k", "explanation": "", "conditions": "", "note": ""}],
+      "reference_links": [{"label": "Minitab Nominal Logistic", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/nominal-logistic-regression/methods-and-formulas/methods-and-formulas/", "accessed": "2026-08-22", "kind": "minitab"}],
+      "source_documents": [{"label": "P3 research", "path": "docs/research/p3_nominal_logistic.md", "section": ""}],
+      "wiring": {"command_id": "nominal_logistic", "service_method": "nominal_logistic", "facts_type": "nominal_logistic", "primary_test": "algorithm_wave2_track_test"}
+    },
+    {
+      "id": "discriminant",
+      "title": "线性判别分析",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": [
+        "discriminant",
+        "LDA"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "用等协方差线性判别对类别响应分类并报告混淆矩阵。",
+      "method_overview": "类均值、合并协方差、线性得分与先验。",
+      "input_description": "类别响应 + ≥1 数值预测；≥2 类。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "估计类均值与合并协方差",
+        "线性得分分类",
+        "输出混淆矩阵"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Σ",
+          "meaning": "合并协方差"
+        },
+        {
+          "symbol": "π_c",
+          "meaning": "类先验"
+        }
+      ],
+      "decision_rules": [
+        "训练准确率不能外推为工艺判定。"
+      ],
+      "invalid_input_conditions": "类过小或协方差奇异。",
+      "output_description": "类均值、混淆矩阵、LD 投影散点。",
+      "output_interpretation": "看类可分性与误分模式。",
+      "assumptions_and_boundaries": "不做 QDA；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "线性得分",
+          "plain_text": "δ_c(x)=x'Σ^{-1}μ_c−½μ_c'Σ^{-1}μ_c+log π_c。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方多元分析总览",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/supporting-topics/basics/multivariate-analyses-in-minitab/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_discriminant.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "discriminant",
+        "service_method": "discriminant",
+        "facts_type": "discriminant",
+        "primary_test": "p3_batch3_ordinal_lda_ccf_correlogram_test"
+      }
+    },
+    {
+      "id": "ccf",
+      "title": "互相关（CCF）",
+      "category": "时间序列",
+      "menu_path": "统计 > 时间序列",
+      "aliases": [
+        "ccf",
+        "互相关"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "计算两列对齐序列在正负滞后上的互相关，并画置信带。",
+      "method_overview": "样本互相关；带宽 ±z/√n（白噪声固定）。",
+      "input_description": "两个数值序列；可选 max_lag 与置信水平。",
+      "missing_value_policy": "按行对齐；缺失行跳过。",
+      "calculation_steps": [
+        "对齐有效对",
+        "计算各滞后 CCF",
+        "输出表与图"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "c_k",
+          "meaning": "滞后 k 的互相关"
+        }
+      ],
+      "decision_rules": [
+        "越过带宽只提示相关证据。"
+      ],
+      "invalid_input_conditions": "有效对过少或零方差。",
+      "output_description": "CCF 表与带置信限的图。",
+      "output_interpretation": "先看 lag0 与邻近滞后。",
+      "assumptions_and_boundaries": "非预白化；宜与 ACF/PACF 对照。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "CCF",
+          "plain_text": "c_k=Σ(x_t−x̄)(y_{t+k}−ȳ)/√[Σ(x−x̄)²Σ(y−ȳ)²]。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Feature List",
+          "url": "https://www.minitab.com/en-us/products/minitab/features/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_ccf.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "ccf",
+        "service_method": "ccf",
+        "facts_type": "ccf",
+        "primary_test": "p3_batch3_ordinal_lda_ccf_correlogram_test"
+      }
+    },
+    {
+      "id": "correlogram",
+      "title": "Correlogram（相关热图）",
+      "category": "图形",
+      "menu_path": "图形",
+      "aliases": [
+        "correlogram",
+        "相关热图"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "把多列两两相关矩阵画成热图并输出系数表。",
+      "method_overview": "复用 correlation_matrix（Pearson/Spearman）；PlotKind::heatmap。",
+      "input_description": "≥2 数值列；method。",
+      "missing_value_policy": "complete-case 多列对齐。",
+      "calculation_steps": [
+        "complete-case",
+        "相关矩阵",
+        "热图"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "r",
+          "meaning": "相关系数"
+        }
+      ],
+      "decision_rules": [
+        "热图只展示相关结构。"
+      ],
+      "invalid_input_conditions": "列数<2。",
+      "output_description": "相关矩阵表与热图。",
+      "output_interpretation": "看强相关块与符号。",
+      "assumptions_and_boundaries": "与 correlation_plot 分流；非 Graph Builder。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "相关矩阵",
+          "plain_text": "对 complete-case 列计算 Pearson 或 Spearman 相关。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Feature List",
+          "url": "https://www.minitab.com/en-us/products/minitab/features/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_correlogram.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "correlogram",
+        "service_method": "correlogram",
+        "facts_type": "correlogram",
+        "primary_test": "p3_batch3_ordinal_lda_ccf_correlogram_test"
+      }
+    },
+    {
+      "id": "stepwise_regression",
+      "title": "逐步回归",
+      "category": "回归",
+      "menu_path": "统计 > 回归",
+      "aliases": [
+        "stepwise_regression",
+        "逐步回归"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "按 α 或 Forward AICc/BIC 对线性回归候选预测做逐步选择。",
+      "method_overview": "stepwise/forward/backward（α）；forward_aicc/forward_bic（信息准则表形）。",
+      "input_description": "数值响应 + ≥2 候选预测；complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行。",
+      "calculation_steps": [
+        "拟合当前子集",
+        "按 p 值进/出",
+        "输出步骤与终模型"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "α_enter",
+          "meaning": "进入阈值"
+        },
+        {
+          "symbol": "α_remove",
+          "meaning": "剔除阈值"
+        }
+      ],
+      "decision_rules": [
+        "选入项只描述相对拟合证据。"
+      ],
+      "invalid_input_conditions": "候选不足或观测过少。",
+      "output_description": "步骤表、选入项、终模型系数。",
+      "output_interpretation": "先看步骤稳定性，再读终模型系数。",
+      "assumptions_and_boundaries": "非 Best subsets；含 Forward AICc/BIC 表形；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "逐步",
+          "plain_text": "按项 p 值与 α_enter/α_remove 进退预测变量。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "官方逐步方法",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-regression-model/methods-and-formulas/stepwise/",
+          "accessed": "2026-08-21",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_stepwise_regression.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "stepwise_regression",
+        "service_method": "stepwise_regression",
+        "facts_type": "stepwise_regression",
+        "primary_test": "p3_track_h_stepwise_km_pb_test"
+      }
+    },
+    {
+      "id": "best_subsets_regression",
+      "title": "Best Subsets 回归",
+      "category": "回归",
+      "menu_path": "统计 > 回归",
+      "aliases": [
+        "best_subsets_regression",
+        "Best Subsets 回归"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "比较不同预测变量子集的线性回归拟合，按规模展示最佳模型摘要。",
+      "method_overview": "枚举候选预测子集（≤15）；每规模保留最高 R² 模型；输出 R²、Adj R²、Mallows Cp、S。",
+      "input_description": "数值响应 + 1–15 候选预测；complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。跳过不完整行；保留 source_row。",
+      "calculation_steps": [
+        "complete-case 提取响应与预测",
+        "拟合全模型得 s²_full",
+        "枚举子集并拟合",
+        "按规模保留最佳模型"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Cp",
+          "meaning": "Mallows Cp"
+        },
+        {
+          "symbol": "S",
+          "meaning": "残差标准差"
+        }
+      ],
+      "decision_rules": [
+        "子集比较只描述相对拟合证据，不宣称唯一最优。"
+      ],
+      "invalid_input_conditions": "候选超过 15 或观测不足以拟合最大模型。",
+      "output_description": "模型摘要表（Vars + X 标记 + R²/Cp/S）。",
+      "output_interpretation": "先看各规模 R² 与 Cp，再选子集深入回归诊断。",
+      "assumptions_and_boundaries": "子集枚举；非 Hamiltonian Walk；非 Minitab golden。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "Mallows Cp",
+          "plain_text": "Cp = SSE_p / s²_full − (n − 2(p+1))",
+          "explanation": "",
+          "conditions": "",
+          "note": "# source: formula_reference"
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "Minitab Best Subsets 概述",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/best-subsets-regression/before-you-start/overview/",
+          "accessed": "2026-08-22",
+          "kind": "minitab"
+        },
+        {
+          "label": "方法与公式",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/best-subsets-regression/methods-and-formulas/methods-and-formulas/",
+          "accessed": "2026-08-22",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_best_subsets_regression.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "best_subsets_regression",
+        "service_method": "best_subsets_regression",
+        "facts_type": "best_subsets_regression",
+        "primary_test": "algorithm_batch_2026_08_test"
+      }
+    },
+    {
+      "id": "batch_capability",
+      "title": "批次过程能力",
+      "category": "质量工具",
+      "menu_path": "质量工具 > 能力分析",
+      "aliases": [
+        "batch_capability",
+        "批次过程能力"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "按批次列分组，逐批计算正态过程能力指标。",
+      "method_overview": "每批 complete-case；n≥min_batch_size；样本 σ；Cp/Cpk/Pp/Ppk。",
+      "input_description": "测量列 + 批次 ID 列 + LSL/USL。",
+      "missing_value_policy": "缺失测量或批次标签的行跳过；保留 source_row。",
+      "calculation_steps": [
+        "按批次分组",
+        "每批估计均值与样本 σ",
+        "计算能力指数"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "Cp/Cpk",
+          "meaning": "组内/整体能力（逐批）"
+        }
+      ],
+      "decision_rules": [
+        "指标只描述该批样本，禁止写成批次合格。"
+      ],
+      "invalid_input_conditions": "无有效批次或规格缺失。",
+      "output_description": "批次能力摘要表。",
+      "output_interpretation": "比较各批 Cpk/Ppk 与样本量。",
+      "assumptions_and_boundaries": "正态 + 样本 σ；非 Between/Within；非 Automated。",
+      "interpretation_limits": "禁止批次合格/过程已稳定等结论性措辞。",
+      "formula_blocks": [],
+      "reference_links": [
+        {
+          "label": "Minitab 能力分析总览",
+          "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/supporting-topics/basics/capability-analyses-in-minitab/",
+          "accessed": "2026-08-22",
+          "kind": "minitab"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_batch_capability.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "batch_capability",
+        "service_method": "batch_capability",
+        "facts_type": "batch_capability",
+        "primary_test": "algorithm_batch_2026_08_test"
+      }
+    },
+    {
+      "id": "nonparametric_capability",
+      "title": "非参数过程能力",
+      "category": "质量工具",
+      "menu_path": "质量工具 > 能力分析",
+      "aliases": ["nonparametric_capability", "Cnp", "Cnpk"],
+      "implemented_status": "formula_reference",
+      "purpose": "用经验分位数估计 Cnp/Cnpk，不假设特定分布。",
+      "method_overview": "容差 K 对应经验分位数；Cnpk=min(Cnpl,Cnpu)。",
+      "input_description": "测量列 + LSL/USL；N≥10；complete-case。",
+      "missing_value_policy": "空单元格、*、NA、N/A、NaN 视为缺失。",
+      "calculation_steps": ["排序", "经验分位数", "Cnp/Cnpk"],
+      "symbol_definitions": [{"symbol": "Cnpk", "meaning": "非参数能力指数"}],
+      "decision_rules": ["指标只描述样本 spread/location 证据。"],
+      "invalid_input_conditions": "N 不足或缺双侧规格。",
+      "output_description": "Overall Capability、Observed PPM 与 Capability Histogram。",
+      "output_interpretation": "比较 Cnp 与 Cnpk 判断居中程度；PPM 描述规格外比例。",
+      "assumptions_and_boundaries": "非正态/Jenkins 路径；非 Minitab golden。",
+      "interpretation_limits": "禁止单独作为过程合格结论。",
+      "formula_blocks": [
+        {
+          "title": "Capability Histogram",
+          "plain_text": "直方图叠加 LSL/USL；与 Overall Capability 表同批数据。",
+          "explanation": "",
+          "conditions": "N≥10；双侧规格。",
+          "note": "formula_reference"
+        },
+        {
+          "title": "Observed PPM",
+          "plain_text": "PPM_below = 1000000 × (#<LSL)/N；PPM_above、PPM_total 同理。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        },
+        {
+          "title": "Cnp / Cnpk",
+          "plain_text": "Cnp=(USL−LSL)/(Xpu−Xpl)；Cnpk=min(Cnpl,Cnpu)。",
+          "explanation": "",
+          "conditions": "容差 K 对应正态分位数。",
+          "note": ""
+        }
+      ],
+      "reference_links": [{"label": "Minitab Nonparametric Capability", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/nonparametric-capability-analysis/methods-and-formulas/overall-capability/", "accessed": "2026-08-22", "kind": "minitab"}],
+      "source_documents": [{"label": "P4 deepen", "path": "docs/research/p4_nonparametric_capability_deepen.md", "section": ""}, {"label": "P3 research", "path": "docs/research/p3_nonparametric_capability.md", "section": ""}],
+      "wiring": {"command_id": "nonparametric_capability", "service_method": "nonparametric_capability", "facts_type": "nonparametric_capability", "primary_test": "algorithm_wave4_track_test"}
+    },
+    {
+      "id": "cox_regression",
+      "title": "Cox 回归",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": ["cox_regression", "Cox Regression"],
+      "implemented_status": "formula_reference",
+      "purpose": "固定协变量 Cox 比例风险：估计相对风险 HR。",
+      "method_overview": "λ(t|x)=λ₀(t)exp(x'β)；Breslow ties；Newton–Raphson。",
+      "input_description": "时间列、事件/删失列、一个或多个协变量；complete-case。",
+      "missing_value_policy": "缺测行排除；保留 source_row。",
+      "calculation_steps": ["complete-case 对齐", "偏对数似然", "系数/SE/HR/P", "Log-L"],
+      "symbol_definitions": [{"symbol": "HR", "meaning": "exp(β) 相对风险"}, {"symbol": "ℓ(β)", "meaning": "偏对数似然"}],
+      "decision_rules": ["HR 只描述关联证据，不写因果或寿命达标。"],
+      "invalid_input_conditions": "无事件、奇异信息矩阵或 ties 非 breslow 时诊断。",
+      "output_description": "模型摘要与系数/HR 表。",
+      "output_interpretation": "看 HR 与置信区间；与 Fine-Gray/ALT 命令分流。",
+      "assumptions_and_boundaries": "仅 exact+right；固定协变量；非 Minitab golden。",
+      "interpretation_limits": "禁止过程合格、已证明因果、寿命达标。",
+      "formula_blocks": [
+        {"title": "Cox PH", "plain_text": "λ(t|x)=λ₀(t)exp(x'β)。", "explanation": "", "conditions": "", "note": ""},
+        {"title": "Breslow partial likelihood", "plain_text": "ℓ(β)=Σ_events[x'β − log Σ_{R(t)} exp(x'β)]。", "explanation": "", "conditions": "breslow ties", "note": "formula_reference / cox_ph_fixed_covariates"}
+      ],
+      "reference_links": [{"label": "Minitab Cox Regression methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/cox-regression/with-fixed-predictors-only/methods-and-formulas/methods/", "accessed": "2026-08-22", "kind": "minitab"}],
+      "source_documents": [{"label": "P4 Cox", "path": "docs/research/p4_cox_regression.md", "section": ""}],
+      "wiring": {"command_id": "cox_regression", "service_method": "cox_regression", "facts_type": "cox_regression", "primary_test": "algorithm_wave4_track_test"}
+    },
+    {
+      "id": "km_interval",
+      "title": "区间删失 Kaplan–Meier",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": [
+        "km_interval",
+        "Turnbull"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "对左/区间/右删失寿命数据用 Turnbull NPMLE 估计生存函数。",
+      "method_overview": "把观测写成 (L,R]；自洽迭代质量点；输出 S(t)。",
+      "input_description": "左端列与右端列；右端空/Inf 表示右删失。",
+      "missing_value_policy": "左端缺失跳过；右端空/Inf 视为右删失。",
+      "calculation_steps": [
+        "构造区间",
+        "Turnbull 迭代",
+        "累计质量得 S(t)"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "S(t)",
+          "meaning": "生存函数"
+        },
+        {
+          "symbol": "(L,R]",
+          "meaning": "删失区间"
+        }
+      ],
+      "decision_rules": [
+        "中位寿命未估出时只报告曲线。"
+      ],
+      "invalid_input_conditions": "有效区间过少或 R<L。",
+      "output_description": "摘要、生存表与曲线。",
+      "output_interpretation": "对照删失类型计数与中位寿命。",
+      "assumptions_and_boundaries": "非右删失 product-limit；非参数寿命模型。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "Turnbull",
+          "plain_text": "自洽更新质量点直至收敛，再累计得 S(t)。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "NIST 可靠性",
+          "url": "https://www.itl.nist.gov/div898/handbook/apr/section4/apr4.htm",
+          "accessed": "2026-08-21",
+          "kind": "nist"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_km_interval.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "km_interval",
+        "service_method": "km_interval",
+        "facts_type": "km_interval",
+        "primary_test": "p3_track_h_stepwise_km_pb_test"
+      }
+    },
+    {
+      "id": "doe_plackett_burman",
+      "title": "Plackett–Burman 设计生成",
+      "category": "DOE",
+      "menu_path": "质量工具 > DOE",
+      "aliases": [
+        "doe_plackett_burman",
+        "PB"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "生成 Plackett–Burman 两水平筛选设计矩阵。",
+      "method_overview": "选择最小 N=4m≥k+1；循环 ±1 行；可选中心点。",
+      "input_description": "因子名列表；可选高低水平、中心点、随机化。",
+      "missing_value_policy": "设计生成不读工作表缺失。",
+      "calculation_steps": [
+        "选 N",
+        "循环生成",
+        "输出运行表"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "N",
+          "meaning": "运行数"
+        },
+        {
+          "symbol": "k",
+          "meaning": "因子数"
+        }
+      ],
+      "decision_rules": [
+        "分辨率 III，仅适合筛选。"
+      ],
+      "invalid_input_conditions": "因子数越界或名称重复。",
+      "output_description": "设计信息与编码运行表。",
+      "output_interpretation": "按运行表安排试验。",
+      "assumptions_and_boundaries": "本轮支持 N∈{8,12,16,20,24}；非 CCD。",
+      "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。",
+      "formula_blocks": [
+        {
+          "title": "PB",
+          "plain_text": "用循环生成器构造 N×(N−1) 的 ±1 矩阵并截取前 k 列。",
+          "explanation": "",
+          "conditions": "",
+          "note": ""
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "NIST PB",
+          "url": "https://www.itl.nist.gov/div898/handbook/pri/section3/pri334.htm",
+          "accessed": "2026-08-21",
+          "kind": "nist"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "P3 research",
+          "path": "docs/research/p3_plackett_burman.md",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "doe_plackett_burman",
+        "service_method": "doe_plackett_burman",
+        "facts_type": "plackett_burman",
+        "primary_test": "p3_track_h_stepwise_km_pb_test"
+      }
+    },
+    {
+      "id": "doe_ccd",
+      "title": "中心复合设计 CCD",
+      "category": "DOE",
+      "menu_path": "质量工具 > DOE",
+      "aliases": [
+        "ccd",
+        "ccc",
+        "cci",
+        "ccf",
+        "central composite"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "生成 CCD（CCC/CCI/CCF）设计矩阵：立方点、星点、中心点；输出 coded/actual 与可行性诊断。",
+      "method_overview": "连续因素；CCF α=1；CCC 可旋转 α=2^(k/4)，超范围需显式允许；CCI 星点贴限、立方点内缩。",
+      "input_description": "因素 ID/名/单位、低高中心、变体、中心点数、seed、是否允许超范围星点。",
+      "missing_value_policy": "设计生成不读工作表缺失。",
+      "calculation_steps": [
+        "校验连续因素与边界",
+        "生成 cube/star/center",
+        "按 seed 随机化运行顺序",
+        "输出 DesignGenerationFacts"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "α",
+          "meaning": "轴向距离（星点编码）"
+        },
+        {
+          "symbol": "k",
+          "meaning": "因素数"
+        }
+      ],
+      "decision_rules": [
+        "证据类型 formula_reference；不得宣称商业软件对齐。"
+      ],
+      "invalid_input_conditions": "k<2、边界非法、重复 ID、CCC 超范围且未允许。",
+      "output_description": "设计信息、因素定义、设计矩阵（Run ID / point type / coded / actual）。",
+      "output_interpretation": "按矩阵安排试验后填响应，再接 RSM（Phase 4.4）。",
+      "assumptions_and_boundaries": "第一阶段仅连续因素；非 vendor_oracle golden。",
+      "interpretation_limits": "解释层只陈述设计结构，不写过程已优化。",
+      "formula_blocks": [
+        {
+          "title": "CCD",
+          "plain_text": "立方点 ±1；星点 ±α e_i；中心点 0；CCC α=2^(k/4)。",
+          "explanation": "",
+          "conditions": "",
+          "note": "NIST handbook PRI 3.3.6.1"
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "NIST CCD",
+          "url": "https://itl.nist.gov/div898/handbook/pri/section3/pri3361.htm",
+          "accessed": "2026-08-21",
+          "kind": "nist"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "Phase0 baseline",
+          "path": "samples/phase0_baselines/doe_ccd_k2_factors.json",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "doe_ccd",
+        "service_method": "doe_response_surface_design",
+        "facts_type": "design_generation",
+        "primary_test": "response_surface_design_phase4_test"
+      }
+    },
+    {
+      "id": "doe_bbd",
+      "title": "Box–Behnken 设计",
+      "category": "DOE",
+      "menu_path": "质量工具 > DOE",
+      "aliases": [
+        "bbd",
+        "box-behnken"
+      ],
+      "implemented_status": "formula_reference",
+      "purpose": "生成 BBD：边中点 + 中心点；明确避开所有因素同时极端的角点。",
+      "method_overview": "对每对因素取 (±1,±1) 且其余为 0；加中心点；k∈[3,7]。",
+      "input_description": "≥3 连续因素 ID/名/单位、低高中心、中心点数、seed。",
+      "missing_value_policy": "设计生成不读工作表缺失。",
+      "calculation_steps": [
+        "拒绝 k<3",
+        "生成边中点与中心点",
+        "随机化运行顺序",
+        "输出 DesignGenerationFacts"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "k",
+          "meaning": "因素数（3–7）"
+        }
+      ],
+      "decision_rules": [
+        "不宣称全域预测质量最优。"
+      ],
+      "invalid_input_conditions": "k∉[3,7]、边界非法、重复 ID。",
+      "output_description": "设计信息与边中点/中心点矩阵。",
+      "output_interpretation": "角点缺失是设计定义，不是缺陷。",
+      "assumptions_and_boundaries": "formula_reference；非 vendor_oracle。",
+      "interpretation_limits": "解释层只陈述设计结构。",
+      "formula_blocks": [
+        {
+          "title": "BBD",
+          "plain_text": "每对因素四个边中点，其余因素为中心；无全极端角点。",
+          "explanation": "",
+          "conditions": "",
+          "note": "NIST handbook PRI 3.3.6.2"
+        }
+      ],
+      "reference_links": [
+        {
+          "label": "NIST BBD",
+          "url": "https://itl.nist.gov/div898/handbook/pri/section3/pri3362.htm",
+          "accessed": "2026-08-21",
+          "kind": "nist"
+        }
+      ],
+      "source_documents": [
+        {
+          "label": "Phase0 baseline",
+          "path": "samples/phase0_baselines/doe_bbd_k3_factors.json",
+          "section": ""
+        }
+      ],
+      "wiring": {
+        "command_id": "doe_bbd",
+        "service_method": "doe_response_surface_design",
+        "facts_type": "design_generation",
+        "primary_test": "response_surface_design_phase4_test"
+      }
+    },
+    {
+      "id": "database_import",
+      "title": "数据库导入",
+      "category": "数据",
+      "menu_path": "数据 > 数据库导入…",
+      "aliases": [
+        "sqlite",
+        "database provider",
+        "数据库导入"
+      ],
+      "implemented_status": "partial",
+      "purpose": "通过 Provider 连接数据库、发现表/视图与列，按 ImportPlan 导入工作表。",
+      "method_overview": "Registry 注册 sqlite/postgresql/mysql/odbc。SQLite 全功能；PostgreSQL/MySQL/ODBC 在检测到对应 Qt SQL 驱动后可用，分别走 information_schema / INFORMATION_SCHEMA / ODBC catalog。分页优先复合/单列 keyset，否则 OFFSET 并声明限制。",
+      "input_description": "SQLite 文件路径；只读连接默认开启。",
+      "missing_value_policy": "NULL → CellState::missing；空字符串保持可区分（非 missing）；数值列无法解析 → invalid。",
+      "calculation_steps": [
+        "选择 Provider 并测试连接。",
+        "列出表/视图并选择对象。",
+        "勾选列、可选过滤/排序/行上限。",
+        "预览样本（不影响最终 ImportPlan）。",
+        "导入：事务快照 → DataTable contract → 写入工作表与 provenance。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "provider_id",
+          "meaning": "sqlite / postgresql / mysql / odbc"
+        },
+        {
+          "symbol": "ImportPlan",
+          "meaning": "列选择、过滤、排序键、行上限与 null_policy 的不可变导入计划"
+        },
+        {
+          "symbol": "RowId",
+          "meaning": "优先主键；否则 synthetic 行号"
+        }
+      ],
+      "decision_rules": [
+        "UI 不直接调用 QSqlDatabase::addDatabase。",
+        "未实现 Provider 不得伪装为已支持。"
+      ],
+      "assumptions_and_boundaries": "失败或取消不留下半份工作表。密码永不写入 ImportPlan/项目 JSON。estimated_rows 可能为估计值，不得当作精确 N。优先 keyset 分页。",
+      "output_description": "ImportedTable/DataTable（含 provenance）；失败不写入主窗口工作表。",
+      "interpretation_guidance": "预览截断不等于最终导入行数；取消/失败不留下半份工作表。",
+      "limitations": "无对应 Qt 驱动时跨库 Provider 诚实 ❌；ODBC LIMIT 能力因驱动而异；百万行压测仍待手工基准。",
+      "related_commands": [
+        "import"
+      ],
+      "formula_sources": [],
+      "references": [],
+      "status": "partial"
+    },
+    {
+      "id": "report_templates",
+      "title": "报告模板（客户/工程师/审计）",
+      "category": "报告",
+      "menu_path": "文件 > 导出 PDF",
+      "aliases": [
+        "report_templates",
+        "报告模板",
+        "客户版报告",
+        "审计版报告"
+      ],
+      "command_id": "export_pdf",
+      "implemented_status": "implemented",
+      "purpose": "用同一份 OutputPage/Facts 生成客户版、工程师版或审计版报告；模板只改变展示与证据密度，不重算统计。",
+      "method_overview": "ReportProfile 选择展示策略；EvidenceBundle 聚合数据源、ImportPlan、过滤、参数、规则证据与 provenance；JSON 可 round-trip；PDF 写入可读报告。PDF/A 默认 not_validated；PDF/UA 在 QPainter 路径为 unsupported；不得宣称合规。",
+      "input_description": "已有分析输出页与当前工作表快照。",
+      "missing_value_policy": "报告保留分析当时的 N、缺失计数与过滤摘要；不因模板切换改写 Facts。",
+      "calculation_steps": [
+        "选择报告模板（独立对话框）。",
+        "装配 EvidenceBundle 与 ReportDocument（Facts 保持不变）。",
+        "预览显示模板、语言与证据级别。",
+        "导出 PDF；审计版同时写出 .audit.json。"
+      ],
+      "symbol_definitions": [
+        {
+          "symbol": "ReportProfile",
+          "meaning": "展示策略（客户/工程师/审计）"
+        },
+        {
+          "symbol": "EvidenceBundle",
+          "meaning": "稳定证据 ID、来源行、参数、规则与 provenance"
+        },
+        {
+          "symbol": "facts_hash",
+          "meaning": "Facts 指纹；模板切换不得改变"
+        }
+      ],
+      "decision_rules": [
+        "模板不得重新计算算法。",
+        "客户版必须保留关键风险与限制。",
+        "未验证前不得声称 PDF/A 或 PDF/UA 合规。"
+      ],
+      "assumptions_and_boundaries": "报告语言当前按 ADR 0006 为 zh-CN；双语属 Phase 3。manifest 与 PDF/A 验证属 Phase 2。",
+      "output_description": "PDF；审计版另有 audit JSON。JSON schema 含 profile、evidence、provenance、source_page Facts。",
+      "interpretation_guidance": "先看风险/限制，再看工程师细节；审计版用于追溯快照与版本，不是新的统计结论。",
+      "limitations": "Phase 1 不包含 PDF/A·UA 验证器、完整双语与跨页表头增强。",
+      "related_commands": [
+        "export_pdf"
+      ],
+      "formula_sources": [],
+      "references": [
+        {
+          "label": "Phase 0/1 报告证据契约",
+          "url": "docs/research/phase0-report-evidence-contracts.md",
+          "kind": "internal"
+        }
+      ],
+      "wiring": {
+        "command_id": "export_pdf",
+        "service_method": "build_report_document",
+        "facts_type": "InterpretationFacts",
+        "primary_test": "report_profile_phase1_test"
+      },
+      "status": "implemented",
+      "test_targets": [
+        "report_profile_phase1_test",
+        "report_contract_phase0_test"
+      ]
     }
   ]
 }

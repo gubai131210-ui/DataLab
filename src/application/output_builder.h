@@ -105,10 +105,34 @@ domain::StatisticTable cusum_signal_table(
     const domain::statistics::TimeWeightedControlChartResult& chart,
     const std::vector<std::size_t>& source_rows);
 
+domain::StatisticTable zone_point_table(
+    const domain::statistics::ZoneChartResult& chart,
+    const std::vector<std::size_t>& source_rows);
+
+domain::StatisticTable zmr_point_table(
+    const domain::statistics::ZmrChartResult& chart,
+    const std::vector<std::size_t>& source_rows,
+    const std::vector<std::string>& group_labels);
+
+domain::StatisticTable moving_average_point_table(
+    const domain::statistics::ControlChartResult& chart,
+    const std::vector<double>& observations,
+    const std::vector<std::size_t>& source_rows);
+
 domain::PlotSpec control_plot(
     const std::string& title,
     const std::string& y_axis,
     const domain::statistics::ControlChartResult& chart,
     const std::vector<std::size_t>& source_rows);
+
+void attach_special_cause_rules(
+    domain::SpcFacts& spc,
+    const domain::statistics::ControlChartResult& chart,
+    domain::statistics::ControlChartKind kind,
+    const domain::statistics::SpecialCauseSelection& selection);
+
+void append_special_cause_rule_table(
+    domain::OutputPage& page,
+    const domain::SpcFacts& spc);
 
 }  // namespace datalab::application

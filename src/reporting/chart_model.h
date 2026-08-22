@@ -26,7 +26,11 @@ enum class ChartKind {
     Area,
     Contour,
     Pie,
-    Surface
+    Surface,
+    Density,
+    Hexbin,
+    Violin,
+    Bar
 };
 
 enum class ChartSeriesRole {
@@ -131,6 +135,11 @@ struct ChartModel final {
     std::vector<double> upper;
     std::vector<ChartSeries> series;
     std::vector<std::size_t> source_rows;
+    // Parallel to categories / box groups / interval groups: all worksheet rows
+    // represented by an aggregated mark. Present index (even empty) is
+    // authoritative; use source_rows[i] only when member_source_rows is shorter
+    // than the hit index.
+    std::vector<std::vector<std::size_t>> member_source_rows;
     std::vector<std::vector<std::size_t>> special_cause_points;
     std::vector<std::vector<int>> triggered_tests;
     std::vector<int> primary_test_by_point;
@@ -176,4 +185,5 @@ struct ChartModel final {
     std::optional<double> x_min;
     std::optional<double> x_max;
     QString data_region_fill;
+    std::string language_tag = "zh-CN";
 };

@@ -1,0 +1,173 @@
+PARAM_UNIQ 168 families={'misc': 112, 'attrib_spc': 28, 'spc_capability_meta': 3, 'inference_groups': 6, 'reliability': 6, 'doe': 8, 'ml': 5}
+
+## param/misc n=112
+src/application/analysis_service.cpp:158	残差 = 0
+src/application/analysis_service.cpp:1670	变量数 = 
+src/application/analysis_service.cpp:1792	    缺失值 N* = 
+src/application/analysis_service.cpp:2095	方法 = 
+src/application/analysis_service.cpp:2096	    置信水平 = 
+src/application/analysis_service.cpp:2097	    有效变量数 = 
+src/application/analysis_service.cpp:2099	    偏相关 = 是
+src/application/analysis_service.cpp:2226	变量 = 
+src/application/analysis_service.cpp:2537	    界限 = [
+src/application/analysis_service.cpp:2676	    目标 = 
+src/application/analysis_service.cpp:2677	    变量 = 
+src/application/analysis_service.cpp:2714	    方法 = 
+src/application/analysis_service.cpp:2720	双样本等价性检验跳过缺失或非法单元格。
+src/application/analysis_service.cpp:2756	    变换 = 
+src/application/analysis_service.cpp:2757	    检验 = 
+src/application/analysis_service.cpp:2757	    参考 = 
+src/application/analysis_service.cpp:2762	均值比等价性检验跳过缺失或非法单元格。
+src/application/analysis_service.cpp:2801	    第一列 = 
+src/application/analysis_service.cpp:2801	    第二列 = 
+src/application/analysis_service.cpp:2808	配对等价性检验按 complete-case 对齐，已跳过不成对的缺失或非法单元格。
+
+## param/attrib_spc n=28
+src/application/analysis_service.cpp:714	分布 = 二项    子组数 = 
+src/application/analysis_service.cpp:715	分布 = 泊松    子组数 = 
+src/application/analysis_service.cpp:877	    子组大小 = 
+src/application/analysis_service.cpp:979	分布参数
+src/application/analysis_service.cpp:3904	缺陷 = 
+src/application/analysis_service.cpp:6822	    子组数 = 
+src/application/analysis_service.cpp:7875	个体分布识别
+src/application/analysis_service.cpp:7900	分布
+src/application/analysis_service.cpp:10647	参数分布比较
+src/application/analysis_service.cpp:10899	Fine-Gray 子分布风险（多协变量）
+src/application/analysis_service.cpp:10919	Fine-Gray 子分布风险（连续协变量）
+src/application/analysis_service.cpp:10935	Fine-Gray 子分布风险（二分类 group）
+src/application/analysis_service.cpp:13114	Bootstrap 均值分布
+src/application/analysis_service.cpp:14418	分布 = 二项分布    p̄ = Σ不合格品数 / Σ检验数    
+src/application/analysis_service.cpp:14478	分布 = 二项分布    np̄_i = n_i p̄    
+src/application/analysis_service.cpp:14534	分布 = 泊松分布    c̄ = 缺陷数均值    
+src/application/analysis_service.cpp:14535	C 图要求每个子组单位数相同    「单点超出 3σ 控制限」= 超出 3σ 控制限的点（rule_id=beyond_control_limit）
+src/application/analysis_service.cpp:14574	分布 = 泊松分布    ū = Σ缺陷数 / Σ单位数    
+src/application/analysis_service.cpp:14618	二项分布
+src/application/analysis_service.cpp:14670	泊松分布
+
+## param/doe n=8
+src/application/analysis_service.cpp:2964	    因子 = 
+src/application/analysis_service.cpp:8907	    因子数 = 
+src/application/analysis_service.cpp:8909	    模型 = 线性+交互+纯二次（编码单位）
+src/application/analysis_service.cpp:8967	设计来源 ID = 
+src/application/analysis_service.cpp:8970	；设计族 = 
+src/application/analysis_service.cpp:9199	存在缺少有效因子水平的运行，已跳过。
+src/application/doe_pages.cpp:585	因子数 k = 
+src/application/doe_pages.cpp:691	因子数 = 
+
+## param/inference_groups n=6
+src/application/analysis_service.cpp:2428	双样本 t 检验跳过缺失或非法单元格；组 1 = 
+src/application/analysis_service.cpp:2429	，组 2 = 
+src/application/analysis_service.cpp:2914	    第一组 = 
+src/application/analysis_service.cpp:2915	    第二组 = 
+src/application/analysis_service.cpp:3656	第一组 = 
+src/application/analysis_service.cpp:5635	，列水平数 = 
+
+## param/reliability n=6
+src/application/analysis_service.cpp:2851	    事件 = 
+src/application/analysis_service.cpp:3775	事件 = 
+src/application/analysis_service.cpp:7777	    事件水平 = 
+src/application/analysis_service.cpp:10327	寿命列 = 
+src/application/analysis_service.cpp:10683	    暴露量合计 = 
+src/application/analysis_service.cpp:11278	    暴露量 = 
+
+## param/ml n=5
+src/application/analysis_service.cpp:6968	    得分阈值 = 
+src/application/analysis_service.cpp:12463	    迭代 = 
+src/application/analysis_service.cpp:12657	    深度上限 = 
+src/application/analysis_service.cpp:12658	    叶数 = 
+src/application/analysis_service.cpp:13769	    选入 = 
+
+## param/spc_capability_meta n=3
+src/application/analysis_service.cpp:2227	    假设均值 = 
+src/application/analysis_service.cpp:3777	    假设比例 = 
+src/application/analysis_service.cpp:3905	    假设发生率 = 
+
+TITLE_UNIQ 9
+src/application/analysis_service.cpp:1667	所选列没有足够的数值观测。
+src/application/analysis_service.cpp:2187	 与 
+src/application/analysis_service.cpp:7208	 逐点统计
+src/application/analysis_service.cpp:7209	间隔
+src/application/analysis_service.cpp:9133	（编码）
+src/application/analysis_service.cpp:14684	需要单位数列。
+src/application/analysis_service.cpp:15461	效应
+src/application/chart_pages.cpp:187	没有可显示的数据。
+src/application/chart_pages.cpp:215	逐子组统计
+
+DOMAIN_DIAG_THIN_UNIQ 466
+diag_families={'other': 341, 'reliability': 37, 'doe': 47, 'capability': 33, 'msa': 2, 'spc': 6}
+
+## diag/other n=341
+src/domain/statistics/johnson_transform.cpp:381	数值是公式参考，不是 Minitab Individual Distribution Identification 导出。
+src/domain/statistics/censoring_contract.cpp:534	这不是实测分母，报告须标注 exposure_attribution=proportional_scalar。
+src/domain/statistics/censoring_contract.cpp:611	分层 expected_failures = 层暴露量 * F(T_w)，F 来自总体池化 R(T_w)；
+src/domain/statistics/eda_plots.cpp:100	默认带宽为 Silverman：h=0.9·min(s,IQR/1.34)·n^(-1/5)；高斯核。
+src/domain/statistics/distribution_identification.cpp:288	存在非正值；Weibull、Lognormal 与 Exponential 仅对全部正值计算 AD。
+src/domain/statistics/process_capability.cpp:1069	gaussian_mixture_k_bic）；不是非高斯混合，不是商业软件对齐，合格判定保持关闭。
+src/domain/statistics/analysis_rules.cpp:136	Durbin-Watson 对照 α=0.05 近似 dL/dU 判定区；不能写成已证明无自相关。
+src/domain/statistics/reliability.cpp:706	两参数指数使用剖面似然估计阈值；这不是 Minitab 无界似然 bias-correction。
+src/domain/statistics/t_power.cpp:1161	容差样本量按 NIST Howe 双侧 k(n)≤max_k 求解；非 Minitab 精确积分。
+src/domain/statistics/normality_test.cpp:108	Ryan–Joiner：R 不高于 α=0.01 临界，报告 p<0.01（存储 0.01）。
+src/domain/statistics/normality_test.cpp:104	Ryan–Joiner：R 高于 α=0.10 临界，报告 p>0.10（存储 0.10）。
+src/domain/statistics/time_series.cpp:86	双指数平滑要求至少三个观测，alpha/gamma 位于 (0,1] 且预测期数大于 0。
+src/domain/statistics/adf_test.cpp:241	临界值为大样本 MacKinnon 风格常数表；非 Minitab 导出 golden。
+src/domain/database/import_plan_validation.cpp:95	keyset_after.columns 与 after_values 长度必须一致。
+src/domain/database/import_plan_validation.cpp:119	不能同时使用 keyset_after 与 row_offset；优先 keyset。
+
+## diag/doe n=47
+src/domain/statistics/plackett_burman.cpp:124	Plackett–Burman 筛选设计；分辨率 III；非 CCD；非 Minitab golden。
+src/domain/statistics/tolerance_intervals.cpp:198	单侧容差因子使用 NIST Natrella 近似，不是 Minitab 非中心 t 精确值。
+src/domain/statistics/tolerance_intervals.cpp:216	双侧容差因子使用 NIST Howe 近似，不是 Minitab 精确积分。
+src/domain/statistics/doe_factorial.cpp:1213	hold 实际值超出高低水平，已 clamp 到编码 [-1,1]。
+src/domain/statistics/multi_vari.cpp:171	因子水平组合覆盖不足 60%，不绘制 Multi-Vari 图。
+src/domain/statistics/plackett_burman.cpp:52	Plackett–Burman 本轮支持 1…23 个因子。
+src/domain/statistics/doe_factorial.cpp:1145	未作图的因子按指定实际单位 hold（已转换为编码）求值。
+src/domain/statistics/doe_factorial.cpp:590	设计未完整覆盖每个 2 水平因子组合，或存在重复运行。
+src/domain/statistics/doe_factorial.cpp:1226	hold 实际值无法匹配高低水平，该因子回退编码 0。
+src/domain/statistics/response_optimization.cpp:193	交互效应必须引用两个不同且已定义的因子，且不能重复。
+src/domain/statistics/doe_factorial.cpp:559	每个 DOE 运行必须包含一个对应每个因子的编码。
+src/domain/statistics/reliability.cpp:414	未知事件编码必须在导入阶段拒绝，不能静默当作删失。
+src/domain/statistics/response_optimization.cpp:273	2-level 设计编码只能使用 -1 或 +1。
+src/domain/statistics/response_optimization.cpp:419	因子数量过大，无法枚举所有 2-level 组合。
+src/domain/statistics/analysis_rules.cpp:172	只接受明确的失效/删失语义，拒绝未知编码。
+
+## diag/reliability n=37
+src/domain/statistics/km_interval.cpp:192	Turnbull NPMLE（简化网格）；非右删失 product-limit；非 Minitab golden。
+src/domain/statistics/reliability.cpp:917	报告 Location、Scale、Threshold 和分位寿命；拟合未拒绝假设不等于寿命服从该分布。
+src/domain/statistics/reliability.cpp:589	报告 Shape、Scale、Threshold 和分位寿命；拟合未拒绝假设不等于寿命服从该分布。
+src/domain/statistics/fine_gray.cpp:468	 条 exact 失效缺少 failure_mode，已从 Fine-Gray 排除。
+src/domain/statistics/reliability.cpp:708	报告 Scale、Threshold 和分位寿命；拟合未拒绝假设不等于寿命服从该分布。
+src/domain/statistics/analysis_rules.cpp:174	同一时刻多个失效应合并，并报告 at-risk/failures/censored。
+src/domain/statistics/censoring_contract.cpp:758	分模式可靠度 = cause-specific：目标模式 exact 为失效，
+src/domain/statistics/fine_gray.cpp:211	多协变量 Fine-Gray 需要目标失效数 ≥ 5×p（当前 target=
+src/domain/statistics/aalen_johansen_cif.cpp:74	 条 exact 失效缺少 failure_mode，已从 CIF 排除。
+src/domain/statistics/aalen_johansen_cif.cpp:85	总体生存把任一标注失效当作事件；CIF_k 为原因 k 的累计发生概率。
+src/domain/statistics/reliability.cpp:624	指数模型不能描述随时间上升或下降的失效率，应与 Weibull 比较。
+src/domain/statistics/reliability.cpp:287	报告形状、尺度、删失似然和置信区间；不要把分位寿命当成单件保证寿命。
+src/domain/statistics/reliability.cpp:825	报告位置、尺度、删失似然和分位寿命；不要把分位寿命当成单件保证寿命。
+src/domain/statistics/fine_gray.cpp:202	Fine-Gray 需要 n≥10 且目标原因失效≥2（当前 n=
+src/domain/statistics/reliability.cpp:409	Kaplan-Meier 已按同时刻合并失效并报告风险集。
+
+## diag/capability n=33
+src/domain/statistics/process_capability.cpp:644	组间/组内能力区间自由度使用 N−1，不是 Minitab Rbar/Sbar 调整 ν。
+src/domain/statistics/seasonal_forecasting.cpp:854	已使用固定参数 SARIMA 递推；未来创新项按零处理，区间为创新方差的正态近似。
+src/domain/statistics/grubbs_test.cpp:54	Grubbs 检验假设观测近似正态且至多一个异常值；本分析未验证正态性。
+src/domain/statistics/msa_type1.cpp:84	未提供有效公差，Cg/Cgk/%Tolerance 不可用作能力证据。
+src/domain/statistics/normality_test.cpp:185	正态性检验至少需要 3 个有效观测；n<3 时不计算统计量与 p 值。
+src/domain/statistics/seasonal_forecasting.cpp:650	当前预测区间使用 95% 正态近似系数，非 95% 置信水平仅作近似。
+src/domain/statistics/variance_tests.cpp:881	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+src/domain/statistics/process_capability.cpp:525	不报告 Cp/Cpk。数值是公式参考，不是 Minitab 导出。
+src/domain/statistics/variance_tests.cpp:249	第一组正态性风险较高，Levene 类检验结果应结合图形诊断解释。
+src/domain/statistics/variance_tests.cpp:251	第二组正态性风险较高，Levene 类检验结果应结合图形诊断解释。
+src/domain/statistics/process_capability.cpp:437	Weibull/Lognormal 非正态能力要求观测值为正数。
+src/domain/statistics/normality_test.cpp:91	Ryan–Joiner 统计量无法计算（方差或正态得分为零）。
+src/domain/statistics/t_power.cpp:963	等价功效使用已知 σ 的正态规划近似，不是精确二元非中心 t。
+src/domain/statistics/analysis_rules.cpp:134	Anderson-Darling 只能拒绝或未拒绝正态假设。
+src/domain/statistics/process_capability.cpp:856	合格判定保持关闭，直至独立稳定性与正态性验收工作流落地。
+
+## diag/spc n=6
+src/domain/statistics/control_charts.cpp:1658	特殊原因策略=all_applicable：启用该图种全部适用特殊原因规则；
+src/domain/statistics/control_charts.cpp:1645	特殊原因策略=minitab_like：默认仅启用「
+src/domain/statistics/msa_type1.cpp:301	超限只是调查提示，不能直接判定量具合格或不合格。
+src/domain/statistics/process_capability.cpp:847	 个超限点；能力指数仅供调查，不得写成过程合格。
+src/domain/statistics/msa_type1.cpp:299	量具稳定性图存在超限点，需要调查特殊原因。
+src/domain/statistics/msa_type1.cpp:298	当前观测未发现稳定性图超限点。

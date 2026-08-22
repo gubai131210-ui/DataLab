@@ -47,4 +47,21 @@ AssembledMatrixColumns assemble_numeric_matrix(
 
 std::size_t stable_group_index(std::vector<std::string>& labels, const std::string& value);
 
+struct FacetPanel {
+    std::string level;
+    std::vector<std::size_t> member_indices;  // indices into parallel source arrays
+};
+
+struct FacetPartitionResult {
+    std::vector<FacetPanel> panels;
+    std::size_t level_count = 0;
+    std::size_t truncated_levels = 0;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Stable first-seen level order. max_panels clamps productized facet grid (1..12).
+FacetPartitionResult partition_facet_levels(
+    const std::vector<std::string>& facet_labels,
+    int max_panels);
+
 }  // namespace datalab::domain

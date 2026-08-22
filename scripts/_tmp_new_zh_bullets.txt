@@ -1,0 +1,384 @@
+﻿+            "閰嶇疆闅愯棌浜?" + std::to_string(page.configuration.hidden_rows.size())
++            + " 琛岋紱闅愯棌琛屼粛璁″叆鍒嗘瀽鍙ｅ緞锛屼粎褰卞搷鏄剧ず銆?
++            "涓嶅緱灏?hidden 涓?excluded 鍚堝苟鍙欒堪銆?);
++            "璁捐绫诲瀷 = " + (page.facts.doe->design_kind.empty()
++            + "锛涜繍琛屾暟 = " + std::to_string(page.facts.doe->run_count)
++                   ? ("锛涘垎杈ㄥ害 = " + std::to_string(page.facts.doe->resolution))
++            + "銆傚彲灏嗚璁＄煩闃靛啓鍏ュ伐浣滆〃鍚庣敤 DOE 鍝嶅簲鍒嗘瀽琛旀帴銆?);
++                "鐢熸垚鍣細" + page.facts.doe->generator_text
++                + "銆傚埆鍚嶇粨鏋勪粎璇存槑娣锋穯妯″紡锛屼笉鏄樉钁楁€х粨璁恒€?);
++                "EMP Crossed锛欼CC(with interaction) = "
++                + "锛屽垎绾?= " + facts.emp_classification
++                + "銆傝繖鏄?Wheeler 鐩戞帶鑳藉姏鍒嗙骇锛屼笉鏄?AIAG 鍚堟牸鍒ゅ畾锛屼笉鑳藉啓鎴愰噺鍏峰悎鏍笺€?);
++                    + "锛涚敤浜庡鐓ф祴閲忓閲忔槸鍚︾墿鐞嗗悎鐞嗭紝涓嶆槸鍏樊鍚堟牸璇佹槑銆?);
++                "宸插 " + std::to_string(facts.mode_fits.size())
++                + " 涓け鏁堟ā寮忓仛 cause-specific 鍒嗘ā寮忔嫙鍚堬紙scheme="
++                + "锛夈€?);
++                "鍒嗘ā寮忓彲闈犲害涓?formula_reference锛堢珵浜夊け鏁堜綔鍙冲垹澶憋級锛?
++                "涓嶆槸 vendor_oracle / golden锛涢槇鍊兼ā鍨嬩笌 pinned R 瀵归綈浠嶆湭鍐荤粨銆?);
++                "宸茶绠?" + std::to_string(facts.cif_modes.size())
++                + " 涓け鏁堟ā寮忕殑 Aalen鈥揓ohansen 绱鍙戠敓鍑芥暟 CIF锛坅lgorithm="
++                + "锛夈€?);
++                "CIF 涓?formula_reference锛圓alen鈥揓ohansen锛夛紝"
++                "涓嶆槸 Fine-Gray 鍥炲綊锛屼篃涓嶆槸 cause-specific 鍙潬搴︽垨 vendor_oracle銆?);
++                    multi << "Fine-Gray 澶氬崗鍙橀噺瀛愬垎甯冮闄╋細鐩爣鍘熷洜="
++                          << facts.fine_gray_target_mode << "锛岄」鏁?"
++                        multi << "锛? << term.name;
++                            multi << " 尾=" << *term.beta;
++                    multi << "銆?;
++                        "Fine-Gray 杩炵画鍗忓彉閲忓瓙鍒嗗竷椋庨櫓锛氱洰鏍囧師鍥?"
++                        + facts.fine_gray_target_mode + "锛屽崗鍙橀噺="
++                        + "锛屛?" + std::to_string(*facts.fine_gray_beta)
++                               ? ("锛孒R(+1)="
++                               ? ("锛孭=" + std::to_string(*facts.fine_gray_p_value))
++                        + "銆?);
++                        "Fine-Gray 浜屽垎绫诲瓙鍒嗗竷椋庨櫓锛氱洰鏍囧師鍥?"
++                        + facts.fine_gray_target_mode + "锛実roup "
++                        + facts.fine_gray_group0 + "鈫? / " + facts.fine_gray_group1
++                        + "鈫?锛屛?" + std::to_string(*facts.fine_gray_beta)
++                               ? ("锛孒R=" + std::to_string(*facts.fine_gray_hazard_ratio))
++                               ? ("锛孭=" + std::to_string(*facts.fine_gray_p_value))
++                        + "銆?);
++                        "Fine-Gray 涓?formula_reference / fine_gray_multi_ipcw锛堝鍗忓彉閲?IPCW锛屽潎鍊间腑蹇冨寲锛夛紱涓嶆槸 cause-specific Cox銆佷笉鏄?vendor_oracle锛涙湭瀵归綈 pinned R survival::finegray銆?);
++                        "Fine-Gray 涓?formula_reference / fine_gray_continuous_ipcw锛堝崟鍗忓彉閲?IPCW锛夛紱涓嶆槸 cause-specific Cox銆佷笉鏄?vendor_oracle銆?);
++                        "Fine-Gray 涓?formula_reference / fine_gray_binary_ipcw锛堝崟鍗忓彉閲?IPCW锛夛紱涓嶆槸 cause-specific Cox銆佷笉鏄?vendor_oracle銆?);
++                    "Fine-Gray 鏈绠楋紙" + facts.fine_gray_not_computed_reason
++                    + "锛夛紱涓嶅緱浼€犲瓙鍒嗗竷椋庨櫓姣斻€?);
++                "RSM 浜屾妯″瀷锛堢紪鐮佸崟浣嶏級锛氬洜瀛愭暟 = "
++                + "锛涢」鏁?= " + std::to_string(rsm.term_count)
++                       ? "锛汻虏 = " + std::to_string(*rsm.r_squared)
++                + "銆?);
++                    "褰撳墠 |t| 鏈€澶ч」 = " + rsm.largest_abs_t_term
++                    + "锛堜粎鎻忚堪鐩稿澶у皬锛屼笉鏄伐绋嬫渶浼橈級銆?);
++                    "绛夊€肩嚎/鏇查潰鎸夊墠涓ゅ洜瀛愮粯鍒讹紝鍏朵綑鍥犲瓙缂栫爜 hold=0锛涚敤浜庢帰绱㈠搷搴斿舰鐘躲€?);
++                    "鏇查潰鍥句负闈欐€佹爡鏍硷紝涓嶆槸鍙棆杞氦浜?3D銆?);
++                    "璁捐鏉ユ簮 ID = " + rsm.design_source_id
++                    + (rsm.design_kind.empty() ? "" : ("锛? + rsm.design_kind + "锛?))
++                    + "锛涚紪鐮佹ā寮?= " + rsm.coding_mode + "銆?);
++                    "鏈娴嬪埌涓績鐐癸紱绾宸及璁″彲鑳戒笉鍙敤銆?);
++                    "鏃犻噸澶嶇紪鐮佺偣锛氭湭鎶ュ憡绾宸?澶辨嫙锛涗笉寰楃敤娈嬪樊 MS 鍐掑厖绾宸€?);
++                    "澶辨嫙妫€楠屽彲鐢紙绾宸?DF = "
++                    + "锛涘け鎷?DF = "
++                           ? ("锛汸 = " + std::to_string(*rsm.lack_of_fit_p))
++                    + "锛夛紱璇佹嵁绫诲瀷 formula_reference锛屼笉鏄?vendor_oracle銆?);
++                    "鏈夌函璇樊浣嗗け鎷熻嚜鐢卞害涓嶈冻锛屾湭缁欏嚭澶辨嫙 F/P銆?);
++                    "璇风粨鍚堟畫宸笌鎷熷悎鍊?椤哄簭/姝ｆ€?鐩存柟鍥惧垽鏂ā鍨嬪厖鍒嗘€с€?);
++                "RSM 绯绘暟鍦ㄧ紪鐮佸崟浣嶏紱鏄捐憲涓嶇瓑浜庡凡鎵惧埌宸ョ▼鏈€浼樿瀹氥€?);
++                "Fisher 绮剧‘妫€楠?
++                       ? "锛屼紭鍔挎瘮 OR = " + std::to_string(*facts.odds_ratio)
++                + "銆侾 鍊煎彧鎻忚堪褰撳墠 2脳2 琛ㄤ笌鐙珛鎬у亣璁剧殑涓€鑷寸▼搴︼紝涓嶈兘鍐欐垚宸茶瘉鏄庡瓨鍦ㄦ垨涓嶅瓨鍦ㄥ叧鑱斻€?);
++                "Pearson 蠂虏"
++                       ? "锛孭 = " + std::to_string(*facts.p_value) : "")
++                + "銆侾 鍊煎彧鎻忚堪褰撳墠鍒楄仈琛ㄤ笌鐙珛鎬у亣璁剧殑涓€鑷寸▼搴︼紝涓嶈兘璇佹槑鍥犳灉鍏崇郴銆?);
++                limitations.bullets.push_back("瀛樺湪鏈熸湜棰戞暟杩囧皬鐨勫崟鍏冩牸锛屽崱鏂硅繎浼煎彲鑳戒笉鍙潬銆?);
++                "璋冩暣娈嬪樊鐑浘鍙弿杩板崟鍏冩牸鐩稿鐙珛鍋囪鐨勫亸绂绘柟鍚戜笌鐩稿澶у皬锛屼笉鏄洜鏋滆瘉鎹€?);
++                "鏈€澶?|璋冩暣娈嬪樊| = " + std::to_string(*facts.max_abs_adjusted_residual)
++                       : ("锛岃础鐚渶澶у崟鍏冩牸: " + facts.largest_contribution_cell))
++                + "銆傝繖浜涢噺鍙府鍔╁畾浣嶅亸绂伙紝涓嶈兘鍐欐垚宸茶瘉鏄庡叧鑱旀垨鏃犲叧鑱斻€?);
++                "琛?/鍒?/鍚堣% 鏄弿杩版€ф眹鎬伙紝涓嶆浛浠ｇ嫭绔嬫€ф楠岀粨璁恒€?);
++            "浜ゅ弶琛ㄦ眹鎬?"
++            + std::to_string(facts.row_count) + " 脳 " + std::to_string(facts.column_count)
++            + " 鍒嗙被锛孨 = " + std::to_string(facts.total_count)
++            + "銆傛湰杈撳嚭鍙彁渚涢鏁颁笌鐧惧垎姣旓紝涓嶅仛鐙珛鎬ф楠岋紱妫€楠岃浣跨敤鍒楄仈琛ㄥ崱鏂广€?);
++                "鐧惧垎姣旇〃鏄弿杩版€х粨鏋滐紝涓嶈兘鍐欐垚宸茶瘉鏄庡瓨鍦ㄦ垨涓嶅瓨鍦ㄥ叧鑱斻€?);
++                "娉婃澗鎷熷悎浼樺害 Pearson 蠂虏"
++                       ? "锛孭 = " + std::to_string(*facts.p_value) : "")
++                + "锛孌F = "
++                       ? "锛屛惶?= " + std::to_string(*facts.lambda_hat) : "")
++                + "銆侾 鍊煎彧鎻忚堪瑙傚療璁℃暟涓庢硦鏉炬ā鍨嬬殑鍋忕绋嬪害锛屼笉鑳借瘉鏄庢€讳綋鏈嶄粠娉婃澗鍒嗗竷銆?);
++                "鎷熷悎浼樺害 Pearson 蠂虏"
++                       ? "锛孭 = " + std::to_string(*facts.p_value) : "")
++                + "锛孌F = "
++                + "銆侾 鍊煎彧鎻忚堪瑙傚療棰戞暟涓庢寚瀹氭瘮渚嬬殑涓€鑷寸▼搴︼紝涓嶈兘璇佹槑鎬讳綋姣斾緥绛変簬鍋囪銆?);
++                "娓哥▼妫€楠?
++                       ? " P = " + std::to_string(*facts.p_value) : " 鏈绠楀嚭 P")
++                + "銆傜粨鏋滃彧闄堣堪鐩稿姣旇緝鍑嗗垯 K 鐨勯『搴忛殢鏈烘€ц瘉鎹紝涓嶈兘鍐欐垚宸茶瘉鏄庤繃绋嬪彈鎺ф垨澶辨帶銆?);
++                    "姣旇緝鍑嗗垯 K = " + std::to_string(*facts.location_estimate)
++                    + "锛涚瓑鍙峰綊鍏?鈮 渚с€?);
++            "K-Means锛歬 = " + std::to_string(facts.k)
++            + "锛孨 = " + std::to_string(facts.n)
++            + "锛屽彉閲忔暟 = " + std::to_string(facts.variable_count)
++            + "锛岃凯浠?= " + std::to_string(facts.iterations)
++            + (facts.converged ? "锛堝凡鏀舵暃锛? : "锛堟湭瀹屽叏鏀舵暃锛?)
++                   ? "锛涙€荤皣鍐呭钩鏂瑰拰 鈮?" + std::to_string(*facts.total_within_ss)
++            + "銆傜皣鏍囩鍙弿杩扮浉瀵归偦杩戠粨鏋勶紝涓嶈兘鍐欐垚杩囩▼鎴栨壒娆″垽瀹氥€?);
++            "鍒濆璐ㄥ績鍙栧墠 k 涓娴嬶紱缁撴灉渚濊禆灏哄害"
++            + std::string(facts.standardized ? "锛堝凡鏍囧噯鍖栵級" : "锛堟湭鏍囧噯鍖栵級")
++            + "锛涢潪 Minitab golden銆?);
++                ? ("锛涜缁冮泦 RMSE 鈮?" + std::to_string(*facts.train_metric))
++                : ("锛涜缁冮泦鍑嗙‘鐜?鈮?" + std::to_string(*facts.train_metric));
++            "CART 鍗曟爲浠诲姟 = " + facts.task
++            + "锛孨 = " + std::to_string(facts.n)
++            + "锛岄娴嬪彉閲?= " + std::to_string(facts.predictor_count)
++            + "锛岀粨鐐?= " + std::to_string(facts.node_count)
++            + "锛屽彾 = " + std::to_string(facts.leaf_count)
++            + (facts.top_variable.empty() ? "" : ("锛涗富瀵煎垎瑁傚彉閲?= " + facts.top_variable))
++            + "銆傝缁冮泦鎸囨爣涓嶈兘澶栨帹涓鸿繃绋嬪悎鏍肩粨璁恒€?);
++            "鑷爺浜屽弶 CART锛涢潪 Minitab TreeNet/Random Forests 瀵归綈锛涙湰杞棤鎴愭湰澶嶆潅搴﹀壀鏋濄€?);
++            "ADF锛? + facts.regression + "锛夛細N = " + std::to_string(facts.n)
++            + "锛屾粸鍚?= " + std::to_string(facts.lags)
++            + "锛屾湁鏁堝洖褰掕 = " + std::to_string(facts.used_observations)
++            + (facts.tau.has_value() ? ("锛浵?鈮?" + std::to_string(*facts.tau)) : "")
++                   ? ("锛?% 涓寸晫鍊?鈮?" + std::to_string(*facts.critical_5))
++                   ? "锛涚浉瀵?5% 涓寸晫鍊兼湁鎷掔粷鍗曚綅鏍圭殑璇佹嵁"
++                   : "锛涚浉瀵?5% 涓寸晫鍊兼湭鎷掔粷鍗曚綅鏍?)
++            + "銆傚崟浣嶆牴缁撹鍙弿杩板樊鍒嗗钩绋虫€ц瘉鎹紝涓嶈兘澶栨帹涓哄伐鑹哄垽瀹氥€?);
++            "涓寸晫鍊间负澶ф牱鏈?MacKinnon 椋庢牸甯告暟锛涢潪 Minitab 瀵煎嚭锛涘疁涓?ACF/PACF 涓€骞堕槄璇汇€?);
++            "Poisson 鍥炲綊锛坙og 閾撅級锛歂 = " + std::to_string(facts.n)
++            + "锛岄娴嬪彉閲?= " + std::to_string(facts.predictor_count)
++            + "锛岃凯浠?= " + std::to_string(facts.iteration_count)
++            + (facts.converged ? "锛堝凡鏀舵暃锛? : "锛堟湭鏀舵暃锛?)
++                   ? "锛涘亸宸?鈮?" + std::to_string(*facts.deviance) : "")
++            + (facts.aic.has_value() ? "锛汚IC 鈮?" + std::to_string(*facts.aic) : "")
++            + "銆傜郴鏁版樉钁楁€у彧鎻忚堪璁℃暟鍧囧€间笌棰勬祴鍙橀噺鐨勫叧鑱旇瘉鎹€?);
++            "鏈疆鏃犺礋浜岄」/闆惰啫鑳€/鍋忕Щ鍒楋紱闈?Minitab golden銆?);
++            "Isolation Forest锛歂 = " + std::to_string(facts.n)
++            + "锛屽彉閲?= " + std::to_string(facts.variable_count)
++            + "锛屾爲鏁?= " + std::to_string(facts.tree_count)
++            + "锛屾爣璁板紓甯?= " + std::to_string(facts.anomaly_count)
++                   ? ("锛涘垎鏁伴槇鍊?鈮?" + std::to_string(*facts.score_threshold))
++            + "銆傚垎鏁伴珮鍙彁绀虹浉瀵瑰绔嬶紝涓庡崟鍙橀噺 outlier_test 鍒嗘祦锛屼笉鑳藉啓鎴愬伐鑹哄垽瀹氥€?);
++            "鑷爺瀹炵幇锛涢潪 sklearn 杩愯鏃讹紱闈?TreeNet/RF銆?);
++            "Bootstrap 鍧囧€硷紙" + facts.method + "锛夛細N = " + std::to_string(facts.n)
++            + "锛孊 = " + std::to_string(facts.replicates)
++                   ? ("锛涘潎鍊?鈮?" + std::to_string(*facts.sample_mean)) : "")
++                   ? ("锛汣I 鈮?[" + std::to_string(*facts.ci_lower) + ", "
++            + "銆傚尯闂村彧鎻忚堪閲嶆娊鏍蜂笉纭畾鎬с€?);
++        limitations.bullets.push_back("鏈疆涓虹櫨鍒嗕綅娉曪紝闈?BCa銆?);
++            "灞傛鑱氱被锛? + facts.linkage + "锛夛細N = " + std::to_string(facts.n)
++            + "锛宬 = " + std::to_string(facts.cluster_count)
++            + "锛屽悎骞舵 = " + std::to_string(facts.merge_count)
++            + (facts.standardized ? "锛涘凡鏍囧噯鍖? : "锛涙湭鏍囧噯鍖?)
++            + "銆傜皣鏍囩鍙弿杩扮浉瀵归偦杩戠粨鏋勩€?);
++            "鏈疆浠?complete linkage锛涢潪 K-Means锛涢潪 Minitab golden銆?);
++            "鏈夊簭 Logistic锛堟瘮渚嬩紭鍔?logit锛夛細N = " + std::to_string(facts.n)
++            + "锛屾按骞?= " + std::to_string(facts.category_count)
++            + "锛岄娴嬪彉閲?= " + std::to_string(facts.predictor_count)
++            + (facts.converged ? "锛涘凡鏀舵暃" : "锛涙湭鏀舵暃")
++            + (facts.aic.has_value() ? ("锛汚IC 鈮?" + std::to_string(*facts.aic)) : "")
++            + "銆傜郴鏁版弿杩版湁搴忕疮绉鏁颁紭鍔跨殑鍏宠仈璇佹嵁銆?);
++        limitations.bullets.push_back("鏈疆浠?logit 閾撅紱闈炲悕涔?Logistic锛涢潪 Minitab golden銆?);
++            "绾挎€у垽鍒細N = " + std::to_string(facts.n)
++            + "锛岀被鏁?= " + std::to_string(facts.class_count)
++            + "锛岄娴嬪彉閲?= " + std::to_string(facts.predictor_count)
++                   ? ("锛涜缁冨噯纭巼 鈮?" + std::to_string(*facts.train_accuracy))
++            + "銆傝缁冮泦鍑嗙‘鐜囦笉鑳藉鎺ㄤ负宸ヨ壓鍒ゅ畾銆?);
++        limitations.bullets.push_back("绛夊崗鏂瑰樊 LDA锛涗笉鍋?QDA锛涢潪 Minitab golden銆?);
++            "CCF锛歂 = " + std::to_string(facts.n)
++            + "锛宮ax|lag| = " + std::to_string(facts.max_lag)
++                   ? ("锛沴ag0 鈮?" + std::to_string(*facts.ccf_at_zero))
++            + "銆傝秺杩囧甫瀹藉彧鎻愮ず鐩稿鐙珛鎬ч浂鍋囪鐨勭浉鍏宠瘉鎹€?);
++        limitations.bullets.push_back("鐧藉櫔澹板浐瀹氬甫瀹斤紱闈為鐧藉寲锛涘疁涓?ACF/PACF 瀵圭収銆?);
++            "Correlogram锛? + facts.method + "锛夛細鍙橀噺鏁?= "
++            + "锛屾垚瀵规暟 = " + std::to_string(facts.pair_count)
++            + "銆傜儹鍥惧彧灞曠ず涓や袱鐩稿叧缁撴瀯銆?);
++        limitations.bullets.push_back("涓?correlation_plot 鍒嗘祦锛涢潪 Graph Builder銆?);
++            "閫愭鍥炲綊锛? + facts.method + "锛夛細N = " + std::to_string(facts.n)
++            + "锛屽€欓€?= " + std::to_string(facts.candidate_count)
++            + "锛岄€夊叆 = " + std::to_string(facts.selected_count)
++                   ? ("锛汻虏 鈮?" + std::to_string(*facts.r_squared))
++            + "銆傞€夊叆椤瑰彧鎻忚堪鐩稿鎷熷悎璇佹嵁銆?);
++            "伪 閫愭锛涢潪 Best subsets锛涢€夋嫨涓嶇ǔ瀹氭椂鍕垮鎺ㄣ€?);
++            "鍖洪棿鍒犲け KM锛圱urnbull锛夛細N = " + std::to_string(facts.n)
++            + "锛屽乏/鍖洪棿/鍙?= "
++                   ? ("锛涗腑浣嶅鍛?鈮?" + std::to_string(*facts.median_life))
++                   : "锛涗腑浣嶅鍛芥湭浼板嚭")
++            + "銆?);
++            "Turnbull NPMLE锛堢畝鍖栫綉鏍硷級锛沞vidence_type="
++            + facts.evidence_type + "锛沘lgorithm_id=" + facts.algorithm_id
++            + "锛涢潪鍙冲垹澶?product-limit锛涢潪鍙傛暟瀵垮懡妯″瀷锛涗笉寰楀啓鎴?vendor_oracle/golden銆?);
++                "鏈壒瑙傛祴鍧囦负绮剧‘澶辨晥锛堟棤宸?鍖洪棿/鍙冲垹澶憋級锛涗粛璧板尯闂?NPMLE 璺緞锛?
++                "涓嶈嚜鍔ㄧ瓑浠锋浛鎹负缁忓吀鍙冲垹澶?KM 鎶ュ憡銆?);
++            "Plackett鈥揃urman锛氬洜瀛?= " + std::to_string(facts.factor_count)
++            + "锛岃繍琛?= " + std::to_string(facts.run_count)
++            + "锛屼腑蹇冪偣 = " + std::to_string(facts.center_point_count)
++            + "銆傝璁＄煩闃典粎渚涚瓫閫夊疄楠屾帓甯冦€?);
++        limitations.bullets.push_back("鍒嗚鲸鐜?III锛涢潪 CCD/BBD锛涢潪 Minitab golden銆?);
++                "Box鈥揃ehnken锛氬洜瀛?= " + std::to_string(facts.factor_count)
++                + "锛岃竟涓偣 = " + std::to_string(facts.edge_count)
++                + "锛屼腑蹇冪偣 = " + std::to_string(facts.center_count)
++                + "锛屾€昏繍琛?= " + std::to_string(facts.run_count)
++                + "銆備笉鍖呭惈鎵€鏈夊洜瀛愬悓鏃舵瀬绔殑瑙掔偣銆?);
++                "璇佹嵁绫诲瀷 formula_reference锛涙湭瀹ｇО鍏ㄥ煙棰勬祴鏈€浼橈紱闈?vendor_oracle銆?);
++                "CCD锛? + facts.ccd_variant + "锛夛細鍥犲瓙 = "
++                + "锛岀珛鏂圭偣 = " + std::to_string(facts.cube_count)
++                + "锛屾槦鐐?= " + std::to_string(facts.star_count)
++                + "锛屼腑蹇冪偣 = " + std::to_string(facts.center_count)
++                + "锛屛?= " + std::to_string(facts.alpha) + "銆?);
++                    "妫€娴嬪埌鏄熺偣瓒呭嚭鍘熷鍥犵礌鑼冨洿锛涢渶浜哄伐纭瀹為獙鍙鎬с€?);
++                "璇佹嵁绫诲瀷 formula_reference锛涢潪 vendor_oracle / 鍟嗕笟杞欢瀵归綈銆?);
++            "淇濅慨鎽樿锛歍_w = " + std::to_string(facts.warranty_time) + " "
++            + facts.time_unit + "锛屾毚闇查噺 = " + std::to_string(facts.exposure)
++            + "锛宑laims/1000 = " + std::to_string(facts.claims_per_1000)
++            + "锛堝彛寰?= " + facts.quantity_label + "锛夈€?);
++            "涓嶅緱鎶婄粺璁￠娴嬪啓鎴愭硶寰?璐ㄩ噺鎵胯锛涘垎姣嶄笌鏃堕棿绐楀彛蹇呴』涓€骞堕槄璇汇€?);
++            "璇佹嵁绫诲瀷 " + facts.evidence_type + "锛涢潪 vendor_oracle銆?);
++                    "宸叉寜 " + facts.stratum_kind + " 杩芥函 "
++                    + " 涓垎灞傚垎姣嶏紱閮ㄥ垎/鍏ㄩ儴鍒嗗眰 expected_failures 浣跨敤 "
++                      "cause-specific 鍒嗘ā寮?R(T_w)銆?);
++                    "鍒嗘ā寮?R 涓?cause-specific锛堢珵浜夊け鏁堜綔鍙冲垹澶憋級formula_reference锛?
++                    "涓嶆槸 vendor_oracle锛涗笉寰楀啓鎴愬晢涓氳蒋浠跺榻愩€?);
++                    "宸叉寜 " + facts.stratum_kind + " 杩芥函 "
++                    + " 涓垎灞傚垎姣嶏紱鍒嗗眰 expected_failures 浣跨敤姹犲寲 R(T_w)銆?);
++                    "鍒嗗眰鏈及璁″垎妯″紡鍙潬搴︼紙uses_pooled_reliability="
++                    + "锛夛紱姣斾緥鍒嗘憡鏆撮湶閲忛』鏍囨敞 proportional_scalar銆?);
++        text << "鍙樺紓鎬у浘鎸?" << facts.factor_count << " 涓洜瀛愭眹鎬?"
++             << facts.cell_count << " 涓崟鍏冦€? << facts.valid_count
++             << " 涓湁鏁堟祴閲忕殑鍧囧€间笌鏍囧噯宸?;
++            text << "锛屾€诲潎鍊?= " << *facts.overall_mean;
++            text << "锛屽崟鍏?StDev 骞冲潎 = " << *facts.mean_of_cell_sds;
++        text << "銆傚浘鍙敤浜庢帰绱㈠彉寮傜粨鏋勶紝涓嶆槸鏄捐憲鎬ф楠屾垨杩囩▼鍒ゅ畾銆?;
++            "鍏堢湅鍧囧€奸潰鏉夸腑鏋佸樊杈冨ぇ鐨勫崟鍏冿紝鍐嶅鐓ф爣鍑嗗樊闈㈡澘瀹氫綅绂绘暎搴︽潵婧愩€?);
++            "鍙樺紓鎬у浘涓?Multi-Vari 璇箟涓嶅悓锛氭湰鍛戒护杈撳嚭鍧囧€?鏋佸樊涓庢爣鍑嗗樊鍙岄潰鏉匡紝涓嶆浛浠?ANOVA銆?);
++                "宸茶烦杩?" + std::to_string(facts.missing_count)
++                + " 涓己澶辨垨涓嶅畬鏁磋銆?);
++        interval_text += "銆傚尯闂村彧鎻忚堪褰撳墠鏍锋湰瑕嗙洊锛屼笉鏄鏍艰鐩栨垨杩囩▼鍒ゅ畾銆?;
++            "缁撳悎鐩存柟鍥句笌鏂规硶鏃忚瘖鏂皟鏌ヨ鐩栧尯闂达紱闇€瑕佸鐓ц鏍兼椂浣跨敤杩囩▼鑳藉姏鍒嗘瀽銆?);
++                "闈炲弬鏁板宸緷璧栧簭缁熻涓庤繛缁垎甯冨亣璁撅紱achieved confidence 浣庝簬鐩爣鏃讹紝"
++                "鍙鏄庢牱鏈噺涓嶈冻锛屼笉鏄绠楅敊璇€?);
++                "鏈柟娉曞亣璁炬祴閲忚繎浼兼鎬佷笖鏈湪鏈〉楠岃瘉锛坅ssumption_status="
++                + "锛夛紱鍗曚晶浣跨敤 Natrella 杩戜技锛屽弻渚т娇鐢?Howe 杩戜技銆?);
++                                            ? "锛屼綆浜庨」鐩彁绀哄熀鍑?1.33锛岄渶瑕佽皟鏌ヨ繃绋嬭兘鍔涖€?
++                                            : "锛岃揪鍒伴」鐩彁绀哄熀鍑?1.33锛涜繖涓嶆槸宸查獙璇佺殑杩囩▼鍚堟牸缁撹銆?));
++                       ? "锛堢爺绌?棰勮鎸囨暟锛涢棬绂佺姝㈠啓鎴愯繃绋嬪悎鏍煎垽瀹氾級銆?
++                              ? "锛堥潪姝ｆ€?鍙樻崲璺緞锛涚姝㈠啓鎴愯繃绋嬪悎鏍煎垽瀹氾級銆?
++                              : "锛堢ǔ瀹氭€у墠缃湭楠屾敹锛涚姝㈠啓鎴愯繃绋嬪悎鏍煎垽瀹氾級銆?)));
++                                            ? "锛屾暣浣撹繃绋嬭〃鐜颁綆浜?1.33 鎻愮ず鍩哄噯銆?
++                                            : "锛屾暣浣撹繃绋嬭〃鐜拌揪鍒?1.33 鎻愮ず鍩哄噯銆?));
++                       ? "锛堢爺绌?棰勮鎸囨暟锛涢棬绂佺姝㈠啓鎴愯繃绋嬪悎鏍煎垽瀹氾級銆?
++                              ? "锛堥潪姝ｆ€?鍙樻崲璺緞锛涚姝㈠啓鎴愯繃绋嬪悎鏍煎垽瀹氾級銆?
++                              : "锛堢ǔ瀹氭€у墠缃湭楠屾敹锛涚姝㈠啓鎴愯繃绋嬪悎鏍煎垽瀹氾級銆?)));
++            + "锛泂tability_screen="
++            + "锛圤OC="
++            + "锛夛紱bimodality_screen="
++            + "锛坧eaks="
++            + "锛夛紱hartigan_dip="
++            + "锛圖="
++            + "锛夛紱mixture="
++            + "锛坘="
++            + "锛屛擝IC="
++            + "锛夛細I-MR Rule-1 / 鐩存柟鍥惧弻宄?/ Hartigan dip / 楂樻柉娣峰悎闂ㄧ绛涙煡涓嶇瓑浜庡畬鏁寸ǔ瀹氭€ф垨鍗曞嘲楠屾敹銆?);
++                    ? ("楂樻柉娣峰悎涓?preferred_kcomp锛坘="
++                       + "锛夛細鍗曚竴鍒嗗竷鑳藉姏鎸囨暟浠呬緵璋冩煡锛屼笉寰楀啓鎴愯繃绋嬪悎鏍硷紙formula_reference / "
++                         "gaussian_mixture_k_bic锛涢潪 vendor_oracle锛夈€?)
++                    : "浜岀淮楂樻柉娣峰悎涓?preferred_2comp锛氬崟涓€鍒嗗竷鑳藉姏鎸囨暟浠呬緵璋冩煡锛?
++                      "涓嶅緱鍐欐垚杩囩▼鍚堟牸锛坒ormula_reference / gaussian_mixture_k_bic锛涢潪 vendor_oracle锛夈€?);
++                "Hartigan dip 涓?evidence_against锛氬崟涓€鍒嗗竷鑳藉姏鎸囨暟浠呬緵璋冩煡锛?
++                "涓嶅緱鍐欐垚杩囩▼鍚堟牸锛坒ormula_reference锛涢潪 vendor_oracle锛夈€?);
++                "鍙屽嘲鍒濈瓫涓?suspected锛氬崟涓€鍒嗗竷鑳藉姏鎸囨暟浠呬緵璋冩煡锛?
++                "涓嶅緱鍐欐垚杩囩▼鍚堟牸锛堢洿鏂瑰浘鍒濈瓫 鈮?娣峰悎妯″瀷璇佹槑锛夈€?);
++            + "锛氬綋鍓嶄负鐮旂┒/棰勮锛岃瘉鎹被鍨?"
++            + "锛涙湭婊¤冻 golden/灏鹃儴楠屾敹鍓嶄笉寰楀紑鏀惧悎鏍煎垽瀹氥€?);
++            "鐗规畩鍘熷洜绛栫暐 = " + policy
++                   ? "锛堝瑙勫垯鎻愰珮鐏垫晱搴︿篃鎻愰珮璇姤椋庨櫓锛?
++                         ? "锛堥粯璁ゆ帴杩?Minitab 浠呫€屽崟鐐硅秴鍑?3蟽 鎺у埗闄愩€嶏級"
++                    "瑙勫垯銆? + (rule.name.empty() ? rule.id : rule.name) + "銆嶅凡瑙﹀彂"
++                           ? "銆?
++                           : ("锛? + rule.suggested_action)));
++            "鐗规畩鍘熷洜瑙勫垯璇佹嵁锛氬凡瑙﹀彂 " + std::to_string(triggered) + " / "
++            + " 鏉★紱璇﹁銆岀壒娈婂師鍥犺鍒欒瘉鎹€嶈〃锛堝惈 rule_id銆佺獥鍙ｃ€侀槇鍊间笌鐘舵€侊級銆?);
++            "EWMA 浠呭惎鐢ㄣ€屽崟鐐硅秴鍑?3蟽 鎺у埗闄愩€嶏紱鍏朵綑鐗规畩鍘熷洜瑙勫垯涓嶉€傜敤锛岃秴闄愮偣闇€缁撳悎鍘熷瑙傛祴璋冩煡銆?);
++            "CUSUM 浣跨敤绱鍜屽喅绛栭棿闅斾俊鍙凤紝涓嶅鐢?Shewhart 鐗规畩鍘熷洜瑙勫垯锛坆eyond_control_limit 绛夛級锛?
++            text << "鍗曟牱鏈?Z 妫€楠岋紙宸茬煡 蟽";
++            text << "锛?;
++                text << "锛孼 = " << *facts.z_statistic;
++                "Z 妫€楠岃姹傚凡鐭ユ€讳綋鏍囧噯宸笖姝ｆ€?澶ф牱鏈繎浼兼垚绔嬶紙assumption_status="
++                + facts.assumption_status + "锛夛紱鏍锋湰 StDev 浠呭睍绀猴紝涓嶅弬涓?Z/CI銆?);
++                "t 妫€楠屾鎬佷笌鐙珛鍋囪鏈獙璇侊紙assumption_status="
++                + facts.assumption_status + "锛夈€?);
++        text << (dixon ? "Dixon r10 寮傚父鍊兼楠? : "Grubbs 寮傚父鍊兼楠?);
++                    "P 鍊煎彧鎻忚堪涓庢鎬佸亣璁句笅鐨勪竴鑷存€э紝鍕垮綋浣滃垹鐐逛緷鎹紝涔熷嬁褰撴垚寮傚父宸叉牳瀹炪€?;
++                "Dixon r10 瑕佹眰杩戜技姝ｆ€併€佽嚦澶氫竴涓紓甯稿€硷紝涓?P 鍙兘涓轰复鐣屽€兼彃鍊艰繎浼?
++                "锛坅ssumption_status=" + facts.assumption_status + "锛夈€?);
++                "Grubbs 瑕佹眰杩戜技姝ｆ€佷笖鑷冲涓€涓紓甯稿€硷紙assumption_status="
++                + facts.assumption_status + "锛夈€?);
++                "鍗忔柟宸煩闃靛熀浜?complete-case 鏍锋湰鍗忔柟宸紱瀵硅绾夸负鍚勫彉閲忔柟宸€?);
++                "鍋忕浉鍏冲湪鎺у埗鍏朵綑鍙橀噺鍚庣粰鍑?Pearson 鍋忕郴鏁帮紱涓嶈兘鍐欐垚宸叉帓闄ゆ贩鏉傛垨宸茶瘉鏄庡洜鏋溿€?);
++            "浜岄」 OC 鏇茬嚎鎻忚堪鍦?n=" + std::to_string(facts.sample_size)
++            + "銆乧=" + std::to_string(facts.acceptance_number)
++            + " 璁″垝涓嬶紝涓嶅悓涓嶅悎鏍煎搧鐜?p 鐨勬帴鏀舵鐜?Pa(p)锛?
++              "OC 鐢ㄤ簬璇勪及鎶芥牱鏂规椋庨櫓锛屼笉鑳芥浛浠ｅ鍏蜂綋鎵规鐨勬帴鏀跺垽瀹氥€?);
++                + " 鍙弽鏄?AQL 椋庨櫓鐐癸紝涓嶆槸鐢熶骇鍒ゅ畾缁撹銆?);
++                + " 鍙弽鏄?RQL 椋庨櫓鐐癸紝涓嶆槸鎷掓敹璇佹槑銆?);
++                "鎵瑰ぇ灏?N = " + std::to_string(*facts.lot_size)
++                + " 浠呬綔鎽樿锛涙湰杞?OC 浠嶇敤浜岄」锛堟棤闄愭壒锛夎繎浼笺€?);
++            "ANOM 鍦?伪=" + std::to_string(facts.alpha)
++            + " 涓嬫瘮杈冨悇缁勫潎鍊间笌鎬讳綋鍧囧€硷紱瓒呭嚭 UDL/LDL 鐨勭粍鏁?= "
++            + "銆傝繖鏍囪鍊煎緱杩涗竴姝ヨ皟鏌ョ殑缁勶紝涓嶈兘鍐欐垚缁勯棿鏃犲樊寮傛垨搴斿墧闄よ缁勩€?);
++            "鍐崇瓥闄愭柟娉?= " + facts.decision_limit_method
++            + "锛堟鎬佽繎浼硷級锛涗簩椤?娉婃澗璁℃暟涓嶉€傜敤鏈懡浠ゃ€?);
++            "I-MR 蟽 浼拌鏂规硶 = " + page.facts.spc->sigma_method
++                   ? ("锛汵elson estimate 鍓旈櫎杩囧ぇ MR "
++                      + std::to_string(page.facts.spc->nelson_excluded_ranges) + " 涓?)
++            + "銆傁?浼拌鍙樺寲鍙奖鍝嶆帶鍒堕檺瀹藉害锛屼笉鑳藉崟鐙啓鎴愮ǔ瀹氱粨璁恒€?);
++                "鎺у埗闄愪娇鐢ㄤ簡鍘嗗彶 渭/蟽锛涘垎闃舵浼拌琛ㄤ粎渚涘鐓э紝涓嶄細鑷姩鏀瑰啓鍏ㄥ眬闄愩€?);
++                "宸叉寜闃舵鍒楁眹鎬讳及璁★紙闃舵鏁?= "
++                + "锛夛紱褰撳墠杈撳嚭浠嶄娇鐢ㄥ叏鏍锋湰浼拌闄愶紝涓嶆槸閫愰樁娈电嫭绔嬫帶鍒跺浘銆?);
++        std::string chart_label = "Hotelling T虏";
++            chart_label = "骞夸箟鏂瑰樊 |S|";
++            + "锛歮 = " + std::to_string(facts.observation_count)
++            + "锛宲 = " + std::to_string(facts.variable_count)
++                   ? ("锛屽瓙缁勬暟 = " + std::to_string(facts.subgroup_count))
++            + "锛岃秴闄?= " + std::to_string(facts.out_of_control_count)
++            + "銆傝秴闄愭槸缁熻淇″彿鎻愮ず锛岄渶瑕佺粨鍚堝伐鑹鸿皟鏌ワ紝涓嶈兘鍗曠嫭鍐欐垚澶辨帶鎴栫ǔ瀹氱粨璁恒€?
++                   ? " 鏈浘涓嶆槸 PCA 缁忛獙鍒嗕綅 T虏銆?
++                          ? " 榛樿 UCL 鍙兘鏄笎杩戣繎浼硷紝涓嶆槸 ARL 浠跨湡鏍″噯銆?
++                          : " Montgomery |S| 瀛愮粍鍥撅紱涓綋璺緞涓?NIST 浜夎璇存槑瑙佽瘖鏂€?)));
++            "杩愯鍥?N = " + std::to_string(facts.n)
++                   ? "锛屼腑浣嶆暟 = " + std::to_string(*facts.median) : "")
++            + "锛涘叧浜庝腑浣嶆暟娓哥▼ = " + std::to_string(facts.runs_about_median)
++            + "锛屼笂鍗?涓嬮檷娓哥▼ = " + std::to_string(facts.runs_up_down)
++            + "銆傚洓妯″紡 P 鍙彁绀虹浉瀵归殢鏈烘€х殑鍋忕鏂瑰悜锛屼笉鑳藉啓鎴愬凡璇佹槑杩囩▼鍙楁帶鎴栧け鎺с€?);
++                "瀵圭収 P clustering / mixtures / trends / oscillation 涓庣幇鍦烘椂搴忥紝"
++                "灏?P 鍙〃绀鸿妯″紡鏂瑰悜涓婄殑鍋忕璇佹嵁銆?);
++            "鍖哄煙鍥?Jaehn 绱寰楀垎杈惧埌闃堝€?"
++            + std::to_string(facts.signal_threshold) + " 鐨勭偣鏈?"
++            + " 涓紱杩欐槸缁熻淇″彿鎻愮ず锛岄渶瑕佽皟鏌ョ壒娈婂師鍥狅紝"
++            "涓嶈兘灏嗙粺璁′俊鍙风洿鎺ョ瓑鍚屼簬杩囩▼澶辨帶鍒ゅ畾鎴栫ǔ瀹氱粨璁恒€?);
++            "鍖哄煙鍥鹃噰鐢?Jaehn 1/2/4 璁″垎锛坒ormula_reference锛夛紝"
++            "涓嶆槸瀹屾暣 Shewhart 鐗规畩鍘熷洜瑙勫垯锛坆eyond_control_limit 绛夛級鐨勬浛浠ｅ搧銆?);
++            "Z-MR 鍥?N = " + std::to_string(facts.n)
++            + "锛岀粍鏁?= " + std::to_string(facts.group_count)
++            + "锛孼 鍥捐秴闄?= " + std::to_string(facts.z_out_of_control_count)
++            + "锛涚煭娴佺▼鏍囧噯鍖栦緷璧?"
++            + (facts.used_sample_parameters ? "鏍锋湰浼拌 渭/蟽" : "鍘嗗彶 渭/蟽")
++            + "锛岃秴闄愮偣闇€瑕佽皟鏌ワ紝涓嶈兘鐩存帴褰撲綔杩囩▼澶辨帶鎴栫ǔ瀹氱粨璁恒€?);
++                "鏈彁渚涘畬鏁村巻鍙?渭/蟽 琛紱鏈疆鐢ㄥ悇缁勬牱鏈潎鍊间笌鍏ㄥ簭鍒?MR/d2 浼拌 蟽銆?);
++            "绉诲姩骞冲潎鍥剧獥瀹?w = " + std::to_string(facts.window)
++            + "锛屻€屽崟鐐硅秴鍑?3蟽 鎺у埗闄愩€嶈Е鍙?= " + std::to_string(facts.out_of_control_count)
++            + "锛汳A 骞虫粦鍚庣殑鍑洪檺鏄俊鍙锋彁绀猴紝闇€瑕佺粨鍚堝伐鑹鸿皟鏌ワ紝"
++            "涓嶈兘灏嗙粺璁′俊鍙风洿鎺ョ瓑鍚屼簬杩囩▼澶辨帶鍒ゅ畾鎴栫ǔ瀹氱粨璁恒€?);
++            "绉诲姩骞冲潎鍥句笌 EWMA 涓嶅悓锛涗粎瀹屾暣绐?MA 鐐瑰弬涓庡垽璇伙紝"
++            "涓嶆槸 Minitab golden銆?);
++            "ACF/PACF 鍩轰簬 N = " + std::to_string(facts.n)
++            + "锛屾渶澶ф粸鍚?= " + std::to_string(facts.max_lag)
++            + "锛涢粯璁ょ疆淇″甫鏂规硶 = " + facts.confidence_band_method
++                   ? ("锛屽崐瀹?鈮?" + std::to_string(*facts.band_half_width))
++            + "銆傝秺杩囧甫瀹藉彧鎻愮ず鐩稿鐧藉櫔澹伴浂鍋囪鐨勭浉鍏宠瘉鎹紝涓嶈兘鍐欐垚杩囩▼澶辨帶鍒ゅ畾銆?);
++            "榛樿甯﹀鏄?NIST 鐧藉櫔澹板浐瀹?卤z/鈭歯锛堢嫭绔嬫€ф楠岋級锛?
++            "涓嶆槸 ARIMA 璇嗗埆鐢ㄧ殑 Bartlett 鍙樺甫瀹斤紱浜﹂潪 Minitab golden銆?);
++                "Ljung鈥揃ox P 鈮?" + std::to_string(*facts.ljung_box_p_value)
++                + "锛涘皬 P 鎻愮ず搴忓垪瀛樺湪鎬讳綋鑷浉鍏崇粨鏋勶紝搴旂粨鍚?ACF/PACF 鍥句笌宸ヨ壓鏃跺簭瑙ｉ噴銆?);
++                "瀵嗗害鍥撅細N = " + std::to_string(eda.n)
++                       ? "锛汼ilverman 甯﹀ h = " + std::to_string(*eda.bandwidth)
++                + "銆傛洸绾挎槸骞虫粦浼拌锛屼笉鑳芥嵁姝ゅ啓鎴愭鎬佹€х粨璁恒€?);
++                "浜岀淮鍒嗙锛歂 = " + std::to_string(eda.n) + "锛涙牸 = "
++                + std::to_string(eda.x_bins) + "脳" + std::to_string(eda.y_bins)
++                + "锛堢煩褰㈡牸锛屼骇鍝佸悕 Hexbin锛夈€?);
++                "灏忔彁鐞村浘锛氱粍鏁?= " + std::to_string(eda.category_count)
++                + "锛涘舰鐘舵潵鑷垎缁?KDE锛岀绾夸负浜旀暟鎽樿銆?);
++                "閫氱敤鏉″舰鍥撅細绫诲埆鏁?= " + std::to_string(eda.category_count)
++                + "锛涙湭鎸夎鏁版帓搴忥紝鏃犵疮绉櫨鍒嗘瘮锛堜笌鏌忔媺鍥惧垎娴侊級銆?);
++                "NIST EDA 鍥涘浘锛歂 = " + std::to_string(eda.n)
++                + "锛涘悓椤靛寘鍚?run sequence銆乴ag-1銆乭istogram銆乶ormal probability銆?
++                "鍥涘浘鐢ㄤ簬妫€鏌ヤ綅缃?鏁ｅ竷/闅忔満鎬?鍒嗗竷褰㈡€佸亣璁撅紝涓嶈兘鍐欐垚鍙楁帶缁撹鎴栨鎬佸凡鎴愮珛銆?);
++                "鍙楁帶鍒嗛潰锛氶潰鏉?= " + std::to_string(eda.facet_panel_count)
++                + "锛坢ax=" + std::to_string(eda.facet_max_panels) + "锛?
++                       ? "锛涘凡鎴柇 " + std::to_string(eda.facet_truncated_levels) + " 涓按骞?
++                + "銆傚垎闈㈡槸澶氶潰鏉跨紪鎺掞紝涓嶆槸鑷敱鎷肩増锛沚y/鍒嗙粍浠嶆槸鍥惧唴鐫€鑹层€?);
++            "EDA 鍥剧敤浜庢帰绱㈠舰鎬佷笌棰戞暟锛屼笉鏄亣璁炬楠岀粨璁恒€?);
++            "鍥犳灉鍥炬晥搴斾负鈥? + facts.effect + "鈥濓紝鍏?"
++            + std::to_string(facts.category_count) + " 涓被鍒€?
++            + " 鏉″師鍥犮€傝繖鏄粨鏋勫寲澶磋剳椋庢毚鎽樿锛屼笉鏄粺璁℃楠岋紝"
++            "涓嶈兘鍐欐垚宸茶瘉鏄庢牴鍥犮€?);
++            "鑻ヨ姣旇緝鍘熷洜棰戞浼樺厛绾э紝璇锋敼鐢ㄦ煆鎷夊浘骞剁粨鍚堢幇鍦洪獙璇併€?);

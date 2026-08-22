@@ -90,6 +90,8 @@ struct HeatmapPlotResult {
     std::vector<std::string> column_labels;
     std::vector<std::vector<double>> values;
     std::vector<std::vector<std::size_t>> counts;
+    // Parallel to values[row][col]: worksheet rows aggregated into that cell.
+    std::vector<std::vector<std::vector<std::size_t>>> cell_source_rows;
     double color_min = -1.0;
     double color_max = 1.0;
     std::vector<DiagnosticMessage> diagnostics;
@@ -116,6 +118,7 @@ struct PiePlotResult {
     std::vector<std::string> labels;
     std::vector<double> values;
     std::vector<double> percents;
+    std::vector<std::vector<std::size_t>> member_source_rows;
     std::vector<DiagnosticMessage> diagnostics;
 };
 
@@ -195,6 +198,7 @@ ContourPlotResult contour_plot(
 PiePlotResult pie_plot(
     const std::vector<std::string>& categories,
     const std::vector<double>& weights,
-    double other_threshold_percent = 5.0);
+    double other_threshold_percent = 5.0,
+    const std::vector<std::size_t>& source_rows = {});
 
 }  // namespace datalab::domain::statistics

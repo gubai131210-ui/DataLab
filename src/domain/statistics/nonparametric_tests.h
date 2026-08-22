@@ -283,4 +283,54 @@ bool resolve_binary_label(
     const std::map<std::string, bool>& level_to_positive,
     bool& out);
 
+enum class RunsCriterionKind {
+    mean,
+    median,
+    value
+};
+
+struct RunsTestResult {
+    double criterion = 0.0;
+    RunsCriterionKind criterion_kind = RunsCriterionKind::mean;
+    std::size_t n = 0;
+    std::size_t above = 0;
+    std::size_t below_or_equal = 0;
+    std::size_t observed_runs = 0;
+    std::optional<double> expected_runs;
+    std::optional<double> variance;
+    std::optional<double> z_statistic;
+    std::optional<double> p_value;
+    bool small_sample_warning = false;
+    std::string approximation = "normal";
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// One-column numeric sequence (already filtered). Equals count as below_or_equal.
+RunsTestResult runs_test(
+    const std::vector<double>& values,
+    RunsCriterionKind criterion_kind = RunsCriterionKind::mean,
+    std::optional<double> criterion_value = std::nullopt);
+
+struct RunChartResult {
+    double median = 0.0;
+    std::size_t n = 0;
+    std::size_t above_median = 0;
+    std::size_t below_or_equal_median = 0;
+    std::size_t runs_about_median = 0;
+    std::size_t longest_run_about_median = 0;
+    std::optional<double> expected_runs_about_median;
+    std::size_t runs_up_down = 0;
+    std::size_t longest_run_up_down = 0;
+    std::optional<double> expected_runs_up_down;
+    std::optional<double> p_clustering;
+    std::optional<double> p_mixtures;
+    std::optional<double> p_trends;
+    std::optional<double> p_oscillation;
+    bool ties_break_direction = false;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// Median center line; points on median count as below (Minitab).
+RunChartResult run_chart_analysis(const std::vector<double>& values);
+
 }  // namespace datalab::domain::statistics

@@ -1,0 +1,4 @@
+﻿wrote D:\QT_CppPrograms\DataLab\scripts\_tmp_next_slice_roi_out.txt
+uniq=241 top_fam=[('misc', 163), ('inference', 17), ('spc', 11), ('reliability', 11), ('msa', 8)]
+best_interp=286 n=25 L2364-2453
+best_chrome=0 n=0 

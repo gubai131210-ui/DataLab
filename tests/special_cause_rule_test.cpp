@@ -81,6 +81,7 @@ void SpecialCauseRuleTest::applicableRulesMatchChartKind()
     QCOMPARE(applicable_special_cause_tests(ControlChartKind::ewma),
              (std::vector<int>{1}));
     QVERIFY(applicable_special_cause_tests(ControlChartKind::cusum).empty());
+    QVERIFY(applicable_special_cause_tests(ControlChartKind::zone).empty());
     QCOMPARE(default_special_cause_tests(ControlChartKind::xbar).size(), std::size_t{8});
 }
 
@@ -106,6 +107,16 @@ void SpecialCauseRuleTest::defaultAllApplicableUnlessExplicit()
     SpecialCauseSelection cleared;
     cleared.policy = "explicit";
     QVERIFY(resolve_special_cause_tests(cleared, ControlChartKind::attribute).empty());
+
+    SpecialCauseSelection minitab_like;
+    minitab_like.policy = "minitab_like";
+    QCOMPARE(resolve_special_cause_tests(minitab_like, ControlChartKind::individuals),
+             (std::vector<int>{1}));
+
+    SpecialCauseSelection all_applicable;
+    all_applicable.policy = "all_applicable";
+    QCOMPARE(resolve_special_cause_tests(all_applicable, ControlChartKind::individuals).size(),
+             std::size_t{8});
 }
 
 void SpecialCauseRuleTest::filtersInapplicableRules()

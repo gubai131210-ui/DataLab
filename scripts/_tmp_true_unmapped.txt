@@ -1,0 +1,78 @@
+sw_prefixes=213 exact=1481
+interp_start_candidates=161 uncovered_starts=32 covered=129
+direct_push_unique=61 uncovered_direct=6
+fixed_diags_unique=20
+
+=== DIAG BY FAMILY ===
+
+## capability n=7
+  src/domain/statistics/process_capability.cpp:60	LSL 必须为有限数。
+  src/domain/statistics/process_capability.cpp:65	USL 必须为有限数。
+  src/domain/statistics/process_capability.cpp:81	过程均值必须为有限数。
+  src/domain/statistics/process_capability.cpp:611	组间/组内能力需要有效数值观测。
+  src/domain/statistics/quality_extensions.cpp:115	样本量 n 必须 ≥ 1。
+  src/domain/statistics/quality_extensions.cpp:190	无法估计组内方差。
+  src/domain/statistics/quality_extensions.cpp:196	组内标准差为 0。
+
+## analysis_service_prefix n=6
+  src/application/analysis_service.cpp:2230	单样本 t：
+  src/application/analysis_service.cpp:2313	单样本 Z：
+  src/application/analysis_service.cpp:2423	双样本 t：
+  src/application/analysis_service.cpp:4682	能力分析: 
+  src/application/analysis_service.cpp:9665	响应优化预测：
+  src/application/analysis_service.cpp:14034	设计生成失败。
+
+## spc_control_charts n=3
+  src/domain/statistics/control_charts.cpp:1189	过程 σ 必须大于 0。
+  src/domain/statistics/control_charts.cpp:1295	无法估计 σ。
+  src/domain/statistics/control_charts.cpp:1375	无法估计过程 σ。
+
+## doe_rsm n=3
+  src/domain/statistics/response_surface_design.cpp:44	因素 ID 不能为空。
+  src/domain/statistics/response_surface_design.cpp:58	因素低/高水平必须有限。
+  src/domain/statistics/response_surface_design.cpp:201	alpha 必须为正有限数。
+
+## chart_graph n=1
+  src/application/chart_pages.cpp:187	没有可显示的数据。
+
+=== UNCOVERED INTERP STARTS ===
+L126	 下显著的项：
+L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+L689	 下，估计实际功效 = 
+L1075	（最小期望频数 = 
+L1320	（已标准化）
+L1320	（未标准化）
+L1534	（口径 = 
+L1587	 个因子汇总 
+L1589	 个有效测量的均值与标准差
+L1596	。图只用于探索变异结构，不是显著性检验或过程判定。
+L1631	。区间只描述当前样本覆盖，不是规格覆盖或过程判定。
+L1663	。未拒绝原假设不能证明方差相等。
+L1674	Levene（中位数）为稳健默认路径。
+L1701	。P 值只描述两组比例差异的证据强度，不是规格判定。
+L1715	。P 值只描述与假设比例的证据强度，不是规格判定。
+L1732	。概率图只是诊断，不能写成数据已正态。
+L1766	。P 值只描述与假设发生率的证据强度，不是规格判定。
+L1796	这只陈述界限关系，不能写成已证明等价。
+L2100	。这些标准差只描述当前子组分解，不是规格判定。
+L2141	。P 值与置信区间只描述当前样本证据，统计显著不等于工程差异具有实际重要性，也不是过程合格判定。
+L2159	 正态性检验判定为 
+L2167	。在 alpha 下未拒绝正态假设，不能写成数据已正态。
+L2169	。证据反对正态假设，这不是规格判定。
+L2171	。统计量未计算，不能写成数据已正态。
+L2192	。在 α 下拒绝“无异常值”假设，嫌疑观测需工程调查，
+L2195	。未拒绝“无异常值”假设，不能证明数据中没有异常值。
+L2254	 下比较各组均值与总体均值；超出 UDL/LDL 的组数 = 
+L2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+
+=== UNCOVERED DIRECT PUSH ===
+L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+L2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；

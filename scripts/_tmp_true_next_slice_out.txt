@@ -1,0 +1,158 @@
+exact=1662 sw=207 find_marks=190 count_prefs=4 uncovered_bullets=10 params_u=93 titles_u=1 diags_u=3
+
+=== UNCOVERED BULLET TOPICS ===
+  3	other
+  2	msa
+  2	spc_mv
+  2	inference_corr_anova
+  1	reliability
+
+=== UNCOVERED BULLETS ===
+
+## other n=3
+  L290	；用于对照测量增量是否物理合理，不是公差合格证明。
+  L1938	；未拒绝正态假设不等于已证明正态分布。
+  L2075	规则「」已触发。：
+
+## msa n=2
+  L283	，分级 = 。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+  L311	；%Contribution 与 %Study Var 口径不同，不能混用。
+
+## spc_mv n=2
+  L2056	发现  个控制图超限点。
+  L2340	 Sigma Z = ，存在过度离散，传统控制限可能过窄。，控制限已按离散程度进行调整。
+
+## inference_corr_anova n=2
+  L2199	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  L2211	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+
+## reliability n=1
+  L525	可靠性结果当前不可识别，不能估计寿命分位数。可靠性结果不可识别（），不能估计寿命分位数。
+
+=== TITLES n=1 ===
+  src/application/graph_service.cpp:2109	Hexbin（分面）
+
+=== DIAGS n=3 ===
+  src/domain/statistics/doe_factorial.cpp:427	部分析因分辨度 
+  src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。
+  src/application/chart_pages.cpp:187	没有可显示的数据。
+
+=== PARAMS sample n=93 ===
+param families: misc:65, attrib_oc:8, prop:8, dist_id:3, anova:3, msa:3, doe:3
+
+## param/misc n=65
+  src/application/analysis_service.cpp:1792	    缺失值 N* = 
+  src/application/analysis_service.cpp:2097	    有效变量数 = 
+  src/application/analysis_service.cpp:2099	    偏相关 = 是
+  src/application/analysis_service.cpp:2428	双样本 t 检验跳过缺失或非法单元格；组 1 = 
+  src/application/analysis_service.cpp:2429	，组 2 = 
+  src/application/analysis_service.cpp:2756	    变换 = 
+  src/application/analysis_service.cpp:2757	    参考 = 
+  src/application/analysis_service.cpp:2801	    第二列 = 
+  src/application/analysis_service.cpp:3348	    预测变量 = 
+  src/application/analysis_service.cpp:3777	    假设比例 = 
+  src/application/analysis_service.cpp:3905	    假设发生率 = 
+  src/application/analysis_service.cpp:3994	    比较 = 
+  src/application/analysis_service.cpp:5635	，列水平数 = 
+  src/application/analysis_service.cpp:6028	；总体中位数 M = 
+  src/application/analysis_service.cpp:6319	    区组 = 
+  src/application/analysis_service.cpp:6968	    得分阈值 = 
+  src/application/analysis_service.cpp:7052	    Z 超限 = 
+  src/application/analysis_service.cpp:7122	    窗宽 w = 
+  src/application/analysis_service.cpp:7259	    预测期数 = 
+  src/application/analysis_service.cpp:7416	    选择准则 = 
+  src/application/analysis_service.cpp:7778	    预测变量数 = 
+  src/application/analysis_service.cpp:8371	    覆盖率 = 
+  src/application/analysis_service.cpp:8733	    周期 = 
+  src/application/analysis_service.cpp:8909	    模型 = 线性+交互+纯二次（编码单位）
+  src/application/analysis_service.cpp:8970	；设计族 = 
+  src/application/analysis_service.cpp:9516	    有效运行数 = 
+  src/application/analysis_service.cpp:9556	权重
+  src/application/analysis_service.cpp:9639	排序
+  src/application/analysis_service.cpp:9689	预测
+  src/application/analysis_service.cpp:10683	    暴露量合计 = 
+
+## param/attrib_oc n=8
+  src/application/analysis_service.cpp:714	分布 = 二项    子组数 = 
+  src/application/analysis_service.cpp:715	分布 = 泊松    子组数 = 
+  src/application/analysis_service.cpp:14418	分布 = 二项分布    p̄ = Σ不合格品数 / Σ检验数    
+  src/application/analysis_service.cpp:14478	分布 = 二项分布    np̄_i = n_i p̄    
+  src/application/analysis_service.cpp:14534	分布 = 泊松分布    c̄ = 缺陷数均值    
+  src/application/analysis_service.cpp:14574	分布 = 泊松分布    ū = Σ缺陷数 / Σ单位数    
+  src/application/analysis_service.cpp:15306	    Other 阈值 = 
+  src/application/analysis_service.cpp:15539	模型 = 二项 OC    n = 
+
+## param/prop n=8
+  src/application/analysis_service.cpp:2676	    目标 = 
+  src/application/analysis_service.cpp:2801	    第一列 = 
+  src/application/analysis_service.cpp:2851	    事件 = 
+  src/application/analysis_service.cpp:2852	    试验 = 
+  src/application/analysis_service.cpp:7777	    事件水平 = 
+  src/application/analysis_service.cpp:9556	目标
+  src/application/analysis_service.cpp:13100	    方法 = percentile
+  src/application/analysis_service.cpp:14100	    σ 方法 = 
+
+## param/dist_id n=3
+  src/application/analysis_service.cpp:1812	判定
+  src/application/analysis_service.cpp:4816	截断
+  src/application/analysis_service.cpp:7900	分布
+
+## param/anova n=3
+  src/application/analysis_service.cpp:3349	    有效观测 = 
+  src/application/analysis_service.cpp:7049	    分组 = （单过程）
+  src/application/analysis_service.cpp:8501	    分组列 = 
+
+## param/msa n=3
+  src/application/analysis_service.cpp:4801	    操作员 = 
+  src/application/analysis_service.cpp:9869	    过程变差(6σ) = 
+  src/application/analysis_service.cpp:11787	    操作者数 = 
+
+## param/doe n=3
+  src/application/analysis_service.cpp:8907	    因子数 = 
+  src/application/doe_pages.cpp:589	    分辨度 = 
+  src/application/doe_pages.cpp:695	    变体 = 
+
+
+=== PACK SIZES ===
+inference_pack=2
+quality_attrib_pack=10
+msa_pack=2
+doe_pack=0
+
+inference_pack_dedup=2
+quality_attrib_pack_dedup=14
+hybrid_all_uncovered=10
+
+=== CANDIDATE PACKS ===
+
+### quality_attrib_oc_pareto_laney n=14
+  interp	src/application/interpretation_service.cpp:2056	发现  个控制图超限点。
+  interp	src/application/interpretation_service.cpp:2340	 Sigma Z = ，存在过度离散，传统控制限可能过窄。，控制限已按离散程度进行调整。
+  param	src/application/analysis_service.cpp:714	分布 = 二项    子组数 = 
+  param	src/application/analysis_service.cpp:715	分布 = 泊松    子组数 = 
+  param	src/application/analysis_service.cpp:14418	分布 = 二项分布    p̄ = Σ不合格品数 / Σ检验数    
+  param	src/application/analysis_service.cpp:14478	分布 = 二项分布    np̄_i = n_i p̄    
+  param	src/application/analysis_service.cpp:14534	分布 = 泊松分布    c̄ = 缺陷数均值    
+  param	src/application/analysis_service.cpp:14574	分布 = 泊松分布    ū = Σ缺陷数 / Σ单位数    
+  param	src/application/analysis_service.cpp:15306	    Other 阈值 = 
+  param	src/application/analysis_service.cpp:15539	模型 = 二项 OC    n = 
+  chrome	src/application/analysis_service.cpp:15136	检查假设
+  chrome	src/application/analysis_service.cpp:15471	    原因数 = 
+  chrome	src/application/analysis_service.cpp:15483	原因
+  chrome	src/application/analysis_service.cpp:15486	 — 类别原因计数
+
+### inference_corr_anova_adf_dw n=2
+  interp	src/application/interpretation_service.cpp:2199	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  interp	src/application/interpretation_service.cpp:2211	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+
+### hybrid_interp_honesty_leftovers n=10
+  interp	src/application/interpretation_service.cpp:2199	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  interp	src/application/interpretation_service.cpp:2211	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+  interp	src/application/interpretation_service.cpp:283	，分级 = 。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+  interp	src/application/interpretation_service.cpp:311	；%Contribution 与 %Study Var 口径不同，不能混用。
+  interp	src/application/interpretation_service.cpp:525	可靠性结果当前不可识别，不能估计寿命分位数。可靠性结果不可识别（），不能估计寿命分位数。
+  interp	src/application/interpretation_service.cpp:290	；用于对照测量增量是否物理合理，不是公差合格证明。
+  interp	src/application/interpretation_service.cpp:1938	；未拒绝正态假设不等于已证明正态分布。
+  interp	src/application/interpretation_service.cpp:2056	发现  个控制图超限点。
+  interp	src/application/interpretation_service.cpp:2075	规则「」已触发。：
+  interp	src/application/interpretation_service.cpp:2340	 Sigma Z = ，存在过度离散，传统控制限可能过窄。，控制限已按离散程度进行调整。

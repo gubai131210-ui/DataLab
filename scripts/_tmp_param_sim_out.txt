@@ -1,0 +1,67 @@
+cap_tokens=7 param_tokens=145
+sites=134 leaky_sites=10
+
+TOP REMAINING FRAGMENTS
+  2	组数
+  1	比例
+  1	EMP；非全量
+  1	零件
+  1	操作员
+  1	（平衡三因子随机；非全量
+  1	；总体中位数
+  1	误差Model
+  1	趋势Model
+  1	迭代
+  1	标准化
+  1	中位数
+  1	（信息）
+
+LEAKY SITES (sample)
+
+analysis_service.cpp:4537
+  BEFORE: 分类列 =     比例 = 
+  AFTER:  Category column =     比例 = 
+
+analysis_service.cpp:4922
+  BEFORE: 测量值 =     零件 =     操作员 =     （Wheeler EMP；非全量 Expanded Gage）
+  AFTER:  Measurement =     Part =     Operator =     （Wheeler EMP；非全量 Expanded Gage）
+
+analysis_service.cpp:5016
+  BEFORE: 测量值 =     零件 / 操作员 /     （平衡三因子随机；非全量 GLM）
+  AFTER:  Measurement =     零件 / 操作员 /     （平衡三因子随机；非全量 GLM）
+
+analysis_service.cpp:6027
+  BEFORE: 测量值 = ；总体中位数 M = 
+  AFTER:  Measurement = ；总体中位数 M = 
+
+analysis_service.cpp:12026
+  BEFORE: 变量 =     周期 =     误差模型 =     趋势模型 =     有效观测 = 
+  AFTER:  Variable =     Period =     误差Model =     趋势Model =     Valid observations = 
+
+analysis_service.cpp:12461
+  BEFORE:     迭代 =     标准化
+  AFTER:      迭代 =     标准化
+
+analysis_service.cpp:15014
+  BEFORE: 变量:     组数 =     分箱规则 = 
+  AFTER:  Variable:     组数 =     Binning rule = 
+
+analysis_service.cpp:15237
+  BEFORE: 变量:     须线 = Tukey 1.5×IQR    组数 = 
+  AFTER:  Variable:     Whiskers = Tukey 1.5×IQR    组数 = 
+
+analysis_service.cpp:15372
+  BEFORE:     中位数 = 
+  AFTER:      中位数 = 
+
+analysis_service.cpp:15539
+  BEFORE: 模型 = 二项 OC    n = （信息）
+  AFTER:  Model = Binomial OC    n = （信息）
+
+
+TITLE_LEAKS 5
+  analysis_service.cpp:2187	 与 
+  analysis_service.cpp:14684	需要单位数列。
+  chart_pages.cpp:187	没有可显示的数据。
+  chart_pages.cpp:215	逐子组统计
+  chart_pages.cpp:280	没有可显示的数据。

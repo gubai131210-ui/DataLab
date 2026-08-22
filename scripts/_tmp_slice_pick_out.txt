@@ -1,0 +1,126 @@
+exact=1583 sw=204 uncovered_interp_lits=368 unmapped_chrome=1 unmapped_diags=3
+
+=== INTERP BY FUNC (top) ===
+
+## InterpretationService n=286
+  L864 [lit] 统计结论
+  L865 [lit] 工程建议
+  L866 [lit] 限制与数据质量
+  L879 [lit] ；项数 = 
+  L887 [lit] （仅描述相对大小，不是工程最优）。
+  L901 [lit] ；编码模式 = 
+  L914 [lit] ；失拟 DF = 
+  L919 [lit] ）；证据类型 formula_reference，不是 vendor_oracle。
+  L978 [lit] ，缺失 N* = 
+  L980 [lit] ，均值为 
+  L981 [lit] 。描述统计不检验分布假设，也不能写成过程合格。
+  L993 [lit] ，优势比 OR = 
+
+## add_doe_rules n=25
+  L126 [lit]  下显著的项：
+  L135 [push] 优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+  L136 [lit] 显著性本身不代表工程影响足够大。
+  L143 [lit] ；参考线方法为 
+  L145 [lit] 。条越过参考线只提供统计证据，不表示过程合格。
+  L168 [build] ；其余因子实际单位 hold：
+  L179 [build] （编码 
+  L184 [build] ；其余因子编码 hold=0：
+  L203 [lit] 等值线/曲面在编码 [-1,1] 空间求值；非轴因子默认 hold 编码 0，
+  L204 [lit] 也可按实际单位 hold；二水平模型无平方项，不能把曲面曲率当成已估计。
+  L209 [lit]  个因子、
+  L210 [lit]  个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。
+
+## add_msa_rules n=21
+  L287 [lit] ，分级 = 
+  L288 [lit] 。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+  L292 [lit] ；用于对照测量增量是否物理合理，不是公差合格证明。
+  L299 [lit] ，小于 5，提示测量系统分辨力需要调查。
+  L300 [lit] ；ndc 只描述当前研究中零件间变异相对 Gage 变异的分辨力。
+  L314 [lit] ；%Contribution 与 %Study Var 口径不同，不能混用。
+  L323 [lit] 按零件图展示各零件重复测量的离散程度；同一零件上点越集中表示重复性越小。
+  L324 [lit] 该图不单独判定量具是否合格。
+  L341 [lit]  个超限点，统计上存在失控信号。
+  L342 [push] 按时间顺序回查校准、环境、操作者和量具维护记录；
+  L343 [lit] 不要在特殊原因未排除前用该量具放行产品。
+  L367 [lit] ，低/高参考点偏倚 = 
+
+## add_reliability_rules n=21
+  L435 [lit]  个失效模式做 cause-specific 分模式拟合（scheme=
+  L440 [lit] 分模式可靠度为 formula_reference（竞争失效作右删失），
+  L441 [lit] 不是 vendor_oracle / golden；阈值模型与 pinned R 对齐仍未冻结。
+  L446 [lit]  个失效模式的 Aalen–Johansen 累计发生函数 CIF（algorithm=
+  L451 [lit] CIF 为 formula_reference（Aalen–Johansen），
+  L452 [lit] 不是 Fine-Gray 回归，也不是 cause-specific 可靠度或 vendor_oracle。
+  L462 [lit] ，项数=
+  L481 [lit] ，协变量=
+  L521 [lit] ）；不得伪造子分布风险比。
+  L529 [lit] ），不能估计寿命分位数。
+  L537 [lit] ，失效 
+  L539 [lit] ，删失 
+
+## add_limitations n=5
+  L77 [lit] 配置排除了 
+  L78 [lit]  行；结论只适用于纳入分析的数据。
+  L82 [lit] 配置隐藏了 
+  L83 [lit]  行；隐藏行仍计入分析口径，仅影响显示。
+  L84 [lit] 不得将 hidden 与 excluded 合并叙述。
+
+## add_power_rules n=4
+  L689 [lit]  下，估计实际功效 = 
+  L695 [lit] 、目标功效 = 
+  L698 [lit] ，对应样本量 n = 
+  L700 [lit] 。数值是假设条件下的计算值。
+
+## add_anova_rules n=4
+  L837 [lit] ，显著比较对数 = 
+  L838 [lit] ；区间含 0 不显著。同字母仅表示在本产品 Tukey 近似规则下未显著不同，
+  L839 [lit] 不能写成已证明相同。
+  L847 [lit]  个字母；字母来自成对显著矩阵，不改 Studentized Range 近似。
+
+## add_regression_rules n=2
+  L779 [lit]  只描述当前样本拟合程度，不能单独判定模型合格。
+  L796 [lit] ，提示共线性调查，不会自动删除预测变量。
+
+=== UNMAPPED CHROME ===
+  src/application/graph_service.cpp:2109	Hexbin（分面）
+
+=== UNMAPPED DIAGS (sample 80) ===
+
+## doe_factorial.cpp n=1
+  L427	部分析因分辨度 
+
+## special_cause_rule_catalog.cpp n=1
+  L242	 当前未触发。
+
+## analysis_service.cpp n=1
+  L14275	无法计算 I-MR-R/S 控制图。
+
+=== HONESTY / FULL PUSH UNCOVERED n=6 ===
+  L135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+  L268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+  L342	按时间顺序回查校准、环境、操作者和量具维护记录；
+  L370	将端点偏倚与产品公差和测量系统可接受界限比较；
+  L2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+  L2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+
+=== LEADING-PUNCT FRAGS n=195 (need parent template) ===
+  2	' 对；Grouping '
+  1	' 行；结论只适用于纳入分'
+  1	' 行；隐藏行仍计入分析口'
+  1	' 下显著的项：'
+  1	'；参考线方法为 '
+  1	'；其余因子实际单位 ho'
+  1	'（编码 '
+  1	'；其余因子编码 hold'
+  1	' 个因子、'
+  1	' 个中心点；实施时保持随'
+  1	'；运行数 = '
+  1	'；分辨度 = '
+  1	' 个响应（'
+  1	'；这是在编码 ±1 设计'
+  1	'，分级 = '
+  1	'；用于对照测量增量是否物'
+  1	'，小于 5，提示测量系统'
+  1	'；ndc 只描述当前研究'
+  1	'；%Contributi'
+  1	' 个超限点，统计上存在失'

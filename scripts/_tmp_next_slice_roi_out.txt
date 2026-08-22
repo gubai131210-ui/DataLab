@@ -1,0 +1,328 @@
+exact=1625 catalog_zh=1925 sw=207 ew=147
+uniq_unmapped=241
+
+=== BY FAMILY ===
+  163	misc
+  17	inference
+  11	spc
+  11	reliability
+  8	msa
+  6	doe_rsm
+  6	capability
+  5	regression
+  4	tables
+  3	eda_graph
+  3	skip_cc
+  3	forecast
+  1	nonparametric
+
+=== BY KIND ===
+  165	interp_dyn
+  55	interp_static
+  19	param
+  1	title
+  1	diag
+
+
+## misc n=163
+  param	src/application/analysis_service.cpp:2676	    目标 = 
+  param	src/application/analysis_service.cpp:2714	    方法 = 
+  param	src/application/analysis_service.cpp:2801	    第一列 = 
+  param	src/application/analysis_service.cpp:2851	    事件 = 
+  param	src/application/analysis_service.cpp:2914	    第一组 = 
+  param	src/application/analysis_service.cpp:7920	分布
+  param	src/application/analysis_service.cpp:8220	    有效观测 = 
+  param	src/application/analysis_service.cpp:8501	    分组列 = 
+  param	src/application/analysis_service.cpp:9869	    过程变差(6σ) = 
+  param	src/application/analysis_service.cpp:14418	分布 = 二项分布    p̄ = Σ不合格品数 / Σ检验数    
+  param	src/application/analysis_service.cpp:14478	分布 = 二项分布    np̄_i = n_i p̄    
+  param	src/application/analysis_service.cpp:14534	分布 = 泊松分布    c̄ = 缺陷数均值    
+  param	src/application/analysis_service.cpp:14574	分布 = 泊松分布    ū = Σ缺陷数 / Σ单位数    
+  param	src/application/analysis_service.cpp:15136	图
+  param	src/application/analysis_service.cpp:15306	    Other 阈值 = 
+  param	src/application/analysis_service.cpp:15539	模型 = 二项 OC    n = 
+  interp_static	src/application/interpretation_service.cpp:78	 行；结论只适用于纳入分析的数据。
+  interp_static	src/application/interpretation_service.cpp:83	 行；隐藏行仍计入分析口径，仅影响显示。
+  interp_static	src/application/interpretation_service.cpp:84	不得将 hidden 与 excluded 合并叙述。
+  interp_dyn	src/application/interpretation_service.cpp:126	 下显著的项：
+  interp_static	src/application/interpretation_service.cpp:136	显著性本身不代表工程影响足够大。
+  interp_dyn	src/application/interpretation_service.cpp:143	；参考线方法为 
+  interp_dyn	src/application/interpretation_service.cpp:168	；其余因子实际单位 hold：
+  interp_dyn	src/application/interpretation_service.cpp:179	（编码 
+  interp_dyn	src/application/interpretation_service.cpp:184	；其余因子编码 hold=0：
+  interp_dyn	src/application/interpretation_service.cpp:203	等值线/曲面在编码 [-1,1] 空间求值；非轴因子默认 hold 编码 0，
+  interp_static	src/application/interpretation_service.cpp:204	也可按实际单位 hold；二水平模型无平方项，不能把曲面曲率当成已估计。
+  interp_dyn	src/application/interpretation_service.cpp:209	 个因子、
+  interp_dyn	src/application/interpretation_service.cpp:218	；运行数 = 
+  interp_dyn	src/application/interpretation_service.cpp:220	；分辨度 = 
+  interp_dyn	src/application/interpretation_service.cpp:246	 个响应（
+  interp_static	src/application/interpretation_service.cpp:265	多响应冲突时优先核对各响应 Desirability 与权重；
+  interp_static	src/application/interpretation_service.cpp:266	确认性试验应覆盖总体 D 靠前且工程上可实施的组合。
+  interp_static	src/application/interpretation_service.cpp:268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；
+  interp_dyn	src/application/interpretation_service.cpp:287	，分级 = 
+  interp_static	src/application/interpretation_service.cpp:323	按零件图展示各零件重复测量的离散程度；同一零件上点越集中表示重复性越小。
+  interp_dyn	src/application/interpretation_service.cpp:462	，项数=
+  interp_dyn	src/application/interpretation_service.cpp:481	，协变量=
+  interp_static	src/application/interpretation_service.cpp:593	exp(μ + σ Φ⁻¹(p)) 给出。
+  interp_dyn	src/application/interpretation_service.cpp:698	，对应样本量 n = 
+
+## inference n=17
+  interp_static	src/application/interpretation_service.cpp:260	缺协方差或残差自由度不足，置信/预测区间不可用；
+  interp_dyn	src/application/interpretation_service.cpp:689	 下，估计实际功效 = 
+  interp_dyn	src/application/interpretation_service.cpp:695	、目标功效 = 
+  interp_dyn	src/application/interpretation_service.cpp:838	；区间含 0 不显著。同字母仅表示在本产品 Tukey 近似规则下未显著不同，
+  interp_static	src/application/interpretation_service.cpp:1094	这只说明当前配对表不支持该检验，不能写成前后比例已证明相同或不同。
+  interp_static	src/application/interpretation_service.cpp:1663	。未拒绝原假设不能证明方差相等。
+  interp_dyn	src/application/interpretation_service.cpp:1790	，区间落在等价界限内。
+  interp_static	src/application/interpretation_service.cpp:1791	，区间未落入等价界限内。
+  interp_dyn	src/application/interpretation_service.cpp:1820	响应优化在编码 ±1 空间枚举候选组合；缺协方差时置信/预测区间不可用，
+  interp_dyn	src/application/interpretation_service.cpp:2159	 正态性检验判定为 
+  interp_dyn	src/application/interpretation_service.cpp:2200	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  interp_dyn	src/application/interpretation_service.cpp:2213	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，
+  interp_static	src/application/interpretation_service.cpp:2214	不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+  interp_dyn	src/application/interpretation_service.cpp:2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+  interp_static	src/application/interpretation_service.cpp:2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；
+  interp_static	src/application/interpretation_service.cpp:2289	不能写成已证明无自相关或存在自相关。
+  interp_dyn	src/application/interpretation_service.cpp:2316	广义方差 |S|
+
+## spc n=11
+  diag	src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。
+  interp_dyn	src/application/interpretation_service.cpp:1879	超限点数
+  interp_static	src/application/interpretation_service.cpp:1992	）：I-MR Rule-1 / 直方图双峰 / Hartigan dip / 高斯混合门禁筛查不等于完整稳定性或单峰验收。
+  interp_static	src/application/interpretation_service.cpp:2110	CUSUM 使用累计和决策间隔信号，不套用 Shewhart 特殊原因规则（beyond_control_limit 等）；
+  interp_dyn	src/application/interpretation_service.cpp:2296	；Nelson estimate 剔除过大 MR 
+  interp_dyn	src/application/interpretation_service.cpp:2325	，超限 = 
+  interp_static	src/application/interpretation_service.cpp:2326	。超限是统计信号提示，需要结合工艺调查，不能单独写成失控或稳定结论。
+  interp_dyn	src/application/interpretation_service.cpp:2413	 个；这是统计信号提示，需要调查特殊原因，
+  interp_static	src/application/interpretation_service.cpp:2417	不是完整 Shewhart 特殊原因规则（beyond_control_limit 等）的替代品。
+  interp_dyn	src/application/interpretation_service.cpp:2425	，Z 图超限 = 
+  interp_dyn	src/application/interpretation_service.cpp:2443	移动平均图与 EWMA 不同；仅完整窗 MA 点参与判读，
+
+## reliability n=11
+  interp_dyn	src/application/interpretation_service.cpp:435	 个失效模式做 cause-specific 分模式拟合（scheme=
+  interp_dyn	src/application/interpretation_service.cpp:440	分模式可靠度为 formula_reference（竞争失效作右删失），
+  interp_dyn	src/application/interpretation_service.cpp:446	 个失效模式的 Aalen–Johansen 累计发生函数 CIF（algorithm=
+  interp_dyn	src/application/interpretation_service.cpp:451	CIF 为 formula_reference（Aalen–Johansen），
+  interp_dyn	src/application/interpretation_service.cpp:537	，失效 
+  interp_dyn	src/application/interpretation_service.cpp:539	，删失 
+  interp_dyn	src/application/interpretation_service.cpp:592	对数正态模型估计了右删失下的位置/尺度参数；分位寿命由 
+  interp_dyn	src/application/interpretation_service.cpp:632	 个时间点；删失数合计 
+  interp_dyn	src/application/interpretation_service.cpp:1487	本批观测均为精确失效（无左/区间/右删失）；仍走区间 NPMLE 路径，
+  interp_static	src/application/interpretation_service.cpp:1488	不自动等价替换为经典右删失 KM 报告。
+  interp_dyn	src/application/interpretation_service.cpp:1547	分模式 R 为 cause-specific（竞争失效作右删失）formula_reference，
+
+## msa n=8
+  interp_static	src/application/interpretation_service.cpp:324	该图不单独判定量具是否合格。
+  interp_static	src/application/interpretation_service.cpp:342	按时间顺序回查校准、环境、操作者和量具维护记录；
+  interp_static	src/application/interpretation_service.cpp:343	不要在特殊原因未排除前用该量具放行产品。
+  interp_dyn	src/application/interpretation_service.cpp:367	，低/高参考点偏倚 = 
+  interp_static	src/application/interpretation_service.cpp:370	将端点偏倚与产品公差和测量系统可接受界限比较；
+  interp_static	src/application/interpretation_service.cpp:371	回归关系不能替代跨操作者、跨部件的完整 Gage R&R。
+  interp_dyn	src/application/interpretation_service.cpp:393	斜率检验 p≤0.05，提示线性显著；应分别解读各参考水平的偏倚，
+  interp_dyn	src/application/interpretation_service.cpp:394	不宜只用平均偏倚。
+
+## doe_rsm n=6
+  param	src/application/doe_pages.cpp:589	    分辨度 = 
+  param	src/application/doe_pages.cpp:695	    变体 = 
+  interp_static	src/application/interpretation_service.cpp:135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；
+  interp_static	src/application/interpretation_service.cpp:210	 个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。
+  interp_static	src/application/interpretation_service.cpp:269	不要仅凭主效应图下结论。
+  interp_dyn	src/application/interpretation_service.cpp:914	；失拟 DF = 
+
+## capability n=6
+  interp_dyn	src/application/interpretation_service.cpp:2000	）：单一分布能力指数仅供调查，不得写成过程合格（formula_reference / 
+  interp_dyn	src/application/interpretation_service.cpp:2002	二维高斯混合为 preferred_2comp：单一分布能力指数仅供调查，
+  interp_dyn	src/application/interpretation_service.cpp:2008	Hartigan dip 为 evidence_against：单一分布能力指数仅供调查，
+  interp_dyn	src/application/interpretation_service.cpp:2014	双峰初筛为 suspected：单一分布能力指数仅供调查，
+  interp_static	src/application/interpretation_service.cpp:2034	组间/组内能力使用 σ_BW 计算 Cp/Cpk、样本标准差计算 Pp/Ppk；
+  interp_dyn	src/application/interpretation_service.cpp:2042	非正态 Z-score Pp/Ppk 依赖所选分布的 CDF；拟合未拒绝假设不等于已证明
+
+## regression n=5
+  interp_dyn	src/application/interpretation_service.cpp:1269	，Hosmer–Lemeshow 未计算
+  interp_dyn	src/application/interpretation_service.cpp:1287	；最大 VIF = 
+  interp_dyn	src/application/interpretation_service.cpp:1348	，有效回归行 = 
+  interp_dyn	src/application/interpretation_service.cpp:1354	；相对 5% 临界值有拒绝单位根的证据
+  interp_dyn	src/application/interpretation_service.cpp:1355	；相对 5% 临界值未拒绝单位根
+
+## tables n=4
+  interp_dyn	src/application/interpretation_service.cpp:1075	（最小期望频数 = 
+  interp_static	src/application/interpretation_service.cpp:1093	McNemar 未计算出统计量（非二元、无不一致对或输入不足）。
+  interp_static	src/application/interpretation_service.cpp:1111	Cochran Q 未计算出统计量（例如列数不足、编码失败或分母退化）。
+  interp_static	src/application/interpretation_service.cpp:1112	两列配对请用 McNemar；不得写成已证明各处理阳性率相同或不同。
+
+## eda_graph n=3
+  param	src/application/graph_service.cpp:1694	    面积表示相邻观测之间的数值区间，不是置信区间
+  title	src/application/graph_service.cpp:2109	Hexbin（分面）
+  interp_dyn	src/application/interpretation_service.cpp:2266	不能单独证明因果关系。
+
+## skip_cc n=3
+  interp_dyn	src/application/interpretation_service.cpp:77	配置排除了 
+  interp_dyn	src/application/interpretation_service.cpp:82	配置隐藏了 
+  interp_dyn	src/application/interpretation_service.cpp:978	，缺失 N* = 
+
+## forecast n=3
+  interp_static	src/application/interpretation_service.cpp:261	不要仅凭点预测确定最优设置。
+  interp_dyn	src/application/interpretation_service.cpp:1334	，预测变量 = 
+  interp_static	src/application/interpretation_service.cpp:2458	不是 ARIMA 识别用的 Bartlett 变带宽；亦非 Minitab golden。
+
+
+=== SLICE CANDIDATES (target 15-25) ===
+
+### inference_cluster n=17
+  src/application/interpretation_service.cpp:260	缺协方差或残差自由度不足，置信/预测区间不可用；	[interp_static/inference]	suggest_id~
+  src/application/interpretation_service.cpp:689	 下，估计实际功效 = 	[interp_dyn/inference]	suggest_id~
+  src/application/interpretation_service.cpp:695	、目标功效 = 	[interp_dyn/inference]	suggest_id~
+  src/application/interpretation_service.cpp:838	；区间含 0 不显著。同字母仅表示在本产品 Tukey 近似规则下未显著不同，	[interp_dyn/inference]	suggest_id~0_tukey
+  src/application/interpretation_service.cpp:1094	这只说明当前配对表不支持该检验，不能写成前后比例已证明相同或不同。	[interp_static/inference]	suggest_id~
+  src/application/interpretation_service.cpp:1663	。未拒绝原假设不能证明方差相等。	[interp_static/inference]	suggest_id~
+  src/application/interpretation_service.cpp:1790	，区间落在等价界限内。	[interp_dyn/inference]	suggest_id~
+  src/application/interpretation_service.cpp:1791	，区间未落入等价界限内。	[interp_static/inference]	suggest_id~
+  src/application/interpretation_service.cpp:1820	响应优化在编码 ±1 空间枚举候选组合；缺协方差时置信/预测区间不可用，	[interp_dyn/inference]	suggest_id~1
+  src/application/interpretation_service.cpp:2159	 正态性检验判定为 	[interp_dyn/inference]	suggest_id~
+  src/application/interpretation_service.cpp:2200	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似	[interp_dyn/inference]	suggest_id~dixon_r10_p
+  src/application/interpretation_service.cpp:2213	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，	[interp_dyn/inference]	suggest_id~p_value
+  src/application/interpretation_service.cpp:2214	不能单独证明因果关系。未拒绝零相关不能写成已证明无关。	[interp_static/inference]	suggest_id~
+  src/application/interpretation_service.cpp:2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，	[interp_dyn/inference]	suggest_id~p_value
+  src/application/interpretation_service.cpp:2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；	[interp_static/inference]	suggest_id~anova_f
+  src/application/interpretation_service.cpp:2289	不能写成已证明无自相关或存在自相关。	[interp_static/inference]	suggest_id~
+  src/application/interpretation_service.cpp:2316	广义方差 |S|	[interp_dyn/inference]	suggest_id~s
+
+### interp_dyn_all n=165
+  src/application/interpretation_service.cpp:77	配置排除了 	[interp_dyn/skip_cc]	suggest_id~
+  src/application/interpretation_service.cpp:82	配置隐藏了 	[interp_dyn/skip_cc]	suggest_id~
+  src/application/interpretation_service.cpp:126	 下显著的项：	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:143	；参考线方法为 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:168	；其余因子实际单位 hold：	[interp_dyn/misc]	suggest_id~hold
+  src/application/interpretation_service.cpp:179	（编码 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:184	；其余因子编码 hold=0：	[interp_dyn/misc]	suggest_id~hold_0
+  src/application/interpretation_service.cpp:203	等值线/曲面在编码 [-1,1] 空间求值；非轴因子默认 hold 编码 0，	[interp_dyn/misc]	suggest_id~1_1_hold_0
+  src/application/interpretation_service.cpp:209	 个因子、	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:218	；运行数 = 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:220	；分辨度 = 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:246	 个响应（	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:287	，分级 = 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:367	，低/高参考点偏倚 = 	[interp_dyn/msa]	suggest_id~
+  src/application/interpretation_service.cpp:393	斜率检验 p≤0.05，提示线性显著；应分别解读各参考水平的偏倚，	[interp_dyn/msa]	suggest_id~p_0_05
+  src/application/interpretation_service.cpp:394	不宜只用平均偏倚。	[interp_dyn/msa]	suggest_id~
+  src/application/interpretation_service.cpp:435	 个失效模式做 cause-specific 分模式拟合（scheme=	[interp_dyn/reliability]	suggest_id~cause_specific_scheme
+  src/application/interpretation_service.cpp:440	分模式可靠度为 formula_reference（竞争失效作右删失），	[interp_dyn/reliability]	suggest_id~formula_reference
+  src/application/interpretation_service.cpp:446	 个失效模式的 Aalen–Johansen 累计发生函数 CIF（algorithm=	[interp_dyn/reliability]	suggest_id~aalen_johansen_cif_algori
+  src/application/interpretation_service.cpp:451	CIF 为 formula_reference（Aalen–Johansen），	[interp_dyn/reliability]	suggest_id~cif_formula_reference_aalen_johansen
+  src/application/interpretation_service.cpp:462	，项数=	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:481	，协变量=	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:537	，失效 	[interp_dyn/reliability]	suggest_id~
+  src/application/interpretation_service.cpp:539	，删失 	[interp_dyn/reliability]	suggest_id~
+  src/application/interpretation_service.cpp:592	对数正态模型估计了右删失下的位置/尺度参数；分位寿命由 	[interp_dyn/reliability]	suggest_id~
+  src/application/interpretation_service.cpp:632	 个时间点；删失数合计 	[interp_dyn/reliability]	suggest_id~
+  src/application/interpretation_service.cpp:689	 下，估计实际功效 = 	[interp_dyn/inference]	suggest_id~
+  src/application/interpretation_service.cpp:695	、目标功效 = 	[interp_dyn/inference]	suggest_id~
+  src/application/interpretation_service.cpp:698	，对应样本量 n = 	[interp_dyn/misc]	suggest_id~n
+  src/application/interpretation_service.cpp:837	，显著比较对数 = 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:838	；区间含 0 不显著。同字母仅表示在本产品 Tukey 近似规则下未显著不同，	[interp_dyn/inference]	suggest_id~0_tukey
+  src/application/interpretation_service.cpp:839	不能写成已证明相同。	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:879	；项数 = 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:901	；编码模式 = 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:914	；失拟 DF = 	[interp_dyn/doe_rsm]	suggest_id~df
+  src/application/interpretation_service.cpp:978	，缺失 N* = 	[interp_dyn/skip_cc]	suggest_id~n
+  src/application/interpretation_service.cpp:980	，均值为 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:993	，优势比 OR = 	[interp_dyn/misc]	suggest_id~or
+  src/application/interpretation_service.cpp:1021	，贡献最大单元格: 	[interp_dyn/misc]	suggest_id~
+  src/application/interpretation_service.cpp:1034	 分类，N = 	[interp_dyn/misc]	suggest_id~n
+
+### skip_cc_cluster n=3
+  src/application/interpretation_service.cpp:77	配置排除了 	[interp_dyn/skip_cc]	suggest_id~
+  src/application/interpretation_service.cpp:82	配置隐藏了 	[interp_dyn/skip_cc]	suggest_id~
+  src/application/interpretation_service.cpp:978	，缺失 N* = 	[interp_dyn/skip_cc]	suggest_id~n
+
+### forecast_adf_cluster n=2
+  src/application/interpretation_service.cpp:1354	；相对 5% 临界值有拒绝单位根的证据	[interp_dyn/regression]	suggest_id~5
+  src/application/interpretation_service.cpp:1355	；相对 5% 临界值未拒绝单位根	[interp_dyn/regression]	suggest_id~5
+
+### densest_interp_window score=286 lines L2364-L2453 n=25
+  src/application/interpretation_service.cpp:2364	”，计数 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2366	，单项占比 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2372	 个类别累计占比 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2375	应优先结合现场原因验证，而不是直接假设存在 80/20 规律。	[interp_static/misc]
+  src/application/interpretation_service.cpp:2396	，中位数 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2397	；关于中位数游程 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2398	，上升/下降游程 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2403	对照 P clustering / mixtures / trends / oscillation 与现场时序，	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2404	小 P 只表示该模式方向上的偏离证据。	[interp_static/misc]
+  src/application/interpretation_service.cpp:2411	 的点有 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2413	 个；这是统计信号提示，需要调查特殊原因，	[interp_dyn/spc]
+  src/application/interpretation_service.cpp:2414	不能将统计信号直接等同于过程失控判定或稳定结论。	[interp_static/misc]
+  src/application/interpretation_service.cpp:2416	区域图采用 Jaehn 1/2/4 计分（formula_reference），	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2417	不是完整 Shewhart 特殊原因规则（beyond_control_limit 等）的替代品。	[interp_static/spc]
+  src/application/interpretation_service.cpp:2424	，组数 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2425	，Z 图超限 = 	[interp_dyn/spc]
+  src/application/interpretation_service.cpp:2426	；短流程标准化依赖 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2427	样本估计 μ/σ	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2439	，「单点超出 3σ 控制限」触发 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2440	；MA 平滑后的出限是信号提示，需要结合工艺调查，	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2443	移动平均图与 EWMA 不同；仅完整窗 MA 点参与判读，	[interp_dyn/spc]
+  src/application/interpretation_service.cpp:2444	不是 Minitab golden。	[interp_static/misc]
+  src/application/interpretation_service.cpp:2450	，最大滞后 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2451	；默认置信带方法 = 	[interp_dyn/misc]
+  src/application/interpretation_service.cpp:2453	，半宽 ≈ 	[interp_dyn/misc]
+
+### densest_chrome_window score=0 file= L0-L0 n=0
+
+### all_interp_static n=55
+  src/application/interpretation_service.cpp:78	 行；结论只适用于纳入分析的数据。	[misc]
+  src/application/interpretation_service.cpp:83	 行；隐藏行仍计入分析口径，仅影响显示。	[misc]
+  src/application/interpretation_service.cpp:84	不得将 hidden 与 excluded 合并叙述。	[misc]
+  src/application/interpretation_service.cpp:135	优先在确认性试验中复核显著项，并结合效应方向选择可操作的因子水平；	[doe_rsm]
+  src/application/interpretation_service.cpp:136	显著性本身不代表工程影响足够大。	[misc]
+  src/application/interpretation_service.cpp:204	也可按实际单位 hold；二水平模型无平方项，不能把曲面曲率当成已估计。	[misc]
+  src/application/interpretation_service.cpp:210	 个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。	[doe_rsm]
+  src/application/interpretation_service.cpp:260	缺协方差或残差自由度不足，置信/预测区间不可用；	[inference]
+  src/application/interpretation_service.cpp:261	不要仅凭点预测确定最优设置。	[forecast]
+  src/application/interpretation_service.cpp:265	多响应冲突时优先核对各响应 Desirability 与权重；	[misc]
+  src/application/interpretation_service.cpp:266	确认性试验应覆盖总体 D 靠前且工程上可实施的组合。	[misc]
+  src/application/interpretation_service.cpp:268	检查残差随机性、异常值和重复/纯误差后再确定最优设置；	[misc]
+  src/application/interpretation_service.cpp:269	不要仅凭主效应图下结论。	[doe_rsm]
+  src/application/interpretation_service.cpp:323	按零件图展示各零件重复测量的离散程度；同一零件上点越集中表示重复性越小。	[misc]
+  src/application/interpretation_service.cpp:324	该图不单独判定量具是否合格。	[msa]
+  src/application/interpretation_service.cpp:342	按时间顺序回查校准、环境、操作者和量具维护记录；	[msa]
+  src/application/interpretation_service.cpp:343	不要在特殊原因未排除前用该量具放行产品。	[msa]
+  src/application/interpretation_service.cpp:370	将端点偏倚与产品公差和测量系统可接受界限比较；	[msa]
+  src/application/interpretation_service.cpp:371	回归关系不能替代跨操作者、跨部件的完整 Gage R&R。	[msa]
+  src/application/interpretation_service.cpp:593	exp(μ + σ Φ⁻¹(p)) 给出。	[misc]
+  src/application/interpretation_service.cpp:1093	McNemar 未计算出统计量（非二元、无不一致对或输入不足）。	[tables]
+  src/application/interpretation_service.cpp:1094	这只说明当前配对表不支持该检验，不能写成前后比例已证明相同或不同。	[inference]
+  src/application/interpretation_service.cpp:1111	Cochran Q 未计算出统计量（例如列数不足、编码失败或分母退化）。	[tables]
+  src/application/interpretation_service.cpp:1112	两列配对请用 McNemar；不得写成已证明各处理阳性率相同或不同。	[tables]
+  src/application/interpretation_service.cpp:1488	不自动等价替换为经典右删失 KM 报告。	[reliability]
+  src/application/interpretation_service.cpp:1545	cause-specific 分模式 R(T_w)。	[misc]
+  src/application/interpretation_service.cpp:1638	只说明样本量不足，不是计算错误。	[misc]
+  src/application/interpretation_service.cpp:1663	。未拒绝原假设不能证明方差相等。	[inference]
+  src/application/interpretation_service.cpp:1666	极偏/重尾小样本时宜对照 Levene。	[misc]
+  src/application/interpretation_service.cpp:1669	正态假设状态未在本页验证。	[misc]
+  src/application/interpretation_service.cpp:1791	，区间未落入等价界限内。	[inference]
+  src/application/interpretation_service.cpp:1821	最佳组合不能外推到设计空间之外。	[misc]
+  src/application/interpretation_service.cpp:1992	）：I-MR Rule-1 / 直方图双峰 / Hartigan dip / 高斯混合门禁筛查不等于完整稳定性或单峰验收。	[spc]
+  src/application/interpretation_service.cpp:2034	组间/组内能力使用 σ_BW 计算 Cp/Cpk、样本标准差计算 Pp/Ppk；	[capability]
+  src/application/interpretation_service.cpp:2041	未拒绝变换后正态假设不等于原始数据服从正态分布，也不能写成过程合格。	[misc]
+  src/application/interpretation_service.cpp:2043	过程服从该分布，也不能写成过程合格。	[misc]
+  src/application/interpretation_service.cpp:2110	CUSUM 使用累计和决策间隔信号，不套用 Shewhart 特殊原因规则（beyond_control_limit 等）；	[spc]
+  src/application/interpretation_service.cpp:2111	信号点需结合原始行调查，不是删点指令。	[misc]
+  src/application/interpretation_service.cpp:2193	P 值只描述与正态假设下的一致性，勿当作删点依据，也勿当成异常已核实。	[misc]
+  src/application/interpretation_service.cpp:2214	不能单独证明因果关系。未拒绝零相关不能写成已证明无关。	[inference]
+  src/application/interpretation_service.cpp:2232	 计划下，不同不合格品率 p 的接收概率 Pa(p)；	[misc]
+  src/application/interpretation_service.cpp:2233	OC 用于评估抽样方案风险，不能替代对具体批次的接收判定。	[misc]
+  src/application/interpretation_service.cpp:2274	ANOVA 的总体 F 检验显著时，只能说明至少存在一组均值差异；	[inference]
+  src/application/interpretation_service.cpp:2275	需要后续多重比较确定具体组对。	[misc]
+  src/application/interpretation_service.cpp:2288	（按输入顺序与 α=0.05 近似 dL/dU）。	[misc]
+  src/application/interpretation_service.cpp:2289	不能写成已证明无自相关或存在自相关。	[inference]
+  src/application/interpretation_service.cpp:2326	。超限是统计信号提示，需要结合工艺调查，不能单独写成失控或稳定结论。	[spc]
+  src/application/interpretation_service.cpp:2375	应优先结合现场原因验证，而不是直接假设存在 80/20 规律。	[misc]
+  src/application/interpretation_service.cpp:2404	小 P 只表示该模式方向上的偏离证据。	[misc]
+  src/application/interpretation_service.cpp:2414	不能将统计信号直接等同于过程失控判定或稳定结论。	[misc]
+  src/application/interpretation_service.cpp:2417	不是完整 Shewhart 特殊原因规则（beyond_control_limit 等）的替代品。	[spc]
+  src/application/interpretation_service.cpp:2444	不是 Minitab golden。	[misc]
+  src/application/interpretation_service.cpp:2458	不是 ARIMA 识别用的 Bartlett 变带宽；亦非 Minitab golden。	[forecast]
+  src/application/interpretation_service.cpp:2490	；同页包含 run sequence、lag-1、histogram、normal probability。	[misc]
+  src/application/interpretation_service.cpp:2491	四图用于检查位置/散布/随机性/分布形态假设，不能写成受控结论或正态已成立。	[misc]
+
+### all_diags n=1
+  src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。	[spc]

@@ -150,6 +150,15 @@ void AnalysisIntentTest::appliesToleranceIntervalCommand()
     QCOMPARE(configuration.inference.coverage_proportion, std::optional<double>(0.95));
     QCOMPARE(configuration.inference.confidence_level, 0.99);
     QCOMPARE(configuration.inference.alternative, std::string{"two_sided"});
+    QCOMPARE(configuration.inference.tolerance_method, std::string{"normal"});
+
+    intent.inputs["method"] = "nonparametric";
+    datalab::domain::AnalysisConfiguration np_configuration;
+    const analysis_commands::AnalysisApplyResult np_result =
+        command->apply(np_configuration, intent);
+    QVERIFY(np_result.valid);
+    QCOMPARE(np_configuration.inference.tolerance_method, std::string{"nonparametric"});
+    QCOMPARE(np_configuration.inference.variance_method, std::string{"nonparametric"});
 }
 
 void AnalysisIntentTest::appliesOneProportionCommand()
@@ -290,6 +299,14 @@ void AnalysisIntentTest::appliesOutlierTestCommand()
     QCOMPARE(configuration.selection.measurement_column, std::size_t{2});
     QCOMPARE(configuration.inference.confidence_level, 0.95);
     QCOMPARE(configuration.inference.alternative, std::string{"two_sided"});
+    QCOMPARE(configuration.inference.outlier_method, std::string{"grubbs"});
+
+    intent.inputs["method"] = "dixon_r10";
+    datalab::domain::AnalysisConfiguration dixon_configuration;
+    const analysis_commands::AnalysisApplyResult dixon_result =
+        command->apply(dixon_configuration, intent);
+    QVERIFY(dixon_result.valid);
+    QCOMPARE(dixon_configuration.inference.outlier_method, std::string{"dixon_r10"});
 }
 
 QTEST_MAIN(AnalysisIntentTest)

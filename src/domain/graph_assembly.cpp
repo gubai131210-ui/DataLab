@@ -135,4 +135,51 @@ AssembledMatrixColumns assemble_numeric_matrix(
     return result;
 }
 
+FacetPartitionResult partition_facet_levels(
+    const std::vector<std::string>& facet_labels,
+    int max_panels)
+{
+    FacetPartitionResult result;
+    const int capped = std::clamp(max_panels, 1, 12);
+    std::vector<std::string> order;
+    std::vector<std::vector<std::size_t>> members;
+    for (std::size_t index = 0; index < facet_labels.size(); ++index) {
+        const std::string level =
+            facet_labels[index].empty() ? "(空)" : facet_labels[index];
+        const std::size_t panel = stable_group_index(order, level);
+        if (panel >= members.size()) {
+            members.resize(panel + 1);
+        }
+        members[panel].push_back(index);
+    }
+    result.level_count = order.size();
+    const std::size_t keep = std::min(order.size(), static_cast<std::size_t>(capped));
+    for (std::size_t i = 0; i < keep; ++i) {
+        FacetPanel panel;
+        panel.level = order[i];
+        panel.member_indices = members[i];
+        result.panels.push_back(std::move(panel));
+    }
+    if (order.size() > keep) {
+        result.truncated_levels = order.size() - keep;
+        DiagnosticMessage diagnostic;
+        diagnostic.severity = DiagnosticMessage::Severity::warning;
+        diagnostic.code = "facet_levels_truncated";
+        diagnostic.message =
+            "分面水平数 = " + std::to_string(order.size())
+            + "，受控 Graph Builder 最多显示 " + std::to_string(capped)
+            + " 个面板；已截断 " + std::to_string(result.truncated_levels)
+            + " 个水平（非自由拼版）。";
+        result.diagnostics.push_back(std::move(diagnostic));
+    }
+    DiagnosticMessage note;
+    note.severity = DiagnosticMessage::Severity::info;
+    note.code = "facet_controlled_panels";
+    note.message =
+        "使用受控分面面板（facet），不是自由像素拼版；"
+        "by/分组仍是图内着色，与分面列不同。";
+    result.diagnostics.push_back(std::move(note));
+    return result;
+}
+
 }  // namespace datalab::domain

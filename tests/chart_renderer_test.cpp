@@ -1,6 +1,8 @@
 #include "reporting/chart_adapter.h"
 #include "reporting/chart_renderer.h"
 
+#include "domain/report_text_catalog.h"
+
 #include <QColor>
 #include <QGuiApplication>
 #include <QImage>
@@ -14,6 +16,7 @@ private slots:
     void themePresetChangesBackgroundColor();
     void printThemeKeepsLightBackground();
     void unknownPresetFallsBackToDefault();
+    void emptyChartUsesReportLocaleForNoDataText();
     void customYRangeAndDataRegionFillRender();
     void histogramCurveLegendRoundTrips();
 };
@@ -78,6 +81,19 @@ void ChartRendererTest::unknownPresetFallsBackToDefault()
     ChartModel def = sample_control_model();
     def.theme_preset = QStringLiteral("default");
     QCOMPARE(corner_pixel(fallback), corner_pixel(def));
+}
+
+void ChartRendererTest::emptyChartUsesReportLocaleForNoDataText()
+{
+    QCOMPARE(
+        QString::fromStdString(datalab::domain::resolve_report_text(
+                                   "chart.no_displayable_data", "en-US")
+                                   .text),
+        QStringLiteral("No displayable data"));
+    ChartModel model;
+    model.language_tag = "en-US";
+    const QPixmap pixmap = ChartRenderer::render_to_pixmap(model, QSize(240, 120), 1.0);
+    QVERIFY(!pixmap.isNull());
 }
 
 void ChartRendererTest::customYRangeAndDataRegionFillRender()

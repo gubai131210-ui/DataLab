@@ -114,4 +114,41 @@ BoxCoxResult box_cox_transform(
     return result;
 }
 
+double box_cox_apply(double value, double lambda)
+{
+    if (!(value > 0.0) || !std::isfinite(value) || !std::isfinite(lambda)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (lambda == 0.0) {
+        return std::log(value);
+    }
+    return (std::pow(value, lambda) - 1.0) / lambda;
+}
+
+std::optional<double> box_cox_transform_limit(double limit, double lambda)
+{
+    const double transformed = box_cox_apply(limit, lambda);
+    if (!std::isfinite(transformed)) {
+        return std::nullopt;
+    }
+    return transformed;
+}
+
+bool box_cox_limits_order_ok(
+    double original_lsl,
+    double original_usl,
+    double lambda)
+{
+    if (!(original_lsl < original_usl)) {
+        return false;
+    }
+    const auto t_lsl = box_cox_transform_limit(original_lsl, lambda);
+    const auto t_usl = box_cox_transform_limit(original_usl, lambda);
+    if (!t_lsl.has_value() || !t_usl.has_value()) {
+        return false;
+    }
+    // Box-Cox (x^λ - 1)/λ and log(λ=0) are strictly increasing on (0, ∞) for all λ.
+    return *t_lsl < *t_usl;
+}
+
 }  // namespace datalab::domain::statistics

@@ -52,6 +52,18 @@ public:
     static domain::OutputPage pie(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
+    static domain::OutputPage density(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+    static domain::OutputPage hexbin(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+    static domain::OutputPage violin(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+    static domain::OutputPage bar(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
 };
 
 }  // namespace datalab::application

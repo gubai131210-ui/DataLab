@@ -402,6 +402,53 @@ void OutputSerializationTest::preservesStructuredAnalysisFacts()
     QVERIFY(restored_outlier.facts.outlier_test.has_value());
     QCOMPARE(*restored_outlier.facts.outlier_test->g_statistic, 1.7);
     QCOMPARE(*restored_outlier.facts.outlier_test->source_row, std::size_t{5});
+    outlier_facts.method = "dixon_r10";
+    outlier_facts.dixon_r = 0.55;
+    outlier_facts.critical_value = 0.642;
+    page.facts.outlier_test = outlier_facts;
+    page.configuration.inference.outlier_method = "dixon_r10";
+    page.configuration.inference.tolerance_method = "nonparametric";
+    page.configuration.inference.known_sigma = 1.25;
+    const auto restored_outlier2 = datalab::infrastructure::output_page_from_json(
+        datalab::infrastructure::output_page_to_json(page));
+    QCOMPARE(restored_outlier2.facts.outlier_test->method, std::string("dixon_r10"));
+    QCOMPARE(*restored_outlier2.facts.outlier_test->dixon_r, 0.55);
+    QCOMPARE(*restored_outlier2.facts.outlier_test->critical_value, 0.642);
+    QCOMPARE(restored_outlier2.configuration.inference.outlier_method,
+             std::string("dixon_r10"));
+    QCOMPARE(restored_outlier2.configuration.inference.tolerance_method,
+             std::string("nonparametric"));
+    QCOMPARE(*restored_outlier2.configuration.inference.known_sigma, 1.25);
+
+    page.facts.variability = datalab::domain::VariabilityFacts{};
+    page.facts.variability->factor_count = 2;
+    page.facts.variability->valid_count = 8;
+    page.facts.variability->missing_count = 1;
+    page.facts.variability->cell_count = 4;
+    page.facts.variability->overall_mean = 12.5;
+    page.facts.variability->mean_of_cell_sds = 1.1;
+    page.facts.variability->factor_names = {"零件", "操作者"};
+    const auto restored_var = datalab::infrastructure::output_page_from_json(
+        datalab::infrastructure::output_page_to_json(page));
+    QVERIFY(restored_var.facts.variability.has_value());
+    QCOMPARE(restored_var.facts.variability->factor_count, std::size_t{2});
+    QCOMPARE(restored_var.facts.variability->cell_count, std::size_t{4});
+    QCOMPARE(*restored_var.facts.variability->overall_mean, 12.5);
+    QCOMPARE(restored_var.facts.variability->factor_names.size(), std::size_t{2});
+
+    page.facts.t_test = datalab::domain::TTestFacts{};
+    page.facts.t_test->kind = "one_sample_z";
+    page.facts.t_test->n = 5;
+    page.facts.t_test->z_statistic = 1.2;
+    page.facts.t_test->known_sigma = 2.0;
+    page.facts.t_test->sample_standard_deviation = 1.8;
+    const auto restored_z = datalab::infrastructure::output_page_from_json(
+        datalab::infrastructure::output_page_to_json(page));
+    QVERIFY(restored_z.facts.t_test.has_value());
+    QCOMPARE(restored_z.facts.t_test->kind, std::string("one_sample_z"));
+    QCOMPARE(*restored_z.facts.t_test->z_statistic, 1.2);
+    QCOMPARE(*restored_z.facts.t_test->known_sigma, 2.0);
+
     page.facts.multi_vari = datalab::domain::MultiVariFacts{2, 6, 1, 1.0, {"零件", "操作者"}};
     const auto restored_multi = datalab::infrastructure::output_page_from_json(
         datalab::infrastructure::output_page_to_json(page));

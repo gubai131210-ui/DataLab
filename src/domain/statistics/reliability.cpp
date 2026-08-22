@@ -8,6 +8,7 @@
 #include <numeric>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -287,7 +288,106 @@ WeibullResult fit_weibull_core(const std::vector<double>& times,
         "报告形状、尺度、删失似然和置信区间；不要把分位寿命当成单件保证寿命。"});
     return r;
 }
+
+double chi_square_right_tail(double value, double degrees_of_freedom)
+{
+    if (!(value >= 0.0) || !(degrees_of_freedom > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    const double shape = degrees_of_freedom / 2.0;
+    const double x = value / 2.0;
+    if (x == 0.0) {
+        return 1.0;
+    }
+    double term = 1.0 / shape;
+    double sum = term;
+    for (int index = 1; index < 200; ++index) {
+        term *= x / (shape + index);
+        sum += term;
+        if (std::abs(term) < std::abs(sum) * 1.0e-14) {
+            break;
+        }
+    }
+    if (x < shape + 1.0) {
+        return std::clamp(1.0 - sum * std::exp(-x + shape * std::log(x)
+            - std::lgamma(shape)), 0.0, 1.0);
+    }
+    double continued = 1.0;
+    double factor = 1.0;
+    for (int index = 1; index < 200; ++index) {
+        factor *= (shape - index) / x;
+        continued += factor;
+        if (std::abs(factor) < std::abs(continued) * 1.0e-14) {
+            break;
+        }
+    }
+    return std::clamp(std::exp(-x + shape * std::log(x)
+        - std::lgamma(shape)) * continued, 0.0, 1.0);
 }
+
+bool invert_matrix(std::vector<std::vector<double>> matrix,
+                   std::vector<std::vector<double>>* inverse)
+{
+    if (matrix.empty() || matrix.size() != matrix.front().size() || inverse == nullptr) {
+        return false;
+    }
+    const std::size_t n = matrix.size();
+    inverse->assign(n, std::vector<double>(n, 0.0));
+    for (std::size_t index = 0; index < n; ++index) {
+        (*inverse)[index][index] = 1.0;
+    }
+    for (std::size_t column = 0; column < n; ++column) {
+        std::size_t pivot = column;
+        double pivot_value = std::abs(matrix[column][column]);
+        for (std::size_t row = column + 1; row < n; ++row) {
+            const double candidate = std::abs(matrix[row][column]);
+            if (candidate > pivot_value) {
+                pivot_value = candidate;
+                pivot = row;
+            }
+        }
+        if (!(pivot_value > 0.0)) {
+            return false;
+        }
+        if (pivot != column) {
+            std::swap(matrix[column], matrix[pivot]);
+            std::swap((*inverse)[column], (*inverse)[pivot]);
+        }
+        const double scale = matrix[column][column];
+        for (std::size_t row = 0; row < n; ++row) {
+            if (row == column) {
+                continue;
+            }
+            const double factor = matrix[row][column] / scale;
+            if (factor == 0.0) {
+                continue;
+            }
+            for (std::size_t col = 0; col < n; ++col) {
+                matrix[row][col] -= factor * matrix[column][col];
+                (*inverse)[row][col] -= factor * (*inverse)[column][col];
+            }
+        }
+        for (std::size_t col = 0; col < n; ++col) {
+            matrix[column][col] /= scale;
+            (*inverse)[column][col] /= scale;
+        }
+    }
+    return true;
+}
+
+double quadratic_form(const std::vector<double>& vector,
+                      const std::vector<std::vector<double>>& inverse)
+{
+    double value = 0.0;
+    for (std::size_t row = 0; row < vector.size(); ++row) {
+        for (std::size_t column = 0; column < vector.size(); ++column) {
+            value += vector[row] * inverse[row][column] * vector[column];
+        }
+    }
+    return value;
+}
+
+}  // namespace
 
 std::optional<bool> parse_reliability_event(const std::string& text)
 {
@@ -498,6 +598,143 @@ LogRankResult log_rank_test(const std::vector<double>& times,
         "risk_set", "not_triggered",
         "Log-rank 已按事件时间构造两组风险集并报告删失数。", {},
         "组间比较必须同时报告有效样本、失效数、删失数和自由度。"});
+    return r;
+}
+
+LogRankKGroupsResult log_rank_k_groups(const std::vector<double>& times,
+                                       const std::vector<bool>& events,
+                                       const std::vector<int>& groups)
+{
+    LogRankKGroupsResult r;
+    if (times.size() < 2 || times.size() != events.size()
+        || times.size() != groups.size()) {
+        error(r.diagnostics, "invalid_log_rank_shape",
+              "Log-rank 检验要求寿命、事件和分组列长度一致。");
+        return r;
+    }
+    int max_group = -1;
+    for (const int group : groups) {
+        if (group < 0) {
+            error(r.diagnostics, "invalid_log_rank_value",
+                  "Log-rank 分组编码必须为非负整数。");
+            return r;
+        }
+        max_group = std::max(max_group, group);
+    }
+    const std::size_t group_count = static_cast<std::size_t>(max_group + 1);
+    if (group_count < 2) {
+        error(r.diagnostics, "insufficient_log_rank_groups",
+              "Log-rank 检验至少需要两个非空分组。");
+        return r;
+    }
+    std::vector<std::size_t> group_n(group_count, 0);
+    std::vector<std::size_t> group_failures(group_count, 0);
+    for (std::size_t index = 0; index < times.size(); ++index) {
+        if (!std::isfinite(times[index]) || times[index] <= 0.0) {
+            error(r.diagnostics, "invalid_log_rank_value",
+                  "Log-rank 时间必须为正数。");
+            return r;
+        }
+        const std::size_t group = static_cast<std::size_t>(groups[index]);
+        if (group >= group_count) {
+            error(r.diagnostics, "invalid_log_rank_value",
+                  "Log-rank 分组编码超出已识别水平范围。");
+            return r;
+        }
+        ++group_n[group];
+        if (events[index]) {
+            ++group_failures[group];
+        }
+    }
+    r.group_summaries.resize(group_count);
+    for (std::size_t group = 0; group < group_count; ++group) {
+        if (group_n[group] == 0) {
+            error(r.diagnostics, "insufficient_log_rank_groups",
+                  "Log-rank 检验至少需要两个非空分组。");
+            return r;
+        }
+        r.group_summaries[group] = {
+            static_cast<int>(group),
+            group_n[group],
+            group_failures[group],
+            group_n[group] - group_failures[group]};
+    }
+    std::vector<double> event_times;
+    event_times.reserve(times.size());
+    for (std::size_t index = 0; index < times.size(); ++index) {
+        if (events[index]) {
+            event_times.push_back(times[index]);
+        }
+    }
+    std::sort(event_times.begin(), event_times.end());
+    event_times.erase(std::unique(event_times.begin(), event_times.end()),
+                      event_times.end());
+    const std::size_t compare_groups = group_count - 1;
+    std::vector<double> observed_minus_expected(compare_groups, 0.0);
+    std::vector<std::vector<double>> variance(
+        compare_groups, std::vector<double>(compare_groups, 0.0));
+    for (const double time : event_times) {
+        std::vector<std::size_t> at_risk(group_count, 0);
+        std::vector<std::size_t> deaths(group_count, 0);
+        for (std::size_t index = 0; index < times.size(); ++index) {
+            if (times[index] >= time) {
+                ++at_risk[static_cast<std::size_t>(groups[index])];
+            }
+            if (times[index] == time && events[index]) {
+                ++deaths[static_cast<std::size_t>(groups[index])];
+            }
+        }
+        std::size_t total_at_risk = 0;
+        std::size_t total_events = 0;
+        for (std::size_t group = 0; group < group_count; ++group) {
+            total_at_risk += at_risk[group];
+            total_events += deaths[group];
+        }
+        if (total_at_risk <= 1 || total_events == 0) {
+            continue;
+        }
+        const double n = static_cast<double>(total_at_risk);
+        const double d = static_cast<double>(total_events);
+        const double tie_factor =
+            static_cast<double>(total_at_risk - total_events)
+            / static_cast<double>(total_at_risk - 1);
+        for (std::size_t group = 0; group < compare_groups; ++group) {
+            const double expected = d * static_cast<double>(at_risk[group]) / n;
+            observed_minus_expected[group] +=
+                static_cast<double>(deaths[group]) - expected;
+            for (std::size_t other = 0; other < compare_groups; ++other) {
+                if (group == other) {
+                    variance[group][other] += d * static_cast<double>(at_risk[group]) / n
+                        * (1.0 - static_cast<double>(at_risk[group]) / n)
+                        * tie_factor;
+                } else {
+                    variance[group][other] -= d * static_cast<double>(at_risk[group]) / n
+                        * static_cast<double>(at_risk[other]) / n
+                        * tie_factor;
+                }
+            }
+        }
+    }
+    std::vector<std::vector<double>> inverse;
+    if (!invert_matrix(variance, &inverse)) {
+        error(r.diagnostics, "zero_log_rank_variance",
+              "分组失效模式没有可估计的 Log-rank 方差。");
+        return r;
+    }
+    r.chi_square = quadratic_form(observed_minus_expected, inverse);
+    if (!(r.chi_square >= 0.0) || !std::isfinite(r.chi_square)) {
+        error(r.diagnostics, "zero_log_rank_variance",
+              "分组失效模式没有可估计的 Log-rank 方差。");
+        return r;
+    }
+    r.df = static_cast<double>(compare_groups);
+    r.p_value = chi_square_right_tail(r.chi_square, r.df);
+    r.evidence.method_version = "3";
+    r.evidence.valid_count = times.size();
+    r.rules.push_back({
+        "risk_set", "not_triggered",
+        "Log-rank 已按事件时间构造 K 组风险集并报告删失数。", {},
+        "组间比较必须同时报告有效样本、失效数、删失数、自由度和 P 值。"});
     return r;
 }
 

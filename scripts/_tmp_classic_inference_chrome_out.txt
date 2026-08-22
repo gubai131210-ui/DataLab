@@ -1,0 +1,100 @@
+﻿PARAM_TOKEN_COUNT 76
+
+=== ATOMIC TOKEN STATUS ===
+MISS  '备择：总体均值 '
+MISS  ' 假设均值'
+MISS  '假设均值 = '
+MISS  '假设比例 = '
+MISS  '假设发生率 = '
+MISS  '备择: '
+MISS  '方法: '
+MISS  '合并方差'
+MISS  '试验 = '
+MISS  '比较 = '
+MISS  '行: '
+MISS  '列: '
+MISS  '缺失值 N* = '
+MAPPED '缺陷 = '
+MAPPED '目标 = '
+MAPPED '事件 = '
+MAPPED '第一组 = '
+MAPPED '第二组 = '
+MAPPED '方法 = '
+
+=== UNCOVERED SITE LITERALS ===
+n=3	'    方法: '
+  src/application/analysis_service.cpp:879
+  src/application/analysis_service.cpp:1792
+  src/application/analysis_service.cpp:1959
+n=3	'Welch'
+  src/application/analysis_service.cpp:2421
+  src/application/analysis_service.cpp:2715
+  src/application/analysis_service.cpp:2755
+n=3	'合并方差'
+  src/application/analysis_service.cpp:2421
+  src/application/analysis_service.cpp:2715
+  src/application/analysis_service.cpp:2755
+n=3	'总体均值'
+  src/application/analysis_service.cpp:15662
+  src/application/analysis_service.cpp:15696
+  src/application/analysis_service.cpp:15697
+n=2	'    假设均值 = '
+  src/application/analysis_service.cpp:2227
+  src/application/analysis_service.cpp:2309
+n=2	'    列: '
+  src/application/analysis_service.cpp:4133
+  src/application/analysis_service.cpp:4366
+n=2	'    备择：总体均值 '
+  src/application/analysis_service.cpp:2228
+  src/application/analysis_service.cpp:2311
+n=2	'    缺失值 N* = '
+  src/application/analysis_service.cpp:1792
+  src/application/analysis_service.cpp:1962
+n=2	'    试验 = '
+  src/application/analysis_service.cpp:2852
+  src/application/analysis_service.cpp:3776
+n=2	' 假设均值'
+  src/application/analysis_service.cpp:2229
+  src/application/analysis_service.cpp:2312
+n=2	'假设均值'
+  src/application/analysis_service.cpp:2337
+  src/application/output_builder.cpp:285
+n=2	'第一组'
+  src/application/analysis_service.cpp:3661
+  src/application/analysis_service.cpp:3999
+n=2	'第一组：'
+  src/application/analysis_service.cpp:2899
+  src/application/analysis_service.cpp:3622
+n=2	'第二组'
+  src/application/analysis_service.cpp:3666
+  src/application/analysis_service.cpp:4002
+n=2	'第二组：'
+  src/application/analysis_service.cpp:2903
+  src/application/analysis_service.cpp:3626
+n=2	'行: '
+  src/application/analysis_service.cpp:4132
+  src/application/analysis_service.cpp:4365
+n=1	'    Known σ = '
+  src/application/analysis_service.cpp:2310
+n=1	'    假设发生率 = '
+  src/application/analysis_service.cpp:3905
+n=1	'    假设比例 = '
+  src/application/analysis_service.cpp:3777
+n=1	'    备择: '
+  src/application/analysis_service.cpp:1960
+n=1	'    比较 = '
+  src/application/analysis_service.cpp:3994
+n=1	'Known σ'
+  src/application/analysis_service.cpp:2324
+n=1	'第一组 N'
+  src/application/analysis_service.cpp:5078
+n=1	'第二组 N'
+  src/application/analysis_service.cpp:5078
+
+=== alternative_label / variance_method sites ===
+1960	+ "    备择: " + alternative_text
+2228	+ "    备择：总体均值 " + alternative_label(configuration.inference.alternative)
+2311	+ "    备择：总体均值 " + alternative_label(configuration.inference.alternative)
+2421	+ std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch")
+2715	+ std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch");
+2755	+ std::string(configuration.inference.variance_method == "pooled" ? "合并方差" : "Welch")

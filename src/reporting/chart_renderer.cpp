@@ -1,8 +1,10 @@
 #include "chart_renderer.h"
 
+#include "domain/report_text_catalog.h"
+#include "domain/statistics/normal_distribution.h"
+#include "domain/statistics/special_cause_rule_catalog.h"
 #include "reporting/chart_coordinate_mapper.h"
 #include "reporting/chart_geometry.h"
-#include "domain/statistics/normal_distribution.h"
 
 #include <QPainter>
 #include <QPainterPath>
@@ -16,6 +18,16 @@
 #include <numeric>
 
 namespace {
+
+QString no_displayable_data_text(const ChartModel& model)
+{
+    const std::string language_tag =
+        model.language_tag.empty() ? std::string("zh-CN") : model.language_tag;
+    return QString::fromStdString(
+        datalab::domain::resolve_report_text("chart.no_displayable_data", language_tag)
+            .text);
+}
+
 QVector<double> finite_values(const std::vector<double>& values)
 {
     QVector<double> result;
@@ -214,7 +226,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
     }
     if (model.values.empty() && first_series == nullptr) {
         painter.setPen(theme_colors(model).muted_text);
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
 
@@ -494,7 +506,9 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
             const std::size_t row = i < model.source_rows.size() ? model.source_rows[i] + 1 : i + 1;
             const QString label = special_cause_test > 0
                 ? QStringLiteral("%1 (%2)").arg(static_cast<qulonglong>(row))
-                    .arg(special_cause_test)
+                    .arg(QString::fromStdString(
+                        datalab::domain::statistics::special_cause_rule_display_name(
+                            special_cause_test)))
                 : QString::number(static_cast<qulonglong>(row));
             painter.drawText(point + QPointF(4.0, -4.0), label);
             painter.setPen(Qt::NoPen);
@@ -698,7 +712,7 @@ void render_probability(QPainter& painter, const QRectF& area, const ChartModel&
     if (model.values.empty() || model.values.size() != model.x_values.size()
         || plot.width() <= 1.0 || plot.height() <= 1.0) {
         painter.setPen(theme_colors(model).muted_text);
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const auto [x_min_it, x_max_it] =
@@ -819,7 +833,7 @@ void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& m
     const QRectF plot = plot_rect(area);
     if (model.histogram_counts.empty() || model.histogram_edges.size() < 2) {
         painter.setPen(theme_colors(model).muted_text);
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const double x_min = model.histogram_edges.front();
@@ -961,7 +975,7 @@ void render_boxplot(QPainter& painter, const QRectF& area, const ChartModel& mod
         model.box_q3.size(), model.box_max.size()});
     if (box_count == 0) {
         painter.setPen(theme_colors(model).muted_text);
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     QVector<double> all_values;
@@ -1043,7 +1057,7 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
     const QRectF plot = pareto_plot_rect(area);
     if (model.category_values.empty() || plot.width() <= 1.0 || plot.height() <= 1.0) {
         painter.setPen(theme_colors(model).muted_text);
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const bool show_cumulative = !model.cumulative_percent.empty();
@@ -1214,7 +1228,7 @@ void render_interval(QPainter& painter, const QRectF& area, const ChartModel& mo
     const std::size_t count = std::min({
         model.values.size(), model.interval_lower.size(), model.interval_upper.size()});
     if (count == 0) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     double minimum = *std::min_element(model.interval_lower.cbegin(),
@@ -1285,7 +1299,7 @@ void render_bubble(QPainter& painter, const QRectF& area, const ChartModel& mode
     const std::size_t count = std::min({
         model.x_values.size(), model.values.size(), model.bubble_sizes.size()});
     if (count == 0) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const auto x_range = std::minmax_element(model.x_values.cbegin(),
@@ -1337,7 +1351,7 @@ void render_correlation(QPainter& painter, const QRectF& area, const ChartModel&
 {
     const std::size_t count = model.matrix_values.size();
     if (count == 0 || model.matrix_labels.size() < count) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const double cell = std::min(82.0, std::max(42.0,
@@ -1392,7 +1406,7 @@ void render_ecdf(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
     const QRectF plot = plot_rect(area);
     if (model.x_values.empty() || model.values.empty()) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const std::size_t count = std::min(model.x_values.size(), model.values.size());
@@ -1427,7 +1441,7 @@ void render_matrix(QPainter& painter, const QRectF& area, const ChartModel& mode
 {
     const std::size_t count = model.matrix_labels.size();
     if (count == 0 || model.matrix_values.size() < count) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const double cell = std::min(area.width(), area.height()) / static_cast<double>(count + 0.4);
@@ -1525,7 +1539,7 @@ void render_parallel(QPainter& painter, const QRectF& area, const ChartModel& mo
     const QRectF plot = plot_rect(area);
     const std::size_t axes = model.matrix_labels.size();
     if (axes < 2 || model.matrix_values.empty()) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     painter.setPen(QPen(theme_colors(model).axis, 1.2));
@@ -1578,7 +1592,7 @@ void render_heatmap(QPainter& painter, const QRectF& area, const ChartModel& mod
     const std::vector<QString>& columns = model.matrix_labels;
     const std::vector<QString>& rows = model.categories.empty() ? model.matrix_labels : model.categories;
     if (columns.empty() || rows.empty() || model.matrix_values.empty()) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const double minimum = model.color_min.value_or(-1.0);
@@ -1644,7 +1658,7 @@ void render_area(QPainter& painter, const QRectF& area, const ChartModel& model)
     const QRectF plot = plot_rect(area);
     const std::size_t count = std::min(model.x_values.size(), model.values.size());
     if (count < 2) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     auto x_range = std::minmax_element(model.x_values.cbegin(), model.x_values.cbegin() + count);
@@ -1668,9 +1682,12 @@ void render_area(QPainter& painter, const QRectF& area, const ChartModel& model)
 void render_contour(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
     const QRectF plot = plot_rect(area);
+    // Contour point grids: matrix size == axis size; hexbin edge grids: matrix == axes-1.
+    const std::size_t cell_rows = model.contour_y.size() >= 2 ? model.contour_y.size() - 1 : 0;
+    const std::size_t cell_cols = model.contour_x.size() >= 2 ? model.contour_x.size() - 1 : 0;
     if (model.contour_x.size() < 2 || model.contour_y.size() < 2
-        || model.matrix_values.size() < model.contour_y.size()) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        || model.matrix_values.size() < cell_rows) {
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const double x_min = model.contour_x.front();
@@ -1681,8 +1698,11 @@ void render_contour(QPainter& painter, const QRectF& area, const ChartModel& mod
     const double c_max = model.color_max.value_or(1.0);
     ChartCoordinateMapper mapper(plot);
     mapper.set_data_range(x_min, x_max, y_min, y_max);
-    for (std::size_t row = 0; row + 1 < model.contour_y.size(); ++row) {
-        for (std::size_t column = 0; column + 1 < model.contour_x.size(); ++column) {
+    for (std::size_t row = 0; row < cell_rows; ++row) {
+        if (model.matrix_values[row].size() < cell_cols) {
+            continue;
+        }
+        for (std::size_t column = 0; column < cell_cols; ++column) {
             const double value = model.matrix_values[row][column];
             const QPointF top_left = mapper.to_pixel(model.contour_x[column], model.contour_y[row + 1]);
             const QPointF bottom_right = mapper.to_pixel(model.contour_x[column + 1], model.contour_y[row]);
@@ -1696,12 +1716,97 @@ void render_contour(QPainter& painter, const QRectF& area, const ChartModel& mod
     draw_title_and_axes(painter, area, plot, model);
 }
 
+void render_violin(QPainter& painter, const QRectF& area, const ChartModel& model)
+{
+    const QRectF plot = plot_rect(area);
+    const std::size_t box_count = std::min({
+        model.box_min.size(), model.box_q1.size(), model.box_median.size(),
+        model.box_q3.size(), model.box_max.size()});
+    if (box_count == 0 || model.series.empty()) {
+        painter.setPen(theme_colors(model).muted_text);
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
+        return;
+    }
+    QVector<double> all_values;
+    for (const auto& series : {model.box_min, model.box_max}) {
+        for (const double value : series) {
+            all_values.append(value);
+        }
+    }
+    for (const ChartSeries& series : model.series) {
+        for (const double value : series.values) {
+            all_values.append(value);
+        }
+    }
+    auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
+    const double padding = std::max(0.08 * (*maximum_it - *minimum_it), 1.0e-6);
+    ChartCoordinateMapper mapper(plot);
+    mapper.set_data_range(-0.5, static_cast<double>(box_count) - 0.5,
+                          *minimum_it - padding, *maximum_it + padding);
+    painter.setPen(QPen(theme_colors(model).axis, 1.2));
+    painter.drawLine(plot.bottomLeft(), plot.topLeft());
+    painter.drawLine(plot.bottomLeft(), plot.bottomRight());
+    draw_title_and_axes(painter, area, plot, model);
+
+    const double half_width = 0.35;
+    for (std::size_t index = 0; index < box_count; ++index) {
+        const double center = static_cast<double>(index);
+        if (index < model.series.size()) {
+            const ChartSeries& density = model.series[index];
+            const std::size_t count = std::min(density.x_values.size(), density.values.size());
+            if (count >= 2) {
+                QPainterPath path;
+                for (std::size_t i = 0; i < count; ++i) {
+                    const QPointF point = mapper.to_pixel(
+                        center - half_width * density.x_values[i], density.values[i]);
+                    if (i == 0) {
+                        path.moveTo(point);
+                    } else {
+                        path.lineTo(point);
+                    }
+                }
+                for (std::size_t i = count; i-- > 0;) {
+                    path.lineTo(mapper.to_pixel(
+                        center + half_width * density.x_values[i], density.values[i]));
+                }
+                path.closeSubpath();
+                QColor fill("#90caf9");
+                fill.setAlpha(140);
+                painter.fillPath(path, fill);
+                painter.setPen(QPen(QColor("#1565c0"), 1.0));
+                painter.drawPath(path);
+            }
+        }
+        const QPointF max_p = mapper.to_pixel(center, model.box_max[index]);
+        const QPointF min_p = mapper.to_pixel(center, model.box_min[index]);
+        const QPointF q3 = mapper.to_pixel(center, model.box_q3[index]);
+        const QPointF q1 = mapper.to_pixel(center, model.box_q1[index]);
+        const QPointF med = mapper.to_pixel(center, model.box_median[index]);
+        const double box_w = std::min(18.0, plot.width() / static_cast<double>(box_count) * 0.15);
+        painter.setPen(QPen(QColor("#0d47a1"), 1.4));
+        painter.drawLine(max_p, q3);
+        painter.drawLine(min_p, q1);
+        painter.fillRect(QRectF(QPointF(q3.x() - box_w / 2.0, q3.y()),
+                                QPointF(q1.x() + box_w / 2.0, q1.y())),
+                         QColor("#bbdefb"));
+        painter.drawRect(QRectF(QPointF(q3.x() - box_w / 2.0, q3.y()),
+                                QPointF(q1.x() + box_w / 2.0, q1.y())));
+        painter.drawLine(QPointF(med.x() - box_w / 2.0, med.y()),
+                         QPointF(med.x() + box_w / 2.0, med.y()));
+        if (index < static_cast<std::size_t>(model.box_labels.size())) {
+            painter.setPen(theme_colors(model).muted_text);
+            painter.drawText(QRectF(min_p.x() - 40.0, plot.bottom() + 4.0, 80.0, 18.0),
+                             Qt::AlignCenter, model.box_labels[index]);
+        }
+    }
+}
+
 void render_surface(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
     const QRectF plot = plot_rect(area);
     if (model.contour_x.size() < 2 || model.contour_y.size() < 2
         || model.matrix_values.size() < model.contour_y.size()) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     double z_min = std::numeric_limits<double>::infinity();
@@ -1717,7 +1822,7 @@ void render_surface(QPainter& painter, const QRectF& area, const ChartModel& mod
         }
     }
     if (!std::isfinite(z_min) || !std::isfinite(z_max)) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     if (qFuzzyCompare(z_min, z_max)) {
@@ -1776,7 +1881,7 @@ void render_surface(QPainter& painter, const QRectF& area, const ChartModel& mod
 void render_pie(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
     if (model.category_values.empty()) {
-        painter.drawText(area, Qt::AlignCenter, QStringLiteral("没有可显示的数据"));
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
     const double total = std::accumulate(
@@ -1876,6 +1981,18 @@ void ChartRenderer::render(QPainter& painter, const QRectF& area, const ChartMod
         break;
     case ChartKind::Pie:
         render_pie(painter, area, model);
+        break;
+    case ChartKind::Density:
+        render_area(painter, area, model);
+        break;
+    case ChartKind::Hexbin:
+        render_contour(painter, area, model);
+        break;
+    case ChartKind::Bar:
+        render_pareto(painter, area, model);
+        break;
+    case ChartKind::Violin:
+        render_violin(painter, area, model);
         break;
     case ChartKind::Control:
     default:

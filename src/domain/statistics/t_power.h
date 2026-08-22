@@ -99,4 +99,31 @@ PowerResult two_poisson_rate_sample_size(
     double observation_length = 1.0, double alpha = 0.05,
     PowerAlternative alternative = PowerAlternative::two_sided);
 
+// Equivalence TOST power (difference / σ units; known-σ normal planning approx).
+PowerResult equivalence_one_sample_power(
+    std::size_t sample_size, double lower_limit, double upper_limit,
+    double true_difference = 0.0, double alpha = 0.05);
+PowerResult equivalence_one_sample_sample_size(
+    double lower_limit, double upper_limit, double target_power = 0.8,
+    double true_difference = 0.0, double alpha = 0.05);
+PowerResult equivalence_two_sample_power(
+    std::size_t sample_size_per_group, double lower_limit, double upper_limit,
+    double true_difference = 0.0, double alpha = 0.05);
+PowerResult equivalence_two_sample_sample_size(
+    double lower_limit, double upper_limit, double target_power = 0.8,
+    double true_difference = 0.0, double alpha = 0.05);
+
+// 2-level factorial design power (effect = |ȳ₊-ȳ₋|/σ).
+PowerResult doe_factorial_power(
+    std::size_t factor_count, std::size_t fraction_p, std::size_t replicates,
+    double effect_over_sigma, double alpha = 0.05);
+PowerResult doe_factorial_sample_size(
+    std::size_t factor_count, std::size_t fraction_p, double effect_over_sigma,
+    double target_power = 0.8, double alpha = 0.05);
+
+// Normal (Howe) tolerance interval: minimal n with k(n) ≤ max_k.
+PowerResult tolerance_normal_sample_size(
+    double coverage = 0.95, double confidence_level = 0.95,
+    double max_k_factor = 4.0);
+
 }  // namespace datalab::domain::statistics

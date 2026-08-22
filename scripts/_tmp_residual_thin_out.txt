@@ -1,0 +1,88 @@
+THIN_UNIQ 379
+  322	other_thin
+  17	plot_title_leftover
+  15	attrib_spc_dist_param
+  10	misc_table_header_param
+  7	misc_eq_param
+  5	doe_coding_chrome
+  2	inference_group_param
+  1	spc_stage_assumption_param
+
+=== other_thin n=322 ===
+src/application/analysis_service.cpp:1196	但不得输出过程合格判定（门禁：缺 golden/尾部/人工解释验收）。
+src/application/analysis_service.cpp:3052	是（区间不含 0）
+src/application/analysis_service.cpp:3052	否（区间含 0）
+src/application/analysis_service.cpp:4338	有效交叉分类观测不足。
+src/application/analysis_service.cpp:4925	    （Wheeler EMP；非全量 Expanded Gage）
+src/application/analysis_service.cpp:5018	    （平衡三因子随机；非全量 GLM）
+src/application/analysis_service.cpp:5928	 行缺失（含 *）。
+src/application/analysis_service.cpp:6581	complete-case 多元观测不足。
+src/application/analysis_service.cpp:7390	没有可拟合的候选模型。
+src/application/analysis_service.cpp:8044	 行。
+src/application/analysis_service.cpp:9186	设计因子列索引超出当前数据表范围。
+src/application/analysis_service.cpp:9459	没有可用于优化的有效 DOE 运行。
+src/application/analysis_service.cpp:9534	 行：因子水平既不匹配 -1/+1，也不匹配给定的低/高水平。
+src/application/analysis_service.cpp:10231	Log-rank 分组目前只支持两个非空水平。
+src/application/analysis_service.cpp:10259	删失类型列无法解析，或与事件列冲突；未知值不会被静默改写。
+src/application/analysis_service.cpp:10260	left/interval 若出现在数据中，将由删失契约拒绝经典 KM 路径。
+src/application/analysis_service.cpp:10272	区间删失行需要有效的左右界列（interval_left < interval_right）；
+src/application/analysis_service.cpp:10286	暴露量列必须为有限非负数；缺失或非法值不会被静默当作 0 或 1。
+src/application/analysis_service.cpp:10338	当前为二参数 Weibull。含阈值的三参数模型请选择 model=weibull3。
+src/application/analysis_service.cpp:10419	当前为一参数指数。含阈值的两参数模型请选择 model=exponential2。
+
+=== plot_title_leftover n=17 ===
+src/application/analysis_service.cpp:7073	Z 图
+src/application/analysis_service.cpp:7074	MR(Z) 图
+src/application/analysis_service.cpp:9156	曲面图为静态栅格可视化，不得解读为可旋转交互 3D。
+src/application/analysis_service.cpp:14317	组内图
+src/application/interpretation_service.cpp:324	该图不单独判定量具是否合格。
+src/application/interpretation_service.cpp:2443	移动平均图与 EWMA 不同；仅完整窗 MA 点参与判读，
+src/application/interpretation_service.cpp:2491	四图用于检查位置/散布/随机性/分布形态假设，不能写成受控结论或正态已成立。
+src/domain/graph_assembly.cpp:180	by/分组仍是图内着色，与分面列不同。
+src/domain/statistics/control_charts.cpp:1360	移动平均图需要至少 w 个观测。
+src/domain/statistics/doe_factorial.cpp:1145	未作图的因子按指定实际单位 hold（已转换为编码）求值。
+src/domain/statistics/eda_plots.cpp:136	Hexbin 要求 x/y/source_row 长度一致。
+src/domain/statistics/eda_plots.cpp:317	没有可用于条形图的类别。
+src/domain/statistics/msa_type1.cpp:298	当前观测未发现稳定性图超限点。
+src/domain/statistics/pca.cpp:355	T²/Q 限使用样本经验分位，不是 Minitab T² 控制图 UCL，也不使用 
+src/domain/statistics/process_capability.cpp:851	I-MR Rule-1 初筛未检出超限点；这不是完整控制图验收，
+src/domain/statistics/process_capability.cpp:954	不得写成过程合格（直方图初筛 ≠ Hartigan；≠ 混合模型证明）。
+src/domain/statistics/process_capability.cpp:962	能力分析双峰前置：当前为公式参考级直方图峰谷初筛；
+
+=== attrib_spc_dist_param n=15 ===
+src/application/analysis_service.cpp:15652	本轮 ANOM 仅支持正态均值；二项/泊松计数请用其他工具。
+src/application/interpretation_service.cpp:343	不要在特殊原因未排除前用该量具放行产品。
+src/application/interpretation_service.cpp:2110	CUSUM 使用累计和决策间隔信号，不套用 Shewhart 特殊原因规则（beyond_control_limit 等）；
+src/application/interpretation_service.cpp:2375	应优先结合现场原因验证，而不是直接假设存在 80/20 规律。
+src/application/interpretation_service.cpp:2417	不是完整 Shewhart 特殊原因规则（beyond_control_limit 等）的替代品。
+src/domain/statistics/aalen_johansen_cif.cpp:85	总体生存把任一标注失效当作事件；CIF_k 为原因 k 的累计发生概率。
+src/domain/statistics/control_charts.cpp:1645	特殊原因策略=minitab_like：默认仅启用「
+src/domain/statistics/control_charts.cpp:1658	特殊原因策略=all_applicable：启用该图种全部适用特殊原因规则；
+src/domain/statistics/control_charts.cpp:1679	已忽略不适用于此控制图的特殊原因规则：
+src/domain/statistics/control_charts.cpp:1686	CUSUM 不使用 Shewhart 特殊原因规则（beyond_control_limit 等），
+src/domain/statistics/eda_plots.cpp:321	通用条形保持出现顺序，不按计数排序，无累积百分比（与柏拉图分流）。
+src/domain/statistics/fine_gray.cpp:202	Fine-Gray 需要 n≥10 且目标原因失效≥2（当前 n=
+src/domain/statistics/fine_gray.cpp:246	；目标原因=
+src/domain/statistics/msa_type1.cpp:299	量具稳定性图存在超限点，需要调查特殊原因。
+src/domain/statistics/quality_visuals.cpp:235	未找到有效的类别-原因行。请提供非空类别列与原因列。
+
+=== misc_table_header_param n=10 ===
+src/application/analysis_service.cpp:7209	间隔
+src/application/interpretation_service.cpp:261	不要仅凭点预测确定最优设置。
+src/application/interpretation_service.cpp:265	多响应冲突时优先核对各响应 Desirability 与权重；
+src/domain/statistics/control_charts.cpp:1239	不是 Minitab 自定义权重 golden。
+src/domain/statistics/control_charts.cpp:1922	0 间隔回归得到非正形状参数。
+src/domain/statistics/eda_plots.cpp:300	已忽略非有限或负权重。
+src/domain/statistics/seasonal_forecasting.cpp:103	季节周期和预测期数必须为正整数。
+src/domain/statistics/seasonal_forecasting.cpp:675	滚动验证的初始样本、步长和预测跨度不足以形成有效起点。
+src/domain/statistics/time_series.cpp:61	单指数平滑要求至少两个观测、alpha 位于 (0,1] 且预测期数大于 0。
+src/domain/statistics/time_series.cpp:86	双指数平滑要求至少三个观测，alpha/gamma 位于 (0,1] 且预测期数大于 0。
+
+=== misc_eq_param n=7 ===
+src/application/analysis_service.cpp:8508	Bonett 仅支持两样本；k>2 组请改用 Levene（中位数）。
+src/application/interpretation_service.cpp:1665	Bonett 为连续分布下的标准差比路径，与中位数 Levene 不同；
+src/application/interpretation_service.cpp:1668	Bartlett 对正态偏离敏感；稳健场景宜对照中位数 Levene。
+src/domain/statistics/arima.cpp:598	与 Minitab 迭代最小二乘（Meeker TSERIES）的最优阶可能不同。
+src/domain/statistics/km_interval.cpp:165	Turnbull 已达最大迭代。
+src/domain/statistics/seasonal_forecasting.cpp:913	与 Minitab 迭代最小二乘（Meeker TSERIES，含 back forecast）
+src/domain/statistics/t_power.cpp:415	每组样本量、组数、效应量和 alpha 必须有效。

@@ -17,6 +17,7 @@ void WorksheetModel::set_table(const datalab::domain::DataTable& table)
 {
     beginResetModel();
     table_ = table;
+    column_hidden_.assign(table_.columns.size(), false);
     endResetModel();
 }
 
@@ -31,6 +32,14 @@ void WorksheetModel::set_excluded_rows(const std::vector<std::size_t>& rows)
     beginResetModel();
     excluded_rows_.clear();
     excluded_rows_.insert(rows.begin(), rows.end());
+    endResetModel();
+}
+
+void WorksheetModel::set_hidden_rows(const std::vector<std::size_t>& rows)
+{
+    beginResetModel();
+    hidden_rows_.clear();
+    hidden_rows_.insert(rows.begin(), rows.end());
     endResetModel();
 }
 
@@ -70,13 +79,67 @@ QVariant WorksheetModel::data(const QModelIndex& index, int role) const
     const std::size_t row = static_cast<std::size_t>(index.row());
     const std::size_t column = static_cast<std::size_t>(index.column());
     if (role == Qt::BackgroundRole && excluded_rows_.count(row) > 0) {
-        return QColor("#fff3cd");
+        return QColor("#fff3cd");  // excluded: analysis-out
+    }
+    if (role == Qt::BackgroundRole && hidden_rows_.count(row) > 0) {
+        return QColor("#e7f1ff");  // hidden: display-only omit (still analysis-eligible)
+    }
+    if (role == datalab::ui::SourceRowIndexRole) {
+        return static_cast<qulonglong>(row);
+    }
+    if (role == datalab::ui::RowIdRole) {
+        if (row < table_.row_ids.size()) {
+            return static_cast<qulonglong>(table_.row_ids[row]);
+        }
+        return {};
+    }
+    if (role == datalab::ui::ColumnTypeRole) {
+        if (column < table_.column_types.size()) {
+            return static_cast<int>(table_.column_types[column]);
+        }
+        return static_cast<int>(datalab::domain::ColumnType::unknown);
+    }
+    if (role == datalab::ui::CellStateRole) {
+        if (row < table_.cell_states.size()
+            && column < table_.cell_states[row].size()) {
+            return static_cast<int>(table_.cell_states[row][column]);
+        }
+        return static_cast<int>(datalab::domain::CellState::missing);
+    }
+    if (role == Qt::ToolTipRole) {
+        QStringList parts;
+        if (row < table_.row_ids.size()) {
+            parts.append(QStringLiteral("RowId=%1").arg(table_.row_ids[row]));
+        }
+        parts.append(QStringLiteral("源行=%1").arg(static_cast<qulonglong>(row)));
+        if (column < table_.column_types.size()) {
+            const auto type = table_.column_types[column];
+            parts.append(QStringLiteral("类型=%1").arg(
+                type == datalab::domain::ColumnType::numeric ? QStringLiteral("数值")
+                : type == datalab::domain::ColumnType::time ? QStringLiteral("时间")
+                : type == datalab::domain::ColumnType::categorical ? QStringLiteral("类别")
+                : QStringLiteral("未知")));
+        }
+        if (row < table_.cell_states.size()
+            && column < table_.cell_states[row].size()) {
+            const auto state = table_.cell_states[row][column];
+            parts.append(QStringLiteral("状态=%1").arg(
+                state == datalab::domain::CellState::valid ? QStringLiteral("有效")
+                : state == datalab::domain::CellState::invalid ? QStringLiteral("无效数值")
+                : QStringLiteral("缺失/NULL")));
+        }
+        return parts.join(QStringLiteral("；"));
     }
     if (role != Qt::DisplayRole && role != Qt::EditRole) {
         return {};
     }
     if (row >= table_.rows.size() || column >= table_.rows[row].size()) {
         return QString();
+    }
+    if (row < table_.cell_states.size()
+        && column < table_.cell_states[row].size()
+        && table_.cell_states[row][column] == datalab::domain::CellState::missing) {
+        return role == Qt::EditRole ? QString() : QStringLiteral("*");
     }
     const std::string& cell = table_.rows[row][column];
     if (role == Qt::EditRole) {
@@ -107,6 +170,18 @@ QVariant WorksheetModel::headerData(
         font.setPointSize(8);
         return font;
     }
+    if (role == Qt::ToolTipRole && orientation == Qt::Vertical
+        && section >= 0
+        && section < static_cast<int>(table_.row_ids.size())) {
+        return QStringLiteral("稳定 RowId=%1（非视觉行号）")
+            .arg(table_.row_ids[static_cast<std::size_t>(section)]);
+    }
+    if (role == Qt::AccessibleDescriptionRole && orientation == Qt::Vertical
+        && section >= 0
+        && section < static_cast<int>(table_.row_ids.size())) {
+        return QStringLiteral("RowId %1")
+            .arg(table_.row_ids[static_cast<std::size_t>(section)]);
+    }
     if (role != Qt::DisplayRole) {
         return {};
     }
@@ -120,7 +195,13 @@ QVariant WorksheetModel::headerData(
             .arg(section + 1)
             .arg(name);
     }
-    return orientation == Qt::Vertical ? section + 1 : QVariant{};
+    if (orientation == Qt::Vertical) {
+        if (section >= 0 && section < static_cast<int>(table_.row_ids.size())) {
+            return QString::number(table_.row_ids[static_cast<std::size_t>(section)]);
+        }
+        return section + 1;
+    }
+    return {};
 }
 
 Qt::ItemFlags WorksheetModel::flags(const QModelIndex& index) const
@@ -228,4 +309,52 @@ bool WorksheetModel::setHeaderData(
     emit headerDataChanged(Qt::Horizontal, section, section);
     emit table_changed(table_);
     return true;
+}
+
+void WorksheetModel::set_column_hidden_flags(const std::vector<bool>& hidden)
+{
+    column_hidden_ = hidden;
+    if (column_hidden_.size() < table_.columns.size()) {
+        column_hidden_.resize(table_.columns.size(), false);
+    }
+}
+
+const std::vector<bool>& WorksheetModel::column_hidden_flags() const
+{
+    return column_hidden_;
+}
+
+QString WorksheetModel::selection_tsv(
+    const QModelIndexList& indexes,
+    bool include_headers) const
+{
+    if (indexes.isEmpty()) {
+        return {};
+    }
+    int min_row = indexes.front().row();
+    int max_row = min_row;
+    int min_column = indexes.front().column();
+    int max_column = min_column;
+    for (const QModelIndex& index : indexes) {
+        min_row = std::min(min_row, index.row());
+        max_row = std::max(max_row, index.row());
+        min_column = std::min(min_column, index.column());
+        max_column = std::max(max_column, index.column());
+    }
+    QStringList lines;
+    if (include_headers) {
+        QStringList headers;
+        for (int column = min_column; column <= max_column; ++column) {
+            headers.append(headerData(column, Qt::Horizontal, Qt::EditRole).toString());
+        }
+        lines.append(headers.join(QLatin1Char('\t')));
+    }
+    for (int row = min_row; row <= max_row; ++row) {
+        QStringList cells;
+        for (int column = min_column; column <= max_column; ++column) {
+            cells.append(data(index(row, column), Qt::DisplayRole).toString());
+        }
+        lines.append(cells.join(QLatin1Char('\t')));
+    }
+    return lines.join(QLatin1Char('\n'));
 }

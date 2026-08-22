@@ -108,17 +108,41 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
         "chi_square", "列联表卡方", "假设检验", "统计 > 假设检验",
         "chi_square", "chi_square", "quality_statistics_test",
         "检验两个分类变量是否独立。",
-        "Pearson χ²、似然比 χ²、期望频数、残差和单元贡献。期望<1 时不显示近似 P。",
+        "Pearson χ²、似然比 χ²、期望频数、残差和单元贡献；行%/列%/合计%；观察频数热图与调整残差热图。"
+        "期望<1 时不显示近似 P。与交叉表命令分流：本命令做关联检验。",
         "两个分类列。",
-        ["complete-case 交叉分类。", "期望=行合计×列合计/总计。", "Pearson 与似然比。", "热图展示观察频数。"],
-        [("O", "观察频数"), ("E", "期望频数"), ("χ²", "Pearson 统计量")],
+        ["complete-case 交叉分类。", "期望=行合计×列合计/总计。", "Pearson 与似然比。",
+         "标准化残差=r/√E；调整残差=r/√[E(1−n_i+/n)(1−n_+j/n)]。",
+         "输出百分比表与调整残差热图。"],
+        [("O", "观察频数"), ("E", "期望频数"), ("χ²", "Pearson 统计量"),
+         ("Adj residual", "调整残差")],
         [fb("Pearson", "χ²=Σ (O−E)²/E。", [t("χ² = Σ "), frac("(O − E)²", "E")])],
-        ["p 小不等于有因果关系。", "期望<1 时近似失效。"],
+        ["p 小不等于有因果关系。", "期望<1 时近似失效。", "最大 |调整残差| 只定位偏离，不证明因果。"],
         "任一类无有效水平或表退化时诊断。",
-        "观察表、检验表、单元格统计、热图。",
-        "先看期望是否过小，再看 p 和残差。",
-        "不合并稀疏格子。",
-        ["anova"],
+        "观察表、检验表、单元格统计、百分比表、观察热图、调整残差热图。",
+        "先看期望是否过小，再看 p、残差热图与贡献最大单元格。",
+        "不合并稀疏格子；不改 chi_square_gof。",
+        ["crosstab"],
+    ))
+
+    ENTRIES.append(entry(
+        "cross_tabulation", "交叉表", "描述统计", "统计 > 表格",
+        "cross_tabulation", "cross_tab", "p2_eda4_crosstab_chi_resid_test",
+        "独立交叉表：观察频数与行%/列%/合计%，不做卡方检验。",
+        "complete-case 交叉分类；输出频数表、三类百分比与观察频数热图。"
+        "独立性检验请用列联表卡方。不替代 chi_square / chi_square_gof。",
+        "两个分类列。",
+        ["complete-case 交叉分类。", "边际合计。", "行%=O/行合计；列%=O/列合计；合计%=O/N。",
+         "信息诊断提示改用 chi_square 做检验。"],
+        [("O", "观察频数"), ("row%", "行百分比"), ("col%", "列百分比"), ("total%", "合计百分比")],
+        [fb("百分比", "描述性比例，不是检验统计量。",
+            [t("row% = 100 · O / n_{i+}；col% = 100 · O / n_{+j}；total% = 100 · O / n")])],
+        ["不得写成已证明存在或不存在关联。", "不做 Pearson/LR 检验。"],
+        "无有效交叉观测时诊断。",
+        "观察频数表、百分比表、热图。",
+        "先看边际与百分比结构；若要检验独立性，改用列联表卡方。",
+        "不破坏 chi_square 命令；本命令不做检验。",
+        ["crosstab"],
     ))
 
     ENTRIES.append(entry(
@@ -294,6 +318,84 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
     ))
 
     ENTRIES.append(entry(
+        "runs_test", "游程检验", "假设检验", "统计 > 假设检验",
+        "runs_test", "wilcoxon_signed_rank", "quality_statistics_test",
+        "检验一列数值按行序相对比较准则 K 是否随机（Wald–Wolfowitz / Minitab Runs）。",
+        "默认 K=均值；可选中位数或常数。A=#(X>K)，B=#(X≤K)；等号归 B。正态近似双侧 P，无连续性校正。中间缺失不出检验。",
+        "一列数值序列；比较准则 mean/median/value（value 时填 K）。",
+        ["按行序抽取有限值。", "中间缺失则诊断并中止。", "计算 K、A、B、游程数。", "正态近似 Z 与双侧 P。"],
+        [("K", "比较准则"), ("A", "大于 K 的个数"), ("B", "小于等于 K 的个数"), ("R", "观察游程数")],
+        [fb("Runs 正态近似",
+            "Expected=2AB/N+1，Var=2AB(2AB−N)/(N²(N−1))，Z=(R−Expected)/√Var，p=2(1−Φ(|Z|))。",
+            conditions="formula_reference；min(A,B)<10 时警告近似偏弱。")],
+        ["不得写已证明过程受控/失控。", "不与运行图四模式检验合并。"],
+        "N<2、全同侧、中间缺失、方差不可算时诊断。",
+        "比较准则表、Runs检验表、带中心线 K 的序列控制图式图。",
+        "先看两侧计数与正态近似警告，再看 P。",
+        "需要关于中位数的四模式 P 时用运行图。",
+        ["t"],
+    ))
+
+    ENTRIES.append(entry(
+        "fisher_exact", "Fisher 精确检验", "假设检验", "统计 > 假设检验",
+        "fisher_exact", "chi_square", "quality_statistics_test",
+        "对恰好 2×2 的分类交叉表做 Fisher 双侧精确检验，并报告可选优势比。",
+        "两列分类 complete-case 计数；复用与两比例相同的超几何双侧求和核。不改 two_proportions 行为。",
+        "正好两列分类，且各恰有 2 个水平。",
+        ["complete-case 交叉计数。", "校验 2×2。", "调用 fisher_exact_2x2。", "输出交叉表、P、可选 OR 与热图。"],
+        [("a,b,c,d", "2×2 计数"), ("OR", "ad/bc（bc>0）"), ("P", "双侧精确概率和")],
+        [fb("Fisher 双侧",
+            "固定边际下对所有 P(a')≤P(a) 的可行格求和；与 two_proportions 的 fisher_two_sided 一致。",
+            conditions="formula_reference；不做 r×c / mid-p / Blaker。")],
+        ["不得写已证明关联存在或不存在。", "禁止因本命令改 two_proportions。"],
+        "非 2×2、空表时诊断。",
+        "交叉表、Fisher精确检验表、观察频数热图。",
+        "先确认 2×2 水平，再看精确 P 与 OR。",
+        "一般 r×c 关联用列联表卡方；配对二元用 McNemar。",
+        ["t"],
+    ))
+
+    ENTRIES.append(entry(
+        "run_chart", "运行图", "质量工具", "质量工具",
+        "run_chart", "time_series", "quality_statistics_test",
+        "按行序画个体运行图（中位数中心线），并给出聚类/混合/趋势/振荡四模式近似 P。",
+        "子组大小=1；中间缺失不出四模式检验。不跑 SPC Test 1–8，不做控制限。独立于 Gage 内嵌 run chart。",
+        "一列数值观测。",
+        ["抽取连续有限值。", "中位数为中心。", "关于中位数游程与上升/下降游程。", "四模式单侧正态近似 P。"],
+        [("M", "中位数"), ("R", "关于中位数游程数"), ("V", "上升/下降游程数")],
+        [fb("关于中位数",
+            "E=1+2mn/N，Z=(R−E)/√Var；clustering=Φ(Z)，mixtures=1−Φ(Z)。点落在中位数上归下侧。",
+            conditions="formula_reference。"),
+         fb("上升/下降",
+            "E=(2N−1)/3，Var=(16N−29)/90；trends=Φ(Z)，oscillation=1−Φ(Z)。平坦差分归下行。",
+            conditions="formula_reference。")],
+        ["不得写已证明过程受控或失控。", "不与游程检验命令合并。"],
+        "空序列、中间缺失、一侧为空时诊断。",
+        "关于中位数的游程表、上升/下降游程表、中位数中心运行图。",
+        "先看图上聚集/交替形态，再对照四个 P。",
+        "只要相对常数 K 的随机性用游程检验。",
+        ["cap"],
+    ))
+
+    ENTRIES.append(entry(
+        "cause_and_effect", "因果图", "质量工具", "质量工具",
+        "cause_and_effect", "pareto", "quality_statistics_test",
+        "按类别汇总原因条目，输出结构摘要与类别计数图（鱼骨/因果头脑风暴）。",
+        "无 P 值、无分布假设。效应标题可配置；跳过空类别/空原因。不与柏拉图合并。",
+        "类别列 + 原因列；可选效应标题（默认“效应”）。",
+        ["读取类别-原因对。", "按类别分组计数。", "结构摘要表。", "类别原因计数条/Pareto 式图。"],
+        [("effect", "效应标题"), ("category", "分支类别"), ("cause", "原因文本")],
+        [fb("结构摘要", "仅分组计数与展示；不做权重、排序检验或根因判定。",
+            conditions="非统计检验；formula_reference 仅指产品合同。")],
+        ["不得写已证明根因。", "禁止重做或拆坏 pareto。"],
+        "无有效类别-原因对时诊断。",
+        "结构摘要表、类别原因计数图。",
+        "用于组织原因清单；频次优先级请转柏拉图并现场验证。",
+        "需要统计排序时用柏拉图。",
+        ["graph"],
+    ))
+
+    ENTRIES.append(entry(
         "variance_test", "等方差检验", "假设检验", "统计 > 假设检验",
         "variance_test", "variance", "quality_statistics_test",
         "检验两组或多组方差/标准差是否相等。",
@@ -336,6 +438,230 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
     ))
 
     ENTRIES.append(entry(
+        "kmeans", "K-Means 聚类", "多变量", "统计 > 多变量",
+        "kmeans", "kmeans", "p3_batch1_kmeans_cart_adf_test",
+        "把多维数值观测分成 k 个簇，并报告质心与簇内平方和。",
+        "欧氏距离 Lloyd 迭代；初始质心取前 k 个有效观测；可选标准化。",
+        "至少两列数值；参数 k、最大迭代、是否标准化。",
+        ["complete-case 多列对齐。", "可选标准化后取前 k 行作初始质心。", "Lloyd 迭代得到分配、质心、簇内 SS。"],
+        [("k", "簇数"), ("d", "欧氏距离"), ("WSS", "簇内平方和")],
+        [fb("欧氏距离", "d(x,c)=√Σ(x_j−c_j)²。"),
+         fb("Lloyd", "分配到最近质心 → 按成员均值更新质心 → 重复。")],
+        ["簇标签只描述相对邻近，不是工艺判定。", "未收敛时只报告迭代诊断。"],
+        "列数<2、有效行<k、k<2。",
+        "簇摘要、质心、分配表、前两列散点。",
+        "看簇大小与 WSS；结合工艺变量解释邻近结构。",
+        "不做层次聚类或自动选 k；非 Minitab golden。",
+        ["pca"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "cluster_observations", "层次聚类（观测）", "多变量", "统计 > 多变量",
+        "cluster_observations", "hierarchical_cluster", "p3_batch2_poisson_iforest_bootstrap_hclust_test",
+        "对多维观测做 complete linkage 凝聚层次聚类，并按 k 切簇。",
+        "欧氏距离；簇间最大两两距离；输出合并历程与分配。",
+        "≥2 数值列；k；可选标准化。",
+        ["complete-case。", "凝聚合并。", "切 k 分配。"],
+        [("height", "合并时 complete 距离")],
+        [fb("Complete linkage", "D(A,B)=max_{i∈A,j∈B} d(i,j)。")],
+        ["簇标签只描述邻近结构。"],
+        "列数<2 或 n<k。",
+        "合并历程、分配表、前两列散点。",
+        "结合 height 跳跃与散点阅读。",
+        "本轮仅 complete；非 single/Ward；非 K-Means。",
+        ["pca"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "cart_tree", "CART 单树", "预测 / 经典 ML", "统计 > 预测辅助",
+        "cart_tree", "cart_tree", "p3_batch1_kmeans_cart_adf_test",
+        "用自研二叉递归划分做分类或回归单树，输出结点表与变量重要性。",
+        "分类用 Gini，回归用 SSE；深度/叶样本停。非 TreeNet/Random Forests 对齐。",
+        "响应列 + ≥1 数值预测列；task；max_depth；min_leaf。",
+        ["对齐响应与预测列。", "递归分裂直至停止条件。", "汇总树表、重要性、混淆矩阵或 RMSE。"],
+        [("Gini", "1−Σp_c²"), ("SSE", "Σ(y−ȳ)²")],
+        [fb("分类分裂", "增益 = 父 Gini − 加权子 Gini。"),
+         fb("回归分裂", "增益 = 父 SSE − (左 SSE + 右 SSE)。")],
+        ["训练集指标不能外推为工艺合格。", "不得声称等同 Minitab TreeNet/RF。"],
+        "无响应、无预测列、分类类别不足。",
+        "树结点、变量重要性、混淆矩阵或观测-拟合图。",
+        "先看主导分裂变量与叶纯度。",
+        "本轮无成本复杂度剪枝；无随机森林；无 Python/sklearn 运行时。",
+        ["pca"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "isolation_forest", "Isolation Forest", "预测 / 经典 ML", "统计 > 预测辅助",
+        "isolation_forest", "isolation_forest", "p3_batch2_poisson_iforest_bootstrap_hclust_test",
+        "对多维数值观测计算孤立分数，标记相对孤立点。",
+        "随机划分树平均路径长度；分数 s=2^(-E(h)/c(n))。与单变量 outlier_test 分流。",
+        "≥2 数值列；tree/max_samples/分位阈值/seed。",
+        ["complete-case。", "建树并估计路径。", "按分数分位标记。"],
+        [("s", "异常分数"), ("c(n)", "平均路径修正")],
+        [fb("分数", "s = 2^(-E(h(x))/c(n))。")],
+        ["高分只提示相对孤立。", "不得声称等同 TreeNet/RF。"],
+        "列数<2 或有效行不足。",
+        "分数表、异常标记、分数图。",
+        "结合工艺变量回查高分行。",
+        "自研 C++；无 sklearn 运行时。",
+        ["pca"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "poisson_regression", "Poisson 回归", "回归", "统计 > 回归",
+        "poisson_regression", "poisson_regression", "p3_batch2_poisson_iforest_bootstrap_hclust_test",
+        "对非负计数响应拟合 log 链 Poisson GLM，并报告系数与偏差。",
+        "IRLS 最大似然；μ=exp(xβ)；权重=μ。",
+        "计数响应 + ≥1 数值预测列。",
+        ["对齐 complete-case。", "IRLS 估计。", "输出系数与 Pearson 残差。"],
+        [("μ", "均值"), ("D", "偏差")],
+        [fb("log 链", "log μ = xβ。"),
+         fb("偏差", "D=2Σ[y log(y/μ)-(y-μ)]（y=0 时 y log 项为 0）。")],
+        ["系数显著性只描述关联证据。", "未收敛时不外推解释。"],
+        "响应负值、观测不足或奇异设计。",
+        "模型摘要、系数、拟合残差、残差散点。",
+        "先看收敛与偏差，再读系数方向。",
+        "本轮无负二项/零膨胀/偏移列；非 Minitab golden。",
+        ["reg"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "bootstrap_mean", "Bootstrap 均值 CI", "推断 / 仿真", "统计 > 基本统计",
+        "bootstrap_mean", "bootstrap_mean", "p3_batch2_poisson_iforest_bootstrap_hclust_test",
+        "对单列样本均值做百分位 bootstrap 置信区间。",
+        "B 次有放回重抽样；取经验分位 α/2 与 1−α/2。非 BCa。",
+        "一个数值列；B、置信水平、seed。",
+        ["读有限值。", "重抽样均值。", "百分位区间。"],
+        [("B", "重抽样次数"), ("x̄*", "bootstrap 均值")],
+        [fb("百分位 CI", "取 {x̄*} 的经验分位 α/2 与 1−α/2。")],
+        ["区间只描述重抽样不确定性。"],
+        "n<2 或 B 过小。",
+        "摘要表与 bootstrap 均值直方图。",
+        "看区间宽度与样本均值位置。",
+        "本轮百分位法；非 BCa；非两样本。",
+        ["t"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "ordinal_logistic", "有序 Logistic 回归", "回归", "统计 > 回归",
+        "ordinal_logistic", "ordinal_logistic", "p3_batch3_ordinal_lda_ccf_correlogram_test",
+        "对有序多水平响应拟合比例优势 logit 模型。",
+        "logit P(Y≤k)=θ_k+xβ；共享斜率。",
+        "有序响应（≥3 水平）+ ≥1 数值预测。",
+        ["编码有序水平。", "MLE 估计。", "输出系数与 AIC。"],
+        [("θ_k", "累积阈值"), ("β", "共享斜率")],
+        [fb("比例优势", "logit P(Y≤k)=θ_k+xβ。")],
+        ["系数描述累积对数优势关联证据。"],
+        "水平不足或奇异信息矩阵。",
+        "模型摘要与系数表。",
+        "先看收敛与 AIC，再读斜率方向。",
+        "本轮仅 logit；非名义 Logistic。",
+        ["reg"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "discriminant", "线性判别分析", "多变量", "统计 > 多变量",
+        "discriminant", "discriminant", "p3_batch3_ordinal_lda_ccf_correlogram_test",
+        "用等协方差线性判别对类别响应分类并报告混淆矩阵。",
+        "类均值、合并协方差、线性得分与先验。",
+        "类别响应 + ≥1 数值预测；≥2 类。",
+        ["估计类均值与合并协方差。", "线性得分分类。", "输出混淆矩阵。"],
+        [("Σ", "合并协方差"), ("π_c", "类先验")],
+        [fb("线性得分", "δ_c(x)=x'Σ^{-1}μ_c−½μ_c'Σ^{-1}μ_c+log π_c。")],
+        ["训练准确率不能外推为工艺判定。"],
+        "类过小或协方差奇异。",
+        "类均值、混淆矩阵、LD 投影散点。",
+        "看类可分性与误分模式。",
+        "不做 QDA。",
+        ["pca"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "ccf", "互相关（CCF）", "时间序列", "统计 > 时间序列",
+        "ccf", "ccf", "p3_batch3_ordinal_lda_ccf_correlogram_test",
+        "计算两列对齐序列在正负滞后上的互相关，并画置信带。",
+        "样本互相关；带宽 ±z/√n。",
+        "两个数值序列；可选 max_lag。",
+        ["对齐有效对。", "计算各滞后 CCF。", "输出表与图。"],
+        [("c_k", "滞后 k 的互相关")],
+        [fb("CCF", "c_k=Σ(x_t−x̄)(y_{t+k}−ȳ)/√[Σ(x−x̄)²Σ(y−ȳ)²]。")],
+        ["越过带宽只提示相关证据。"],
+        "有效对过少或零方差。",
+        "CCF 表与带置信限的图。",
+        "先看 lag0 与邻近滞后。",
+        "非预白化；宜与 ACF/PACF 对照。",
+        ["arima"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "correlogram", "Correlogram（相关热图）", "图形", "图形",
+        "correlogram", "correlogram", "p3_batch3_ordinal_lda_ccf_correlogram_test",
+        "把多列两两相关矩阵画成热图并输出系数表。",
+        "复用 correlation_matrix；PlotKind::heatmap。",
+        "≥2 数值列；Pearson/Spearman。",
+        ["complete-case。", "相关矩阵。", "热图。"],
+        [("r", "相关系数")],
+        [fb("相关矩阵", "对 complete-case 列计算 Pearson 或 Spearman 相关。")],
+        ["热图只展示相关结构。"],
+        "列数<2。",
+        "相关矩阵表与热图。",
+        "看强相关块与符号。",
+        "与 correlation_plot 分流；非 Graph Builder。",
+        ["graph"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "stepwise_regression", "逐步回归", "回归", "统计 > 回归",
+        "stepwise_regression", "stepwise_regression", "p3_track_h_stepwise_km_pb_test",
+        "按 α_enter/α_remove 对线性回归候选预测做逐步选择。",
+        "stepwise / forward / backward；每步用项 p 值进退。",
+        "数值响应 + ≥2 候选预测。",
+        ["拟合当前子集。", "按 p 值进/出。", "输出步骤与终模型。"],
+        [("α_enter", "进入阈值"), ("α_remove", "剔除阈值")],
+        [fb("逐步", "按项 p 值与 α_enter/α_remove 进退预测变量。")],
+        ["选入项只描述相对拟合证据。"],
+        "候选不足或观测过少。",
+        "步骤表、选入项、终模型系数。",
+        "先看步骤稳定性，再读终模型系数。",
+        "非 Best subsets；非 AICc 前进。",
+        ["reg"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "km_interval", "区间删失 Kaplan–Meier", "可靠性", "统计 > 可靠性",
+        "km_interval", "km_interval", "p3_track_h_stepwise_km_pb_test",
+        "对左/区间/右删失寿命数据用 Turnbull NPMLE 估计生存函数。",
+        "把观测写成 (L,R]；自洽迭代质量点。",
+        "左端列与右端列；右端空/Inf 表示右删失。",
+        ["构造区间。", "Turnbull 迭代。", "累计质量得 S(t)。"],
+        [("S(t)", "生存函数"), ("(L,R]", "删失区间")],
+        [fb("Turnbull", "自洽更新质量点直至收敛，再累计得 S(t)。")],
+        ["中位寿命未估出时只报告曲线。"],
+        "有效区间过少或 R<L。",
+        "摘要、生存表与曲线。",
+        "对照删失类型计数与中位寿命。",
+        "非右删失 product-limit。",
+        ["rel"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "doe_plackett_burman", "Plackett–Burman 设计生成", "DOE", "质量工具 > DOE",
+        "doe_plackett_burman", "plackett_burman", "p3_track_h_stepwise_km_pb_test",
+        "生成 Plackett–Burman 两水平筛选设计矩阵。",
+        "选择最小 N=4m≥k+1；循环 ±1 行。",
+        "因子名列表；可选高低水平与中心点。",
+        ["选 N。", "循环生成。", "输出运行表。"],
+        [("N", "运行数"), ("k", "因子数")],
+        [fb("PB", "用循环生成器构造 N×(N−1) 的 ±1 矩阵并截取前 k 列。")],
+        ["分辨率 III，仅适合筛选。"],
+        "因子数越界或名称重复。",
+        "设计信息与编码运行表。",
+        "按运行表安排试验。",
+        "本轮支持 N∈{8,12,16,20,24}；非 CCD。",
+        ["doe"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
         "multi_vari", "Multi-Vari 图", "质量工具", "质量工具",
         "multi_vari", "multi_vari", "multi_vari_test",
         "用 2～4 个因子展示测量值在各层的位置与散布。",
@@ -353,25 +679,142 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
     ))
 
     ENTRIES.append(entry(
+        "variability_chart", "变异性图", "质量工具", "质量工具",
+        "variability_chart", "variability", "quality_statistics_test",
+        "按 1～2 个因子展示各单元均值（含极差）与标准差双面板。",
+        "与 Multi-Vari 独立：输出均值+range 与 SD 两图，不做交互均值连线探索。单元 mean/SD 按因子水平组合聚合；SD 中心线为有 SD 的单元平均。",
+        "一个测量列和 1～2 个因子列（每因子建议 ≥2 水平）。",
+        ["complete-case。", "按因子格子算 N/Mean/StDev/Min/Max。", "画均值+极差面板与标准差面板。"],
+        [("格子", "因子水平组合"), ("s̄", "各单元样本 SD 的平均")],
+        [fb("单元均值与 SD",
+            "ȳ_c=平均，s_c=√[Σ(y−ȳ_c)²/(n_c−1)]（n_c≥2）；极差条为 [min,max]。",
+            conditions="formula_reference；本轮锁定 1～2 因子。")],
+        ["不是 Multi-Vari redo。", "不是 ANOVA 显著性检验。", "不得写过程已受控。"],
+        "因子不是 1～2 个、测量非有限或全单元 n=1（SD 图空）时诊断。",
+        "单元统计表 + 均值/极差图 + 标准差图。",
+        "先看哪一单元均值偏移，再看哪一单元离散度偏大。",
+        "不做 3～8 因子；不并入 multi_vari 命令。",
+        ["graph"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "acceptance_sampling", "属性一次抽样", "质量工具", "质量工具",
+        "acceptance_sampling", "interval", "quality_statistics_test",
+        "按样本量 n 与接收数 c 给出二项 OC 曲线与可选 AQL/RQL 风险点。",
+        "Pa(p)=P(X≤c)，X~Bin(n,p)。批大小 N 可选且仅摘要；有限批超几何本轮不做，仍用二项 OC。",
+        "不读工作表。输入 n、c；可选 AQL、RQL、批大小 N。",
+        ["校验 n≥1、c≤n。", "在 p 网格上算 Pa(p)。", "可选标记 Pa(AQL)/Pa(RQL)。", "输出计划表、OC 表与 OC 曲线图。"],
+        [("n", "样本量"), ("c", "接收数"), ("Pa(p)", "接收概率"), ("p", "不合格品率")],
+        [fb("二项 OC",
+            "Pa(p)=Σ_{k=0}^{c} C(n,k) p^k (1−p)^{n−k}。",
+            conditions="formula_reference；p=0 时 Pa=1。")],
+        ["不得写批次合格或必须接收/拒收。", "N 仅信息，不改变本轮二项 OC。", "不做 ANSI 全表 golden。"],
+        "n=0、c>n 或 AQL/RQL 越界时诊断。",
+        "抽样计划表、OC 曲线表、OC 曲线图。",
+        "先看 OC 形状，再看 AQL/RQL 风险点是否可接受。",
+        "不做超几何有限批 OC；不做多次抽样链。",
+        ["cap"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "anom", "均值分析 (ANOM)", "ANOVA", "统计 > ANOVA",
+        "anom", "anova", "quality_statistics_test",
+        "在正态均值假定下，比较各组均值是否偏离总体均值（Analysis of Means）。",
+        "总体均值与 pooled SD；决策限用 Nelson 正态/多重比较近似。本轮仅正态均值，不做二项/泊松 ANOM。",
+        "一个数值响应列与一个分组列；α 默认 0.05。",
+        ["按组 complete-case。", "算组均值、pooled SD 与 UDL/LDL。", "标记超出决策限的组。", "输出决策限表、组均值表与 ANOM 图。"],
+        [("ȳ̄", "总体均值"), ("s_p", "组内 pooled SD"), ("UDL/LDL", "决策限"), ("α", "族误差率")],
+        [fb("ANOM 决策限",
+            "UDL/LDL=ȳ̄± z_{1−α/(2k)}·s_p·√((k−1)/N)。",
+            conditions="formula_reference；不等 n 时仍用总 N 近似并警告。")],
+        ["不得写已证明同均值或必须删除组。", "二项/泊松计数请用其他工具。", "近似限不是 Minitab exact h golden。"],
+        "组数<2、某组 n<2、s_p=0 时诊断。",
+        "决策限表、组均值表、带中心线与 UDL/LDL 的 ANOM 图。",
+        "先看哪些组超出限，再结合工程背景调查。",
+        "不做二项/泊松 ANOM 变体。",
+        ["anova"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "poisson_gof", "泊松拟合优度", "假设检验", "统计 > 假设检验",
+        "poisson_gof", "chi_square_gof", "quality_statistics_test",
+        "检验一列非负整数计数是否服从泊松分布（估计 λ=样本均值）。",
+        "Pearson χ² 合并小期望格；DF=合并后类别数−1−1。与列联表卡方 GOF 命令独立。",
+        "一列非负整数计数。",
+        ["complete-case 读取整数计数。", "λ̂=均值。", "按观察值合并期望<1 的格。", "输出 λ̂、χ²、DF、p 与有效性提示。"],
+        [("λ̂", "泊松率估计"), ("χ²", "Pearson 统计量"), ("DF", "自由度")],
+        [fb("泊松 GOF",
+            "E_k≈n·P(X=k|λ̂)；χ²=Σ(O−E)²/E，DF=#bins−2。",
+            conditions="formula_reference；全同计数时 P 应偏大。")],
+        ["不得写已证明服从泊松。", "不修改 chi_square_gof 命令。", "非整数计数诊断。"],
+        "n<2、非整数、合并后类别<2 或 DF<1 时诊断。",
+        "泊松参数表、卡方检验表。",
+        "先看期望<5 警告，再看 P。",
+        "分类列比例 GOF 仍用 chi_square_gof。",
+        ["gof"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
         "t_power", "t 功效与样本量", "功效与样本量", "统计 > 功效与样本量",
-        "t_power", "t_power", "capability_ci_gof_rare_event_power_test",
-        "在给定效应、α 和功效目标下，估计样本量或可检测效应。mode 覆盖单/双样本 t、ANOVA、单/两比例、单/双方差、单/双泊松率。",
-        "不使用工作表。不同 mode 复用非中心 t、非中心 F、χ² / F 方差检验、比例或泊松率正态近似。可给逗号分隔的多个 n 或效应。",
-        "mode、效应大小、α、功效或样本量；ANOVA 另给组数；比例/泊松另给假设与比较率；泊松另给观测长度 L；方差把 effect 解释为标准差比。",
-        ["读取 mode、效应、α、功效或 n。", "按 mode 选择公式。", "输出 Actual Power 与功效曲线。"],
-        [("α", "第一类错误"), ("功效", "1−β"), ("effect", "标准化差异、比例差、标准差比或率差"),
-         ("λ0/λ1", "泊松假设率与比较率"), ("L", "泊松观测长度"),
-         ("mode", "one_sample / two_sample / anova / one_proportion / two_proportion / one_variance / two_variance / one_poisson / two_poisson")],
-        [fb("功效", "功效 = P(拒绝 H0 | 真实效应=δ)。t 用非中心 t，ANOVA 用非中心 F，单方差用 χ²，双方差用 F，比例与泊松率用正态近似。"),
-         fb("泊松率功效", "暴露 E=n·L；σ0=√(λ0/E)，σA=√(λ1/E)；双侧用标准正态临界值与 Φ 计算功效。字段：null_proportion→λ0，second_proportion→λ1，observation_length→L。",
-            conditions="mode=one_poisson_* / two_poisson_*。")],
+        "t_power", "t_power", "p2_doe_acf_power_test",
+        "在给定效应、α 和功效目标下，估计样本量或可检测效应。"
+        "mode 覆盖 t/ANOVA/比例/方差/泊松，以及等价 TOST、2 水平 DOE、正态容差样本量。",
+        "不使用工作表。等价功效为已知 σ 正态规划近似；DOE 按主效应高低对比复用双样本非中心 t；"
+        "容差按 Howe k(n)≤max_k 求最小 n。",
+        "mode、效应、α、功效或样本量；DOE 用 groups=k、observation_length=p；"
+        "等价半宽用 effect（σ 单位）；容差覆盖率用 effect、置信用 target、max k 用 null_proportion。",
+        ["读取 mode、效应、α、功效或 n。", "按 mode 选择公式。", "输出 Actual Power / n 与功效曲线。"],
+        [("α", "第一类错误"), ("功效", "1−β"), ("δ", "等价界（σ 单位）"),
+         ("k,p,r", "DOE 因子数/部分析因/重复"), ("Howe k", "双侧正态容差因子")],
+        [fb("功效", "功效 = P(拒绝 H0 | 真实效应=δ)。t 用非中心 t；等价用正态 TOST 规划近似。"),
+         fb("DOE 功效", "n₊=n₋=r·2^(k-p-1)，效应=|ȳ₊−ȳ₋|/σ，复用双样本 t 功效。"),
+         fb("容差样本量", "求最小 n 使 Howe k(n;P,γ) ≤ max_k。")],
         ["这是设计阶段参考，不是已收集数据的 p 值。", "不得写成样本量足够。"],
         "α 或功效越界、效应为 0、率≤0 或非有限时诊断。",
-        "功效与样本量表（Sample Size、Target Power、Actual Power）和功效曲线。",
-        "先核对 mode，再看 σ、比例或泊松率假设是否来自历史数据/工程要求。",
-        "不做泊松 Blaker；不重做已有方差功效路径。",
+        "功效与样本量表和功效曲线。",
+        "先核对 mode，再看 σ/等价界/DOE 参数是否来自工程要求。",
+        "不做 crossover 等价功效、PB 功效、非参数容差样本量；不做泊松 Blaker。",
         ["t", "power"],
         missing="本命令不读取工作表，因此没有 N/N*。",
+        status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "acf_pacf", "ACF/PACF", "时间序列", "统计 > 时间序列",
+        "acf_pacf", "acf_pacf", "p2_doe_acf_power_test",
+        "计算单列序列的自相关与偏自相关，并画带置信限的 ACF/PACF 图。",
+        "ACF 为样本自相关；PACF 用 Durbin–Levinson。"
+        "默认置信带为 NIST 白噪声固定带宽 ±z/√n（独立性检验），不是 Bartlett 变带宽。",
+        "一个数值序列列；可选 max_lag 与置信水平。",
+        ["按行序读取有限值。", "计算 ACF/PACF 与 Ljung–Box。", "输出表与双图。"],
+        [("r_k", "滞后 k 的 ACF"), ("φ_kk", "PACF"), ("带宽", "±z_{1−α/2}/√n")],
+        [fb("ACF", "r_k = Σ(x_t−x̄)(x_{t+k}−x̄) / Σ(x_t−x̄)²，含 lag0=1。"),
+         fb("PACF", "Durbin–Levinson 递推得到 φ_kk。"),
+         fb("置信带", "默认 white_noise_fixed：±z/√n；诊断中说明非 ARIMA 识别变带宽。")],
+        ["越过带宽不是过程已失控。", "Ljung–Box 小 P 不是已证明模型错误。"],
+        "n<3 或零方差时诊断。",
+        "ACF/PACF 表、Ljung–Box、ACF 图、PACF 图。",
+        "先看 lag1–几阶是否持续越带，再结合工艺时序。",
+        "不做 CCF；ADF 见独立命令 adf_test；不自动改 ARIMA 阶。",
+        ["arima"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "adf_test", "ADF 单位根检验", "时间序列", "统计 > 时间序列",
+        "adf_test", "adf", "p3_batch1_kmeans_cart_adf_test",
+        "对单列序列做 Augmented Dickey–Fuller 检验，报告 τ 与临界值。",
+        "对 Δy 回归 y(t−1) 与滞后差分，可选漂移/趋势。τ=γ̂/se(γ̂)。临界值为大样本 MacKinnon 风格常数。",
+        "一个数值序列；regression=none|drift|trend；lags 可空自动。",
+        ["读有限值并差分。", "OLS 估计 ADF 回归。", "输出 τ、临界值、系数表与序列图。"],
+        [("γ", "y(t−1) 系数"), ("τ", "γ̂ / se(γ̂)")],
+        [fb("ADF（漂移）", "Δy_t = α + γ y_{t−1} + Σ δ_i Δy_{t−i} + ε_t。"),
+         fb("临界值", "使用大样本 MacKinnon 风格 1%/5%/10% 常数表。")],
+        ["τ 低于 5% 临界值只提示拒绝单位根的证据。", "宜与 ACF/PACF 一并阅读。"],
+        "有效观测过少或设计矩阵奇异。",
+        "检验表、系数表、序列图。",
+        "先看回归规格与滞后，再解释 τ 相对临界值。",
+        "不做 KPSS/PP/CCF；非 Minitab golden。",
+        ["arima"], status="formula_reference",
     ))
 
     def add_ts(eid, title, overview, formulas, status="implemented"):
@@ -440,6 +883,12 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
             "xbar_s": "xbar_output_test",
             "ewma": "ewma_cusum_output_test",
             "cusum": "ewma_cusum_output_test",
+            "hotelling_t2": "p2_t2_mewma_nelson_emp_test",
+            "mewma": "p2_t2_mewma_nelson_emp_test",
+            "generalized_variance": "p2_gv_expanded_b4b5_test",
+            "zone_chart": "zone_zmr_ma_output_test",
+            "z_mr": "zone_zmr_ma_output_test",
+            "moving_average": "zone_zmr_ma_output_test",
             "g_chart": "capability_ci_gof_rare_event_power_test",
             "t_chart": "capability_ci_gof_rare_event_power_test",
         }.get(eid, "quality_statistics_test")
@@ -463,12 +912,14 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
         ))
 
     add_spc("imr", "I-MR 控制图", "individuals_moving_range",
-            "单值图用 X̄ 作中心线；移动极差默认 w=2。σ_within=MR̄/d2(2)，d2(2)=1.128。",
+            "单值图用 X̄ 作中心线；移动极差默认 w=2。"
+            "σ 方法可选：平均 MR/d2、中位 MR、MSSD；可选 Nelson estimate（剔除 MR>D4·MR̄ 后重估）。",
             [
                 fb("组内标准差",
-                   "σ_within = MR̄ / d2(w)\n默认 w=2，d2(2)=1.128，MR_i=|x_i−x_{i−1}|",
+                   "σ_within = MR̄ / d2(w)\n默认 w=2，d2(2)=1.128，MR_i=|x_i−x_{i−1}|。"
+                   "Nelson：剔除过大 MR 后重算 MR̄。MSSD：√(Σd²/(2(N−1)))/c4'。",
                    [line("σ", sub("within"), " = ", frac([bar("MR")], [t("d"), sub("2"), t("(w)")]))],
-                   explanation="移动极差长度默认 w=2。"),
+                   explanation="移动极差长度默认 w=2；Nelson/MSSD 见参数页。"),
                 fb("I 图（单值）",
                    "UCL = x̄ + 3 σ_within\nCL = x̄\nLCL = x̄ − 3 σ_within",
                    [stack(
@@ -491,6 +942,59 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
                    )]),
             ],
             ["imr", "tests"])
+    ENTRIES.append(entry(
+        "hotelling_t2", "Hotelling T²", "控制图", "控制图",
+        "hotelling_t2", "multivariate_spc", "p2_t2_mewma_nelson_emp_test",
+        "多元个体 Hotelling T² 控制图。",
+        "Phase I 用 Tracy–Young–Mason Beta UCL；可选 Phase II F 限。"
+        "不是 PCA 经验分位 T²。",
+        "至少两个数值变量列；complete-case。",
+        ["估计均值向量与协方差。", "计算逐点 T²。", "按 phase 计算 UCL。", "超限计数。"],
+        [("T²", "马氏距离平方"), ("UCL", "上控制限"), ("m,p", "观测数与变量数")],
+        [fb("T²", "Q=(x−x̄)'S⁻¹(x−x̄)。", [t("Q = (x − x̄)' S⁻¹ (x − x̄)")]),
+         fb("Phase I UCL", "UCL=((m−1)²/m)·B_{1−α}(p/2,(m−p−1)/2)。")],
+        ["超限不是过程失控证明。", "不要与 PCA 经验 T² 混淆。"],
+        "m≤p+1 或协方差奇异时诊断。",
+        "T² 图、摘要表、逐点表。",
+        "先看 UCL 方法与超限点，再结合工艺。",
+        "默认 α=0.05。",
+        ["spc"],
+    ))
+    ENTRIES.append(entry(
+        "mewma", "MEWMA", "控制图", "控制图",
+        "mewma", "multivariate_spc", "p2_t2_mewma_nelson_emp_test",
+        "多元 EWMA（MEWMA）控制图。",
+        "Z_i=λX_i+(1−λ)Z_{i−1}；T²=Z'Σ_Z⁻¹Z。默认 UCL 为渐近 χ² 近似（非 ARL 仿真），可手工指定。",
+        "至少两个数值变量；λ 默认 0.1。",
+        ["估计协方差。", "递推 Z。", "每步精确 Σ_Z。", "画 T² 与 UCL。"],
+        [("λ", "平滑常数"), ("T²", "MEWMA 统计量"), ("UCL", "上控制限")],
+        [fb("MEWMA", "Z_i = λ X_i + (1−λ) Z_{i−1}。"),
+         fb("T²", "T_i² = Z_i' Σ_{Z_i}⁻¹ Z_i。")],
+        ["超限不是过程失控证明。", "默认 UCL 不是 ARL 校准常数。"],
+        "观测过少或协方差奇异时诊断。",
+        "MEWMA T² 图与摘要。",
+        "先看诊断是否提示 UCL 近似，再解释信号。",
+        "可手工输入 UCL。",
+        ["spc"],
+    ))
+    ENTRIES.append(entry(
+        "generalized_variance", "广义方差图", "控制图", "控制图",
+        "generalized_variance", "multivariate_spc", "p2_gv_expanded_b4b5_test",
+        "多元广义方差 |S| 子组控制图（Montgomery）。",
+        "等量子组 n>p：点为 det(S_i)；b1/b2 常数；CL=平均|S|；UCL/LCL=|Σ̂|(b1±3√b2)，LCL≥0。"
+        "个体观测不做假 |S|。NIST 指出多元变差图存在争议，本输出作探索信号。",
+        "至少两个数值变量；子组大小 n>p；观测数可被 n 整除。",
+        ["按顺序切等量子组。", "算各子组协方差行列式。", "估 |Σ| 与控制限。", "画 |S| 图。"],
+        [("|S|", "子组协方差行列式"), ("b1,b2", "期望/方差常数"), ("CL/UCL/LCL", "中心与控制限")],
+        [fb("b1", "b1=Π(n−i)/(n−1)^p，i=1…p。"),
+         fb("限", "UCL=|Σ̂|(b1+3√b2)；LCL=max(0,|Σ̂|(b1−3√b2))。")],
+        ["超限不是过程失控证明。", "不要把个体路径当成子组 |S|。"],
+        "n≤p、不等子组或奇异协方差时诊断。",
+        "|S| 图、摘要与逐子组表。",
+        "与 Hotelling T² / MEWMA 联读：T² 看均值向量，|S| 看联合变差。",
+        "本命令不提供个体标准化替代图。",
+        ["spc"],
+    ))
     add_spc("xbar_r", "Xbar-R 控制图", "xbar_range",
             "子组均值与极差。σ_within=R̄/d2(n)。适合 n≤8。A2=3/(d2√n)。",
             [
@@ -706,6 +1210,58 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
                 )])],
             ["tests"])
 
+    add_spc("zone_chart", "区域图", "zone_chart",
+            "Jaehn 区域计分：同侧连续进入 1σ/2σ/3σ 区分别记 1/2/4 分，累计 ≥8 报警。"
+            "个体值图 CL=均值，σ=MR̄/d2。不是完整 Tests 1–8。",
+            [fb("Jaehn 区域计分",
+                "Z=(x−CL)/σ\n1σ→1, 2σ→2, >3σ→4；换侧或中心带内重置；累计≥8 信号",
+                [stack(
+                    line("Z = (x − CL) / σ"),
+                    heading("区域权重（formula_reference）"),
+                    cases(
+                        [t("1σ ≤ |Z| < 2σ → 权重 1")],
+                        [t("2σ ≤ |Z| < 3σ → 权重 2")],
+                        [t("|Z| ≥ 3σ → 权重 4")],
+                        [t("累计得分 ≥ 8 → 信号")],
+                    ),
+                )])],
+            ["imr"])
+    add_spc("z_mr", "Z-MR 控制图", "z_mr",
+            "短流程/多产品：Z=(x−μ_i)/σ_i；Z 图 CL=0、±3；MR(Z) 标准 MR 限。"
+            "无完整历史参数表时用样本估计并诊断。",
+            [fb("Z-MR",
+                "Z_i=(x_i−μ_g)/σ_g\nZ 图：CL=0, UCL/LCL=±3\nMR(Z)：标准 MR 控制限",
+                [stack(
+                    line("Z", sub("i"), " = (x", sub("i"), " − μ", sub("g"), ")/σ", sub("g")),
+                    heading("Z 图"),
+                    cases(
+                        [t("CL = 0")],
+                        [t("UCL = +3")],
+                        [t("LCL = −3")],
+                    ),
+                    heading("MR(Z) 图"),
+                    cases(
+                        [t("UCL"), sub("MR"), t(" = D"), sub("4"), bar("MR"), t("(Z)")],
+                        [t("CL = "), bar("MR"), t("(Z)")],
+                    ),
+                )])],
+            ["imr", "tests"])
+    add_spc("moving_average", "移动平均控制图", "moving_average",
+            "窗宽 w 的简单移动平均；从第 w 点起画。CL=均值；"
+            "UCL/LCL=CL±L·σ/√w；σ=MR̄/d2。与 EWMA 独立。",
+            [fb("移动平均图",
+                "MA_t=(x_{t−w+1}+…+x_t)/w\nUCL/LCL=CL±L σ/√w",
+                [stack(
+                    line("MA", sub("t"), " = (x", sub("t−w+1"), " + … + x", sub("t"), ") / w"),
+                    heading("控制限（固定 w，仅完整窗）"),
+                    cases(
+                        [t("UCL = CL + L σ / "), sqrt("w")],
+                        [t("CL = "), bar("x")],
+                        [t("LCL = CL − L σ / "), sqrt("w")],
+                    ),
+                )])],
+            ["imr", "tests"])
+
     add_spc("g_chart", "G 图", "g_chart",
             "稀有事件间隔的几何控制图。输入为已算好的非负数值间隔，不解析事件日期。默认仅 Test 1。",
             [fb("G 图控制限",
@@ -904,20 +1460,20 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
     ))
 
     ENTRIES.append(entry(
-        "tolerance_intervals", "正态容差区间", "质量工具", "质量工具",
+        "tolerance_intervals", "容差区间", "质量工具", "质量工具",
         "tolerance_intervals", "tolerance", "tolerance_interval_test",
         "给出以指定置信覆盖总体至少 P 比例的区间。",
-        "支持 normal 与 nonparametric 两族。双侧 normal 用 Howe 近似；单侧 normal 用 Natrella；非参数法同时报告 `achieved_confidence`。公式参考，不是 Minitab golden。",
-        "测量列、覆盖率（如 95%）、置信水平、双侧或单侧。",
-        ["取有限值算 x̄、s。", "按 `method_family` 选择 normal 或 nonparametric。", "normal 双侧/单侧分别用 Howe 或 Natrella。", "nonparametric 输出 `achieved_confidence` 与样本量提示。"],
+        "显式 method=normal|nonparametric（兼容旧 variance_method=nonparametric）。双侧 normal 用 Howe；单侧 normal 用 Natrella；非参数序统计并报告 achieved_confidence。公式参考，不是 Minitab golden。",
+        "测量列、方法 normal/nonparametric、覆盖率、置信水平、双侧或单侧。",
+        ["取有限值算 x̄、s。", "按 method / method_family 选择 normal 或 nonparametric。", "normal 双侧/单侧分别用 Howe 或 Natrella。", "nonparametric 输出 achieved_confidence 与样本量提示。"],
         [("P", "要覆盖的总体比例"), ("γ", "目标置信水平"), ("k", "容差因子"), ("achieved_confidence", "样本在非参数法下实际达到的置信度")],
         [fb("Howe 双侧", "区间 x̄ ± k s，k 为 Howe 近似因子，使 P(覆盖≥P)≈γ。"),
          fb("Natrella 单侧", "单侧界限 x̄ ± k s，k 为 Natrella 近似。"),
-         fb("非参数顺序统计", "当样本量不足以达到目标 γ 时，输出 `achieved_confidence`，提醒当前样本真正达到的置信度。")],
-        ["不是规格限，也不是过程合格。", "nonparametric 的 `achieved_confidence` 低于目标时，只说明样本量不足，不是计算错误。"],
+         fb("非参数顺序统计", "当样本量不足以达到目标 γ 时，输出 achieved_confidence，提醒当前样本真正达到的置信度。")],
+        ["不是规格限，也不是过程合格。", "nonparametric 的 achieved_confidence 低于目标时，只说明样本量不足，不是计算错误。"],
         "n 不足、s=0 或覆盖/置信越界时诊断。",
-        "过程数据 N/N*、容差区间表、`method_family` 与 `achieved_confidence`。",
-        "核对 P 与 γ 是否来自标准/客户要求，再看 `method_family` 是否适合当前样本。",
+        "过程数据 N/N*、按 method 主表、method_family 与 achieved_confidence。",
+        "核对 P 与 γ 是否来自标准/客户要求，再看 method 是否适合当前样本。",
         "formula_reference；normal 与 nonparametric 输出口径保持一致。",
         ["tol"], status="formula_reference",
     ))
@@ -939,6 +1495,48 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
         "ANOVA/分量表、ndc、上述图序。",
         "同时看分量百分比和 Run Chart 是否有异常点。",
         "invalid_tolerance 时不拿公差当研究变异。",
+        ["gage"],
+    ))
+
+    ENTRIES.append(entry(
+        "emp_crossed", "EMP Crossed", "MSA", "质量工具",
+        "emp_crossed", "msa", "p2_t2_mewma_nelson_emp_test",
+        "Wheeler EMP Crossed：用交叉 Gage 方差分量做 ICC 分级。",
+        "复用交叉 ANOVA 分量。ICC(no bias / with bias / with interaction)；"
+        "PE=0.67449√Repeatability；First–Fourth 按 ICC(with interaction)。"
+        "不是 AIAG 合格判定；不是全量 Expanded Gage GLM。",
+        "测量、零件、操作者（平衡交叉）。",
+        ["交叉 ANOVA 方差分量。", "计算三种 ICC。", "Probable Error。", "按 ICC 分级。"],
+        [("ICC", "零件方差 / 相关总方差"), ("PE", "Probable Error"),
+         ("First–Fourth", "Wheeler 监控能力分级")],
+        [fb("ICC (with interaction)",
+            "Part / (Part + Repeat + Operator + Part×Operator)。",
+            [t("ICC = "), frac("σ²_part", "σ²_part+σ²_e+σ²_op+σ²_int")])],
+        ["不得写量具合格/不合格。", "与 AIAG %Study Var 阈值不同。"],
+        "设计不平衡或分量不可估时诊断。",
+        "分量表 + EMP 统计表。",
+        "先看分级与衰减%，再决定是否需要改进测量过程。",
+        "本命令不替代 Crossed Gage R&R 的完整图序。",
+        ["gage"],
+    ))
+
+    ENTRIES.append(entry(
+        "expanded_gage_rr", "Expanded Gage R&R", "MSA", "质量工具",
+        "expanded_gage_rr", "msa", "p2_gv_expanded_b4b5_test",
+        "Expanded Gage：平衡 Part×Operator×附加因子三因子随机 ANOVA。",
+        "主效应 + 全部二阶交互；重复≥2 时有纯误差，否则三阶交互作重复性。"
+        "Reproducibility=Operator+附加因子+相关交互（不含 Part）。"
+        "不平衡/固定效应/嵌套混合 GLM 仍延后。",
+        "测量、零件、操作员、附加因子（各≥2 水平，完整平衡交叉）。",
+        ["检查平衡。", "三因子 ANOVA。", "EMS 方差分量。", "汇总 Total Gage R&R / Part-To-Part。"],
+        [("Additional", "第 3 随机因子"), ("Reproducibility", "操作员+附加+交互"),
+         ("Repeatability", "残差或三阶交互")],
+        [fb("范围", "仅平衡三因子随机；不是 Minitab 全量 Expanded GLM。")],
+        ["不得写量具合格/不合格。", "不平衡设计请用交叉 Gage 或等待后续 GLM。"],
+        "缺失格子、不等重复、水平不足时诊断。",
+        "ANOVA 表 + 分量表。",
+        "先看附加因子与交互是否主导再现性。",
+        "与 EMP Crossed / 交叉 Gage 互补，不互相替代。",
         ["gage"],
     ))
 
@@ -1001,23 +1599,24 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
     ))
 
     ENTRIES.append(entry(
-        "doe_factorial", "2 水平全因子设计", "DOE", "统计 > DOE",
-        "doe_factorial", "doe", "doe_factorial_output_test",
-        "生成或分析 2 水平全因子试验，估计主效应与交互。",
-        "编码 ±1。Pareto 用 |t|；df=0 时用 Lenth PSE。2 因子响应页 11 图固定顺序。",
-        "因子名与低/高水平，或已有设计表的响应与因子列；中心点、区组、随机种子可选；等值线可指定 x_factor/y_factor 与 hold=名=实际值。",
-        ["创建设计或读取已有表。", "编码后回归/ANOVA。", "标准化效应 Pareto、立方图、主效应、交互、等值线/曲面、残差 4 图。"],
-        [("效应", "高−低的编码效应"), ("PSE", "Lenth 伪标准误"), ("D", "响应优化 desirability，见另一命令")],
-        [fb("标准化效应", "通常 t=效应/SE。纯饱和无误差 DF 时用 Lenth PSE 作参考线。"),
-         fb("2 因子图序", "Pareto → 立方 → 主效应 → 交互 → 等值线 → 曲面 → 残差四图（拟合 y=0 / 顺序 / 正态 / 直方图）。"),
-         fb("等值线轴与 hold", "可选 X/Y 因子名；其余因子默认编码 hold=0，也可写 hold=名=实际值;… 转编码。"
-            "数值水平用线性编码；非数值须精确匹配低/高。越界 clamp 到 [-1,1]。不做可旋转 3D。")],
-        ["最大效应不是过程合格。", "残差图不写已正态。", "≥4 因子无立方图。"],
-        "因子水平无法编码、响应缺失过多或设计不可估计时诊断。",
-        "设计表或响应分析表+图。",
-        "先看 Pareto 哪项最大，再用残差检查；hold 变更会改变等值线切片。",
-        "等值线在编码 −1~+1；未选轴因子默认 hold 0，可用实际单位 hold。",
-        ["doe"],
+        "doe_factorial", "2 水平析因设计生成", "DOE", "统计 > DOE",
+        "doe_factorial", "doe", "p2_doe_acf_power_test",
+        "生成 2^k 全因子或 2^(k-p) 部分析因设计矩阵，也可对已有设计表做响应分析。",
+        "编码 ±1。p=0 为全因子；p>0 用默认最高分辨度生成器或手写 D=ABC;E=ABD。"
+        "输出设计信息、生成器、定义关系、别名结构与设计矩阵。响应分析 Pareto 用 |t|；df=0 时用 Lenth PSE。",
+        "因子名与低/高水平，或已有设计表的响应与因子列；fraction_p、generators、中心点、区组、随机种子可选。",
+        ["创建设计或读取已有表。", "编码后（响应分析时）回归/ANOVA。",
+         "设计生成：矩阵+别名；响应分析：Pareto、立方、主效应、交互、等值线/曲面、残差 4 图。"],
+        [("效应", "高−低的编码效应"), ("p", "部分析因生成器个数"), ("Resolution", "定义关系最短非 I 字长")],
+        [fb("全因子", "2^k 运行；每因子独立 ±1。"),
+         fb("部分析因", "基设计 2^(k-p)，附加因子由生成器乘积定义；默认表覆盖常见 (k,p)。"),
+         fb("别名", "用定义关系把效应乘到各词上得到混淆链；不是显著性检验。")],
+        ["最大效应不是过程合格。", "别名链不是已证实混淆因果。", "≥4 因子响应分析无立方图。"],
+        "因子水平无法编码、p≥k、无默认生成器且未手写、响应缺失过多时诊断。",
+        "设计信息/生成器/定义关系/别名/设计矩阵；或响应分析表+图。",
+        "先生成矩阵写入工作表，再选响应列做 doe_response。",
+        "不做 PB/DSD/RSM 设计生成；不做可旋转 3D。",
+        ["doe"], status="formula_reference",
     ))
 
     ENTRIES.append(entry(
@@ -1035,6 +1634,58 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
         "把它当作“已有表上的析因分析”。",
         "共享 doe_factorial 服务。",
         ["doe"],
+    ))
+
+    ENTRIES.append(entry(
+        "rsm_response", "响应曲面分析", "DOE", "统计 > DOE",
+        "rsm_response", "rsm", "p2_rsm_special_cause_test",
+        "对已有连续因子设计表拟合二次响应曲面（线性+交互+纯二次）。",
+        "因子按列内 min/max 编码到 [-1,1]（已在区间内则视为已编码）。系数、ANOVA、残差四图；"
+        "前两因子等值线与静态曲面，其余因子编码 hold=0。",
+        "响应列 + ≥2 连续因子列（complete-case）。",
+        ["complete-case 对齐。", "编码因子。", "构造二次设计矩阵并 OLS。",
+         "输出系数/ANOVA/残差图与等值线曲面。"],
+        [("Coef", "编码单位系数"), ("R²", "决定系数"), ("残差", "观测−拟合")],
+        [fb("二次模型", "y=β0+Σβi xi+Σβij xi xj+Σβii xi²+ε（编码单位）。"),
+         fb("编码", "xi' = 2(xi−min)/(max−min)−1；已在 [-1,1] 则不改。"),
+         fb("等值线", "在编码网格上评估拟合曲面；非轴因子 hold=0。")],
+        ["R² 高不是工艺已验证。", "显著项不是工程最优设定。", "等值线是探索图，不是可旋转 3D。"],
+        "因子不足两个、无变异、观测少于参数时诊断。",
+        "模型摘要、系数表、ANOVA、残差四图、等值线与曲面。",
+        "先看残差是否随机，再解读系数与等值线形状。",
+        "不做 CCD/BBD 设计生成、混合物、Box–Cox 自动。",
+        ["doe", "rsm"], status="formula_reference",
+    ))
+
+    ENTRIES.append(entry(
+        "special_cause_rules", "特殊原因规则 Catalog", "控制图", "帮助 > 算法",
+        "imr", "spc", "special_cause_rule_test",
+        "Minitab Tests 1–8 与 DataLab 图种适用表、默认策略说明。",
+        "Test 1：1 点超 ±3σ。Test 2：连续 9 点同侧。Test 3：连续 6 点升降。"
+        "Test 4：连续 14 点交替上下。Test 5：连续 3 点中 2 点超 ±2σ 同侧。"
+        "Test 6：连续 5 点中 4 点超 ±1σ 同侧。Test 7：连续 15 点在 ±1σ 内。"
+        "Test 8：连续 8 点在 ±1σ 外。"
+        "适用：I/Xbar/属性/Laney=1–8；R/S/MR/Z-MR=1–4；EWMA/MA/G/T=仅 1；CUSUM=无 Tests；"
+        "Zone 图用 Jaehn 分区，不是 Tests 1–8。"
+        "默认策略 all_applicable=启用该图种全部适用 Tests；minitab_like=仅 Test 1。"
+        "DataLab 默认 all_applicable，与 Minitab 常见仅 Test 1 不同；多规则提高误报风险。"
+        "WECO 四规则与 Tests 1/5/6/2 部分重叠，不可一一等同。"
+        "交叉链接：Run Chart（游程/聚类/混合）不是控制图 Tests；"
+        "ANOM 决策限用于组均值比较，不是 Shewhart Tests；"
+        "Zone 图用 Jaehn 分区计分，明确不是 Tests 1–8。",
+        "控制图对话框的规则默认策略与特殊原因测试勾选。",
+        ["选择策略或显式勾选 Tests。", "按图种过滤不适用规则。", "触发点写入图与表。"],
+        [("Test k", "第 k 条特殊原因规则"), ("rule_policy", "all_applicable / minitab_like / explicit")],
+        [fb("策略", "空 tests 时：all_applicable→全部适用；minitab_like→仅 Test 1（若适用）。"),
+         fb("显式", "勾选或文本列出 Tests 时 policy=explicit，覆盖策略默认。")],
+        ["规则触发是调查信号，不是过程已失控、合格或已证明稳定。",
+         "Zone≠Tests 1–8。", "CUSUM 用专用信号逻辑。",
+         "Run Chart / ANOM / Zone 见各自命令帮助，勿与 Tests 混读。"],
+        "CUSUM 与 Zone 不套用 Tests 1–8。",
+        "本条目为规则百科；实际输出见各控制图命令；Run Chart/ANOM/Zone 交叉说明见上文。",
+        "先确认策略，再解读触发点。",
+        "正文不得引用外部公式底稿路径。",
+        ["spc", "rules"], status="formula_reference",
     ))
 
     ENTRIES.append(entry(
@@ -1106,6 +1757,18 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
         ("pie_plot", "饼图", "pie",
          "类别频数占合计的比例为扇区角。",
          "角度 = 360° × n_k / Σ n。类别很多时可读性下降。"),
+        ("density_plot", "密度图", "density",
+         "高斯核密度估计曲线（Silverman 带宽）。",
+         "h=0.9·min(s,IQR/1.34)·n^(-1/5)；曲线是平滑估计，不是分布检验。"),
+        ("hexbin_plot", "Hexbin", "hexbin",
+         "二维矩形分箱计数着色（Binned Scatter）。",
+         "complete-case (x,y) 落入矩形格；产品名 Hexbin，非正六边形镶嵌。"),
+        ("violin_plot", "小提琴图", "violin",
+         "分组镜像 KDE + 箱线五数。",
+         "每组独立 Silverman 带宽；形状与箱线同页。"),
+        ("bar_chart", "条形图", "bar",
+         "分类计数条形；保持出现顺序。",
+         "无按计数排序、无累积百分比；与柏拉图分流。"),
     ]
     for gid, gtitle, gicon, purpose, overview in graphs:
         ENTRIES.append(entry(
@@ -1125,3 +1788,24 @@ def add_remaining(entry, fb, t, frac, sqrt, ENTRIES, bar, dbar, heading, line, c
             ["graph"],
             aliases=[gid, gicon, gtitle],
         ))
+
+    ENTRIES.append(entry(
+        "eda_4plot", "EDA 四图", "探索性图形", "图形",
+        "eda_4plot", "eda", "p2_eda4_crosstab_chi_resid_test",
+        "NIST 单变量四图打包：run sequence、lag-1、histogram、normal probability。",
+        "同页四个 PlotSpec；用于检查位置/散布/随机性/分布形态假设。"
+        "不能写成过程受控或分布已正态。与单独直方图/正态概率图命令并存。",
+        "一个连续变量列；可选直方图组数。",
+        ["按观测顺序画 run sequence。", "lag-1：Y(i-1) vs Y(i)。",
+         "直方图（Sturges 或手工组数）。", "正态概率图（理论分位数 vs 有序值）。"],
+        [("i", "观测顺序"), ("Y(i)", "第 i 个观测"), ("lag-1", "相邻对")],
+        [fb("NIST 4-Plot", "四图并列探索四类假设。",
+            [t("run sequence / lag-1 / histogram / normal probability")])],
+        ["不得写过程已失控、已证明稳定、分布已正态。", "不是假设检验替代。"],
+        "有效观测 < 2 时诊断。",
+        "四图 + 说明表；EdaPlotFacts.kind=eda_4plot。",
+        "先扫四图形态，再决定是否做正态性/控制图等正式分析。",
+        "不做合格判定；不冒充 mosaic。",
+        ["graph"],
+        aliases=["eda_4plot", "4-plot", "EDA 四图"],
+    ))

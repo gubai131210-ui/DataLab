@@ -1,5 +1,10 @@
 <RCC>
     <qresource prefix="/i18n">
         <file>DataLab_zh_CN.qm</file>
+        <file>DataLab_en_US.qm</file>
+        <file>DataLab_zh_CN.ts</file>
+        <file>DataLab_en_US.ts</file>
+        <file>report_strings.json</file>
+        <file>ui_menu_strings.json</file>
     </qresource>
 </RCC>

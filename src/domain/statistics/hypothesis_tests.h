@@ -88,6 +88,28 @@ TTestResult one_sample_t_test(
     double confidence_level = 0.95,
     TestAlternative alternative = TestAlternative::two_sided);
 
+struct ZTestResult {
+    std::size_t count = 0;
+    double mean = 0.0;
+    double known_sigma = 0.0;
+    double standard_error = 0.0;
+    double hypothesized_mean = 0.0;
+    double difference = 0.0;
+    double z_statistic = 0.0;
+    std::optional<double> p_value;
+    std::optional<double> confidence_lower;
+    std::optional<double> confidence_upper;
+    double confidence_level = 0.95;
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+ZTestResult one_sample_z_test(
+    const std::vector<double>& observations,
+    double hypothesized_mean,
+    double known_sigma,
+    double confidence_level = 0.95,
+    TestAlternative alternative = TestAlternative::two_sided);
+
 TwoSampleTTestResult two_sample_t_test(
     const std::vector<double>& first,
     const std::vector<double>& second,

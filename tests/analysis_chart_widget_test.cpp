@@ -16,6 +16,7 @@ private slots:
     void contextMenuProvidesGraphPropertiesAction();
     void browseModeKeepsChartSurface();
     void copyToClipboardPublishesImageMime();
+    void copyIncludesVisibilityFootnoteWhenHidden();
     void ctrlCOnSurfaceCopiesChart();
 };
 
@@ -95,7 +96,25 @@ void AnalysisChartWidgetTest::copyToClipboardPublishesImageMime()
     QVERIFY(mime != nullptr);
     QVERIFY(mime->hasImage());
     QVERIFY(mime->hasFormat(QStringLiteral("image/png")));
+    QVERIFY(mime->hasFormat(QStringLiteral("image/bmp")));
     QVERIFY(!QApplication::clipboard()->image().isNull());
+}
+
+void AnalysisChartWidgetTest::copyIncludesVisibilityFootnoteWhenHidden()
+{
+    AnalysisChartWidget widget;
+    widget.set_model(make_chart_model());
+    widget.resize(640, 420);
+    widget.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&widget));
+    QVERIFY(widget.copy_to_clipboard());
+    const int base_height = QApplication::clipboard()->image().height();
+
+    widget.set_row_visibility_summary(1, 2, 30, 35);
+    QVERIFY(widget.copy_to_clipboard());
+    const QImage with_footnote = QApplication::clipboard()->image();
+    QVERIFY(!with_footnote.isNull());
+    QVERIFY(with_footnote.height() > base_height);
 }
 
 void AnalysisChartWidgetTest::ctrlCOnSurfaceCopiesChart()

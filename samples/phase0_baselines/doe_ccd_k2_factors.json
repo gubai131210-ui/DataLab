@@ -1,0 +1,43 @@
+{
+  "dataset_id": "phase0_doe_ccd_k2",
+  "design_type": "ccd",
+  "ccd_variant": "ccf",
+  "evidence_type": "formula_reference",
+  "formula_source": "https://itl.nist.gov/div898/handbook/pri/section3/pri3361.htm",
+  "notes": "Minimal 2-factor CCD contract. Not a frozen golden. Not vendor_oracle.",
+  "factors": [
+    {
+      "id": "A",
+      "name": "Temperature",
+      "unit": "C",
+      "type": "continuous",
+      "low": 60.0,
+      "high": 80.0,
+      "center": 70.0
+    },
+    {
+      "id": "B",
+      "name": "Pressure",
+      "unit": "kPa",
+      "type": "continuous",
+      "low": 100.0,
+      "high": 140.0,
+      "center": 120.0
+    }
+  ],
+  "center_points": 1,
+  "alpha": 1.0,
+  "randomization_seed": 42,
+  "expected_point_counts": {
+    "cube": 4,
+    "star": 4,
+    "center": 1,
+    "total": 9
+  },
+  "acceptance": [
+    "coded <-> actual round-trip within declared tolerance",
+    "same seed => identical run order",
+    "different seed => same point set, different order only",
+    "do not claim commercial software alignment without vendor_oracle"
+  ]
+}

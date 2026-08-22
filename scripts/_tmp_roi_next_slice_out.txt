@@ -1,0 +1,76 @@
+exact=1910 param_tokens=209 sw=208
+uniq_unmapped=25 kinds={'interp': 11, 'title': 1, 'param': 11, 'diag': 2} families=[('misc', 9), ('inference_corr', 5), ('reliability', 3), ('msa', 2), ('spc_mv', 2), ('capability', 2), ('attrib_spc_oc', 1), ('graph_eda', 1)]
+
+=== FAMILY SIZES ===
+  9	misc
+  5	inference_corr
+  3	reliability
+  2	msa
+  2	spc_mv
+  2	capability
+  1	attrib_spc_oc
+  1	graph_eda
+
+=== PACK SIZES (enriched) ===
+  9	misc
+  7	inference_corr
+  5	msa
+  5	reliability
+  5	attrib_spc_oc
+  2	spc_mv
+  2	capability
+  1	graph_eda
+  1	forecast_ts
+  1	doe_rsm
+  1	crosstab_prop
+
+=== SELECTED PACK: misc n=9 ===
+FINAL_SLICE=misc count=9
+
+| # | file:line | kind | ZH | id | en-US | map |
+|---|---|---|---|---|---|---|
+| 1 | `src/application/analysis_service.cpp:10419` | param | 当前为一参数指数。含阈值的两参数模型请选择 model=exponential2。 | `param.summary.zh_beeade70` | 当前为一参数指数。含阈值的两参数模型请选择 model=exponential2。 | localize_parameter_summary token |
+| 2 | `src/application/analysis_service.cpp:10860` | param | 已指定连续协变量列：Fine-Gray 使用 continuous IPCW， | `param.summary.zh_1aa4566c` | 已指定连续协变量列：Fine-Gray 使用 continuous IPCW， | localize_parameter_summary token |
+| 3 | `src/application/analysis_service.cpp:10831` | param | 已指定多协变量列：Fine-Gray 使用 multi IPCW， | `param.summary.zh_b1ae4b38` | 已指定多协变量列：Fine-Gray 使用 multi IPCW， | localize_parameter_summary token |
+| 4 | `src/application/analysis_service.cpp:2428` | param | 双样本 t 检验跳过缺失或非法单元格；组 1 =  | `param.summary.zh_1ca4790a` | 双样本 t 检验跳过缺失或非法单元格；组 1 =  | localize_parameter_summary token |
+| 5 | `src/application/analysis_service.cpp:2899` | param | 第一组： | `param.summary.zh_190eeafd` | 第一组： | localize_parameter_summary token |
+| 6 | `src/application/analysis_service.cpp:2903` | param | 第二组： | `param.summary.zh_f1c681c5` | 第二组： | localize_parameter_summary token |
+| 7 | `src/domain/statistics/special_cause_rule_catalog.cpp:242` | diag |  当前未触发。 | `diag.zh_7e3d0bb6` |  当前未触发。 | localize_known_plain_message |
+| 8 | `src/application/interpretation_service.cpp:290` | interp | ；用于对照测量增量是否物理合理，不是公差合格证明。 | `interp.comparison_measurement_honesty` | ; use to judge whether the measurement increment is physically sensible — not proof of tolerance conformance. | localize_known_plain_message / interp template |
+| 9 | `src/application/interpretation_service.cpp:2075` | interp | 规则「」已触发。： | `interp.rule_triggered_template` | Rule '' has triggered.： | localize_known_plain_message / interp template |
+
+=== OTHER FAMILY PREVIEWS (top 8 each) ===
+
+## inference_corr n=7
+  interp	src/application/interpretation_service.cpp:1938	；未拒绝正态假设不等于已证明正态分布。
+  interp	src/application/interpretation_service.cpp:2199	Dixon r10 要求近似正态、至多一个异常值，且 P 可能为临界值插值近似
+  interp	src/application/interpretation_service.cpp:2211	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，不能单独证明因果关系。未拒绝零相关不能写成已证明无关。
+  param	src/application/analysis_service.cpp:1220	正态能力未满足稳定性/正态性验收前置：禁止过程合格判定
+  param	src/application/analysis_service.cpp:10495	当前为二参数对数正态。含阈值的三参数模型请选择 model=lognormal3。
+  chrome	src/application/interpretation_service.cpp:2213	 相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下的证据强度，
+  chrome	src/application/interpretation_service.cpp:2265	相关系数表示变量关联方向与强度；P-Value 反映在零相关假设下观察到当前系数的证据强度，
+
+## msa n=5
+  interp	src/application/interpretation_service.cpp:283	，分级 = 。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+  interp	src/application/interpretation_service.cpp:311	；%Contribution 与 %Study Var 口径不同，不能混用。
+  chrome	src/application/interpretation_service.cpp:287	，分级 = 
+  chrome	src/application/interpretation_service.cpp:288	。这是 Wheeler 监控能力分级，不是 AIAG 合格判定，不能写成量具合格。
+  chrome	src/application/interpretation_service.cpp:389	；基于用户提供的过程变差（6σ）。
+
+## reliability n=5
+  interp	src/application/interpretation_service.cpp:433	已对  个失效模式做 cause-specific 分模式拟合（scheme=
+  interp	src/application/interpretation_service.cpp:525	可靠性结果当前不可识别，不能估计寿命分位数。可靠性结果不可识别（），不能估计寿命分位数。
+  param	src/application/analysis_service.cpp:10338	当前为二参数 Weibull。含阈值的三参数模型请选择 model=weibull3。
+  chrome	src/application/interpretation_service.cpp:210	 个中心点；实施时保持随机化/区组记录，避免把运行顺序效应误认为因子效应。
+  chrome	src/application/interpretation_service.cpp:1211	。这只陈述区组设计下处理间秩差异证据，不能写成已证明相同或不同。
+
+## attrib_spc_oc n=5
+  interp	src/application/interpretation_service.cpp:2340	 Sigma Z = ，存在过度离散，传统控制限可能过窄。，控制限已按离散程度进行调整。
+  chrome	src/application/interpretation_service.cpp:1054	。P 值只描述观察计数与泊松模型的偏离程度，不能证明总体服从泊松分布。
+  chrome	src/application/interpretation_service.cpp:1843	）。这是当前样本的不合格品率估计，不是过程合格判定。
+  chrome	src/application/interpretation_service.cpp:2232	 计划下，不同不合格品率 p 的接收概率 Pa(p)；
+  chrome	src/application/interpretation_service.cpp:2486	；未按计数排序，无累积百分比（与柏拉图分流）。
+
+## spc_mv n=2
+  interp	src/application/interpretation_service.cpp:2056	发现  个控制图超限点。
+  diag	src/application/analysis_service.cpp:14275	无法计算 I-MR-R/S 控制图。

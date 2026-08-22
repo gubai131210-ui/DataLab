@@ -1,0 +1,49 @@
+mapped=1583 uniq_unmapped_rowish=34
+
+BY FAM
+  15	analysis_misc
+  13	spc_nested
+  5	capability_nested
+  1	other
+
+## analysis_misc n=15
+  row_first	src/application/analysis_service.cpp:6638	限方法
+  row_first	src/application/analysis_service.cpp:6639	超 UCL 点数
+  row_first	src/application/analysis_service.cpp:6730	UCL 方法
+  row_first	src/application/analysis_service.cpp:6918	目标 T
+  row_first	src/application/analysis_service.cpp:6923	上侧首次信号点
+  row_first	src/application/analysis_service.cpp:6925	下侧首次信号点
+  row_first	src/application/analysis_service.cpp:6927	信号总数
+  row_first	src/application/analysis_service.cpp:6978	移动极差长度
+  row_first	src/application/analysis_service.cpp:6979	Jaehn 累计阈值
+  row_first	src/application/analysis_service.cpp:6980	Jaehn 信号点数
+  row_first	src/application/analysis_service.cpp:7069	适用测试
+  row_first	src/application/analysis_service.cpp:7131	窗宽 w
+  row_first	src/application/analysis_service.cpp:14113	Nelson 剔除 MR 数
+  row_any	src/application/analysis_service.cpp:14175	未指定
+  row_first	src/application/analysis_service.cpp:14317	组内图
+
+## spc_nested n=13
+  row_first	src/application/analysis_service.cpp:912	Within σ 来源
+  row_first	src/application/analysis_service.cpp:918	Between σ 来源
+  row_first	src/application/analysis_service.cpp:924	Between/Within σ 来源
+  row_first	src/application/analysis_service.cpp:937	Overall σ 方法
+  row_first	src/application/analysis_service.cpp:6838	超限子组数
+  row_first	src/application/analysis_service.cpp:6982	计分规则
+  row_first	src/application/analysis_service.cpp:7061	Z 图「单点超出 3σ 控制限」触发
+  row_first	src/application/analysis_service.cpp:14151	阶段数
+  row_first	src/application/analysis_service.cpp:14175	阶段列
+  push_row	src/application/analysis_service.cpp:14135	历史 μ
+  push_row	src/application/analysis_service.cpp:14139	历史 σ
+  push_row	src/application/analysis_service.cpp:14143	控制限参数来源
+  push_row	src/application/analysis_service.cpp:14166	阶段 
+
+## capability_nested n=5
+  row_first	src/application/analysis_service.cpp:902	规格模式
+  row_first	src/application/analysis_service.cpp:958	AD 判定
+  row_first	src/application/analysis_service.cpp:961	假设状态
+  row_first	src/application/analysis_service.cpp:998	低于 LSL
+  row_first	src/application/analysis_service.cpp:1001	高于 USL
+
+## other n=1
+  push_row	src/application/output_builder.cpp:619	无

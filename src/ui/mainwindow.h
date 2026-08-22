@@ -5,13 +5,16 @@
 #include "domain/quality_types.h"
 
 class AlgorithmHelpDialog;
+class FormulaRegistryDialog;
 class CommandRegistry;
 class OutputWorkspace;
 class ProjectNavigator;
 class WorksheetView;
 class WorksheetModel;
+namespace datalab::ui { class WorksheetSortFilterProxyModel; }
 class QDockWidget;
 class QLabel;
+class QLineEdit;
 class QUndoStack;
 
 class MainWindow final : public QMainWindow {
@@ -27,10 +30,13 @@ private:
     void new_project();
     void open_project();
     void import_data();
+    void import_database();
     void save_project();
     void export_pdf();
     void exclude_selected_row();
     void clear_exclusions();
+    void hide_selected_row();
+    void clear_hidden_rows();
     void display_table();
     void run_from_spec(const QString& id);
     void copy_selection();
@@ -45,6 +51,7 @@ private:
     void restore_cleaning_operations(
         const std::vector<datalab::domain::CleaningOperation>& operations);
     std::vector<std::size_t> excluded_rows() const;
+    std::vector<std::size_t> hidden_rows() const;
     void refresh_context_dock();
     bool confirm_discard_output();
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -66,9 +73,12 @@ private:
     QLabel* context_next_ = nullptr;
     QLabel* cell_address_ = nullptr;
     WorksheetModel* worksheet_model_ = nullptr;
+    datalab::ui::WorksheetSortFilterProxyModel* worksheet_sort_proxy_ = nullptr;
+    QLineEdit* worksheet_filter_edit_ = nullptr;
     CommandRegistry* commands_ = nullptr;
     QUndoStack* undo_stack_ = nullptr;
     bool import_in_progress_ = false;
     bool suppress_table_edit_undo_ = false;
     AlgorithmHelpDialog* algorithm_help_dialog_ = nullptr;
+    FormulaRegistryDialog* formula_registry_dialog_ = nullptr;
 };

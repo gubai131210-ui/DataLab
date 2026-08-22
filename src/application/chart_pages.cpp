@@ -39,11 +39,11 @@ OutputPage subgroup_dual_chart_page(
     if (spec.validate && !spec.validate(subgroups).empty()) {
         return error_page(spec.title, spec.method_name, spec.validate(subgroups));
     }
-    auto dual = spec.compute(
-        subgroups,
+    const auto special_causes =
         datalab::domain::statistics::special_cause_selection_from_configuration(
             configuration.control.enabled_special_cause_tests,
-            configuration.control.special_cause_rule_policy));
+            configuration.control.special_cause_rule_policy);
+    auto dual = spec.compute(subgroups, special_causes);
     std::vector<std::string> stages;
     if (configuration.control.stage_column.has_value()) {
         const std::vector<std::string> stage_values = extract_text_column(
@@ -95,17 +95,22 @@ OutputPage subgroup_dual_chart_page(
         {"X̄", format_number(dual.primary.center_line.empty() ? 0.0 : dual.primary.center_line.front())},
         {spec.sigma_label, format_number(dual.average_moving_range)},
         {"σ (within)", format_number(dual.sigma)},
-        {"Xbar Test 1 超限点数", std::to_string(dual.primary.test1_points.size())},
-        {spec.secondary_short + " Test 1 超限点数", std::to_string(dual.secondary.test1_points.size())},
+        {"Xbar「单点超出 3σ 控制限」触发点数", std::to_string(dual.primary.test1_points.size())},
+        {spec.secondary_short + "「单点超出 3σ 控制限」触发点数",
+         std::to_string(dual.secondary.test1_points.size())},
         {"规则策略", configuration.control.special_cause_rule_policy == "explicit"
-            ? "用户指定" : "默认全选适用规则"},
+            ? "用户指定"
+            : (configuration.control.special_cause_rule_policy == "minitab_like"
+                   || configuration.control.special_cause_rule_policy == "default_minitab_like"
+                   ? "minitab_like（仅「单点超出 3σ 控制限」）"
+                   : "all_applicable（全部适用）")},
         {"Xbar 启用测试", datalab::domain::statistics::format_special_cause_tests(
             datalab::domain::statistics::resolve_special_cause_tests(
                 datalab::domain::statistics::special_cause_selection_from_configuration(
                     configuration.control.enabled_special_cause_tests,
                     configuration.control.special_cause_rule_policy),
                 datalab::domain::statistics::ControlChartKind::xbar))},
-        {spec.secondary_short + " 适用规则", "Test 1–4"}};
+        {spec.secondary_short + " 适用规则", "单点超出 3σ 控制限、连续 9 点同侧、连续 6 点趋势、连续 14 点交替"}};
     page.tables.push_back(table_out);
     std::vector<std::size_t> subgroup_rows;
     for (std::size_t index = 0; index < subgroups.size(); ++index) {
@@ -134,6 +139,12 @@ OutputPage subgroup_dual_chart_page(
     page.facts.spc = datalab::domain::SpcFacts{};
     page.facts.spc->sigma_within = dual.sigma;
     page.facts.spc->out_of_control_count = out_of_control_union;
+    attach_special_cause_rules(
+        *page.facts.spc,
+        dual.primary,
+        datalab::domain::statistics::ControlChartKind::xbar,
+        special_causes);
+    append_special_cause_rule_table(page, *page.facts.spc);
     return page;
 }
 
@@ -191,10 +202,14 @@ OutputPage attribute_chart_page(
     parameters.rows = {
         {"有效子组数", std::to_string(chart.plotted_values.size())},
         {"规则策略", configuration.control.special_cause_rule_policy == "explicit"
-            ? "用户指定" : "默认全选适用规则"},
-        {"启用测试", datalab::domain::statistics::format_special_cause_tests(enabled)},
-        {"Test 1 超限点数", std::to_string(chart.test1_points.size())},
-        {"判定口径", "Tests 1–8；超过 kσ 使用严格大于，窗口不跨阶段或缺失断点"}};
+            ? "用户指定"
+            : (configuration.control.special_cause_rule_policy == "minitab_like"
+                   || configuration.control.special_cause_rule_policy == "default_minitab_like"
+                   ? "minitab_like（仅「单点超出 3σ 控制限」）"
+                   : "all_applicable（全部适用）")},
+        {"启用规则", datalab::domain::statistics::format_special_cause_tests(enabled)},
+        {"「单点超出 3σ 控制限」触发点数", std::to_string(chart.test1_points.size())},
+        {"判定口径", "特殊原因规则 beyond_control_limit…eight_beyond_1sigma；超过 kσ 使用严格大于，窗口不跨阶段或缺失断点"}};
     page.tables.push_back(parameters);
     page.tables.push_back(attribute_chart_table(
         spec.title + "逐子组统计", data->counts, data->denominators, chart,
@@ -202,6 +217,12 @@ OutputPage attribute_chart_page(
     page.plots.push_back(control_plot(spec.plot_title, spec.y_axis, chart, data->source_rows));
     page.facts.spc = datalab::domain::SpcFacts{};
     page.facts.spc->out_of_control_count = chart.test1_points.size();
+    attach_special_cause_rules(
+        *page.facts.spc,
+        chart,
+        datalab::domain::statistics::ControlChartKind::attribute,
+        special_causes);
+    append_special_cause_rule_table(page, *page.facts.spc);
     return page;
 }
 
@@ -283,7 +304,7 @@ OutputPage laney_chart_page(
             ? std::accumulate(chart.moving_ranges.cbegin() + 1, chart.moving_ranges.cend(), 0.0)
                 / static_cast<double>(chart.moving_ranges.size() - 1) : 0.0)},
         {"有效子组数", std::to_string(chart.plotted_values.size())},
-        {"Test 1 超限点数", std::to_string(chart.test1_points.size())}};
+        {"「单点超出 3σ 控制限」触发点数", std::to_string(chart.test1_points.size())}};
     if (spec.include_enabled_tests_row) {
         const auto enabled = datalab::domain::statistics::resolve_special_cause_tests(
             datalab::domain::statistics::special_cause_selection_from_configuration(
@@ -292,8 +313,13 @@ OutputPage laney_chart_page(
             datalab::domain::statistics::ControlChartKind::laney);
         parameters.rows.push_back({"规则策略",
             effective.control.special_cause_rule_policy == "explicit"
-                ? "用户指定" : "默认全选适用规则"});
-        parameters.rows.push_back({"启用测试",
+                ? "用户指定"
+                : (effective.control.special_cause_rule_policy == "minitab_like"
+                       || effective.control.special_cause_rule_policy
+                           == "default_minitab_like"
+                       ? "minitab_like（仅「单点超出 3σ 控制限」）"
+                       : "all_applicable（全部适用）")});
+        parameters.rows.push_back({"启用规则",
             datalab::domain::statistics::format_special_cause_tests(enabled)});
     }
     page.tables.push_back(parameters);
@@ -307,6 +333,16 @@ OutputPage laney_chart_page(
     page.facts.spc = datalab::domain::SpcFacts{};
     page.facts.spc->sigma_z = chart.sigma_z;
     page.facts.spc->out_of_control_count = chart.test1_points.size();
+    const auto laney_selection =
+        datalab::domain::statistics::special_cause_selection_from_configuration(
+            effective.control.enabled_special_cause_tests,
+            effective.control.special_cause_rule_policy);
+    attach_special_cause_rules(
+        *page.facts.spc,
+        chart,
+        datalab::domain::statistics::ControlChartKind::laney,
+        laney_selection);
+    append_special_cause_rule_table(page, *page.facts.spc);
     return page;
 }
 

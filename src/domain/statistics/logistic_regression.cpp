@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <set>
 
 namespace datalab::domain::statistics {
 namespace {
@@ -291,6 +292,55 @@ void compute_hosmer_lemeshow(LogisticRegressionResult& result)
     result.hosmer_lemeshow_status = "computed";
 }
 
+void compute_association_and_classification(LogisticRegressionResult& result)
+{
+    const std::size_t n = result.observations.size();
+    if (n < 2) {
+        return;
+    }
+    for (std::size_t i = 0; i < n; ++i) {
+        const int observed = result.observations[i].response;
+        const int predicted = result.observations[i].probability >= 0.5 ? 1 : 0;
+        if (observed == 1 && predicted == 1) {
+            ++result.true_positive;
+        } else if (observed == 0 && predicted == 0) {
+            ++result.true_negative;
+        } else if (observed == 0 && predicted == 1) {
+            ++result.false_positive;
+        } else {
+            ++result.false_negative;
+        }
+    }
+    for (std::size_t i = 0; i + 1 < n; ++i) {
+        for (std::size_t j = i + 1; j < n; ++j) {
+            const int yi = result.observations[i].response;
+            const int yj = result.observations[j].response;
+            if (yi == yj) {
+                continue;
+            }
+            const double pi = result.observations[i].probability;
+            const double pj = result.observations[j].probability;
+            if (pi == pj) {
+                ++result.tied_pairs;
+                continue;
+            }
+            const bool concordant = (yi > yj && pi > pj) || (yi < yj && pi < pj);
+            if (concordant) {
+                ++result.concordant_pairs;
+            } else {
+                ++result.discordant_pairs;
+            }
+        }
+    }
+    const std::size_t usable = result.concordant_pairs + result.discordant_pairs
+        + result.tied_pairs;
+    if (usable > 0) {
+        result.pairs_concordance_percent = 100.0
+            * static_cast<double>(result.concordant_pairs)
+            / static_cast<double>(usable);
+    }
+}
+
 }  // namespace
 
 LogisticRegressionResult fit_logistic_regression(
@@ -543,6 +593,7 @@ LogisticRegressionResult fit_logistic_regression(
         result.maximum_vif = maximum_vif;
     }
     compute_hosmer_lemeshow(result);
+    compute_association_and_classification(result);
     const double parameter_count_value = static_cast<double>(parameter_count);
     result.aic = -2.0 * result.log_likelihood + 2.0 * parameter_count_value;
     result.bic = -2.0 * result.log_likelihood
@@ -577,6 +628,378 @@ std::vector<double> predict_logistic_probabilities(
         probabilities.push_back(predict_logistic_probability(result, row));
     }
     return probabilities;
+}
+
+namespace {
+
+double logistic_aic(const LogisticRegressionResult& model)
+{
+    return -2.0 * model.log_likelihood
+        + 2.0 * static_cast<double>(model.coefficients.size());
+}
+
+double logistic_aicc(const LogisticRegressionResult& model)
+{
+    const double k = static_cast<double>(model.coefficients.size());
+    const double n = static_cast<double>(model.observation_count);
+    const double aic = logistic_aic(model);
+    if (n - k - 1.0 <= 0.0) {
+        return aic;
+    }
+    return aic + (2.0 * k * (k + 1.0)) / (n - k - 1.0);
+}
+
+double logistic_bic(const LogisticRegressionResult& model)
+{
+    return -2.0 * model.log_likelihood
+        + std::log(static_cast<double>(model.observation_count))
+        * static_cast<double>(model.coefficients.size());
+}
+
+void fill_logistic_step_criteria(
+    LogisticStepwiseStep& step,
+    const LogisticRegressionResult& model)
+{
+    step.deviance = model.deviance;
+    step.aic = logistic_aic(model);
+    step.aicc = logistic_aicc(model);
+    step.bic = logistic_bic(model);
+}
+
+double logistic_criterion_value(
+    const LogisticStepwiseStep& step, const std::string& criterion)
+{
+    if (criterion == "bic" && step.bic.has_value()) {
+        return *step.bic;
+    }
+    if (criterion == "aicc" && step.aicc.has_value()) {
+        return *step.aicc;
+    }
+    if (step.aicc.has_value()) {
+        return *step.aicc;
+    }
+    return std::numeric_limits<double>::infinity();
+}
+
+std::optional<double> logistic_term_p_value(
+    const LogisticRegressionResult& model, const std::string& term)
+{
+    for (const LogisticCoefficient& coefficient : model.coefficients) {
+        if (coefficient.term == term) {
+            return coefficient.p_value;
+        }
+    }
+    return std::nullopt;
+}
+
+std::vector<std::vector<double>> subset_predictors(
+    const std::vector<std::vector<double>>& predictors,
+    const std::vector<std::size_t>& indices)
+{
+    std::vector<std::vector<double>> out;
+    out.reserve(predictors.size());
+    for (const auto& row : predictors) {
+        std::vector<double> selected;
+        selected.reserve(indices.size());
+        for (std::size_t index : indices) {
+            selected.push_back(row[index]);
+        }
+        out.push_back(std::move(selected));
+    }
+    return out;
+}
+
+LogisticRegressionResult fit_intercept_only_logistic(
+    const std::vector<int>& response)
+{
+    LogisticRegressionResult result;
+    result.observation_count = response.size();
+    result.predictor_count = 0;
+    result.converged = true;
+    result.iteration_count = 1;
+    double successes = 0.0;
+    for (int value : response) {
+        successes += static_cast<double>(value);
+    }
+    const double n = static_cast<double>(response.size());
+    const double p_hat = successes / n;
+    const double clamped = std::clamp(p_hat, kProbabilityFloor, 1.0 - kProbabilityFloor);
+    const double beta0 = std::log(clamped / (1.0 - clamped));
+    LogisticCoefficient intercept;
+    intercept.term = "Intercept";
+    intercept.coefficient = beta0;
+    result.coefficients.push_back(intercept);
+    result.log_likelihood = 0.0;
+    result.deviance = 0.0;
+    for (int value : response) {
+        const double y = static_cast<double>(value);
+        result.log_likelihood += y * std::log(clamped) + (1.0 - y) * std::log1p(-clamped);
+        const double deviance_contribution = y * std::log(y == 0.0 ? 1.0 : y / clamped)
+            + (1.0 - y) * std::log((y == 1.0 ? 1.0 : (1.0 - y) / (1.0 - clamped)));
+        result.deviance += 2.0 * deviance_contribution;
+    }
+    result.aic = logistic_aic(result);
+    result.bic = logistic_bic(result);
+    return result;
+}
+
+}  // namespace
+
+LogisticStepwiseResult fit_logistic_stepwise(
+    const std::vector<int>& response,
+    const std::vector<std::vector<double>>& predictors,
+    const std::vector<std::string>& predictor_labels,
+    const std::string& method,
+    double alpha_enter,
+    double alpha_remove,
+    double confidence_level,
+    std::size_t max_iterations,
+    double tolerance)
+{
+    LogisticStepwiseResult result;
+    result.method = method;
+    result.alpha_enter = alpha_enter;
+    result.alpha_remove = alpha_remove;
+    const bool info_criterion =
+        method == "forward_aicc" || method == "forward_bic";
+    result.criterion = info_criterion
+        ? (method == "forward_bic" ? "bic" : "aicc") : "alpha";
+    if (response.size() < 4 || predictors.size() != response.size()
+        || predictors.empty() || predictors.front().size() < 2
+        || (!predictor_labels.empty()
+            && predictor_labels.size() != predictors.front().size())) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::error,
+                       "logistic_stepwise_invalid",
+                       "Logistic 逐步需要 ≥4 观测与 ≥2 候选预测变量。");
+        return result;
+    }
+    if (!(alpha_enter > 0.0 && alpha_enter < 1.0)
+        || !(alpha_remove > 0.0 && alpha_remove < 1.0)) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::error,
+                       "logistic_stepwise_alpha",
+                       "α_enter / α_remove 必须在 (0,1)。");
+        return result;
+    }
+
+    const std::size_t p = predictors.front().size();
+    result.observation_count = response.size();
+    result.candidate_count = p;
+    std::set<std::size_t> in_model;
+    std::set<std::size_t> out_model;
+    for (std::size_t index = 0; index < p; ++index) {
+        out_model.insert(index);
+    }
+    const bool do_forward = method == "forward" || method == "stepwise"
+        || method == "forward_aicc" || method == "forward_bic";
+    const bool do_backward = method == "backward" || method == "stepwise";
+    if (method == "backward") {
+        for (std::size_t index = 0; index < p; ++index) {
+            in_model.insert(index);
+        }
+        out_model.clear();
+    }
+
+    auto fit_current = [&](const std::set<std::size_t>& active) {
+        std::vector<std::size_t> indices(active.begin(), active.end());
+        std::vector<std::string> labels;
+        for (std::size_t index : indices) {
+            labels.push_back(predictor_labels.empty()
+                ? ("X" + std::to_string(index + 1)) : predictor_labels[index]);
+        }
+        if (indices.empty()) {
+            return fit_intercept_only_logistic(response);
+        }
+        return fit_logistic_regression(
+            response, subset_predictors(predictors, indices), labels,
+            confidence_level, max_iterations, tolerance);
+    };
+
+    LogisticRegressionResult current = fit_current(in_model);
+    {
+        LogisticStepwiseStep start;
+        start.step = 0;
+        start.action = "start";
+        start.term = "-";
+        fill_logistic_step_criteria(start, current);
+        result.steps.push_back(start);
+    }
+
+    if (info_criterion) {
+        for (std::size_t iter = 0; iter < p + 1; ++iter) {
+            if (out_model.empty()) {
+                break;
+            }
+            std::size_t best = 0;
+            double best_p = std::numeric_limits<double>::infinity();
+            bool found = false;
+            for (std::size_t candidate : out_model) {
+                std::set<std::size_t> trial = in_model;
+                trial.insert(candidate);
+                if (trial.size() + 1 >= response.size()) {
+                    continue;
+                }
+                const auto trial_fit = fit_current(trial);
+                const std::string term = predictor_labels.empty()
+                    ? ("X" + std::to_string(candidate + 1)) : predictor_labels[candidate];
+                const auto p_value = logistic_term_p_value(trial_fit, term);
+                if (!p_value.has_value()) {
+                    continue;
+                }
+                if (*p_value < best_p) {
+                    best_p = *p_value;
+                    best = candidate;
+                    found = true;
+                }
+            }
+            if (!found) {
+                break;
+            }
+            in_model.insert(best);
+            out_model.erase(best);
+            current = fit_current(in_model);
+            LogisticStepwiseStep step;
+            step.step = result.steps.size();
+            step.action = "enter";
+            step.term = predictor_labels.empty()
+                ? ("X" + std::to_string(best + 1)) : predictor_labels[best];
+            step.enter_p_value = best_p;
+            fill_logistic_step_criteria(step, current);
+            result.steps.push_back(step);
+        }
+        LogisticStepwiseStep stop;
+        stop.step = result.steps.size();
+        stop.action = "stop";
+        stop.term = "-";
+        fill_logistic_step_criteria(stop, current);
+        result.steps.push_back(stop);
+
+        double best_crit = std::numeric_limits<double>::infinity();
+        std::size_t best_idx = 0;
+        for (std::size_t si = 0; si < result.steps.size(); ++si) {
+            const double crit = logistic_criterion_value(result.steps[si], result.criterion);
+            if (crit < best_crit) {
+                best_crit = crit;
+                best_idx = si;
+            }
+        }
+        result.best_step_index = best_idx;
+        std::set<std::size_t> replay;
+        for (std::size_t si = 1; si <= best_idx && si < result.steps.size(); ++si) {
+            if (result.steps[si].action == "enter") {
+                for (std::size_t index = 0; index < p; ++index) {
+                    const std::string term = predictor_labels.empty()
+                        ? ("X" + std::to_string(index + 1)) : predictor_labels[index];
+                    if (term == result.steps[si].term) {
+                        replay.insert(index);
+                    }
+                }
+            }
+        }
+        current = fit_current(replay);
+        in_model = replay;
+    } else for (std::size_t iter = 0; iter < p * 4 + 4; ++iter) {
+        bool changed = false;
+
+        if (do_backward && !in_model.empty()) {
+            std::size_t worst = 0;
+            double worst_p = -1.0;
+            bool found = false;
+            for (std::size_t index : in_model) {
+                const std::string term = predictor_labels.empty()
+                    ? ("X" + std::to_string(index + 1)) : predictor_labels[index];
+                const auto p_value = logistic_term_p_value(current, term);
+                if (!p_value.has_value()) {
+                    continue;
+                }
+                if (*p_value > worst_p) {
+                    worst_p = *p_value;
+                    worst = index;
+                    found = true;
+                }
+            }
+            if (found && worst_p > alpha_remove) {
+                in_model.erase(worst);
+                out_model.insert(worst);
+                current = fit_current(in_model);
+                LogisticStepwiseStep step;
+                step.step = result.steps.size();
+                step.action = "remove";
+                step.term = predictor_labels.empty()
+                    ? ("X" + std::to_string(worst + 1)) : predictor_labels[worst];
+                step.remove_p_value = worst_p;
+                fill_logistic_step_criteria(step, current);
+                result.steps.push_back(step);
+                changed = true;
+            }
+        }
+
+        if (!changed && do_forward && !out_model.empty()) {
+            std::size_t best = 0;
+            double best_p = std::numeric_limits<double>::infinity();
+            bool found = false;
+            for (std::size_t candidate : out_model) {
+                std::set<std::size_t> trial = in_model;
+                trial.insert(candidate);
+                if (trial.size() + 1 >= response.size()) {
+                    continue;
+                }
+                const auto trial_fit = fit_current(trial);
+                const std::string term = predictor_labels.empty()
+                    ? ("X" + std::to_string(candidate + 1)) : predictor_labels[candidate];
+                const auto p_value = logistic_term_p_value(trial_fit, term);
+                if (!p_value.has_value()) {
+                    continue;
+                }
+                if (*p_value < best_p) {
+                    best_p = *p_value;
+                    best = candidate;
+                    found = true;
+                }
+            }
+            if (found && best_p < alpha_enter) {
+                in_model.insert(best);
+                out_model.erase(best);
+                current = fit_current(in_model);
+                LogisticStepwiseStep step;
+                step.step = result.steps.size();
+                step.action = "enter";
+                step.term = predictor_labels.empty()
+                    ? ("X" + std::to_string(best + 1)) : predictor_labels[best];
+                step.enter_p_value = best_p;
+                fill_logistic_step_criteria(step, current);
+                result.steps.push_back(step);
+                changed = true;
+            }
+        }
+
+        if (!changed) {
+            LogisticStepwiseStep stop;
+            stop.step = result.steps.size();
+            stop.action = "stop";
+            stop.term = "-";
+            fill_logistic_step_criteria(stop, current);
+            result.steps.push_back(stop);
+            break;
+        }
+    }
+
+    for (std::size_t index : in_model) {
+        result.selected_terms.push_back(predictor_labels.empty()
+            ? ("X" + std::to_string(index + 1)) : predictor_labels[index]);
+    }
+    result.final_model = current;
+    if (result.selected_terms.empty()) {
+        add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::warning,
+                       "logistic_stepwise_empty",
+                       "未选入任何预测变量（仅截距）。");
+    }
+    const std::string scope_message = info_criterion
+        ? ("Forward " + result.criterion
+           + " 信息准则；非 Best subsets；非 Minitab golden。")
+        : "α 逐步选择；非 Best subsets；非 Minitab golden。";
+    add_diagnostic(result.diagnostics, DiagnosticMessage::Severity::info,
+                   "logistic_stepwise_scope", scope_message.c_str());
+    return result;
 }
 
 }  // namespace datalab::domain::statistics

@@ -1,0 +1,11 @@
+﻿python : Traceback (most recent call last):
+所在位置 C:\Users\孤白赟悫\AppData\Local\Temp\ps-script-a2870f76-c2d0-4492-b5db-417072b2606d.ps1:118 字符: 1
++ python scripts/_tmp_slice_verify.py 2>&1 | Out-File -Encoding utf8 sc ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\QT_CppPrograms\DataLab\scripts\_tmp_slice_verify.py", line 250, in <module>
+    print(text[:14000])
+    ~~~~~^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\xb2' in position 1501: illegal multibyte sequence

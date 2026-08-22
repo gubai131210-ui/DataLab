@@ -128,15 +128,56 @@ double normal_quantile(double probability)
 
 }  // namespace
 
+std::vector<std::vector<double>> invert_symmetric(
+    std::vector<std::vector<double>> matrix)
+{
+    const std::size_t n = matrix.size();
+    std::vector<std::vector<double>> inverse(n, std::vector<double>(n, 0.0));
+    for (std::size_t i = 0; i < n; ++i) {
+        inverse[i][i] = 1.0;
+    }
+    for (std::size_t col = 0; col < n; ++col) {
+        std::size_t pivot = col;
+        for (std::size_t row = col + 1; row < n; ++row) {
+            if (std::abs(matrix[row][col]) > std::abs(matrix[pivot][col])) {
+                pivot = row;
+            }
+        }
+        if (std::abs(matrix[pivot][col]) < 1.0e-12) {
+            return {};
+        }
+        std::swap(matrix[col], matrix[pivot]);
+        std::swap(inverse[col], inverse[pivot]);
+        const double diag = matrix[col][col];
+        for (std::size_t j = 0; j < n; ++j) {
+            matrix[col][j] /= diag;
+            inverse[col][j] /= diag;
+        }
+        for (std::size_t row = 0; row < n; ++row) {
+            if (row == col) {
+                continue;
+            }
+            const double factor = matrix[row][col];
+            for (std::size_t j = 0; j < n; ++j) {
+                matrix[row][j] -= factor * matrix[col][j];
+                inverse[row][j] -= factor * inverse[col][j];
+            }
+        }
+    }
+    return inverse;
+}
+
 CorrelationResult correlation_matrix(
     const std::vector<std::vector<double>>& columns,
     CorrelationMethod method,
-    double confidence_level)
+    double confidence_level,
+    bool compute_partial)
 {
     CorrelationResult result;
     result.method = method;
     result.confidence_level = confidence_level;
     result.coefficients.assign(columns.size(), std::vector<double>(columns.size(), 0.0));
+    result.covariances.assign(columns.size(), std::vector<double>(columns.size(), 0.0));
     result.counts.assign(columns.size(), std::vector<std::size_t>(columns.size(), 0));
     for (std::size_t first = 0; first < columns.size(); ++first) {
         for (std::size_t second = first; second < columns.size(); ++second) {
@@ -146,6 +187,37 @@ CorrelationResult correlation_matrix(
             result.coefficients[second][first] = pair.coefficient;
             result.counts[first][second] = pair.count;
             result.counts[second][first] = pair.count;
+
+            // Sample covariance on complete cases (Pearson scale; Spearman uses ranks).
+            const std::size_t count = std::min(columns[first].size(), columns[second].size());
+            std::vector<double> x;
+            std::vector<double> y;
+            for (std::size_t index = 0; index < count; ++index) {
+                if (std::isfinite(columns[first][index])
+                    && std::isfinite(columns[second][index])) {
+                    x.push_back(columns[first][index]);
+                    y.push_back(columns[second][index]);
+                }
+            }
+            if (method == CorrelationMethod::spearman && x.size() >= 2) {
+                x = average_ranks(x);
+                y = average_ranks(y);
+            }
+            if (x.size() >= 2) {
+                const double mean_x = std::accumulate(x.cbegin(), x.cend(), 0.0)
+                    / static_cast<double>(x.size());
+                const double mean_y = std::accumulate(y.cbegin(), y.cend(), 0.0)
+                    / static_cast<double>(y.size());
+                double cov = 0.0;
+                for (std::size_t index = 0; index < x.size(); ++index) {
+                    cov += (x[index] - mean_x) * (y[index] - mean_y);
+                }
+                cov /= static_cast<double>(x.size() - 1);
+                result.covariances[first][second] = cov;
+                result.covariances[second][first] = cov;
+                result.covariance_available = true;
+            }
+
             if (!pair.diagnostics.empty()) {
                 result.diagnostics.insert(
                     result.diagnostics.end(),
@@ -154,6 +226,89 @@ CorrelationResult correlation_matrix(
             }
             result.pairs.push_back(std::move(pair));
         }
+    }
+
+    if (compute_partial && columns.size() >= 3 && method == CorrelationMethod::pearson) {
+        // Complete-case rows across all columns, then precision-matrix partials.
+        const std::size_t p = columns.size();
+        std::size_t row_limit = columns[0].size();
+        for (std::size_t c = 1; c < p; ++c) {
+            row_limit = std::min(row_limit, columns[c].size());
+        }
+        std::vector<std::vector<double>> complete(p);
+        for (std::size_t row = 0; row < row_limit; ++row) {
+            bool ok = true;
+            for (std::size_t c = 0; c < p; ++c) {
+                if (!std::isfinite(columns[c][row])) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (!ok) {
+                continue;
+            }
+            for (std::size_t c = 0; c < p; ++c) {
+                complete[c].push_back(columns[c][row]);
+            }
+        }
+        const std::size_t n = complete[0].size();
+        if (n >= p + 2) {
+            std::vector<double> means(p, 0.0);
+            for (std::size_t c = 0; c < p; ++c) {
+                means[c] = std::accumulate(complete[c].cbegin(), complete[c].cend(), 0.0)
+                    / static_cast<double>(n);
+            }
+            std::vector<std::vector<double>> corr(p, std::vector<double>(p, 0.0));
+            for (std::size_t i = 0; i < p; ++i) {
+                corr[i][i] = 1.0;
+                for (std::size_t j = i + 1; j < p; ++j) {
+                    double num = 0.0;
+                    double vx = 0.0;
+                    double vy = 0.0;
+                    for (std::size_t row = 0; row < n; ++row) {
+                        const double dx = complete[i][row] - means[i];
+                        const double dy = complete[j][row] - means[j];
+                        num += dx * dy;
+                        vx += dx * dx;
+                        vy += dy * dy;
+                    }
+                    const double r = (vx > 0.0 && vy > 0.0)
+                        ? num / std::sqrt(vx * vy) : 0.0;
+                    corr[i][j] = r;
+                    corr[j][i] = r;
+                }
+            }
+            const auto precision = invert_symmetric(corr);
+            if (!precision.empty()) {
+                result.partial_coefficients.assign(p, std::vector<double>(p, 0.0));
+                for (std::size_t i = 0; i < p; ++i) {
+                    result.partial_coefficients[i][i] = 1.0;
+                    for (std::size_t j = i + 1; j < p; ++j) {
+                        const double denom = std::sqrt(
+                            std::abs(precision[i][i] * precision[j][j]));
+                        double partial = 0.0;
+                        if (denom > 0.0) {
+                            partial = -precision[i][j] / denom;
+                        }
+                        result.partial_coefficients[i][j] = partial;
+                        result.partial_coefficients[j][i] = partial;
+                    }
+                }
+                result.partial_available = true;
+            } else {
+                add_error(result.diagnostics, "partial_singular",
+                          "相关矩阵不可逆，无法计算偏相关。");
+            }
+        } else {
+            add_error(result.diagnostics, "partial_insufficient_n",
+                      "偏相关需要完整行数至少为变量数+2。");
+        }
+    } else if (compute_partial && method != CorrelationMethod::pearson) {
+        add_error(result.diagnostics, "partial_pearson_only",
+                  "本轮偏相关仅支持 Pearson。");
+    } else if (compute_partial && columns.size() < 3) {
+        add_error(result.diagnostics, "partial_need_three",
+                  "偏相关至少需要三列。");
     }
     return result;
 }

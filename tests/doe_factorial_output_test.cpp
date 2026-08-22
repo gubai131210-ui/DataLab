@@ -1,4 +1,5 @@
 #include "application/analysis_service.h"
+#include "infrastructure/output_serialization.h"
 
 #include <QtTest/QtTest>
 
@@ -16,6 +17,8 @@ private slots:
     void fourFactorDesignSkipsCubePlotWithDiagnostic();
     void threeFactorContourUsesSelectedAxes();
     void threeFactorContourActualHoldChangesGrid();
+    void factorial_design_page_exports_worksheet_for_response_entry();
+    void factorial_worksheet_reimports_center_points_for_curvature();
 };
 
 void DoeFactorialOutputTest::buildsEffectsParetoAndCubeForTwoFactors()
@@ -331,6 +334,115 @@ void DoeFactorialOutputTest::threeFactorContourActualHoldChangesGrid()
         bad_page.diagnostics.cbegin(), bad_page.diagnostics.cend(),
         [](const datalab::domain::DiagnosticMessage& diagnostic) {
             return diagnostic.code == "invalid_hold_value";
+        }));
+}
+
+void DoeFactorialOutputTest::factorial_design_page_exports_worksheet_for_response_entry()
+{
+    datalab::domain::DataTable empty;
+    datalab::domain::AnalysisConfiguration configuration;
+    configuration.doe.factor_names = {"Temp", "Pressure"};
+    configuration.doe.low_levels = {"80", "1"};
+    configuration.doe.high_levels = {"120", "3"};
+    configuration.doe.center_point_count = 2;
+    configuration.doe.randomize = false;
+    const auto page =
+        datalab::application::AnalysisService::doe_factorial(empty, configuration);
+    QVERIFY(page.worksheet_export.has_value());
+    QCOMPARE(page.worksheet_export->columns.front(), std::string("RunID"));
+    QVERIFY(std::find(page.worksheet_export->columns.begin(),
+                      page.worksheet_export->columns.end(),
+                      "Temp")
+            != page.worksheet_export->columns.end());
+    QVERIFY(std::find(page.worksheet_export->columns.begin(),
+                      page.worksheet_export->columns.end(),
+                      "Response")
+            != page.worksheet_export->columns.end());
+    // 2^2 factorial + 2 centers = 6 runs
+    QCOMPARE(static_cast<int>(page.worksheet_export->rows.size()), 6);
+    bool saw_center = false;
+    bool saw_actual_low = false;
+    bool saw_export_ready = false;
+    QVERIFY(page.facts.doe.has_value());
+    QCOMPARE(page.facts.doe->design_kind, std::string("full"));
+    QCOMPARE(page.worksheet_export->import_metadata.source_object, std::string("full"));
+    for (const auto& row : page.worksheet_export->rows) {
+        QVERIFY(row.size() == page.worksheet_export->columns.size());
+        QCOMPARE(row.back(), std::string(""));  // Response placeholder
+        if (row[4] == "center") {
+            saw_center = true;
+            // Center uses actual midpoints of low/high, not coded 0.
+            QCOMPARE(row[5], std::string("100"));
+            QCOMPARE(row[6], std::string("2"));
+        }
+        if (row[5] == "80" || row[6] == "1") {
+            saw_actual_low = true;
+        }
+    }
+    QVERIFY(saw_center);
+    QVERIFY(saw_actual_low);
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.code == "doe_worksheet_export_ready") {
+            saw_export_ready = true;
+        }
+    }
+    QVERIFY(saw_export_ready);
+
+    const auto json = datalab::infrastructure::output_page_to_json(page);
+    const auto restored = datalab::infrastructure::output_page_from_json(json);
+    QVERIFY(restored.worksheet_export.has_value());
+    QCOMPARE(restored.worksheet_export->rows.size(), page.worksheet_export->rows.size());
+    QCOMPARE(restored.worksheet_export->columns, page.worksheet_export->columns);
+}
+
+void DoeFactorialOutputTest::factorial_worksheet_reimports_center_points_for_curvature()
+{
+    datalab::domain::DataTable empty;
+    datalab::domain::AnalysisConfiguration design_config;
+    design_config.doe.factor_names = {"Temp", "Pressure"};
+    design_config.doe.low_levels = {"80", "1"};
+    design_config.doe.high_levels = {"120", "3"};
+    design_config.doe.center_point_count = 2;
+    design_config.doe.randomize = false;
+    const auto design_page =
+        datalab::application::AnalysisService::doe_factorial(empty, design_config);
+    QVERIFY(design_page.worksheet_export.has_value());
+
+    datalab::domain::DataTable worksheet = *design_page.worksheet_export;
+    // Fill response: factorial corners + two identical centers → pure error / curvature path.
+    const std::vector<std::string> responses = {"10", "14", "12", "16", "13", "13"};
+    QCOMPARE(static_cast<int>(worksheet.rows.size()), 6);
+    QCOMPARE(static_cast<int>(responses.size()), 6);
+    for (std::size_t index = 0; index < worksheet.rows.size(); ++index) {
+        worksheet.rows[index].back() = responses[index];
+    }
+
+    datalab::domain::AnalysisConfiguration analysis_config;
+    analysis_config.doe.factor_columns = {5, 6};  // Temp, Pressure after PointType
+    analysis_config.doe.response_column = 7;
+    analysis_config.doe.low_levels = {"80", "1"};
+    analysis_config.doe.high_levels = {"120", "3"};
+    const auto page = datalab::application::AnalysisService::doe_factorial(
+        worksheet, analysis_config);
+
+    QVERIFY(std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "doe_center_runs_imported";
+        }));
+    QVERIFY(!std::any_of(
+        page.diagnostics.cbegin(), page.diagnostics.cend(),
+        [](const datalab::domain::DiagnosticMessage& diagnostic) {
+            return diagnostic.code == "no_center_points"
+                || diagnostic.code == "missing_doe_run";
+        }));
+    QVERIFY(std::any_of(
+        page.tables.cbegin(), page.tables.cend(),
+        [](const datalab::domain::StatisticTable& table) {
+            return table.title.find("曲率") != std::string::npos
+                || table.title.find("Curvature") != std::string::npos
+                || table.title.find("中心点") != std::string::npos
+                || table.title.find("Center") != std::string::npos;
         }));
 }
 

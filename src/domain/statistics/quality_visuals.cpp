@@ -1,7 +1,10 @@
 #include "domain/statistics/quality_visuals.h"
 
+#include "domain/quality_types.h"
+
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <numeric>
 
 namespace datalab::domain::statistics {
@@ -181,6 +184,135 @@ HistogramResult histogram_with_edges(
             bin = result.counts.size() - 1;
         }
         result.counts[bin] += 1.0;
+    }
+    return result;
+}
+
+CauseEffectResult cause_and_effect_summarize(
+    const std::string& effect,
+    const std::vector<std::pair<std::string, std::string>>& category_causes)
+{
+    CauseEffectResult result;
+    result.effect = effect.empty() ? "效果（未命名）" : effect;
+    std::map<std::string, std::vector<std::string>> grouped;
+    std::size_t skipped = 0;
+    for (const auto& pair : category_causes) {
+        std::string category = pair.first;
+        std::string cause = pair.second;
+        while (!category.empty()
+               && (category.front() == ' ' || category.front() == '\t')) {
+            category.erase(category.begin());
+        }
+        while (!cause.empty()
+               && (cause.front() == ' ' || cause.front() == '\t')) {
+            cause.erase(cause.begin());
+        }
+        while (!category.empty()
+               && (category.back() == ' ' || category.back() == '\t')) {
+            category.pop_back();
+        }
+        while (!cause.empty()
+               && (cause.back() == ' ' || cause.back() == '\t')) {
+            cause.pop_back();
+        }
+        if (category.empty() || cause.empty()) {
+            ++skipped;
+            continue;
+        }
+        grouped[category].push_back(cause);
+        ++result.cause_count;
+    }
+    for (auto& entry : grouped) {
+        CauseEffectCategory row;
+        row.category = entry.first;
+        row.causes = std::move(entry.second);
+        result.categories.push_back(std::move(row));
+    }
+    if (result.categories.empty()) {
+        result.diagnostics.push_back({
+            DiagnosticMessage::Severity::error,
+            "cause_effect_empty",
+            "未找到有效的类别-原因行。请提供非空类别列与原因列。"});
+    }
+    if (skipped > 0) {
+        result.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning,
+            "cause_effect_skipped_rows",
+            "已跳过 " + std::to_string(skipped) + " 个空类别或空原因单元格。"});
+    }
+    return result;
+}
+
+VariabilityChartResult variability_chart_summarize(
+    const std::vector<double>& measurements,
+    const std::vector<std::string>& factor_a,
+    const std::vector<std::string>& factor_b,
+    const std::vector<std::size_t>& source_rows)
+{
+    VariabilityChartResult result;
+    if (measurements.size() != factor_a.size()) {
+        result.diagnostics.push_back({
+            DiagnosticMessage::Severity::error,
+            "variability_length_mismatch",
+            "测量列与因子 A 长度不一致。"});
+        return result;
+    }
+    const bool two_factor = !factor_b.empty();
+    if (two_factor && factor_b.size() != measurements.size()) {
+        result.diagnostics.push_back({
+            DiagnosticMessage::Severity::error,
+            "variability_length_mismatch",
+            "测量列与因子 B 长度不一致。"});
+        return result;
+    }
+    result.factor_count = two_factor ? 2 : 1;
+    std::map<std::string, std::vector<std::size_t>> groups;
+    for (std::size_t i = 0; i < measurements.size(); ++i) {
+        if (!std::isfinite(measurements[i])) {
+            continue;
+        }
+        std::string key = factor_a[i];
+        if (two_factor) {
+            key += " | ";
+            key += factor_b[i];
+        }
+        groups[key].push_back(i);
+        ++result.valid_count;
+    }
+    if (groups.empty()) {
+        result.diagnostics.push_back({
+            DiagnosticMessage::Severity::error,
+            "variability_empty",
+            "没有有效的测量值可用于变异性图。"});
+        return result;
+    }
+    for (const auto& entry : groups) {
+        VariabilityCell cell;
+        cell.label = entry.first;
+        cell.n = entry.second.size();
+        double sum = 0.0;
+        for (std::size_t index : entry.second) {
+            sum += measurements[index];
+            if (index < source_rows.size()) {
+                cell.source_rows.push_back(source_rows[index]);
+            }
+        }
+        cell.mean = sum / static_cast<double>(cell.n);
+        if (cell.n >= 2) {
+            double ss = 0.0;
+            for (std::size_t index : entry.second) {
+                const double d = measurements[index] - cell.mean;
+                ss += d * d;
+            }
+            cell.sample_sd = std::sqrt(ss / static_cast<double>(cell.n - 1));
+        } else {
+            cell.sample_sd = 0.0;
+            result.diagnostics.push_back({
+                DiagnosticMessage::Severity::warning,
+                "variability_singleton_cell",
+                "单元「" + cell.label + "」仅 1 个点，SD 记为 0。"});
+        }
+        result.cells.push_back(std::move(cell));
     }
     return result;
 }

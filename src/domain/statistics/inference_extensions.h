@@ -166,4 +166,31 @@ ChiSquareGofResult chi_square_goodness_of_fit(
     const std::vector<double>& counts,
     const std::vector<double>& proportions = {});
 
+struct FisherExactResult {
+    std::size_t a = 0;
+    std::size_t b = 0;
+    std::size_t c = 0;
+    std::size_t d = 0;
+    std::string row1_label;
+    std::string row2_label;
+    std::string col1_label;
+    std::string col2_label;
+    std::optional<double> p_value;
+    std::optional<double> odds_ratio;
+    bool computable = false;
+    std::string method = "fisher_exact_hypergeometric";
+    std::vector<DiagnosticMessage> diagnostics;
+};
+
+// 2×2 counts [[a,b],[c,d]]. Reuses same two-sided hypergeometric sum as proportions.
+FisherExactResult fisher_exact_2x2(
+    std::size_t a,
+    std::size_t b,
+    std::size_t c,
+    std::size_t d,
+    const std::string& row1_label = "Row1",
+    const std::string& row2_label = "Row2",
+    const std::string& col1_label = "Col1",
+    const std::string& col2_label = "Col2");
+
 }  // namespace datalab::domain::statistics

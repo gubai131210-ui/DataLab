@@ -1,0 +1,1 @@
+﻿wrote D:\QT_CppPrograms\DataLab\scripts\_tmp_param_leak_out.txt leaks=94 cells=43 attrib_leaks=8 eda4=6

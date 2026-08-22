@@ -930,4 +930,236 @@ PowerResult two_poisson_rate_sample_size(
         low, first_rate, second_rate, observation_length, alpha, alternative);
 }
 
+PowerResult equivalence_power_core(
+    const std::size_t n_per, const bool two_sample, const double lower_limit,
+    const double upper_limit, const double true_difference, const double alpha)
+{
+    PowerResult result;
+    result.sample_size = n_per;
+    result.sample_size_per_group = two_sample ? n_per : 0;
+    result.total_sample_size = two_sample ? 2 * n_per : n_per;
+    result.effect_size = true_difference;
+    if (n_per < 2 || !std::isfinite(lower_limit) || !std::isfinite(upper_limit)
+        || !(lower_limit < upper_limit) || !std::isfinite(true_difference)
+        || !valid_probability(alpha)) {
+        error(result.diagnostics, "invalid_equivalence_power_input",
+              "等价功效输入无效：需 n≥2 且下限 < 上限。");
+        return result;
+    }
+    const double se = two_sample
+        ? std::sqrt(2.0 / static_cast<double>(n_per))
+        : 1.0 / std::sqrt(static_cast<double>(n_per));
+    const double z_alpha = normal_quantile(1.0 - alpha);
+    const double upper_term =
+        normal_cdf((upper_limit - true_difference) / se - z_alpha);
+    const double lower_term =
+        normal_cdf((lower_limit - true_difference) / se + z_alpha);
+    result.power = std::clamp(upper_term - lower_term, 0.0, 1.0);
+    result.critical_value = z_alpha;
+    result.degrees_of_freedom = std::numeric_limits<double>::infinity();
+    result.diagnostics.push_back({
+        DiagnosticMessage::Severity::info,
+        "equivalence_power_known_sigma_normal",
+        "等价功效使用已知 σ 的正态规划近似，不是精确二元非中心 t。"});
+    return result;
+}
+
+PowerResult equivalence_one_sample_power(
+    const std::size_t sample_size, const double lower_limit, const double upper_limit,
+    const double true_difference, const double alpha)
+{
+    return equivalence_power_core(
+        sample_size, false, lower_limit, upper_limit, true_difference, alpha);
+}
+
+PowerResult equivalence_two_sample_power(
+    const std::size_t sample_size_per_group, const double lower_limit,
+    const double upper_limit, const double true_difference, const double alpha)
+{
+    return equivalence_power_core(
+        sample_size_per_group, true, lower_limit, upper_limit, true_difference, alpha);
+}
+
+PowerResult equivalence_sample_size_core(
+    const bool two_sample, const double lower_limit, const double upper_limit,
+    const double target_power, const double true_difference, const double alpha)
+{
+    if (!valid_probability(target_power)) {
+        return invalid_power_result("invalid_equivalence_sample_size_input",
+                                    "目标功效必须位于 0 和 1 之间。");
+    }
+    std::size_t high = 2;
+    while (high < 1000000
+           && equivalence_power_core(
+                  high, two_sample, lower_limit, upper_limit, true_difference, alpha)
+                      .power
+               < target_power) {
+        high *= 2;
+    }
+    if (equivalence_power_core(
+            high, two_sample, lower_limit, upper_limit, true_difference, alpha)
+            .power
+        < target_power) {
+        return invalid_power_result("equivalence_sample_size_limit",
+                                    "在允许的最大样本量内无法达到目标功效。");
+    }
+    std::size_t low = 2;
+    while (low < high) {
+        const std::size_t mid = low + (high - low) / 2;
+        if (equivalence_power_core(
+                mid, two_sample, lower_limit, upper_limit, true_difference, alpha)
+                .power
+            >= target_power) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    return equivalence_power_core(
+        low, two_sample, lower_limit, upper_limit, true_difference, alpha);
+}
+
+PowerResult equivalence_one_sample_sample_size(
+    const double lower_limit, const double upper_limit, const double target_power,
+    const double true_difference, const double alpha)
+{
+    return equivalence_sample_size_core(
+        false, lower_limit, upper_limit, target_power, true_difference, alpha);
+}
+
+PowerResult equivalence_two_sample_sample_size(
+    const double lower_limit, const double upper_limit, const double target_power,
+    const double true_difference, const double alpha)
+{
+    return equivalence_sample_size_core(
+        true, lower_limit, upper_limit, target_power, true_difference, alpha);
+}
+
+PowerResult doe_factorial_power(
+    const std::size_t factor_count, const std::size_t fraction_p,
+    const std::size_t replicates, const double effect_over_sigma, const double alpha)
+{
+    PowerResult result;
+    result.effect_size = effect_over_sigma;
+    if (factor_count < 2 || fraction_p >= factor_count || replicates < 1
+        || !std::isfinite(effect_over_sigma) || effect_over_sigma == 0.0
+        || !valid_probability(alpha)) {
+        error(result.diagnostics, "invalid_doe_factorial_power_input",
+              "DOE 功效需要 k≥2、p<k、replicates≥1 且效应/σ≠0。");
+        return result;
+    }
+    const std::size_t base = factor_count - fraction_p;
+    if (base > 20) {
+        error(result.diagnostics, "doe_factorial_power_overflow",
+              "基设计过大。");
+        return result;
+    }
+    std::size_t runs_per_replicate = 1;
+    for (std::size_t i = 0; i < base; ++i) {
+        runs_per_replicate *= 2;
+    }
+    const std::size_t n_per_level = replicates * (runs_per_replicate / 2);
+    result = two_sample_t_power(n_per_level, effect_over_sigma, alpha);
+    result.sample_size = replicates;
+    result.sample_size_per_group = n_per_level;
+    result.total_sample_size = replicates * runs_per_replicate;
+    result.diagnostics.push_back({
+        DiagnosticMessage::Severity::info,
+        "doe_factorial_power_contrast",
+        "DOE 功效按主效应高低水平对比，复用双样本非中心 t；中心点未计入。"});
+    return result;
+}
+
+PowerResult doe_factorial_sample_size(
+    const std::size_t factor_count, const std::size_t fraction_p,
+    const double effect_over_sigma, const double target_power, const double alpha)
+{
+    if (!valid_probability(target_power)) {
+        return invalid_power_result("invalid_doe_factorial_sample_size_input",
+                                    "目标功效必须位于 0 和 1 之间。");
+    }
+    std::size_t high = 1;
+    while (high < 100000
+           && doe_factorial_power(
+                  factor_count, fraction_p, high, effect_over_sigma, alpha)
+                      .power
+               < target_power) {
+        high *= 2;
+    }
+    if (doe_factorial_power(factor_count, fraction_p, high, effect_over_sigma, alpha)
+            .power
+        < target_power) {
+        return invalid_power_result("doe_factorial_sample_size_limit",
+                                    "在允许的最大重复数内无法达到目标功效。");
+    }
+    std::size_t low = 1;
+    while (low < high) {
+        const std::size_t mid = low + (high - low) / 2;
+        if (doe_factorial_power(
+                factor_count, fraction_p, mid, effect_over_sigma, alpha)
+                .power
+            >= target_power) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    return doe_factorial_power(factor_count, fraction_p, low, effect_over_sigma, alpha);
+}
+
+double howe_k_factor(const std::size_t n, const double coverage, const double confidence)
+{
+    if (n < 2 || !valid_probability(coverage) || !valid_probability(confidence)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    const double nn = static_cast<double>(n);
+    const double nu = nn - 1.0;
+    const double z_coverage = normal_quantile((1.0 + coverage) / 2.0);
+    // Chi-square lower quantile via Wilson–Hilferty inverse of normal.
+    const double z = normal_quantile(1.0 - confidence);
+    const double h = 2.0 / (9.0 * nu);
+    const double cube = 1.0 - h + z * std::sqrt(h);
+    const double chi_lower = nu * cube * cube * cube;
+    if (!(chi_lower > 0.0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return z_coverage * std::sqrt(nu * (1.0 + 1.0 / nn) / chi_lower);
+}
+
+PowerResult tolerance_normal_sample_size(
+    const double coverage, const double confidence_level, const double max_k_factor)
+{
+    PowerResult result;
+    result.effect_size = max_k_factor;
+    if (!valid_probability(coverage) || !valid_probability(confidence_level)
+        || !(max_k_factor > 0.0)) {
+        error(result.diagnostics, "invalid_tolerance_sample_size_input",
+              "覆盖率、置信水平须在 (0,1)，max k 须为正。");
+        return result;
+    }
+    std::size_t found = 0;
+    for (std::size_t n = 2; n <= 100000; ++n) {
+        const double k = howe_k_factor(n, coverage, confidence_level);
+        if (std::isfinite(k) && k <= max_k_factor) {
+            found = n;
+            result.power = confidence_level;
+            result.sample_size = n;
+            result.total_sample_size = n;
+            result.critical_value = k;
+            result.degrees_of_freedom = static_cast<double>(n - 1);
+            break;
+        }
+    }
+    if (found == 0) {
+        error(result.diagnostics, "tolerance_sample_size_limit",
+              "在允许的最大 n 内 Howe k 仍大于目标上限。");
+        return result;
+    }
+    result.diagnostics.push_back({
+        DiagnosticMessage::Severity::info,
+        "tolerance_sample_size_howe",
+        "容差样本量按 NIST Howe 双侧 k(n)≤max_k 求解；非 Minitab 精确积分。"});
+    return result;
+}
+
 }  // namespace datalab::domain::statistics

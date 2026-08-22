@@ -1,0 +1,14 @@
+﻿[  0%] Built target datalab_domain_autogen_timestamp_deps
+[  0%] Built target datalab_domain_autogen
+[  5%] Building CXX object CMakeFiles/datalab_domain.dir/src/domain/report_text_catalog.cpp.obj
+cmake : mingw32-make.exe[3]: *** [CMakeFiles\datalab_domain.dir\build.make:136: CMakeFiles/datalab_domain.dir/src/domai
+n/report_text_catalog.cpp.obj] Error 1
+所在位置 C:\Users\孤白赟悫\AppData\Local\Temp\ps-script-7e0e06b6-d27a-40e3-8d15-77539cae7030.ps1:118 字符: 86
++ ... W_64_bit_Debug"; cmake --build . --target datalab_domain 2>&1 | Out-F ...
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (mingw32-make.ex...pp.obj] Error 1:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+mingw32-make.exe[2]: *** [CMakeFiles\Makefile2:400: CMakeFiles/datalab_domain.dir/all] Error 2
+mingw32-make.exe[1]: *** [CMakeFiles\Makefile2:407: CMakeFiles/datalab_domain.dir/rule] Error 2
+mingw32-make.exe: *** [Makefile:178: datalab_domain] Error 2

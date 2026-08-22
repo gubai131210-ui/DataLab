@@ -1,0 +1,24 @@
+﻿wrote D:\QT_CppPrograms\DataLab\scripts\_tmp_unmapped_zh_refined.txt
+titles=1 headers=0 axes=0 diags_u=16 interp_u=127
+title samples:
+  graph_service.cpp:2109 Hexbin
+diag prefix clusters:
+  1 相关分析：
+  1 单样本 t：
+  1 单样本 Z：
+  1 双样本 t：
+  1 拟合与诊断
+  1 标准化残差
+  1 能力分析: 
+  1 响应优化预测：
+python : Traceback (most recent call last):
+所在位置 C:\Users\孤白赟悫\AppData\Local\Temp\ps-script-ed003588-75e8-4a91-8692-6a5fc6b3aaa2.ps1:118 字符: 1
++ python scripts/_tmp_unmapped_zh_refined.py 2>&1 | Out-File -Encoding  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\QT_CppPrograms\DataLab\scripts\_tmp_unmapped_zh_refined.py", line 232, in <module>
+    print(f"  {c} {k}")
+    ~~~~~^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\xb2' in position 5: illegal multibyte sequence

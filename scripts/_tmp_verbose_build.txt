@@ -1,0 +1,8 @@
+﻿mingw32-make : mingw32-make: *** No rule to make target 'CMakeFiles/datalab_domain.dir/src/domain/report_text_catalog.c
+pp.obj'.  Stop.
+所在位置 C:\Users\孤白赟悫\AppData\Local\Temp\ps-script-3df43aa6-0b94-4c0d-bc1f-0b1845d83d70.ps1:118 字符: 86
++ ... bit_Debug"; mingw32-make VERBOSE=1 CMakeFiles/datalab_domain.dir/src/ ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (mingw32-make: *...pp.obj'.  Stop.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

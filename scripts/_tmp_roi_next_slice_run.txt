@@ -1,0 +1,3 @@
+﻿wrote D:\QT_CppPrograms\DataLab\scripts\_tmp_roi_next_slice_out.txt
+selected=attrib_spc_oc n=23 uniq=89
+top families: [('misc', 13), ('inference_corr', 6), ('reliability', 4), ('spc_mv', 4), ('attrib_spc_oc', 3), ('capability', 3), ('forecast_ts', 3), ('msa', 2)]

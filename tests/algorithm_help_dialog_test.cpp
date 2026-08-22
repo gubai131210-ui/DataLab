@@ -20,6 +20,7 @@ private slots:
     void summaryCopyContainsMethodNotRepoPath();
     void invalidReferenceUrlIsRejected();
     void formulaSourcesTabShowsFormulasAndLinks();
+    void formulaRegistryButtonExists();
     void cleanupTestCase();
 
 private:
@@ -90,17 +91,17 @@ void AlgorithmHelpDialogTest::searchFiltersEntries()
     search->clear();
     QVERIFY(tree->topLevelItemCount() > 0);
 
-    search->setText(QStringLiteral("Grubbs"));
-    bool has_grubbs = false;
+    search->setText(QStringLiteral("异常值"));
+    bool has_outlier = false;
     for (int category_index = 0; category_index < tree->topLevelItemCount(); ++category_index) {
         QTreeWidgetItem* category = tree->topLevelItem(category_index);
         for (int entry_index = 0; entry_index < category->childCount(); ++entry_index) {
-            if (category->child(entry_index)->text(0).contains(QStringLiteral("Grubbs"))) {
-                has_grubbs = true;
+            if (category->child(entry_index)->text(0).contains(QStringLiteral("异常值"))) {
+                has_outlier = true;
             }
         }
     }
-    QVERIFY(has_grubbs);
+    QVERIFY(has_outlier);
 
     search->setText(QStringLiteral("σ_within"));
     QVERIFY(tree->topLevelItemCount() > 0);
@@ -174,6 +175,20 @@ void AlgorithmHelpDialogTest::formulaSourcesTabShowsFormulasAndLinks()
             || html.contains(QStringLiteral("官方链接")));
     QVERIFY(!html.contains(QStringLiteral("仓库公式文档")));
     QVERIFY(!html.contains(QStringLiteral("接线与测试")));
+}
+
+void AlgorithmHelpDialogTest::formulaRegistryButtonExists()
+{
+    AlgorithmHelpDialog dialog;
+    const auto buttons = dialog.findChildren<QPushButton*>();
+    bool found = false;
+    for (QPushButton* button : buttons) {
+        if (button->text().contains(QStringLiteral("公式注册表"))) {
+            found = true;
+            break;
+        }
+    }
+    QVERIFY(found);
 }
 
 QTEST_MAIN(AlgorithmHelpDialogTest)

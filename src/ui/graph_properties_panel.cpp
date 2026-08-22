@@ -133,6 +133,15 @@ GraphPropertiesPanel::GraphPropertiesPanel(const ChartModel& model, QWidget* par
     selection_path_->setStyleSheet(QStringLiteral("color:#39777b; padding:4px 0;"));
     root->addWidget(selection_path_);
 
+    visibility_banner_ = new QLabel(this);
+    visibility_banner_->setObjectName(QStringLiteral("row_visibility_banner"));
+    visibility_banner_->setWordWrap(true);
+    visibility_banner_->setStyleSheet(QStringLiteral(
+        "background:#eef6fb; color:#1f4e79; border:1px solid #c5d9ea;"
+        " border-radius:6px; padding:8px;"));
+    root->addWidget(visibility_banner_);
+    refresh_visibility_banner();
+
     auto* object_group = new QGroupBox(QStringLiteral("编辑对象"), this);
     auto* object_layout = new QVBoxLayout(object_group);
     object_list_ = new QListWidget(object_group);
@@ -447,6 +456,36 @@ void GraphPropertiesPanel::set_selected_path(const QString& path)
     }
     selection_path_->setText(resolved);
     load_series_editors();
+}
+
+void GraphPropertiesPanel::set_row_visibility_summary(
+    const std::size_t excluded_count,
+    const std::size_t hidden_count,
+    const std::size_t analysis_n,
+    const std::size_t display_n)
+{
+    excluded_count_ = excluded_count;
+    hidden_count_ = hidden_count;
+    analysis_n_ = analysis_n;
+    display_n_ = display_n;
+    refresh_visibility_banner();
+}
+
+void GraphPropertiesPanel::refresh_visibility_banner()
+{
+    if (visibility_banner_ == nullptr) {
+        return;
+    }
+    visibility_banner_->setText(
+        QStringLiteral(
+            "行可见性契约（只读）\n"
+            "排除 %1 行（分析与显示均省略）· 隐藏 %2 行（仅显示省略，分析仍纳入）\n"
+            "分析 N = %3 · 显示 N = %4\n"
+            "不得将 hidden 与 excluded 合并叙述；改标记请用数据菜单。")
+            .arg(static_cast<qulonglong>(excluded_count_))
+            .arg(static_cast<qulonglong>(hidden_count_))
+            .arg(static_cast<qulonglong>(analysis_n_))
+            .arg(static_cast<qulonglong>(display_n_)));
 }
 
 void GraphPropertiesPanel::apply_changes()

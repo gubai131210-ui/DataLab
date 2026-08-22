@@ -1,0 +1,1 @@
+﻿wrote D:\QT_CppPrograms\DataLab\scripts\_tmp_slice_rank_out.txt graph=35 inf=18

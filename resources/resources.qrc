@@ -20,6 +20,7 @@
         <file>icons/outlier_test.svg</file>
         <file>icons/correlation.svg</file>
         <file>icons/one_sample_t.svg</file>
+        <file>icons/one_sample_z.svg</file>
         <file>icons/two_sample_t.svg</file>
         <file>icons/one_way_anova.svg</file>
         <file>icons/paired_t.svg</file>
@@ -32,6 +33,11 @@
         <file>icons/chi_square.svg</file>
         <file>icons/mann_whitney.svg</file>
         <file>icons/wilcoxon_signed_rank.svg</file>
+        <file>icons/sign_test.svg</file>
+        <file>icons/mcnemar.svg</file>
+        <file>icons/cochran_q.svg</file>
+        <file>icons/mood_median.svg</file>
+        <file>icons/friedman.svg</file>
         <file>icons/kruskal_wallis.svg</file>
         <file>icons/box_cox.svg</file>
         <file>icons/gage_rr.svg</file>
@@ -39,6 +45,7 @@
         <file>icons/xbar_r.svg</file>
         <file>icons/xbar_s.svg</file>
         <file>icons/imr_rs.svg</file>
+        <file>icons/hotelling_t2.svg</file>
         <file>icons/p_chart.svg</file>
         <file>icons/np_chart.svg</file>
         <file>icons/c_chart.svg</file>
@@ -73,6 +80,7 @@
         <file>icons/parallel.svg</file>
         <file>icons/heatmap.svg</file>
         <file>icons/time_series.svg</file>
+        <file>icons/time_series_plot.svg</file>
         <file>icons/area.svg</file>
         <file>icons/contour.svg</file>
         <file>icons/pie.svg</file>

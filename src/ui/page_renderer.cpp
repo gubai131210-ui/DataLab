@@ -1,8 +1,12 @@
 #include "ui/page_renderer.h"
+#include "ui/row_visibility_clipboard.h"
 
 #include "ui/analysis_chart_widget.h"
+#include "ui/report_table_model.h"
+#include "ui/worksheet_sort_filter_proxy.h"
 #include "reporting/chart_adapter.h"
 
+#include <QAbstractItemView>
 #include <QFile>
 #include <QApplication>
 #include <QAction>
@@ -12,17 +16,24 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QIcon>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QObject>
 #include <QRegularExpression>
-#include <QTableWidget>
+#include <QShortcut>
+#include <QTableView>
 #include <QTextStream>
 #include <QVBoxLayout>
+
+#include <set>
 
 namespace page_renderer {
 namespace {
 
-QString table_text(const datalab::domain::StatisticTable& table, QChar separator)
+QString table_text(
+    const datalab::domain::StatisticTable& table,
+    QChar separator,
+    const QString& visibility_footnote = {})
 {
     QStringList lines;
     auto encode = [separator](const std::string& value) {
@@ -45,7 +56,26 @@ QString table_text(const datalab::domain::StatisticTable& table, QChar separator
         }
         lines.push_back(cells.join(separator));
     }
+    if (!visibility_footnote.isEmpty()) {
+        return datalab::ui::append_clipboard_footnote_comments(
+            lines.join(QLatin1Char('\n')), visibility_footnote);
+    }
     return lines.join(QLatin1Char('\n'));
+}
+
+datalab::domain::StatisticTable selected_table_rows(
+    const datalab::domain::StatisticTable& table,
+    const std::vector<int>& row_indexes)
+{
+    datalab::domain::StatisticTable selected;
+    selected.title = table.title;
+    selected.headers = table.headers;
+    for (const int row_index : row_indexes) {
+        if (row_index >= 0 && static_cast<std::size_t>(row_index) < table.rows.size()) {
+            selected.rows.push_back(table.rows[static_cast<std::size_t>(row_index)]);
+        }
+    }
+    return selected;
 }
 
 }  // namespace
@@ -104,6 +134,22 @@ QWidget* build_page_widget(
         layout->addWidget(summary);
     }
 
+    const std::size_t excluded_rows = page.configuration.excluded_rows.size();
+    const std::size_t hidden_rows = page.configuration.hidden_rows.size();
+    std::size_t analysis_n = 0;
+    std::size_t display_n = 0;
+    if (page.facts.eda.has_value()) {
+        analysis_n = page.facts.eda->analysis_n != 0
+            ? page.facts.eda->analysis_n
+            : page.facts.eda->analysis_eligible_n;
+        display_n = page.facts.eda->n != 0 ? page.facts.eda->n : display_n;
+    }
+    if (display_n == 0 && !page.plots.empty()) {
+        display_n = page.plots.front().source_rows.size();
+    }
+    const QString visibility_footnote = datalab::ui::row_visibility_footnote(
+        excluded_rows, hidden_rows, analysis_n, display_n);
+
     for (const auto& section : page.interpretation) {
         auto* card = new QLabel(container);
         QString text = QStringLiteral("【%1】\n").arg(QString::fromStdString(section.heading));
@@ -126,21 +172,42 @@ QWidget* build_page_widget(
         auto* caption = new QLabel(QString::fromStdString(table.title), container);
         caption->setStyleSheet(QStringLiteral("font-weight: 600; margin-top: 8px;"));
         layout->addWidget(caption);
-        auto* grid = new QTableWidget(
-            static_cast<int>(table.rows.size()),
-            static_cast<int>(table.headers.size()),
-            container);
+        auto* model = new datalab::ui::ReportTableModel(container);
+        model->set_table(table);
+        auto* proxy = new datalab::ui::WorksheetSortFilterProxyModel(container);
+        proxy->setSourceModel(model);
+        std::set<int> sortable;
+        for (int column = 0; column < static_cast<int>(table.headers.size()); ++column) {
+            sortable.insert(column);
+        }
+        proxy->set_sortable_columns(sortable);
+        auto* grid = new QTableView(container);
+        grid->setModel(proxy);
+        grid->setSortingEnabled(true);
         grid->setEditTriggers(QAbstractItemView::NoEditTriggers);
         grid->setSelectionMode(QAbstractItemView::ContiguousSelection);
-        grid->setSelectionBehavior(QAbstractItemView::SelectItems);
+        grid->setSelectionBehavior(QAbstractItemView::SelectRows);
         grid->setContextMenuPolicy(Qt::ActionsContextMenu);
+        const auto copy_table_text = [grid, table, proxy, visibility_footnote]() {
+            std::vector<int> selected_rows;
+            if (grid->selectionModel() != nullptr) {
+                for (const QModelIndex& proxy_index : grid->selectionModel()->selectedRows()) {
+                    selected_rows.push_back(proxy->mapToSource(proxy_index).row());
+                }
+            }
+            const datalab::domain::StatisticTable payload =
+                selected_rows.empty() ? table : selected_table_rows(table, selected_rows);
+            QApplication::clipboard()->setText(
+                table_text(payload, QLatin1Char('\t'), visibility_footnote));
+        };
         auto* copy_table = new QAction(QStringLiteral("复制表格（TSV）"), grid);
-        QObject::connect(copy_table, &QAction::triggered, grid, [table] {
-            QApplication::clipboard()->setText(table_text(table, QLatin1Char('\t')));
-        });
+        QObject::connect(copy_table, &QAction::triggered, grid, copy_table_text);
         grid->addAction(copy_table);
+        auto* copy_shortcut = new QShortcut(QKeySequence::Copy, grid);
+        copy_shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        QObject::connect(copy_shortcut, &QShortcut::activated, grid, copy_table_text);
         auto* export_table = new QAction(QStringLiteral("导出表格（CSV）"), grid);
-        QObject::connect(export_table, &QAction::triggered, grid, [table, grid] {
+        QObject::connect(export_table, &QAction::triggered, grid, [table, grid, visibility_footnote] {
             const QString path = QFileDialog::getSaveFileName(
                 grid, QStringLiteral("导出统计表"),
                 QString::fromStdString(table.title) + QStringLiteral(".csv"),
@@ -152,7 +219,7 @@ QWidget* build_page_widget(
             if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QTextStream stream(&file);
                 stream.setEncoding(QStringConverter::Utf8);
-                stream << table_text(table, QLatin1Char(','));
+                stream << table_text(table, QLatin1Char(','), visibility_footnote);
             }
         });
         grid->addAction(export_table);
@@ -164,7 +231,7 @@ QWidget* build_page_widget(
         grid->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         grid->setAlternatingRowColors(true);
         grid->setStyleSheet(QStringLiteral(
-            "QTableWidget { background:#ffffff; alternate-background-color:#f6fafb;"
+            "QTableView { background:#ffffff; alternate-background-color:#f6fafb;"
             " gridline-color:#dbe6e9; border:1px solid #d6e1e5; }"
             "QHeaderView::section { background:#e7f0f3; color:#29434e;"
             " border:0; border-right:1px solid #d6e1e5; padding:7px; font-weight:600; }"));
@@ -172,26 +239,26 @@ QWidget* build_page_widget(
         grid->horizontalHeader()->setMinimumSectionSize(64);
         grid->horizontalHeader()->setMaximumSectionSize(220);
         grid->horizontalHeader()->setStretchLastSection(false);
-        for (int column = 0; column < static_cast<int>(table.headers.size()); ++column) {
-            grid->setHorizontalHeaderItem(
-                column, new QTableWidgetItem(QString::fromStdString(
-                    table.headers[static_cast<std::size_t>(column)])));
-        }
-        for (int row = 0; row < static_cast<int>(table.rows.size()); ++row) {
-            for (int column = 0; column < static_cast<int>(table.headers.size()); ++column) {
-                const auto& cells = table.rows[static_cast<std::size_t>(row)];
-                const QString text = column < static_cast<int>(cells.size())
-                    ? QString::fromStdString(cells[static_cast<std::size_t>(column)])
-                    : QString();
-                auto* item = new QTableWidgetItem(text);
-                if (text.contains(QRegularExpression(QStringLiteral(
-                        "^\\s*[+\\-]?(?:\\d|\\.)")))) {
-                    item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                } else {
-                    item->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-                }
-                grid->setItem(row, column, item);
-            }
+        if (options.interactive_charts && options.on_rows_selected) {
+            QObject::connect(
+                grid->selectionModel(),
+                &QItemSelectionModel::selectionChanged,
+                grid,
+                [grid, model, proxy, callback = options.on_rows_selected]() {
+                    std::vector<std::size_t> rows;
+                    for (const QModelIndex& proxy_index :
+                         grid->selectionModel()->selectedRows()) {
+                        const QModelIndex index = proxy->mapToSource(proxy_index);
+                        const QVariant row_id =
+                            model->data(index, datalab::ui::ReportRowIdRole);
+                        if (row_id.isValid()) {
+                            rows.push_back(static_cast<std::size_t>(row_id.toULongLong()));
+                        } else {
+                            rows.push_back(static_cast<std::size_t>(index.row()));
+                        }
+                    }
+                    callback(rows);
+                });
         }
         grid->resizeColumnsToContents();
         grid->resizeRowsToContents();
@@ -238,7 +305,10 @@ QWidget* build_page_widget(
     for (std::size_t plot_index = 0; plot_index < page.plots.size(); ++plot_index) {
         const auto& plot = page.plots[plot_index];
         auto* chart = new AnalysisChartWidget(container);
-        chart->set_model(chart_model_from_plot(plot));
+        ChartModel model = chart_model_from_plot(plot);
+        model.language_tag = options.chart_language_tag;
+        chart->set_model(model);
+        chart->set_row_visibility_summary(excluded_rows, hidden_rows, analysis_n, display_n);
         chart->setMinimumHeight(280);
         chart->setStyleSheet(QStringLiteral(
             "background:#ffffff; border:1px solid #d6e1e5; border-radius:8px;"));

@@ -16,6 +16,17 @@
 - 高杠杆与高 VIF 作为“诊断信号”，不是自动删点/删变量指令。
 - 与 complete-case 行映射一起输出，便于回查原始行。
 
+## §2 关联与分类（批次 A2 · 2026-08-22）
+
+- **配对一致率**：对响应不同的观测对 (i,j)，比较事件顺序与预测概率顺序；报告 Concordant / Discordant / Tied 与 Pairs Concordance (%)。  
+- **分类表（阈值 0.5）**：2×2 表（TP/TN/FP/FN）；`formula_reference`，非 Minitab golden。
+
+### Primary URL
+
+| URL | 访问 |
+|---|---|
+| https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-binary-logistic-model/interpret-the-results/all-statistics-and-graphs/association-statistics/ | 2026-08-22 |
+
 ## Minitab 口径
 
 - Fits and Diagnostics 展示 residual 与 leverage（Hi）。

@@ -1,0 +1,105 @@
+interp_cands=313 uncovered=2
+domain_diag_unc=3 fam={'doe_rsm': 1, 'spc': 1, 'other': 1}
+app_diag_unc=2 title_unc=27 param_tok_uniq=10
+exact_zh=1898 sw=175 finds=159 ends=143 param_prefs=161
+
+=== UNCOVERED INTERP ===
+L1541	已按  追溯  个分层分母；部分/全部分层 expected_failures 使用 cause-specific 分模式 R(T_w)。
+L2075	规则「」已触发。：
+
+=== DOMAIN DIAG BY FAM ===
+  1	doe_rsm
+  1	spc
+  1	other
+
+=== DOMAIN DIAG SAMPLE ===
+src/domain/statistics/doe_factorial.cpp:427	doe_rsm	部分析因分辨度 
+src/domain/statistics/special_cause_rule_catalog.cpp:242	spc	 当前未触发。
+src/domain/report_text_catalog.cpp:119	other	诊断无关联行
+
+=== APP DIAG UNC ===
+src/application/chart_pages.cpp:187	没有可显示的数据。
+src/application/chart_pages.cpp:280	没有可显示的数据。
+
+=== TITLE/HEADER/SERIES UNC ===
+src/application/analysis_service.cpp:2187	 与 
+src/application/analysis_service.cpp:9133	（编码）
+src/application/analysis_service.cpp:9134	（编码）
+src/application/analysis_service.cpp:14684	需要单位数列。
+src/application/graph_service.cpp:444	散点图（分面）
+src/application/graph_service.cpp:587	区间散点图（分面）
+src/application/graph_service.cpp:708	相关图（分面）
+src/application/graph_service.cpp:797	气泡图（分面）
+src/application/graph_service.cpp:892	正态概率图（分面）
+src/application/graph_service.cpp:982	经验累积分布图（分面）
+src/application/graph_service.cpp:1071	矩阵图（分面）
+src/application/graph_service.cpp:1167	边际图（分面）
+src/application/graph_service.cpp:1261	平行坐标图（分面）
+src/application/graph_service.cpp:1374	热图（分面）
+src/application/graph_service.cpp:1519	热图（分面）
+src/application/graph_service.cpp:1624	时间序列图（分面）
+src/application/graph_service.cpp:1772	等值线图（分面）
+src/application/graph_service.cpp:1973	密度图（分面）
+src/application/graph_service.cpp:2109	Hexbin（分面）
+src/application/graph_service.cpp:2233	小提琴图（分面）
+src/application/graph_service.cpp:2445	条形图（分面）
+src/application/doe_pages.cpp:510	（编码）
+src/application/doe_pages.cpp:511	（编码）
+src/application/chart_pages.cpp:187	没有可显示的数据。
+src/application/chart_pages.cpp:215	逐子组统计
+src/application/chart_pages.cpp:280	没有可显示的数据。
+src/application/output_builder.cpp:552	间隔
+
+=== PARAM TOKENS ===
+36	    显示 N = 
+34	    分析 N = 
+17	    分析 N(水平) = 
+17	    分面 = 
+8	跳过 
+3	 跳过 
+1	描述统计跳过 
+1	，组 2 = 
+1	，请结合正态概率图和 P 值判断残差正态性，不能只看 R²。
+1	，列水平数 = 
+
+=== PARAM EXAMPLES ===
+src/application/analysis_service.cpp:721	跳过 
+src/application/analysis_service.cpp:1756	描述统计跳过 
+src/application/analysis_service.cpp:2235	跳过 
+src/application/analysis_service.cpp:2318	跳过 
+src/application/analysis_service.cpp:2429	，组 2 = 
+src/application/analysis_service.cpp:2682	跳过 
+src/application/analysis_service.cpp:2863	跳过 
+src/application/analysis_service.cpp:3585	，请结合正态概率图和 P 值判断残差正态性，不能只看 R²。
+src/application/analysis_service.cpp:5635	，列水平数 = 
+src/application/analysis_service.cpp:7894	 跳过 
+src/application/analysis_service.cpp:9533	跳过 
+src/application/analysis_service.cpp:9540	跳过 
+src/application/analysis_service.cpp:11665	 跳过 
+src/application/analysis_service.cpp:12080	跳过 
+src/application/analysis_service.cpp:12788	 跳过 
+src/application/graph_service.cpp:412	    显示 N = 
+src/application/graph_service.cpp:413	    分析 N = 
+src/application/graph_service.cpp:484	    分析 N(水平) = 
+src/application/graph_service.cpp:485	    显示 N = 
+src/application/graph_service.cpp:499	    分面 = 
+src/application/graph_service.cpp:503	    显示 N = 
+src/application/graph_service.cpp:504	    分析 N = 
+src/application/graph_service.cpp:568	    显示 N = 
+src/application/graph_service.cpp:569	    分析 N = 
+src/application/graph_service.cpp:610	    分析 N(水平) = 
+src/application/graph_service.cpp:618	    分面 = 
+src/application/graph_service.cpp:622	    显示 N = 
+src/application/graph_service.cpp:623	    分析 N = 
+src/application/graph_service.cpp:693	    显示 N = 
+src/application/graph_service.cpp:694	    分析 N = 
+src/application/graph_service.cpp:717	    分析 N(水平) = 
+src/application/graph_service.cpp:724	    分面 = 
+src/application/graph_service.cpp:728	    显示 N = 
+src/application/graph_service.cpp:729	    分析 N = 
+src/application/graph_service.cpp:782	    显示 N = 
+src/application/graph_service.cpp:783	    分析 N = 
+src/application/graph_service.cpp:806	    分析 N(水平) = 
+src/application/graph_service.cpp:814	    分面 = 
+src/application/graph_service.cpp:818	    显示 N = 
+src/application/graph_service.cpp:819	    分析 N = 
