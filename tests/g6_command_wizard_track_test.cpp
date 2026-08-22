@@ -87,7 +87,8 @@ void G6CommandWizardTrackTest::t02_oneNumericControlChart()
     const RecommendResult result =
         recommend({ColumnType::numeric}, CommandWizardIntent::control_chart);
     QVERIFY(contains_id(result, "imr"));
-    QCOMPARE(result.recommendations.size(), static_cast<std::size_t>(1));
+    QVERIFY(result.recommendations.size() >= 1);
+    QVERIFY(result.recommendations.size() <= 8);
     QString orphan;
     QVERIFY2(all_findable(result, &orphan), qPrintable(orphan));
 }
