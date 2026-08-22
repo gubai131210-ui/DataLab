@@ -210,7 +210,7 @@ ui → application → {infrastructure, reporting} → domain
 |-------|------|----------|------|
 | **G1 公式注册表 UI** | 应用内 Formula Registry | 新页：搜索 id、显示公式、链到 research md / NIST | 用户诉求；`report_text_catalog` evidence 公式 id |
 | **G2 图表/表格复制** | 输出可粘贴 | Copy PNG/TSV；尊重 hidden/excluded 脚注 | JMP/Minitab 导出 |
-| **G3 Graph 受控 Builder** | 分面+geom 画廊 | 独立 `GraphBuilderPage`；对接 `graph_service` | §3.1 |
+| **G3 Graph 受控 Builder** | 分面+geom 画廊 | 独立 `GraphBuilderPage`；对接 `graph_service` | §3.1；计划 [`goal-wave-2026-08-23-g3-graph-builder-plan-and-mega-prompt.md`](goal-wave-2026-08-23-g3-graph-builder-plan-and-mega-prompt.md) |
 | **G4 4-plot / Report Card** | 假设可视化 | 命令或能力子页；Facts `AssumptionCheck` | NIST 4-plot |
 | **G5 AnalysisService 拆分** | 降耦合 | 按命令族拆 cpp；dispatch 表 | architecture-review §3.1 |
 | **G6 命令 Wizard** | 降学习曲线 | 列类型 → 推荐命令列表（不自动跑） | QI Macros Wizard |

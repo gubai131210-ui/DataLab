@@ -25,15 +25,16 @@
 |-------|----------|---------------|------------|------------------|
 | **G1** | 公式注册表 UI | ✅ | ✅ 2026-08-22 | ✅ 已签（可回归） |
 | **G2** | 图表/表格复制 | ✅ | ✅ 2026-08-22 | ✅ 已签（可回归） |
-| **G3** | Graph 受控 Builder | ⏳ | ⏳ | ⏳ |
+| **G3** | Graph 受控 Builder | ⏳ 计划已备 | ⏳ | ⏳ |
 | **G4** | 4-plot / Report Card | ⏳ | ⏳ | ⏳ |
 | **G5** | AnalysisService 拆分 | ⏳ | ⏳ | ⏳ |
 | **G6** | 命令 Wizard | ✅ | ✅ | ⏳ |
 | **G7** | 离线监视摘要 | ⏳ | ⏳ | ⏳ |
 | **G8** | Worksheet 编辑 | ⏳ | ⏳ | ⏳ |
 
-> G6 竖切（Tester）：脚本预检 ✅；Track 交付 ✅（引擎 + Wizard + 入口 + i18n + QtTest t01–t15）；统一验收 ⏳。python tools/verify_g6_command_wizard_track.py PASS。
-> DoD：[`docs/research/goal-wave-2026-08-23-g6-command-wizard.md`](../../docs/research/goal-wave-2026-08-23-g6-command-wizard.md)
+> G6 竖切（Tester）：脚本预检 ✅；Track 交付 ✅（引擎 + Wizard + 入口 + i18n + QtTest t01–t15）；统一验收 ⏳。python tools/verify_g6_command_wizard_track.py PASS。  
+> DoD：[`docs/research/goal-wave-2026-08-23-g6-command-wizard.md`](../../docs/research/goal-wave-2026-08-23-g6-command-wizard.md)  
+> **G3 下一 Goal（计划已备，待执行）：** [`goal-wave-2026-08-23-g3-graph-builder-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-23-g3-graph-builder-plan-and-mega-prompt.md) · 调研 [`g3-graph-builder-ux-research-2026-08-23.md`](../../docs/research/g3-graph-builder-ux-research-2026-08-23.md) · DoD [`goal-wave-2026-08-23-g3-graph-builder.md`](../../docs/research/goal-wave-2026-08-23-g3-graph-builder.md)
 
 ### 算法竖切批次（2026-08-22）
 
