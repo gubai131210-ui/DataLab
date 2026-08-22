@@ -107,5 +107,3 @@ datalab::domain::ReportProfile ReportTemplateDialog::selected_profile() const
     }
     return profile;
 }
-
-#include "report_template_dialog.moc"

@@ -128,7 +128,9 @@ void CommandWizardDialog::build_pages()
     column_list_ = new QListWidget(columns_page);
     column_list_->setObjectName(QStringLiteral("commandWizardColumnList"));
     column_list_->setSelectionMode(QAbstractItemView::NoSelection);
-    const int n = std::min(column_names_.size(), static_cast<int>(column_types_.size()));
+    const int n = static_cast<int>(std::min(
+        static_cast<std::size_t>(column_names_.size()),
+        column_types_.size()));
     for (int i = 0; i < n; ++i) {
         const QString label = QStringLiteral("%1  [%2]")
                                   .arg(column_names_.at(i), column_type_label(column_types_[static_cast<std::size_t>(i)]));
