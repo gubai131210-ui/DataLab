@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace datalab::application {
 namespace {
@@ -48,30 +47,32 @@ void add_candidate(
 
 bool intent_allows_id(CommandWizardIntent intent, const std::string& command_id)
 {
-    if (intent == CommandWizardIntent::any) {
+    // 不用 unordered_map<enum class, …>：MinGW 上首次插入非 any 意图时可能异常/卡死。
+    switch (intent) {
+    case CommandWizardIntent::any:
         return true;
+    case CommandWizardIntent::describe:
+        return command_id == "descriptive" || command_id == "histogram"
+            || command_id == "normality_test" || command_id == "boxplot"
+            || command_id == "pareto" || command_id == "chi_square";
+    case CommandWizardIntent::compare:
+        return command_id == "two_sample_t" || command_id == "mann_whitney"
+            || command_id == "variance_test" || command_id == "one_way_anova"
+            || command_id == "kruskal_wallis" || command_id == "boxplot";
+    case CommandWizardIntent::associate:
+        return command_id == "correlation" || command_id == "regression"
+            || command_id == "scatter_plot" || command_id == "pca";
+    case CommandWizardIntent::control_chart:
+        return command_id == "imr" || command_id == "xbar_r" || command_id == "p_chart";
+    case CommandWizardIntent::capability:
+        return command_id == "capability" || command_id == "nonnormal_capability";
+    case CommandWizardIntent::reliability:
+        return command_id == "reliability" || command_id == "cox_regression";
+    case CommandWizardIntent::graph:
+        return command_id == "histogram" || command_id == "boxplot"
+            || command_id == "scatter_plot" || command_id == "time_series_plot";
     }
-
-    static const std::unordered_map<CommandWizardIntent, std::unordered_set<std::string>> k_allowed = {
-        {CommandWizardIntent::describe,
-         {"descriptive", "histogram", "normality_test", "boxplot", "pareto", "chi_square"}},
-        {CommandWizardIntent::compare,
-         {"two_sample_t", "mann_whitney", "variance_test", "one_way_anova", "kruskal_wallis",
-          "boxplot"}},
-        {CommandWizardIntent::associate,
-         {"correlation", "regression", "scatter_plot", "pca"}},
-        {CommandWizardIntent::control_chart, {"imr"}},
-        {CommandWizardIntent::capability, {"capability", "nonnormal_capability"}},
-        {CommandWizardIntent::reliability, {"reliability", "cox_regression"}},
-        {CommandWizardIntent::graph,
-         {"histogram", "boxplot", "scatter_plot", "time_series_plot"}},
-    };
-
-    const auto it = k_allowed.find(intent);
-    if (it == k_allowed.end()) {
-        return false;
-    }
-    return it->second.count(command_id) > 0;
+    return false;
 }
 
 std::vector<Recommendation> merge_and_rank(
@@ -139,6 +140,7 @@ void append_structural_rules(
         }
         if (intent == CommandWizardIntent::control_chart) {
             add_candidate(out, "imr", 1.0, "reason.imr");
+            add_candidate(out, "xbar_r", 0.7, "reason.imr");
         }
         if (intent == CommandWizardIntent::capability) {
             add_candidate(out, "capability", 1.0, "reason.capability");
