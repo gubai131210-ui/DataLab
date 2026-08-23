@@ -283,3 +283,15 @@
 **[`next-wave-algorithms-charts-ml-oss.md`](next-wave-algorithms-charts-ml-oss.md)**（2026-08-21）
 
 该文件**不**改变本表已有 ✅ 行；实现前须把选中项登记回本表章节与 §12，再竖切。Predictive Analytics 全模块 / Graph Builder / 嵌入 Python·R 仍属 §13 延后。
+
+### 15.1 算法 Wave-5 锁定（2026-08-23 · 待执行）
+
+计划与 Mega `/goal`：[`goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md`](goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave5-market-formula-research-2026-08-23.md`](algorithm-wave5-market-formula-research-2026-08-23.md)
+
+| Wave-5 | id | 备注 |
+|--------|-----|------|
+| W5-1 | `random_forest` | Track E2 窄化 |
+| W5-2 | `weibayes` | 可靠性少失效窄化 |
+| W5-3 | `taguchi_orthogonal_design` | DOE 设计生成子集 |
+| W5-4 | `distribution_calculator` | PDF/CDF/分位工具 |

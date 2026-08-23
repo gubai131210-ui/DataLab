@@ -79,6 +79,22 @@
 
 > 脚本：`python tools/verify_algorithm_wave4_track.py`
 
+### 算法 Wave-5（计划已备 · 2026-08-23 · 待 `/goal`）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W5-1** | `random_forest` 窄化 | ⏳ | ⏳ | ⏳ |
+| **W5-2** | `weibayes` 窄化 | ⏳ | ⏳ | ⏳ |
+| **W5-3** | `taguchi_orthogonal_design` | ⏳ | ⏳ | ⏳ |
+| **W5-4** | `distribution_calculator` | ⏳ | ⏳ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave5-market-formula-research-2026-08-23.md`](../../docs/research/algorithm-wave5-market-formula-research-2026-08-23.md)  
+> DoD：[`docs/research/goal-wave-2026-08-23-algorithm-wave5.md`](../../docs/research/goal-wave-2026-08-23-algorithm-wave5.md)  
+> 门禁（执行后）：`python tools/verify_algorithm_wave5_track.py`
+
+### 报告产品 Phase（节选）
+
 ### UI 菜单 IA（2026-08-23）
 
 | 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
