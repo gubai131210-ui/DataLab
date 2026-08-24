@@ -209,6 +209,8 @@ ui → application → {infrastructure, reporting} → domain
 | Track | 目标 | 关键交付 | 参考 |
 |-------|------|----------|------|
 | **G1 公式注册表 UI** | 应用内 Formula Registry | 新页：搜索 id、显示公式、链到 research md / NIST | 用户诉求；`report_text_catalog` evidence 公式 id |
+| **G9 公式代入 / Show Your Work** | 运行时符号绑定（Cassini 式） | 输出页入口 + **四页**（列表/变量/代入/出处）；全命令覆盖 | 调研+计划：`formula-substitution-show-your-work-research-2026-08-23.md` · `goal-wave-2026-08-23-g9-formula-substitution-plan-and-mega-prompt.md` |
+| **G9-D 验算轨迹深化** | 分步求值 + 真值绑定（Excel/Cassini 深度） | Facts→bindings/steps；消灭 stub；页3 分步表；A/B/C 尽量 L3 | `g9-show-your-work-deepen-research-2026-08-24.md` · `goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md` |
 | **G2 图表/表格复制** | 输出可粘贴 | Copy PNG/TSV；尊重 hidden/excluded 脚注 | JMP/Minitab 导出 |
 | **G3 Graph 受控 Builder** | 分面+geom 画廊 | 独立 `GraphBuilderPage`；对接 `graph_service` | §3.1；计划 [`goal-wave-2026-08-23-g3-graph-builder-plan-and-mega-prompt.md`](goal-wave-2026-08-23-g3-graph-builder-plan-and-mega-prompt.md) |
 | **G4 4-plot / Report Card** | 假设可视化 | 命令或能力子页；Facts `AssumptionCheck` | NIST 4-plot |

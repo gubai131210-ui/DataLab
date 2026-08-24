@@ -31,6 +31,11 @@
 | **G6** | 命令 Wizard | ✅ | ✅ | ⏳ |
 | **G7** | 离线监视摘要 | ⏳ | ⏳ | ⏳ |
 | **G8** | Worksheet 编辑 | ⏳ | ⏳ | ⏳ |
+| **G9** | 公式代入 / Show Your Work（框架） | ✅ | ✅ 2026-08-23 | ⏳ |
+| **G9-D** | 验算轨迹深化（分步求值 · 能做尽做） | ⏳ 计划已备 | ⏳ | ⏳ |
+
+> G9：`python tools/verify_g9_formula_substitution_track.py`；覆盖矩阵 [`g9-formula-substitution-coverage-matrix.md`](../../docs/research/g9-formula-substitution-coverage-matrix.md)；DoD [`goal-wave-2026-08-23-g9-formula-substitution.md`](../../docs/research/goal-wave-2026-08-23-g9-formula-substitution.md)。  
+> **G9-D 下一优先（计划已备）：** 调研 [`g9-show-your-work-deepen-research-2026-08-24.md`](../../docs/research/g9-show-your-work-deepen-research-2026-08-24.md) · 计划+Mega [`goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md) · DoD [`goal-wave-2026-08-24-g9-show-your-work-deepen.md`](../../docs/research/goal-wave-2026-08-24-g9-show-your-work-deepen.md)。目标：消灭「主公式」stub；Facts 真值绑定；Excel 风格分步求值；A/B/C 尽量 L3。  
 
 > G6 竖切（Tester）：脚本预检 ✅；Track 交付 ✅（引擎 + Wizard + 入口 + i18n + QtTest t01–t15）；统一验收 ⏳。python tools/verify_g6_command_wizard_track.py PASS。  
 > DoD：[`docs/research/goal-wave-2026-08-23-g6-command-wizard.md`](../../docs/research/goal-wave-2026-08-23-g6-command-wizard.md)  
@@ -79,19 +84,19 @@
 
 > 脚本：`python tools/verify_algorithm_wave4_track.py`
 
-### 算法 Wave-5（计划已备 · 2026-08-23 · 待 `/goal`）
+### 算法 Wave-5（2026-08-23 · ✅）
 
 | 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
 |----|----------|---------------|------------|------------------|
-| **W5-1** | `random_forest` 窄化 | ⏳ | ⏳ | ⏳ |
-| **W5-2** | `weibayes` 窄化 | ⏳ | ⏳ | ⏳ |
-| **W5-3** | `taguchi_orthogonal_design` | ⏳ | ⏳ | ⏳ |
-| **W5-4** | `distribution_calculator` | ⏳ | ⏳ | ⏳ |
+| **W5-1** | `random_forest` 窄化 | ✅ | ✅ | ⏳ |
+| **W5-2** | `weibayes` 窄化 | ✅ | ✅ | ⏳ |
+| **W5-3** | `taguchi_orthogonal_design` | ✅ | ✅ | ⏳ |
+| **W5-4** | `distribution_calculator` | ✅ | ✅ | ⏳ |
 
 > 计划：[`docs/research/goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md)  
 > 调研：[`docs/research/algorithm-wave5-market-formula-research-2026-08-23.md`](../../docs/research/algorithm-wave5-market-formula-research-2026-08-23.md)  
 > DoD：[`docs/research/goal-wave-2026-08-23-algorithm-wave5.md`](../../docs/research/goal-wave-2026-08-23-algorithm-wave5.md)  
-> 门禁（执行后）：`python tools/verify_algorithm_wave5_track.py`
+> 门禁：`python tools/verify_algorithm_wave5_track.py`
 
 ### 报告产品 Phase（节选）
 
@@ -135,6 +140,7 @@ python tools/verify_algorithm_batch_2026_08.py   # 算法批 A1–A3（2026-08-2
 python tools/verify_algorithm_wave2_track.py       # 算法 Wave-2 W2-1–W2-4（2026-08-22）
 python tools/verify_algorithm_wave3_track.py       # 算法 Wave-2.5 + Wave-3（2026-08-22）
 python tools/verify_algorithm_wave4_track.py       # 算法 Wave-4 W4-0–W4-4（2026-08-22）
+python tools/verify_algorithm_wave5_track.py       # 算法 Wave-5 W5-1–W5-4（2026-08-23）
 python tools/verify_ui_menu_ia_track.py            # UI 菜单 IA U1–U3（2026-08-23）
 # 后续：python tools/verify_g6_command_wizard_track.py  # G6 命令 Wizard（Tester）
 # 后续：python tools/verify_g3_track.py 等（随 Track 增加）
