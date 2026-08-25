@@ -133,7 +133,7 @@
 |---|---|---|
 | Two-level factorial 分析 | ✅ | Pareto/立方/等值线/残差/优化 |
 | 设计生成（全因子/部分/PB/DSD…） | ✅ / ⏸ | 2^k + 2^(k-p) ✅；PB ✅（`doe_plackett_burman`）；DSD ⏸ |
-| RSM / Mixture / Taguchi / Split-plot | 🟡 | RSM 分析（已有表）✅；设计生成/Mixture/Taguchi/Split-plot 仍 ❌ |
+| RSM / Mixture / Taguchi / Split-plot | 🟡 | RSM 分析 ✅；`taguchi_orthogonal_design`+`taguchi_analyze`+`mixture_design` ✅（W5/W6）；Split-plot 仍 ❌ |
 | Analyze variability / binary response DOE | ❌ | |
 | 响应优化 | ✅ | 多响应 D；精确 PI 优先协方差 |
 
@@ -144,7 +144,7 @@
 | 右删失参数分布（Weibull/指数/对数正态） | ✅ / ⚪ | 含阈值族；待 golden |
 | KM / Log-rank / CIF | ✅ | 右删失 KM ✅；K 组 Log-rank ✅；Aalen–Johansen CIF 曲线+表 + Gray 窄化 ✅（2026-08-22 Wave-4）；Fine-Gray IPCW formula_reference |
 | Accelerated life / warranty / repairable | ✅ / ✅ | ALT Newton MLE + 使用应力百分位 ✅（2026-08-22）；warranty ✅ |
-| Probit / Weibayes / life regression | 🟡 | `probit_reliability` 窄化 ✅（2026-08-22）；Weibayes / 全量寿命回归 ❌ |
+| Probit / Weibayes / life regression | 🟡 | `probit_reliability` ✅；`weibayes` ✅（W5）；`nhpp_repairable`/`reliability_test_plan` ✅（W6）；全量寿命回归 ❌ |
 | Test plans | ❌ | |
 
 ## 10. Time Series / Power / Multivariate
@@ -284,14 +284,27 @@
 
 该文件**不**改变本表已有 ✅ 行；实现前须把选中项登记回本表章节与 §12，再竖切。Predictive Analytics 全模块 / Graph Builder / 嵌入 Python·R 仍属 §13 延后。
 
-### 15.1 算法 Wave-5 锁定（2026-08-23 · 待执行）
+### 15.1 算法 Wave-5 锁定（2026-08-23 · ✅）
 
 计划与 Mega `/goal`：[`goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md`](goal-wave-2026-08-23-algorithm-wave5-plan-and-mega-prompt.md)  
 调研：[`algorithm-wave5-market-formula-research-2026-08-23.md`](algorithm-wave5-market-formula-research-2026-08-23.md)
 
 | Wave-5 | id | 备注 |
 |--------|-----|------|
-| W5-1 | `random_forest` | Track E2 窄化 |
-| W5-2 | `weibayes` | 可靠性少失效窄化 |
-| W5-3 | `taguchi_orthogonal_design` | DOE 设计生成子集 |
-| W5-4 | `distribution_calculator` | PDF/CDF/分位工具 |
+| W5-1 | `random_forest` | Track E2 窄化 ✅ |
+| W5-2 | `weibayes` | 可靠性少失效窄化 ✅ |
+| W5-3 | `taguchi_orthogonal_design` | DOE 设计生成子集 ✅ |
+| W5-4 | `distribution_calculator` | PDF/CDF/分位工具 ✅ |
+
+### 15.2 算法 Wave-6 锁定（2026-08-25 · ✅）
+
+计划与 Mega `/goal`：[`goal-wave-2026-08-25-algorithm-wave6-plan-and-mega-prompt.md`](goal-wave-2026-08-25-algorithm-wave6-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave6-market-formula-research-2026-08-25.md`](algorithm-wave6-market-formula-research-2026-08-25.md)  
+DoD：[`goal-wave-2026-08-25-algorithm-wave6.md`](goal-wave-2026-08-25-algorithm-wave6.md)
+
+| Wave-6 | id | 备注 |
+|--------|-----|------|
+| W6-1 | `taguchi_analyze` | Taguchi **分析**（设计已在 W5） ✅ |
+| W6-2 | `mixture_design` | Mixture 设计生成（simplex 窄化） ✅ |
+| W6-3 | `nhpp_repairable` | 可修复 NHPP 幂律 ✅ |
+| W6-4 | `reliability_test_plan` | 可靠性试验/演示样本量 ✅ |

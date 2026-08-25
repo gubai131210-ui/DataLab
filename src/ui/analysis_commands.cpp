@@ -2013,6 +2013,59 @@ const std::vector<AnalysisCommand>& all()
             AnalysisService::cart_tree,
             QStringLiteral("多变量")},
         {
+            QStringLiteral("random_forest"),
+            QStringLiteral("随机森林"),
+            QStringLiteral("Random Forest"),
+            QStringLiteral("统计"),
+            QStringLiteral("scatter"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), false, false},
+             {QStringLiteral("predictors"), QStringLiteral("预测变量（数值）"), true, false}},
+            {{QStringLiteral("task"), QStringLiteral("任务"),
+              QStringLiteral("classification / regression")},
+             {QStringLiteral("n_trees"), QStringLiteral("树数"), QStringLiteral("50")},
+             {QStringLiteral("max_depth"), QStringLiteral("最大深度"), QStringLiteral("5")},
+             {QStringLiteral("min_leaf"), QStringLiteral("最小叶样本"), QStringLiteral("5")},
+             {QStringLiteral("seed"), QStringLiteral("随机种子"), QStringLiteral("1")},
+             {QStringLiteral("oob"), QStringLiteral("计算 OOB"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int response = d.first_role_index("response");
+                if (response < 0) {
+                    return apply_error(QStringLiteral("未选择响应"),
+                                       QStringLiteral("请选择响应列。"));
+                }
+                c.analysis_name = "随机森林";
+                c.chart_type = "random_forest";
+                c.random_forest.response_column = static_cast<std::size_t>(response);
+                for (const int column : d.role_indices("predictors")) {
+                    if (column >= 0) {
+                        c.random_forest.predictor_columns.push_back(
+                            static_cast<std::size_t>(column));
+                    }
+                }
+                if (c.random_forest.predictor_columns.empty()) {
+                    return apply_error(QStringLiteral("未选择预测变量"),
+                                       QStringLiteral("请至少选择一个数值预测列。"));
+                }
+                const std::string task = normalize(d.line_text("task"));
+                c.random_forest.task =
+                    (task == "regression") ? "regression" : "classification";
+                c.random_forest.n_trees = static_cast<std::size_t>(
+                    std::max(1, d.line_int("n_trees").value_or(50)));
+                c.random_forest.max_depth = static_cast<std::size_t>(
+                    std::max(1, d.line_int("max_depth").value_or(5)));
+                c.random_forest.min_leaf = static_cast<std::size_t>(
+                    std::max(1, d.line_int("min_leaf").value_or(5)));
+                c.random_forest.seed = static_cast<std::uint32_t>(
+                    std::max(0, d.line_int("seed").value_or(1)));
+                const std::string oob = normalize(d.line_text("oob"));
+                c.random_forest.compute_oob =
+                    !(oob == "false" || oob == "0" || oob == "no");
+                return {};
+            },
+            AnalysisService::random_forest,
+            QStringLiteral("多变量")},
+        {
             QStringLiteral("adf_test"),
             QStringLiteral("ADF 单位根检验"),
             QStringLiteral("Augmented Dickey-Fuller"),
@@ -2149,6 +2202,42 @@ const std::vector<AnalysisCommand>& all()
                 return {};
             },
             AnalysisService::bootstrap_mean,
+            QStringLiteral("推断 / 仿真")},
+        {
+            QStringLiteral("distribution_calculator"),
+            QStringLiteral("分布计算器"),
+            QStringLiteral("Distribution Calculator"),
+            QStringLiteral("统计"),
+            QStringLiteral("histogram"),
+            false, false,
+            {},
+            {{QStringLiteral("distribution"), QStringLiteral("分布"),
+              QStringLiteral("normal / t / chi_square / f / weibull")},
+             {QStringLiteral("operation"), QStringLiteral("运算"),
+              QStringLiteral("pdf / cdf / quantile")},
+             {QStringLiteral("param1"), QStringLiteral("参数1"), QStringLiteral("0")},
+             {QStringLiteral("param2"), QStringLiteral("参数2"), QStringLiteral("1")},
+             {QStringLiteral("param3"), QStringLiteral("参数3（F 的 df2）"), QStringLiteral("1")},
+             {QStringLiteral("value"), QStringLiteral("x 或概率 p"), QStringLiteral("0")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "分布计算器";
+                c.chart_type = "distribution_calculator";
+                const std::string dist = normalize(d.line_text("distribution"));
+                c.distribution_calculator.distribution =
+                    dist.empty() ? "normal" : dist;
+                const std::string op = normalize(d.line_text("operation"));
+                c.distribution_calculator.operation = op.empty() ? "cdf" : op;
+                c.distribution_calculator.param1 =
+                    d.line_number("param1").value_or(0.0);
+                c.distribution_calculator.param2 =
+                    d.line_number("param2").value_or(1.0);
+                c.distribution_calculator.param3 =
+                    d.line_number("param3").value_or(1.0);
+                c.distribution_calculator.value =
+                    d.line_number("value").value_or(0.0);
+                return {};
+            },
+            AnalysisService::distribution_calculator,
             QStringLiteral("推断 / 仿真")},
         {
             QStringLiteral("bootstrap_two_sample"),
@@ -2579,6 +2668,150 @@ const std::vector<AnalysisCommand>& all()
                 return {};
             },
             AnalysisService::doe_plackett_burman,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("taguchi_orthogonal_design"),
+            QStringLiteral("Taguchi 正交设计"),
+            QStringLiteral("Taguchi Orthogonal Design"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, false,
+            {},
+            {{QStringLiteral("factors"), QStringLiteral("因子名（逗号分隔）"), QStringLiteral("A,B,C")},
+             {QStringLiteral("array"), QStringLiteral("阵列 L8/L9/L12"), QStringLiteral("L8")},
+             {QStringLiteral("low"), QStringLiteral("低水平（逗号，可空）"), QStringLiteral("")},
+             {QStringLiteral("high"), QStringLiteral("高水平（逗号，可空）"), QStringLiteral("")},
+             {QStringLiteral("mid"), QStringLiteral("中水平（L9，逗号，可空）"), QStringLiteral("")},
+             {QStringLiteral("randomize"), QStringLiteral("随机化"), QStringLiteral("false")},
+             {QStringLiteral("seed"), QStringLiteral("随机种子"), QStringLiteral("1")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                c.analysis_name = "Taguchi 正交设计";
+                c.chart_type = "taguchi_orthogonal_design";
+                const QString factors_text =
+                    QString::fromStdString(normalize(d.line_text("factors")));
+                const QStringList names = factors_text.split(QLatin1Char(','), Qt::SkipEmptyParts);
+                for (const QString& name : names) {
+                    c.taguchi_orthogonal.factor_names.push_back(name.trimmed().toStdString());
+                }
+                if (c.taguchi_orthogonal.factor_names.empty()) {
+                    return apply_error(QStringLiteral("因子不足"),
+                                       QStringLiteral("请提供至少一个因子名称。"));
+                }
+                const std::string array = normalize(d.line_text("array"));
+                if (array == "l9" || array == "9") {
+                    c.taguchi_orthogonal.array = "L9";
+                } else if (array == "l12" || array == "12") {
+                    c.taguchi_orthogonal.array = "L12";
+                } else {
+                    c.taguchi_orthogonal.array = "L8";
+                }
+                const QStringList lows =
+                    QString::fromStdString(normalize(d.line_text("low")))
+                        .split(QLatin1Char(','), Qt::KeepEmptyParts);
+                const QStringList highs =
+                    QString::fromStdString(normalize(d.line_text("high")))
+                        .split(QLatin1Char(','), Qt::KeepEmptyParts);
+                const QStringList mids =
+                    QString::fromStdString(normalize(d.line_text("mid")))
+                        .split(QLatin1Char(','), Qt::KeepEmptyParts);
+                for (std::size_t i = 0; i < c.taguchi_orthogonal.factor_names.size(); ++i) {
+                    c.taguchi_orthogonal.low_levels.push_back(
+                        i < static_cast<std::size_t>(lows.size())
+                                && !lows[static_cast<int>(i)].trimmed().isEmpty()
+                            ? lows[static_cast<int>(i)].trimmed().toStdString() : "-1");
+                    c.taguchi_orthogonal.high_levels.push_back(
+                        i < static_cast<std::size_t>(highs.size())
+                                && !highs[static_cast<int>(i)].trimmed().isEmpty()
+                            ? highs[static_cast<int>(i)].trimmed().toStdString() : "+1");
+                    if (i < static_cast<std::size_t>(mids.size())
+                        && !mids[static_cast<int>(i)].trimmed().isEmpty()) {
+                        c.taguchi_orthogonal.mid_levels.push_back(
+                            mids[static_cast<int>(i)].trimmed().toStdString());
+                    } else {
+                        c.taguchi_orthogonal.mid_levels.push_back("0");
+                    }
+                }
+                const std::string randomize = normalize(d.line_text("randomize"));
+                c.taguchi_orthogonal.randomize =
+                    randomize == "true" || randomize == "1" || randomize == "yes";
+                c.taguchi_orthogonal.random_seed = static_cast<std::uint64_t>(
+                    std::max(0, d.line_int("seed").value_or(1)));
+                return {};
+            },
+            AnalysisService::taguchi_orthogonal_design,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("taguchi_analyze"),
+            QStringLiteral("Taguchi 分析"),
+            QStringLiteral("Analyze Taguchi Design"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("factors"), QStringLiteral("因子"), true, false},
+             {QStringLiteral("responses"), QStringLiteral("响应"), true, false}},
+            {{QStringLiteral("sn_type"), QStringLiteral("S/N 类型 larger/smaller/nominal"),
+              QStringLiteral("larger")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto factors = d.role_indices("factors");
+                const auto responses = d.role_indices("responses");
+                if (factors.empty() || responses.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("请选择因子列与响应列。"));
+                }
+                c.analysis_name = "Taguchi 分析";
+                c.chart_type = "taguchi_analyze";
+                for (int col : factors) {
+                    c.taguchi_analyze.factor_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                for (int col : responses) {
+                    c.taguchi_analyze.response_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                const std::string sn = normalize(d.line_text("sn_type"));
+                c.taguchi_analyze.sn_type = sn.empty() ? "larger" : sn;
+                return {};
+            },
+            AnalysisService::taguchi_analyze,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("mixture_design"),
+            QStringLiteral("Mixture 设计"),
+            QStringLiteral("Mixture Design"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, false,
+            {},
+            {{QStringLiteral("q"), QStringLiteral("分量数 q（3/4）"), QStringLiteral("3")},
+             {QStringLiteral("names"), QStringLiteral("分量名（逗号）"), QStringLiteral("x1,x2,x3")},
+             {QStringLiteral("randomize"), QStringLiteral("随机化"), QStringLiteral("false")},
+             {QStringLiteral("seed"), QStringLiteral("随机种子"), QStringLiteral("1")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                c.analysis_name = "Mixture 设计";
+                c.chart_type = "mixture_design";
+                const int q = d.line_int("q").value_or(3);
+                if (q < 3 || q > 4) {
+                    return apply_error(QStringLiteral("q 无效"),
+                                       QStringLiteral("分量数 q 仅支持 3 或 4。"));
+                }
+                c.mixture_design.component_count = static_cast<std::size_t>(q);
+                const QStringList names =
+                    QString::fromStdString(normalize(d.line_text("names")))
+                        .split(QLatin1Char(','), Qt::SkipEmptyParts);
+                for (const QString& name : names) {
+                    c.mixture_design.component_names.push_back(
+                        name.trimmed().toStdString());
+                }
+                const std::string randomize = normalize(d.line_text("randomize"));
+                c.mixture_design.randomize =
+                    randomize == "true" || randomize == "1" || randomize == "yes";
+                c.mixture_design.random_seed = static_cast<std::uint64_t>(
+                    std::max(0, d.line_int("seed").value_or(1)));
+                return {};
+            },
+            AnalysisService::mixture_design,
             QStringLiteral("DOE")},
         {
             QStringLiteral("doe_ccd"),
@@ -4986,6 +5219,98 @@ const std::vector<AnalysisCommand>& all()
             },
             AnalysisService::cox_regression,
             QStringLiteral("可靠性")},
+        {
+            QStringLiteral("weibayes"),
+            QStringLiteral("Weibayes"),
+            QStringLiteral("Weibayes"),
+            QStringLiteral("统计"),
+            QStringLiteral("report"),
+            false, true,
+            {{QStringLiteral("time"), QStringLiteral("时间"), false, false},
+             {QStringLiteral("event"), QStringLiteral("事件/删失"), false, false}},
+            {{QStringLiteral("shape_prior"), QStringLiteral("形状先验 β"), QStringLiteral("2")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d) -> AnalysisApplyResult {
+                const int time = d.first_role_index("time");
+                const int event = d.first_role_index("event");
+                if (time < 0 || event < 0) {
+                    return apply_error(QStringLiteral("参数不足"),
+                                       QStringLiteral("请选择时间列与事件列。"));
+                }
+                c.analysis_name = "Weibayes";
+                c.chart_type = "weibayes";
+                c.weibayes.time_column = static_cast<std::size_t>(time);
+                c.weibayes.event_column = static_cast<std::size_t>(event);
+                c.weibayes.shape_prior =
+                    d.line_number("shape_prior").value_or(2.0);
+                return {};
+            },
+            AnalysisService::weibayes,
+            QStringLiteral("可靠性")},
+        {
+            QStringLiteral("nhpp_repairable"),
+            QStringLiteral("可修复系统 NHPP"),
+            QStringLiteral("NHPP Crow-AMSAA"),
+            QStringLiteral("统计"),
+            QStringLiteral("report"),
+            false, true,
+            {{QStringLiteral("time"), QStringLiteral("累积失效时间"), false, false}},
+            {{QStringLiteral("truncation"), QStringLiteral("截尾 T（可空=max ti）"), QStringLiteral("")},
+             {QStringLiteral("duane"), QStringLiteral("Duane 图 true/false"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const int time = d.first_role_index("time");
+                if (time < 0) {
+                    return apply_error(QStringLiteral("参数不足"),
+                                       QStringLiteral("请选择累积失效时间列。"));
+                }
+                c.analysis_name = "可修复系统 NHPP";
+                c.chart_type = "nhpp_repairable";
+                c.nhpp_repairable.time_column = static_cast<std::size_t>(time);
+                const auto truncation = d.line_number("truncation");
+                if (truncation.has_value() && *truncation > 0.0) {
+                    c.nhpp_repairable.truncation_time = *truncation;
+                }
+                const std::string duane = normalize(d.line_text("duane"));
+                c.nhpp_repairable.include_duane_plot =
+                    duane.empty() || duane == "true" || duane == "1" || duane == "yes";
+                return {};
+            },
+            AnalysisService::nhpp_repairable,
+            QStringLiteral("可靠性")},
+        {
+            QStringLiteral("reliability_test_plan"),
+            QStringLiteral("可靠性试验计划"),
+            QStringLiteral("Reliability Demonstration Test Plan"),
+            QStringLiteral("统计"),
+            QStringLiteral("report"),
+            false, false,
+            {},
+            {{QStringLiteral("beta"), QStringLiteral("形状 β"), QStringLiteral("1")},
+             {QStringLiteral("R"), QStringLiteral("目标可靠度 R"), QStringLiteral("0.9")},
+             {QStringLiteral("CL"), QStringLiteral("置信水平 CL"), QStringLiteral("0.9")},
+             {QStringLiteral("T0"), QStringLiteral("试验时长 T0"), QStringLiteral("1")},
+             {QStringLiteral("tm"), QStringLiteral("任务时长 tm"), QStringLiteral("1")},
+             {QStringLiteral("r"), QStringLiteral("允许失效数"), QStringLiteral("0")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                c.analysis_name = "可靠性试验计划";
+                c.chart_type = "reliability_test_plan";
+                c.reliability_test_plan.shape_beta =
+                    d.line_number("beta").value_or(1.0);
+                c.reliability_test_plan.target_reliability =
+                    d.line_number("R").value_or(0.9);
+                c.reliability_test_plan.confidence_level =
+                    d.line_number("CL").value_or(0.9);
+                c.reliability_test_plan.test_time =
+                    d.line_number("T0").value_or(1.0);
+                c.reliability_test_plan.mission_time =
+                    d.line_number("tm").value_or(1.0);
+                c.reliability_test_plan.allowed_failures = static_cast<std::size_t>(
+                    std::max(0, d.line_int("r").value_or(0)));
+                return {};
+            },
+            AnalysisService::reliability_test_plan,
+            QStringLiteral("功效与样本量")},
         {
             QStringLiteral("binomial_capability"),
             QStringLiteral("二项过程能力"),

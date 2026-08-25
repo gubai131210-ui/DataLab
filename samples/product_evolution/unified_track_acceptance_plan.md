@@ -32,10 +32,10 @@
 | **G7** | 离线监视摘要 | ⏳ | ⏳ | ⏳ |
 | **G8** | Worksheet 编辑 | ⏳ | ⏳ | ⏳ |
 | **G9** | 公式代入 / Show Your Work（框架） | ✅ | ✅ 2026-08-23 | ⏳ |
-| **G9-D** | 验算轨迹深化（分步求值 · 能做尽做） | ⏳ 计划已备 | ⏳ | ⏳ |
+| **G9-D** | 验算轨迹深化（分步求值 · 能做尽做） | ✅ 2026-08-24 | ✅ 脚本预检 | ⏳ Qt Creator 手测 |
 
 > G9：`python tools/verify_g9_formula_substitution_track.py`；覆盖矩阵 [`g9-formula-substitution-coverage-matrix.md`](../../docs/research/g9-formula-substitution-coverage-matrix.md)；DoD [`goal-wave-2026-08-23-g9-formula-substitution.md`](../../docs/research/goal-wave-2026-08-23-g9-formula-substitution.md)。  
-> **G9-D 下一优先（计划已备）：** 调研 [`g9-show-your-work-deepen-research-2026-08-24.md`](../../docs/research/g9-show-your-work-deepen-research-2026-08-24.md) · 计划+Mega [`goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md) · DoD [`goal-wave-2026-08-24-g9-show-your-work-deepen.md`](../../docs/research/goal-wave-2026-08-24-g9-show-your-work-deepen.md)。目标：消灭「主公式」stub；Facts 真值绑定；Excel 风格分步求值；A/B/C 尽量 L3。  
+> **G9-D（2026-08-24）：** 调研 [`g9-show-your-work-deepen-research-2026-08-24.md`](../../docs/research/g9-show-your-work-deepen-research-2026-08-24.md) · 深度矩阵 [`g9-show-your-work-depth-matrix.md`](../../docs/research/g9-show-your-work-depth-matrix.md) · 预检 `python tools/verify_g9_show_your_work_deepen_track.py` · QtTest `g9_show_your_work_deepen_track_test`。消灭「主公式」stub；Facts 真值 + Excel 风格分步求值；页3 独立步骤表。  
 
 > G6 竖切（Tester）：脚本预检 ✅；Track 交付 ✅（引擎 + Wizard + 入口 + i18n + QtTest t01–t15）；统一验收 ⏳。python tools/verify_g6_command_wizard_track.py PASS。  
 > DoD：[`docs/research/goal-wave-2026-08-23-g6-command-wizard.md`](../../docs/research/goal-wave-2026-08-23-g6-command-wizard.md)  
@@ -98,6 +98,20 @@
 > DoD：[`docs/research/goal-wave-2026-08-23-algorithm-wave5.md`](../../docs/research/goal-wave-2026-08-23-algorithm-wave5.md)  
 > 门禁：`python tools/verify_algorithm_wave5_track.py`
 
+### 算法 Wave-6（2026-08-25 · ✅）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W6-1** | `taguchi_analyze` 静态 S/N | ✅ | ✅ | ⏳ |
+| **W6-2** | `mixture_design` simplex-lattice | ✅ | ✅ | ⏳ |
+| **W6-3** | `nhpp_repairable` Crow-AMSAA | ✅ | ✅ | ⏳ |
+| **W6-4** | `reliability_test_plan` 演示型 | ✅ | ✅ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-08-25-algorithm-wave6-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-25-algorithm-wave6-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave6-market-formula-research-2026-08-25.md`](../../docs/research/algorithm-wave6-market-formula-research-2026-08-25.md)  
+> DoD：[`docs/research/goal-wave-2026-08-25-algorithm-wave6.md`](../../docs/research/goal-wave-2026-08-25-algorithm-wave6.md)  
+> 门禁：`python tools/verify_algorithm_wave6_track.py`
+
 ### 报告产品 Phase（节选）
 
 ### UI 菜单 IA（2026-08-23）
@@ -141,6 +155,7 @@ python tools/verify_algorithm_wave2_track.py       # 算法 Wave-2 W2-1–W2-4�
 python tools/verify_algorithm_wave3_track.py       # 算法 Wave-2.5 + Wave-3（2026-08-22）
 python tools/verify_algorithm_wave4_track.py       # 算法 Wave-4 W4-0–W4-4（2026-08-22）
 python tools/verify_algorithm_wave5_track.py       # 算法 Wave-5 W5-1–W5-4（2026-08-23）
+python tools/verify_algorithm_wave6_track.py       # 算法 Wave-6 W6-1–W6-4（2026-08-25）
 python tools/verify_ui_menu_ia_track.py            # UI 菜单 IA U1–U3（2026-08-23）
 # 后续：python tools/verify_g6_command_wizard_track.py  # G6 命令 Wizard（Tester）
 # 后续：python tools/verify_g3_track.py 等（随 Track 增加）

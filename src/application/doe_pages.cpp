@@ -570,12 +570,16 @@ domain::OutputPage doe_design_page(
     domain::OutputPage page;
     page.id = new_id("doe");
     const bool plackett_burman = design.design_kind == "plackett_burman";
+    const bool taguchi = design.design_kind == "taguchi_orthogonal";
     const bool fractional =
-        !plackett_burman
+        !plackett_burman && !taguchi
         && (design.design_kind == "fractional" || design.fraction_p > 0);
     if (plackett_burman) {
         page.title = "Plackett–Burman 设计";
         page.method_name = "Plackett-Burman Design";
+    } else if (taguchi) {
+        page.title = "Taguchi 正交设计";
+        page.method_name = "Taguchi Orthogonal Design";
     } else {
         page.title = fractional ? "2 水平部分析因设计" : "2 水平全因子设计";
         page.method_name = fractional ? "2-Level Fractional Factorial Design"
@@ -595,6 +599,8 @@ domain::OutputPage doe_design_page(
     info.headers = {"Property", "Value"};
     if (plackett_burman) {
         info.rows.push_back({"Design", "Plackett-Burman"});
+    } else if (taguchi) {
+        info.rows.push_back({"Design", "Taguchi Orthogonal"});
     } else {
         info.rows.push_back(
             {"Design", fractional ? "2^(k-p) fractional" : "2^k full"});
@@ -857,6 +863,9 @@ std::string factorial_actual_level(
     if (coded > 0) {
         return factor.high_level.empty() ? "1" : factor.high_level;
     }
+    if (!factor.mid_level.empty()) {
+        return factor.mid_level;
+    }
     const auto low = parse_numeric_cell(factor.low_level);
     const auto high = parse_numeric_cell(factor.high_level);
     if (low.has_value() && high.has_value()) {
@@ -870,6 +879,9 @@ std::string factorial_worksheet_default_name(
 {
     if (design.design_kind == "plackett_burman") {
         return "plackett_burman_worksheet";
+    }
+    if (design.design_kind == "taguchi_orthogonal") {
+        return "taguchi_orthogonal_worksheet";
     }
     const bool fractional =
         design.design_kind == "fractional" || design.fraction_p > 0;

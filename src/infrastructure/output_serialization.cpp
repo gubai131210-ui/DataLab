@@ -1527,6 +1527,158 @@ void write_interpretation_facts(
                   static_cast<int>(facts.plackett_burman->center_point_count));
         serialized.insert(QStringLiteral("plackett_burman"), pb);
     }
+    if (facts.random_forest.has_value()) {
+        QJsonObject rf;
+        rf.insert(QStringLiteral("task"), QString::fromStdString(facts.random_forest->task));
+        rf.insert(QStringLiteral("n"), static_cast<int>(facts.random_forest->n));
+        rf.insert(QStringLiteral("predictor_count"),
+                  static_cast<int>(facts.random_forest->predictor_count));
+        rf.insert(QStringLiteral("n_trees"),
+                  static_cast<int>(facts.random_forest->n_trees));
+        rf.insert(QStringLiteral("max_depth"),
+                  static_cast<int>(facts.random_forest->max_depth));
+        rf.insert(QStringLiteral("train_metric"),
+                  optional_number(facts.random_forest->train_metric));
+        rf.insert(QStringLiteral("oob_metric"),
+                  optional_number(facts.random_forest->oob_metric));
+        rf.insert(QStringLiteral("top_variable"),
+                  QString::fromStdString(facts.random_forest->top_variable));
+        rf.insert(QStringLiteral("disclosure"),
+                  QString::fromStdString(facts.random_forest->disclosure));
+        rf.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.random_forest->evidence_type));
+        rf.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.random_forest->algorithm_id));
+        serialized.insert(QStringLiteral("random_forest"), rf);
+    }
+    if (facts.weibayes.has_value()) {
+        QJsonObject wb;
+        wb.insert(QStringLiteral("n"), static_cast<int>(facts.weibayes->n));
+        wb.insert(QStringLiteral("failure_count"),
+                  static_cast<int>(facts.weibayes->failure_count));
+        wb.insert(QStringLiteral("censored_count"),
+                  static_cast<int>(facts.weibayes->censored_count));
+        wb.insert(QStringLiteral("shape_prior"), facts.weibayes->shape_prior);
+        wb.insert(QStringLiteral("scale"), optional_number(facts.weibayes->scale));
+        wb.insert(QStringLiteral("zero_failure_bound"), facts.weibayes->zero_failure_bound);
+        wb.insert(QStringLiteral("b10"), optional_number(facts.weibayes->b10));
+        wb.insert(QStringLiteral("b50"), optional_number(facts.weibayes->b50));
+        wb.insert(QStringLiteral("b90"), optional_number(facts.weibayes->b90));
+        wb.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.weibayes->evidence_type));
+        wb.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.weibayes->algorithm_id));
+        serialized.insert(QStringLiteral("weibayes"), wb);
+    }
+    if (facts.taguchi_orthogonal.has_value()) {
+        QJsonObject tg;
+        tg.insert(QStringLiteral("array"),
+                  QString::fromStdString(facts.taguchi_orthogonal->array));
+        tg.insert(QStringLiteral("factor_count"),
+                  static_cast<int>(facts.taguchi_orthogonal->factor_count));
+        tg.insert(QStringLiteral("run_count"),
+                  static_cast<int>(facts.taguchi_orthogonal->run_count));
+        tg.insert(QStringLiteral("levels_per_factor"),
+                  static_cast<int>(facts.taguchi_orthogonal->levels_per_factor));
+        tg.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.taguchi_orthogonal->evidence_type));
+        tg.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.taguchi_orthogonal->algorithm_id));
+        serialized.insert(QStringLiteral("taguchi_orthogonal"), tg);
+    }
+    if (facts.distribution_calculator.has_value()) {
+        QJsonObject dc;
+        dc.insert(QStringLiteral("distribution"),
+                  QString::fromStdString(facts.distribution_calculator->distribution));
+        dc.insert(QStringLiteral("operation"),
+                  QString::fromStdString(facts.distribution_calculator->operation));
+        dc.insert(QStringLiteral("param1"), facts.distribution_calculator->param1);
+        dc.insert(QStringLiteral("param2"), facts.distribution_calculator->param2);
+        dc.insert(QStringLiteral("param3"), facts.distribution_calculator->param3);
+        dc.insert(QStringLiteral("value"), facts.distribution_calculator->value);
+        dc.insert(QStringLiteral("result"),
+                  optional_number(facts.distribution_calculator->result));
+        dc.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.distribution_calculator->evidence_type));
+        dc.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.distribution_calculator->algorithm_id));
+        serialized.insert(QStringLiteral("distribution_calculator"), dc);
+    }
+    if (facts.taguchi_analyze.has_value()) {
+        QJsonObject ta;
+        ta.insert(QStringLiteral("sn_type"),
+                  QString::fromStdString(facts.taguchi_analyze->sn_type));
+        ta.insert(QStringLiteral("factor_count"),
+                  static_cast<int>(facts.taguchi_analyze->factor_count));
+        ta.insert(QStringLiteral("response_count"),
+                  static_cast<int>(facts.taguchi_analyze->response_count));
+        ta.insert(QStringLiteral("run_count"),
+                  static_cast<int>(facts.taguchi_analyze->run_count));
+        ta.insert(QStringLiteral("top_delta"),
+                  optional_number(facts.taguchi_analyze->top_delta));
+        ta.insert(QStringLiteral("top_factor"),
+                  QString::fromStdString(facts.taguchi_analyze->top_factor));
+        ta.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.taguchi_analyze->evidence_type));
+        ta.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.taguchi_analyze->algorithm_id));
+        serialized.insert(QStringLiteral("taguchi_analyze"), ta);
+    }
+    if (facts.mixture_design.has_value()) {
+        QJsonObject md;
+        md.insert(QStringLiteral("component_count"),
+                  static_cast<int>(facts.mixture_design->component_count));
+        md.insert(QStringLiteral("degree"),
+                  static_cast<int>(facts.mixture_design->degree));
+        md.insert(QStringLiteral("run_count"),
+                  static_cast<int>(facts.mixture_design->run_count));
+        md.insert(QStringLiteral("design_kind"),
+                  QString::fromStdString(facts.mixture_design->design_kind));
+        md.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.mixture_design->evidence_type));
+        md.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.mixture_design->algorithm_id));
+        serialized.insert(QStringLiteral("mixture_design"), md);
+    }
+    if (facts.nhpp_repairable.has_value()) {
+        QJsonObject nh;
+        nh.insert(QStringLiteral("failure_count"),
+                  static_cast<int>(facts.nhpp_repairable->failure_count));
+        nh.insert(QStringLiteral("truncation_time"), facts.nhpp_repairable->truncation_time);
+        nh.insert(QStringLiteral("beta"), optional_number(facts.nhpp_repairable->beta));
+        nh.insert(QStringLiteral("lambda"), optional_number(facts.nhpp_repairable->lambda));
+        nh.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.nhpp_repairable->evidence_type));
+        nh.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.nhpp_repairable->algorithm_id));
+        serialized.insert(QStringLiteral("nhpp_repairable"), nh);
+    }
+    if (facts.reliability_test_plan.has_value()) {
+        QJsonObject rtp;
+        rtp.insert(QStringLiteral("shape_beta"), facts.reliability_test_plan->shape_beta);
+        rtp.insert(QStringLiteral("target_reliability"),
+                   facts.reliability_test_plan->target_reliability);
+        rtp.insert(QStringLiteral("confidence_level"),
+                   facts.reliability_test_plan->confidence_level);
+        rtp.insert(QStringLiteral("test_time"), facts.reliability_test_plan->test_time);
+        rtp.insert(QStringLiteral("mission_time"),
+                   facts.reliability_test_plan->mission_time);
+        rtp.insert(QStringLiteral("time_ratio_delta"),
+                   facts.reliability_test_plan->time_ratio_delta);
+        rtp.insert(QStringLiteral("allowed_failures"),
+                   static_cast<int>(facts.reliability_test_plan->allowed_failures));
+        if (facts.reliability_test_plan->sample_size.has_value()) {
+            rtp.insert(QStringLiteral("sample_size"),
+                       static_cast<int>(*facts.reliability_test_plan->sample_size));
+        } else {
+            rtp.insert(QStringLiteral("sample_size"), QJsonValue());
+        }
+        rtp.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.reliability_test_plan->evidence_type));
+        rtp.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.reliability_test_plan->algorithm_id));
+        serialized.insert(QStringLiteral("reliability_test_plan"), rtp);
+    }
     if (facts.design_generation.has_value()) {
         QJsonObject dg;
         dg.insert(QStringLiteral("design_kind"),
@@ -3520,6 +3672,193 @@ void read_interpretation_facts(
             plackett_burman.value(QStringLiteral("center_point_count")).toInt(0));
         facts.plackett_burman = std::move(value);
     }
+    const QJsonObject random_forest =
+        serialized.value(QStringLiteral("random_forest")).toObject();
+    if (!random_forest.isEmpty()) {
+        domain::RandomForestFacts value;
+        value.task = random_forest.value(QStringLiteral("task"))
+                         .toString(QStringLiteral("classification")).toStdString();
+        value.n = static_cast<std::size_t>(random_forest.value(QStringLiteral("n")).toInt(0));
+        value.predictor_count = static_cast<std::size_t>(
+            random_forest.value(QStringLiteral("predictor_count")).toInt(0));
+        value.n_trees = static_cast<std::size_t>(
+            random_forest.value(QStringLiteral("n_trees")).toInt(0));
+        value.max_depth = static_cast<std::size_t>(
+            random_forest.value(QStringLiteral("max_depth")).toInt(0));
+        value.train_metric =
+            read_optional(random_forest.value(QStringLiteral("train_metric")));
+        value.oob_metric =
+            read_optional(random_forest.value(QStringLiteral("oob_metric")));
+        value.top_variable =
+            random_forest.value(QStringLiteral("top_variable")).toString().toStdString();
+        value.disclosure =
+            random_forest.value(QStringLiteral("disclosure")).toString().toStdString();
+        value.evidence_type =
+            random_forest.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            random_forest.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("bagged_cart_random_forest")).toStdString();
+        facts.random_forest = std::move(value);
+    }
+    const QJsonObject weibayes = serialized.value(QStringLiteral("weibayes")).toObject();
+    if (!weibayes.isEmpty()) {
+        domain::WeibayesFacts value;
+        value.n = static_cast<std::size_t>(weibayes.value(QStringLiteral("n")).toInt(0));
+        value.failure_count = static_cast<std::size_t>(
+            weibayes.value(QStringLiteral("failure_count")).toInt(0));
+        value.censored_count = static_cast<std::size_t>(
+            weibayes.value(QStringLiteral("censored_count")).toInt(0));
+        value.shape_prior = weibayes.value(QStringLiteral("shape_prior")).toDouble(2.0);
+        value.scale = read_optional(weibayes.value(QStringLiteral("scale")));
+        value.zero_failure_bound =
+            weibayes.value(QStringLiteral("zero_failure_bound")).toBool(false);
+        value.b10 = read_optional(weibayes.value(QStringLiteral("b10")));
+        value.b50 = read_optional(weibayes.value(QStringLiteral("b50")));
+        value.b90 = read_optional(weibayes.value(QStringLiteral("b90")));
+        value.evidence_type =
+            weibayes.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            weibayes.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("weibayes_fixed_shape")).toStdString();
+        facts.weibayes = std::move(value);
+    }
+    const QJsonObject taguchi_orthogonal =
+        serialized.value(QStringLiteral("taguchi_orthogonal")).toObject();
+    if (!taguchi_orthogonal.isEmpty()) {
+        domain::TaguchiOrthogonalFacts value;
+        value.array = taguchi_orthogonal.value(QStringLiteral("array"))
+                          .toString(QStringLiteral("L8")).toStdString();
+        value.factor_count = static_cast<std::size_t>(
+            taguchi_orthogonal.value(QStringLiteral("factor_count")).toInt(0));
+        value.run_count = static_cast<std::size_t>(
+            taguchi_orthogonal.value(QStringLiteral("run_count")).toInt(0));
+        value.levels_per_factor = static_cast<std::size_t>(
+            taguchi_orthogonal.value(QStringLiteral("levels_per_factor")).toInt(2));
+        value.evidence_type =
+            taguchi_orthogonal.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            taguchi_orthogonal.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("taguchi_orthogonal_l8_l9_l12")).toStdString();
+        facts.taguchi_orthogonal = std::move(value);
+    }
+    const QJsonObject distribution_calculator =
+        serialized.value(QStringLiteral("distribution_calculator")).toObject();
+    if (!distribution_calculator.isEmpty()) {
+        domain::DistributionCalculatorFacts value;
+        value.distribution =
+            distribution_calculator.value(QStringLiteral("distribution"))
+                .toString(QStringLiteral("normal")).toStdString();
+        value.operation =
+            distribution_calculator.value(QStringLiteral("operation"))
+                .toString(QStringLiteral("cdf")).toStdString();
+        value.param1 = distribution_calculator.value(QStringLiteral("param1")).toDouble(0.0);
+        value.param2 = distribution_calculator.value(QStringLiteral("param2")).toDouble(1.0);
+        value.param3 = distribution_calculator.value(QStringLiteral("param3")).toDouble(1.0);
+        value.value = distribution_calculator.value(QStringLiteral("value")).toDouble(0.0);
+        value.result = read_optional(distribution_calculator.value(QStringLiteral("result")));
+        value.evidence_type =
+            distribution_calculator.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            distribution_calculator.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("distribution_calculator_reuse")).toStdString();
+        facts.distribution_calculator = std::move(value);
+    }
+    const QJsonObject taguchi_analyze =
+        serialized.value(QStringLiteral("taguchi_analyze")).toObject();
+    if (!taguchi_analyze.isEmpty()) {
+        domain::TaguchiAnalyzeFacts value;
+        value.sn_type = taguchi_analyze.value(QStringLiteral("sn_type"))
+                            .toString(QStringLiteral("larger")).toStdString();
+        value.factor_count = static_cast<std::size_t>(
+            taguchi_analyze.value(QStringLiteral("factor_count")).toInt(0));
+        value.response_count = static_cast<std::size_t>(
+            taguchi_analyze.value(QStringLiteral("response_count")).toInt(0));
+        value.run_count = static_cast<std::size_t>(
+            taguchi_analyze.value(QStringLiteral("run_count")).toInt(0));
+        value.top_delta = read_optional(taguchi_analyze.value(QStringLiteral("top_delta")));
+        value.top_factor =
+            taguchi_analyze.value(QStringLiteral("top_factor")).toString().toStdString();
+        value.evidence_type =
+            taguchi_analyze.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            taguchi_analyze.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("taguchi_analyze_static_sn")).toStdString();
+        facts.taguchi_analyze = std::move(value);
+    }
+    const QJsonObject mixture_design =
+        serialized.value(QStringLiteral("mixture_design")).toObject();
+    if (!mixture_design.isEmpty()) {
+        domain::MixtureDesignFacts value;
+        value.component_count = static_cast<std::size_t>(
+            mixture_design.value(QStringLiteral("component_count")).toInt(0));
+        value.degree = static_cast<std::size_t>(
+            mixture_design.value(QStringLiteral("degree")).toInt(2));
+        value.run_count = static_cast<std::size_t>(
+            mixture_design.value(QStringLiteral("run_count")).toInt(0));
+        value.design_kind =
+            mixture_design.value(QStringLiteral("design_kind"))
+                .toString(QStringLiteral("simplex_lattice")).toStdString();
+        value.evidence_type =
+            mixture_design.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            mixture_design.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("mixture_simplex_lattice_m2")).toStdString();
+        facts.mixture_design = std::move(value);
+    }
+    const QJsonObject nhpp_repairable =
+        serialized.value(QStringLiteral("nhpp_repairable")).toObject();
+    if (!nhpp_repairable.isEmpty()) {
+        domain::NhppRepairableFacts value;
+        value.failure_count = static_cast<std::size_t>(
+            nhpp_repairable.value(QStringLiteral("failure_count")).toInt(0));
+        value.truncation_time =
+            nhpp_repairable.value(QStringLiteral("truncation_time")).toDouble(0.0);
+        value.beta = read_optional(nhpp_repairable.value(QStringLiteral("beta")));
+        value.lambda = read_optional(nhpp_repairable.value(QStringLiteral("lambda")));
+        value.evidence_type =
+            nhpp_repairable.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            nhpp_repairable.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("nhpp_crow_amsaa_mle")).toStdString();
+        facts.nhpp_repairable = std::move(value);
+    }
+    const QJsonObject reliability_test_plan =
+        serialized.value(QStringLiteral("reliability_test_plan")).toObject();
+    if (!reliability_test_plan.isEmpty()) {
+        domain::ReliabilityTestPlanFacts value;
+        value.shape_beta =
+            reliability_test_plan.value(QStringLiteral("shape_beta")).toDouble(1.0);
+        value.target_reliability =
+            reliability_test_plan.value(QStringLiteral("target_reliability")).toDouble(0.9);
+        value.confidence_level =
+            reliability_test_plan.value(QStringLiteral("confidence_level")).toDouble(0.9);
+        value.test_time =
+            reliability_test_plan.value(QStringLiteral("test_time")).toDouble(1.0);
+        value.mission_time =
+            reliability_test_plan.value(QStringLiteral("mission_time")).toDouble(1.0);
+        value.time_ratio_delta =
+            reliability_test_plan.value(QStringLiteral("time_ratio_delta")).toDouble(1.0);
+        value.allowed_failures = static_cast<std::size_t>(
+            reliability_test_plan.value(QStringLiteral("allowed_failures")).toInt(0));
+        const QJsonValue sample = reliability_test_plan.value(QStringLiteral("sample_size"));
+        if (!sample.isNull() && sample.isDouble()) {
+            value.sample_size = static_cast<std::size_t>(sample.toInt());
+        }
+        value.evidence_type =
+            reliability_test_plan.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference")).toStdString();
+        value.algorithm_id =
+            reliability_test_plan.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("reliability_demo_test_plan_weibull")).toStdString();
+        facts.reliability_test_plan = std::move(value);
+    }
     const QJsonObject design_generation =
         serialized.value(QStringLiteral("design_generation")).toObject();
     if (!design_generation.isEmpty()) {
@@ -4122,6 +4461,8 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     object.insert(QStringLiteral("id"), QString::fromStdString(page.id));
     object.insert(QStringLiteral("title"), QString::fromStdString(page.title));
     object.insert(QStringLiteral("method_name"), QString::fromStdString(page.method_name));
+    object.insert(QStringLiteral("analysis_command_id"),
+                  QString::fromStdString(page.analysis_command_id));
     object.insert(QStringLiteral("parameter_summary"), QString::fromStdString(page.parameter_summary));
     object.insert(QStringLiteral("method_algorithm"),
                   QString::fromStdString(page.method_metadata.algorithm));
@@ -4766,6 +5107,52 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
         export_object.insert(QStringLiteral("rows"), export_rows);
         object.insert(QStringLiteral("worksheet_export"), export_object);
     }
+    QJsonArray computation_traces;
+    for (const auto& trace : page.computation_traces) {
+        QJsonObject item;
+        item.insert(QStringLiteral("formula_id"), QString::fromStdString(trace.formula_id));
+        item.insert(QStringLiteral("title"), QString::fromStdString(trace.title));
+        item.insert(QStringLiteral("plain_formula"),
+                    QString::fromStdString(trace.plain_formula));
+        item.insert(QStringLiteral("substituted_text"),
+                    QString::fromStdString(trace.substituted_text));
+        item.insert(QStringLiteral("result_symbol"),
+                    QString::fromStdString(trace.result_symbol));
+        item.insert(QStringLiteral("result_value"),
+                    QString::fromStdString(trace.result_value));
+        item.insert(QStringLiteral("evidence_type"),
+                    QString::fromStdString(trace.evidence_type));
+        item.insert(QStringLiteral("primary_url"),
+                    QString::fromStdString(trace.primary_url));
+        item.insert(QStringLiteral("command_id"),
+                    QString::fromStdString(trace.command_id));
+        QJsonArray bindings;
+        for (const auto& binding : trace.bindings) {
+            QJsonObject b;
+            b.insert(QStringLiteral("symbol"), QString::fromStdString(binding.symbol));
+            b.insert(QStringLiteral("label"), QString::fromStdString(binding.label));
+            b.insert(QStringLiteral("value"), QString::fromStdString(binding.value));
+            b.insert(QStringLiteral("role"), QString::fromStdString(binding.role));
+            bindings.append(b);
+        }
+        item.insert(QStringLiteral("bindings"), bindings);
+        QJsonArray steps;
+        for (const auto& step : trace.steps) {
+            QJsonObject s;
+            s.insert(QStringLiteral("order"), step.order);
+            s.insert(QStringLiteral("description"),
+                     QString::fromStdString(step.description));
+            s.insert(QStringLiteral("expression_before"),
+                     QString::fromStdString(step.expression_before));
+            s.insert(QStringLiteral("expression_after"),
+                     QString::fromStdString(step.expression_after));
+            s.insert(QStringLiteral("value"), QString::fromStdString(step.value));
+            steps.append(s);
+        }
+        item.insert(QStringLiteral("steps"), steps);
+        computation_traces.append(item);
+    }
+    object.insert(QStringLiteral("computation_traces"), computation_traces);
     return object;
 }
 
@@ -4776,6 +5163,8 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
     page.title = object.value(QStringLiteral("title")).toString().toStdString();
     page.method_name = object.value(QStringLiteral("method_name")).toString().toStdString();
     page.parameter_summary = object.value(QStringLiteral("parameter_summary")).toString().toStdString();
+    page.analysis_command_id =
+        object.value(QStringLiteral("analysis_command_id")).toString().toStdString();
     page.method_metadata.algorithm =
         object.value(QStringLiteral("method_algorithm")).toString().toStdString();
     page.method_metadata.version =
@@ -5559,6 +5948,52 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         page.worksheet_export = std::move(export_table);
     }
     read_interpretation_facts(object, page.facts);
+    for (const QJsonValue& value : object.value(QStringLiteral("computation_traces")).toArray()) {
+        const QJsonObject item = value.toObject();
+        domain::ComputationTrace trace;
+        trace.formula_id = item.value(QStringLiteral("formula_id")).toString().toStdString();
+        trace.title = item.value(QStringLiteral("title")).toString().toStdString();
+        trace.plain_formula =
+            item.value(QStringLiteral("plain_formula")).toString().toStdString();
+        trace.substituted_text =
+            item.value(QStringLiteral("substituted_text")).toString().toStdString();
+        trace.result_symbol =
+            item.value(QStringLiteral("result_symbol")).toString().toStdString();
+        trace.result_value =
+            item.value(QStringLiteral("result_value")).toString().toStdString();
+        trace.evidence_type =
+            item.value(QStringLiteral("evidence_type")).toString().toStdString();
+        if (trace.evidence_type.empty()) {
+            trace.evidence_type = "formula_reference";
+        }
+        trace.primary_url =
+            item.value(QStringLiteral("primary_url")).toString().toStdString();
+        trace.command_id =
+            item.value(QStringLiteral("command_id")).toString().toStdString();
+        for (const QJsonValue& binding_value : item.value(QStringLiteral("bindings")).toArray()) {
+            const QJsonObject b = binding_value.toObject();
+            domain::FormulaBinding binding;
+            binding.symbol = b.value(QStringLiteral("symbol")).toString().toStdString();
+            binding.label = b.value(QStringLiteral("label")).toString().toStdString();
+            binding.value = b.value(QStringLiteral("value")).toString().toStdString();
+            binding.role = b.value(QStringLiteral("role")).toString().toStdString();
+            trace.bindings.push_back(std::move(binding));
+        }
+        for (const QJsonValue& step_value : item.value(QStringLiteral("steps")).toArray()) {
+            const QJsonObject s = step_value.toObject();
+            domain::ComputationStep step;
+            step.order = s.value(QStringLiteral("order")).toInt(0);
+            step.description =
+                s.value(QStringLiteral("description")).toString().toStdString();
+            step.expression_before =
+                s.value(QStringLiteral("expression_before")).toString().toStdString();
+            step.expression_after =
+                s.value(QStringLiteral("expression_after")).toString().toStdString();
+            step.value = s.value(QStringLiteral("value")).toString().toStdString();
+            trace.steps.push_back(std::move(step));
+        }
+        page.computation_traces.push_back(std::move(trace));
+    }
     return page;
 }
 

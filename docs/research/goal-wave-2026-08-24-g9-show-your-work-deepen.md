@@ -1,20 +1,21 @@
 # DoD：G9-D 验算轨迹深化（2026-08-24）
 
 > 配套计划：[`goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md`](goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md)  
-> 调研：[`g9-show-your-work-deepen-research-2026-08-24.md`](g9-show-your-work-deepen-research-2026-08-24.md)
+> 调研：[`g9-show-your-work-deepen-research-2026-08-24.md`](g9-show-your-work-deepen-research-2026-08-24.md)  
+> 深度矩阵：[`g9-show-your-work-depth-matrix.md`](g9-show-your-work-depth-matrix.md)
 
 ## 交付勾选（执行中由 agent 勾）
 
-- [ ] **SYW-A** `ComputationStep` 扩展 + 序列化 + 页3分步表 + ≥5 试点 L3
-- [ ] **SYW-B** 能力/质量工具族深度（无「主公式」stub）
-- [ ] **SYW-C** 控制图族限值 L3
-- [ ] **SYW-D** 基础统计/检验/非参数尽量 L3
-- [ ] **SYW-E** 回归等 L3；树/森林 L2+notes 例外已登记
-- [ ] **SYW-F** 可靠性/寿命尽量 L3
-- [ ] **SYW-G** DOE/RSM/Taguchi 深度达标
-- [ ] **SYW-H** MSA 尽量 L3
-- [ ] **SYW-I** 图形 L1 真实；工具 L2/L3
-- [ ] **SYW-J** 深度矩阵 + `verify_g9_show_your_work_deepen_track.py` PASS + 回归 PASS
+- [x] **SYW-A** `ComputationStep` 扩展 + 序列化 + 页3分步表 + ≥5 试点 L3
+- [x] **SYW-B** 能力/质量工具族深度（无「主公式」stub）
+- [x] **SYW-C** 控制图族限值 L3
+- [x] **SYW-D** 基础统计/检验/非参数尽量 L3
+- [x] **SYW-E** 回归等 L3；树/森林 L2+notes 例外已登记
+- [x] **SYW-F** 可靠性/寿命尽量 L3
+- [x] **SYW-G** DOE/RSM/Taguchi 深度达标
+- [x] **SYW-H** MSA 尽量 L3
+- [x] **SYW-I** 图形 L1 真实；工具 L2/L3
+- [x] **SYW-J** 深度矩阵 + `verify_g9_show_your_work_deepen_track.py` PASS + 回归 PASS
 
 ## 明确不做
 

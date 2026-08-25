@@ -15035,6 +15035,256 @@
         "report_profile_phase1_test",
         "report_contract_phase0_test"
       ]
+    },
+    {
+      "id": "random_forest",
+      "title": "随机森林",
+      "category": "预测 / 经典 ML",
+      "menu_path": "统计 > 多变量",
+      "aliases": ["random_forest", "Random Forest", "RF"],
+      "implemented_status": "formula_reference",
+      "purpose": "Bagging CART 集成：多数表决/均值预测与平均不纯度下降重要性。",
+      "method_overview": "对 bootstrap 样本调用 fit_cart_tree；聚合投票与重要性。披露非 TreeNet/Minitab RF 对齐。",
+      "input_description": "响应列 + 数值预测列；n_trees/max_depth/min_leaf/seed/oob。complete-case。",
+      "missing_value_policy": "空单元格视为缺失；跳过不完整行；缺失≠0。",
+      "calculation_steps": ["complete-case 对齐", "bootstrap CART", "聚合预测与重要性", "可选 OOB"],
+      "symbol_definitions": [{"symbol": "MDI", "meaning": "Mean Impurity Decrease"}, {"symbol": "OOB", "meaning": "Out-of-bag 评估"}],
+      "decision_rules": ["禁止 TreeNet/Minitab RF对齐 / 过程合格。"],
+      "invalid_input_conditions": "无响应、无预测列、有效 N 过少。",
+      "output_description": "Model Summary、Variable Importance、Confusion（分类）。",
+      "output_interpretation": "先看重要性与披露，再回查工艺；训练集指标不可外推合格。",
+      "assumptions_and_boundaries": "自研 bagging CART；非 sklearn/TreeNet 运行时。",
+      "interpretation_limits": "解释层只陈述统计证据；禁用过程合格。",
+      "formula_blocks": [
+        {"title": "Bagging", "plain_text": "对 bootstrap 样本拟合 CART，再多数表决/均值。", "explanation": "", "conditions": "", "note": "formula_reference"},
+        {"title": "Importance", "plain_text": "重要性 = 各树不纯度下降的均值。", "explanation": "", "conditions": "", "note": ""}
+      ],
+      "reference_links": [
+        {"label": "Minitab Random Forests methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/predictive-analytics/how-to/random-forests-regression/methods-and-formulas/methods/", "accessed": "2026-08-23", "kind": "minitab"},
+        {"label": "sklearn RandomForestClassifier", "url": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html", "accessed": "2026-08-23", "kind": "secondary"}
+      ],
+      "source_documents": [{"label": "P5 RF", "path": "docs/research/p5_random_forest.md", "section": ""}],
+      "wiring": {"command_id": "random_forest", "service_method": "random_forest", "facts_type": "random_forest", "primary_test": "algorithm_wave5_track_test"}
+    },
+    {
+      "id": "weibayes",
+      "title": "Weibayes",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": ["weibayes", "Weibayes"],
+      "implemented_status": "formula_reference",
+      "purpose": "固定形状先验 β 的 Weibull 特征寿命估计（少失效窄化）。",
+      "method_overview": "η=(Σ t_i^β / r)^{1/β}（r≥1）；r=0 走诚实边界。右删失主路径。",
+      "input_description": "时间列、事件/删失列、shape_prior。",
+      "missing_value_policy": "complete-case；仅 exact+right。",
+      "calculation_steps": ["对齐时间与事件", "估计 η", "B10/B50/B90"],
+      "symbol_definitions": [{"symbol": "β", "meaning": "形状先验"}, {"symbol": "η", "meaning": "特征寿命尺度"}, {"symbol": "r", "meaning": "失效数"}],
+      "decision_rules": ["禁止「寿命已达标」。"],
+      "invalid_input_conditions": "时间非正、β≤0。",
+      "output_description": "Parameter Estimates、Percentiles、Censoring Summary。",
+      "output_interpretation": "少失效时强调先验与边界诚实。",
+      "assumptions_and_boundaries": "固定 β；不做全寿命回归全家桶；非 golden。",
+      "interpretation_limits": "禁止寿命已达标 / 过程合格。",
+      "formula_blocks": [
+        {"title": "Weibayes scale", "plain_text": "η = (Σ t_i^β / r)^{1/β}，r≥1。", "explanation": "", "conditions": "fixed shape prior", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "NIST APR Weibull", "url": "https://www.itl.nist.gov/div898/handbook/apr/section4/apr4.htm", "accessed": "2026-08-23", "kind": "nist"},
+        {"label": "NIST APR handbook", "url": "https://www.itl.nist.gov/div898/handbook/apr/apr.htm", "accessed": "2026-08-23", "kind": "nist"}
+      ],
+      "source_documents": [{"label": "P5 Weibayes", "path": "docs/research/p5_weibayes.md", "section": ""}],
+      "wiring": {"command_id": "weibayes", "service_method": "weibayes", "facts_type": "weibayes", "primary_test": "algorithm_wave5_track_test"}
+    },
+    {
+      "id": "taguchi_orthogonal_design",
+      "title": "Taguchi 正交设计",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["taguchi_orthogonal_design", "Taguchi", "L8", "L9", "L12"],
+      "implemented_status": "formula_reference",
+      "purpose": "生成 Taguchi L8/L9/L12 正交设计矩阵并可写入工作表。",
+      "method_overview": "静态正交表；因子数按阵列封顶；可选随机化。",
+      "input_description": "因子名、阵列、低/高/(中)、randomize、seed。requires_data=false。",
+      "missing_value_policy": "设计生成不读活动表缺失；新工作表不复制旧 excluded/hidden。",
+      "calculation_steps": ["选择阵列", "截断因子", "填充水平", "导出矩阵"],
+      "symbol_definitions": [{"symbol": "L8", "meaning": "2 水平 8 运行"}, {"symbol": "L9", "meaning": "3 水平 9 运行"}, {"symbol": "L12", "meaning": "2 水平 12 运行"}],
+      "decision_rules": ["仅设计生成，不是完整 Taguchi ANOVA。"],
+      "invalid_input_conditions": "无因子名。",
+      "output_description": "设计信息、设计矩阵、worksheet_export。",
+      "output_interpretation": "用导出矩阵做后续试验记录，再另开分析。",
+      "assumptions_and_boundaries": "不做 SN 比/完整 Taguchi 分析套件。",
+      "interpretation_limits": "禁止宣称已优化工艺。",
+      "formula_blocks": [
+        {"title": "Orthogonal array", "plain_text": "按 L8/L9/L12 静态表填充因子水平。", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Taguchi designs", "url": "https://www.minitab.com/en-us/products/minitab/features/", "accessed": "2026-08-23", "kind": "minitab"},
+        {"label": "NIST DOE handbook", "url": "https://www.itl.nist.gov/div898/handbook/pri/pri.htm", "accessed": "2026-08-23", "kind": "nist"}
+      ],
+      "source_documents": [{"label": "P5 Taguchi", "path": "docs/research/p5_taguchi_orthogonal_design.md", "section": ""}],
+      "wiring": {"command_id": "taguchi_orthogonal_design", "service_method": "taguchi_orthogonal_design", "facts_type": "taguchi_orthogonal", "primary_test": "algorithm_wave5_track_test"}
+    },
+    {
+      "id": "distribution_calculator",
+      "title": "分布计算器",
+      "category": "推断 / 仿真",
+      "menu_path": "统计 > 推断 / 仿真",
+      "aliases": ["distribution_calculator", "PDF", "CDF", "quantile"],
+      "implemented_status": "formula_reference",
+      "purpose": "正态/t/χ²/F/Weibull 的 PDF、CDF、分位数工具。",
+      "method_overview": "复用既有分布辅助函数；不改 GOF 数值核。",
+      "input_description": "distribution、operation、params、value。requires_data=false。",
+      "missing_value_policy": "标量工具，不读表。",
+      "calculation_steps": ["解析分布与运算", "计算 PDF/CDF/分位"],
+      "symbol_definitions": [{"symbol": "Φ", "meaning": "标准正态 CDF"}, {"symbol": "F", "meaning": "分布函数"}],
+      "decision_rules": ["禁止「分布已正态」。"],
+      "invalid_input_conditions": "非法参数（如 sd≤0、df≤0）。",
+      "output_description": "Parameters 与 Result 表。",
+      "output_interpretation": "结果仅是分布函数值，不作拟合优度判定。",
+      "assumptions_and_boundaries": "不改变既有 GOF/识别数值路径。",
+      "interpretation_limits": "禁止分布已正态 / 过程合格。",
+      "formula_blocks": [
+        {"title": "Normal CDF", "plain_text": "F(x)=Φ((x−μ)/σ)。", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "NIST distribution TOC", "url": "https://www.itl.nist.gov/div898/handbook/dtoc.htm", "accessed": "2026-08-23", "kind": "nist"}
+      ],
+      "source_documents": [{"label": "P5 DistCalc", "path": "docs/research/p5_distribution_calculator.md", "section": ""}],
+      "wiring": {"command_id": "distribution_calculator", "service_method": "distribution_calculator", "facts_type": "distribution_calculator", "primary_test": "algorithm_wave5_track_test"}
+    },
+    {
+      "id": "taguchi_analyze",
+      "title": "Taguchi 分析",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["taguchi_analyze", "Analyze Taguchi Design", "S/N"],
+      "implemented_status": "formula_reference",
+      "purpose": "静态 Taguchi：对控制因子水平与外阵响应重复计算 Means/S/N 响应表（含 Delta/Rank）并绘制多水平主效应图。",
+      "method_overview": "每运行用响应重复计算均值与 S/N（越大越好 / 越小越好 / 望目 II）；再按因子水平平均，Delta=max−min，Rank 按 Delta 降序。独立于 Taguchi 正交设计生成命令。",
+      "input_description": "因子列（水平）、响应列（外阵重复）、S/N 类型。complete-case。",
+      "missing_value_policy": "因子或响应任一缺失则跳过该行；缺失≠0。",
+      "calculation_steps": ["complete-case 对齐", "逐运行 Mean/S/N", "按因子水平汇总", "Delta/Rank", "主效应图"],
+      "symbol_definitions": [
+        {"symbol": "S/N", "meaning": "信噪比（dB）"},
+        {"symbol": "Delta", "meaning": "水平均值最大差"},
+        {"symbol": "Rank", "meaning": "按 Delta 的效应排序"}
+      ],
+      "decision_rules": ["禁止「过程已优化 / 已合格」。仅描述相对效应。"],
+      "invalid_input_conditions": "无因子列、无响应列、无有效运行；望目 II 需每运行 n≥2。",
+      "output_description": "Response Table for Means、Response Table for Signal to Noise Ratios、Diagnostics、主效应图。",
+      "output_interpretation": "先看 S/N 与 Means 的 Delta/Rank，再结合工艺知识复核；不得写成已优化。",
+      "assumptions_and_boundaries": "静态分析；非动态 Taguchi / 噪声因子全交叉；非 Minitab golden。",
+      "interpretation_limits": "禁止过程已优化 / 已合格 / 过程已稳定。",
+      "formula_blocks": [
+        {"title": "Larger is better", "plain_text": "S/N = -10 log10( (1/n) Σ 1/Y_i² )", "explanation": "", "conditions": "Y_i ≠ 0", "note": "formula_reference"},
+        {"title": "Smaller is better", "plain_text": "S/N = -10 log10( (1/n) Σ Y_i² )", "explanation": "", "conditions": "", "note": "formula_reference"},
+        {"title": "Nominal is best (II)", "plain_text": "S/N = -10 log10(s²)", "explanation": "s 为样本标准差", "conditions": "n≥2", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Analyze Taguchi methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/taguchi/analyze-taguchi-design/methods-and-formulas/methods-and-formulas/", "accessed": "2026-08-25", "kind": "minitab"},
+        {"label": "Minitab S/N ratio", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/supporting-topics/taguchi-designs/what-is-the-signal-to-noise-ratio/", "accessed": "2026-08-25", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P6 Taguchi Analyze", "path": "docs/research/p6_taguchi_analyze.md", "section": ""}],
+      "wiring": {"command_id": "taguchi_analyze", "service_method": "taguchi_analyze", "facts_type": "taguchi_analyze", "primary_test": "algorithm_wave6_track_test"}
+    },
+    {
+      "id": "mixture_design",
+      "title": "Mixture 设计",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["mixture_design", "simplex lattice", "Mixture"],
+      "implemented_status": "formula_reference",
+      "purpose": "生成 simplex-lattice {q,m=2} 混料设计矩阵（q=3～4）并写入工作表。",
+      "method_overview": "顶点 e_i 与边中点 (1/2,1/2)；N=q(q+1)/2。可选随机化 RunOrder。新表清空 excluded/hidden。",
+      "input_description": "分量数 q、分量名、randomize、seed。requires_data=false。",
+      "missing_value_policy": "设计生成不读活动表缺失；写表不复制旧排除/隐藏行。",
+      "calculation_steps": ["校验 q", "生成顶点与边中点", "可选随机化", "导出矩阵"],
+      "symbol_definitions": [
+        {"symbol": "q", "meaning": "分量数"},
+        {"symbol": "m", "meaning": "lattice 次数（本波固定 2）"},
+        {"symbol": "N", "meaning": "运行数 = q(q+1)/2"}
+      ],
+      "decision_rules": ["仅设计生成；分析另开命令。"],
+      "invalid_input_conditions": "q∉{3,4}。",
+      "output_description": "Design Info、Design Matrix、worksheet_export。",
+      "output_interpretation": "用导出矩阵录入响应后再分析；本命令不做 Scheffé。",
+      "assumptions_and_boundaries": "不含 extreme-vertices / D-opt / 过程变量联合。",
+      "interpretation_limits": "禁止宣称配方已优化。",
+      "formula_blocks": [
+        {"title": "Simplex-lattice m=2", "plain_text": "点集 = q 顶点 + C(q,2) 边中点；N=q(q+1)/2。", "explanation": "", "conditions": "Σ x_i = 1", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "NIST mixture designs", "url": "https://www.itl.nist.gov/div898/handbook/pri/section5/pri54.htm", "accessed": "2026-08-25", "kind": "nist"},
+        {"label": "NIST simplex lattice", "url": "https://www.itl.nist.gov/div898/handbook/pri/section5/pri542.htm", "accessed": "2026-08-25", "kind": "nist"}
+      ],
+      "source_documents": [{"label": "P6 Mixture", "path": "docs/research/p6_mixture_design.md", "section": ""}],
+      "wiring": {"command_id": "mixture_design", "service_method": "mixture_design", "facts_type": "mixture_design", "primary_test": "algorithm_wave6_track_test"}
+    },
+    {
+      "id": "nhpp_repairable",
+      "title": "可修复系统 NHPP",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": ["nhpp_repairable", "Crow-AMSAA", "NHPP"],
+      "implemented_status": "formula_reference",
+      "purpose": "对累积失效时间拟合 Crow–AMSAA 幂律 NHPP，估计 β、λ 并给出强度/累积均值表与可选 Duane 图。",
+      "method_overview": "β̂=n/Σln(T/ti)，λ̂=n/T^β；λ(t)=λβt^{β−1}，M(t)=λt^β。",
+      "input_description": "累积失效时间列；可选截尾 T；可选 Duane 图。complete-case。",
+      "missing_value_policy": "非正或缺失时间跳过；缺失≠0。",
+      "calculation_steps": ["校验时间", "确定 T", "MLE β/λ", "强度网格", "可选 Duane"],
+      "symbol_definitions": [
+        {"symbol": "β", "meaning": "形状（增长/衰减）"},
+        {"symbol": "λ", "meaning": "尺度"},
+        {"symbol": "M(t)", "meaning": "累积均值函数"}
+      ],
+      "decision_rules": ["禁止「ROCOF合格 / 已证明稳定」。"],
+      "invalid_input_conditions": "无正时间、T 过小、Σln(T/ti)=0。",
+      "output_description": "Observation Summary、Parameter Estimates、Intensity/Mean、可选 Duane 图。",
+      "output_interpretation": "β<1 常表示改善趋势，仅作统计描述，不作合格判定。",
+      "assumptions_and_boundaries": "仅幂律 NHPP；非 HPP 全家桶 / RBD。",
+      "interpretation_limits": "禁止 ROCOF 合格 / 已证明稳定。",
+      "formula_blocks": [
+        {"title": "Crow-AMSAA MLE", "plain_text": "β = n / Σ ln(T/ti)；λ = n / T^β", "explanation": "", "conditions": "0 < t_i ≤ T", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "NIST repairable systems", "url": "https://www.itl.nist.gov/div898/handbook/apr/section1/apr17.htm", "accessed": "2026-08-25", "kind": "nist"},
+        {"label": "NIST Crow-AMSAA", "url": "https://www.itl.nist.gov/div898/handbook/apr/section1/apr172.htm", "accessed": "2026-08-25", "kind": "nist"}
+      ],
+      "source_documents": [{"label": "P6 NHPP", "path": "docs/research/p6_nhpp_repairable.md", "section": ""}],
+      "wiring": {"command_id": "nhpp_repairable", "service_method": "nhpp_repairable", "facts_type": "nhpp_repairable", "primary_test": "algorithm_wave6_track_test"}
+    },
+    {
+      "id": "reliability_test_plan",
+      "title": "可靠性试验计划",
+      "category": "功效与样本量",
+      "menu_path": "统计 > 功效与样本量",
+      "aliases": ["reliability_test_plan", "demonstration test", "success run"],
+      "implemented_status": "formula_reference",
+      "purpose": "Weibull 演示型试验计划：给定 β、R、CL、T0/tm 与允许失效数，计算样本量 n 与假设摘要。",
+      "method_overview": "δ=(T0/tm)^β；零失效 n=ceil(ln(1−CL)/(δ ln R))；允许 r 失效时在 R^δ 下二项搜索最小 n。",
+      "input_description": "β、R、CL、T0、tm、允许失效 r。requires_data=false。",
+      "missing_value_policy": "标量工具，不读表。",
+      "calculation_steps": ["校验输入", "计算 δ 与 R_test", "零失效公式或二项搜索", "输出计划与假设"],
+      "symbol_definitions": [
+        {"symbol": "δ", "meaning": "(T0/tm)^β 时间比调整"},
+        {"symbol": "R", "meaning": "任务时间目标可靠度"},
+        {"symbol": "CL", "meaning": "置信水平"}
+      ],
+      "decision_rules": ["β 为假设；禁止「寿命已达标」。"],
+      "invalid_input_conditions": "R∉(0,1)、CL∉(0,1)、β≤0、时间非正。",
+      "output_description": "Test Plan、Assumptions Summary。",
+      "output_interpretation": "n 为演示样本量；不能外推为现场寿命合格。",
+      "assumptions_and_boundaries": "演示型；非全分布族 / 贝叶斯多阶段计划。",
+      "interpretation_limits": "禁止寿命已达标 / 过程已优化。",
+      "formula_blocks": [
+        {"title": "Zero-failure", "plain_text": "n = ceil( ln(1−CL) / (δ ln R) )，δ=(T0/tm)^β", "explanation": "", "conditions": "r=0", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "ReliaSoft success-run basics", "url": "https://help.reliasoft.com/articles/content/hotwire/issue118/relbasics118.htm", "accessed": "2026-08-25", "kind": "secondary"},
+        {"label": "Minitab demonstration test plan", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/demonstration-test-plan/before-you-start/example/", "accessed": "2026-08-25", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P6 RTP", "path": "docs/research/p6_reliability_test_plan.md", "section": ""}],
+      "wiring": {"command_id": "reliability_test_plan", "service_method": "reliability_test_plan", "facts_type": "reliability_test_plan", "primary_test": "algorithm_wave6_track_test"}
     }
   ]
 }

@@ -128,6 +128,10 @@
 | weibayes | weibayes | weibayes | algorithm_wave5_track_test |
 | taguchi_orthogonal_design | taguchi_orthogonal_design | taguchi_orthogonal | algorithm_wave5_track_test |
 | distribution_calculator | distribution_calculator | distribution_calculator | algorithm_wave5_track_test |
+| taguchi_analyze | taguchi_analyze | taguchi_analyze | algorithm_wave6_track_test |
+| mixture_design | mixture_design | mixture_design | algorithm_wave6_track_test |
+| nhpp_repairable | nhpp_repairable | nhpp_repairable | algorithm_wave6_track_test |
+| reliability_test_plan | reliability_test_plan | reliability_test_plan | algorithm_wave6_track_test |
 | doe_ccd | doe_response_surface_design | design_generation | response_surface_design_phase4_test |
 | doe_bbd | doe_response_surface_design | design_generation | response_surface_design_phase4_test |
 | multi_vari | multi_vari | multi_vari | multi_vari_test |
@@ -245,14 +249,17 @@ complete-case 行主序 `align_complete_rows`；`parse_numeric_cell` / `is_missi
 
 **不合并** G1 `FormulaRegistryDialog`（出处页可 `select_entry` 跳转）。豁免仅 `tests` / `rule_policy`。
 
-### 8.1 Track G9-D：验算轨迹深化（计划 · 2026-08-24）
+### 8.1 Track G9-D：验算轨迹深化（2026-08-24 · 已交付）
 
 > 调研：[`research/g9-show-your-work-deepen-research-2026-08-24.md`](research/g9-show-your-work-deepen-research-2026-08-24.md)  
 > 计划+Mega：[`research/goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md`](research/goal-wave-2026-08-24-g9-show-your-work-deepen-plan-and-mega-prompt.md)  
-> DoD：[`research/goal-wave-2026-08-24-g9-show-your-work-deepen.md`](research/goal-wave-2026-08-24-g9-show-your-work-deepen.md)
+> DoD：[`research/goal-wave-2026-08-24-g9-show-your-work-deepen.md`](research/goal-wave-2026-08-24-g9-show-your-work-deepen.md)  
+> 深度矩阵：[`research/g9-show-your-work-depth-matrix.md`](research/g9-show-your-work-depth-matrix.md)
 
-| 能力 | 目标 | 状态 |
-|---|---|---|
-| 分步求值 | 扩展 `ComputationStep`；页3 步骤表；Facts 优先绑定 | ⏳ 计划已备 |
-| 深度门禁 | 消灭 A/B/C「主公式」stub；`tools/verify_g9_show_your_work_deepen_track.py` + `tests/g9_show_your_work_deepen_track_test.cpp` | ⏳ |
-| 深度矩阵 | `docs/research/g9-show-your-work-depth-matrix.md`（每命令 L3/L2/L1/L0） | ⏳ 执行时创建 |
+| 能力 | UI / 模块 | 数据 / 契约 | 测试 |
+|---|---|---|---|
+| **SYW-A** 分步求值模型 | 页3「分步求值」步骤表（序/说明/代入前/代入后/得数） | `ComputationStep.order/expression_* /value`；JSON round-trip | `g9_show_your_work_deepen_track_test` |
+| **SYW-B～I** 深度绑定 | 四页不变；页2 真值绑定 | `computation_trace_attach_deep.cpp`（79 原 stub → L3）；`trace_helpers` Facts 优先 | 试点：capability / one_sample_t / imr / regression / gage_rr / weibayes |
+| **SYW-J** 门禁 | — | `src` 内「主公式」=0；深度矩阵 143 命令 | `python tools/verify_g9_show_your_work_deepen_track.py` |
+
+**L2 例外（≤15% A 类）：** 见深度矩阵 notes（Bootstrap/树路径/ARIMA 迭代等）。

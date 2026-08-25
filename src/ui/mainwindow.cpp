@@ -23,6 +23,11 @@
 #include "ui/report_template_dialog.h"
 #include "ui/algorithm_help_dialog.h"
 #include "ui/formula_registry_dialog.h"
+#include "ui/formula_substitution_dialog.h"
+#include "ui/taguchi_analyze_dialog.h"
+#include "ui/mixture_design_dialog.h"
+#include "ui/nhpp_repairable_dialog.h"
+#include "ui/reliability_test_plan_dialog.h"
 #include "ui/database_import_wizard.h"
 #include "ui/command_wizard_dialog.h"
 #include "ui/app_ui_tr.h"
@@ -654,6 +659,27 @@ void MainWindow::create_layout()
     output_workspace_ = new OutputWorkspace(central);
     output_workspace_->installEventFilter(this);
     connect(output_workspace_, &OutputWorkspace::copy_chart_requested, this, &MainWindow::copy_chart);
+    connect(output_workspace_, &OutputWorkspace::formula_substitution_requested, this,
+            [this](const datalab::domain::OutputPage& page) {
+                auto* dialog = new FormulaSubstitutionDialog(page, this);
+                dialog->setAttribute(Qt::WA_DeleteOnClose);
+                connect(dialog, &FormulaSubstitutionDialog::open_in_formula_registry, this,
+                        [this](const QString& id) {
+                            if (formula_registry_dialog_ == nullptr) {
+                                formula_registry_dialog_ = new FormulaRegistryDialog(this);
+                                formula_registry_dialog_->setAttribute(Qt::WA_DeleteOnClose);
+                                connect(formula_registry_dialog_, &QObject::destroyed, this,
+                                        [this] { formula_registry_dialog_ = nullptr; });
+                            }
+                            formula_registry_dialog_->select_entry(id);
+                            formula_registry_dialog_->show();
+                            formula_registry_dialog_->raise();
+                            formula_registry_dialog_->activateWindow();
+                        });
+                dialog->show();
+                dialog->raise();
+                dialog->activateWindow();
+            });
     connect(output_workspace_, &OutputWorkspace::rows_selected, this,
             [this](const std::vector<std::size_t>& rows) {
                 if (data_table_ == nullptr || data_table_->selectionModel() == nullptr
@@ -1322,6 +1348,57 @@ void MainWindow::run_from_spec(const QString& id)
     if (command->requires_data && !ensure_data()) {
         return;
     }
+
+    // Wave-6 dedicated multi-page dialogs (not AnalysisSetupDialog).
+    if (id == QStringLiteral("taguchi_analyze")) {
+        TaguchiAnalyzeDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "Taguchi 分析";
+            configuration.chart_type = "taguchi_analyze";
+            configuration.taguchi_analyze = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::taguchi_analyze(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("mixture_design")) {
+        MixtureDesignDialog dialog(this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "Mixture 设计";
+            configuration.chart_type = "mixture_design";
+            configuration.mixture_design = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::mixture_design(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("nhpp_repairable")) {
+        NhppRepairableDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "可修复系统 NHPP";
+            configuration.chart_type = "nhpp_repairable";
+            configuration.nhpp_repairable = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::nhpp_repairable(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("reliability_test_plan")) {
+        ReliabilityTestPlanDialog dialog(this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "可靠性试验计划";
+            configuration.chart_type = "reliability_test_plan";
+            configuration.reliability_test_plan = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::reliability_test_plan(
+                table_, configuration));
+        }
+        return;
+    }
+
     AnalysisSetupDialog dialog(
         command->dialog_title.isEmpty()
             ? datalab::ui::ui_tr(command->menu_label)

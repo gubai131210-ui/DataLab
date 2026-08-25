@@ -1,6 +1,7 @@
 #include "application/analysis_service.h"
 #include "application/chart_pages.h"
 #include "application/column_assembly.h"
+#include "application/computation_trace_attach.h"
 #include "application/doe_pages.h"
 #include "application/output_builder.h"
 
@@ -46,6 +47,14 @@
 #include "domain/statistics/pca.h"
 #include "domain/statistics/kmeans.h"
 #include "domain/statistics/cart_tree.h"
+#include "domain/statistics/random_forest.h"
+#include "domain/statistics/weibayes.h"
+#include "domain/statistics/taguchi_orthogonal.h"
+#include "domain/statistics/distribution_calculator.h"
+#include "domain/statistics/taguchi_analyze.h"
+#include "domain/statistics/mixture_design.h"
+#include "domain/statistics/nhpp_repairable.h"
+#include "domain/statistics/reliability_test_plan.h"
 #include "domain/statistics/adf_test.h"
 #include "domain/statistics/poisson_regression.h"
 #include "domain/statistics/isolation_forest.h"
@@ -1618,6 +1627,18 @@ OutputPage finalize_page(OutputPage page)
         page.facts.spc->enabled_special_cause_tests =
             page.configuration.control.enabled_special_cause_tests;
     }
+    if (page.computation_traces.empty()) {
+        std::string command_id = page.analysis_command_id;
+        if (command_id.empty()) {
+            command_id = resolve_command_id_from_page(page);
+        }
+        if (!command_id.empty()) {
+            if (page.analysis_command_id.empty()) {
+                page.analysis_command_id = command_id;
+            }
+            attach_computation_traces(page, command_id);
+        }
+    }
     return page;
 }
 
@@ -2278,6 +2299,8 @@ OutputPage AnalysisService::one_sample_t(
     facts.ci_upper = result.confidence_upper;
     facts.assumption_status = "not_verified";
     page.facts.t_test = std::move(facts);
+    page.analysis_command_id = "one_sample_t";
+    attach_computation_traces(page, "one_sample_t");
     return finalize_page(std::move(page));
 }
 
@@ -14783,6 +14806,882 @@ OutputPage AnalysisService::doe_plackett_burman(
     return finalize_page(std::move(page));
 }
 
+OutputPage AnalysisService::random_forest(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (!configuration.random_forest.response_column.has_value()
+        || configuration.random_forest.predictor_columns.empty()) {
+        return error_page("随机森林", "Random Forest",
+                          "请选择响应列与至少一个数值预测列。");
+    }
+    const bool is_regression = configuration.random_forest.task == "regression";
+    const std::size_t response_column = *configuration.random_forest.response_column;
+    const auto& predictors_cols = configuration.random_forest.predictor_columns;
+
+    std::vector<std::string> class_labels;
+    std::map<std::string, std::size_t> class_index;
+    if (!is_regression) {
+        for (std::size_t row = 0; row < table.rows.size(); ++row) {
+            if (std::find(configuration.excluded_rows.cbegin(),
+                          configuration.excluded_rows.cend(), row)
+                != configuration.excluded_rows.cend()) {
+                continue;
+            }
+            if (response_column >= table.rows[row].size()) {
+                continue;
+            }
+            const std::string& cell = table.rows[row][response_column];
+            if (is_missing_cell(cell)) {
+                continue;
+            }
+            if (class_index.find(cell) == class_index.end()) {
+                class_index[cell] = class_labels.size();
+                class_labels.push_back(cell);
+            }
+        }
+        if (class_labels.size() < 2) {
+            return error_page("随机森林", "Random Forest",
+                              "分类任务需要至少两个响应类别。");
+        }
+    }
+
+    std::vector<std::vector<double>> predictors;
+    std::vector<double> response;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (response_column >= table.rows[row].size()) {
+            continue;
+        }
+        std::vector<double> values;
+        bool valid = true;
+        for (const std::size_t column : predictors_cols) {
+            if (column >= table.rows[row].size()) {
+                valid = false;
+                break;
+            }
+            const auto parsed = parse_numeric_cell(table.rows[row][column]);
+            if (!parsed.has_value()) {
+                valid = false;
+                break;
+            }
+            values.push_back(*parsed);
+        }
+        if (!valid) {
+            continue;
+        }
+        if (is_regression) {
+            const auto parsed = parse_numeric_cell(table.rows[row][response_column]);
+            if (!parsed.has_value()) {
+                continue;
+            }
+            response.push_back(*parsed);
+        } else {
+            const std::string& cell = table.rows[row][response_column];
+            if (is_missing_cell(cell) || class_index.find(cell) == class_index.end()) {
+                continue;
+            }
+            response.push_back(static_cast<double>(class_index[cell]));
+        }
+        predictors.push_back(std::move(values));
+        source_rows.push_back(row);
+    }
+
+    std::vector<std::string> predictor_names;
+    for (const std::size_t column : predictors_cols) {
+        predictor_names.push_back(column_label(table, column));
+    }
+    datalab::domain::statistics::RandomForestOptions options;
+    options.task = is_regression
+        ? datalab::domain::statistics::CartTask::regression
+        : datalab::domain::statistics::CartTask::classification;
+    options.n_trees = std::max<std::size_t>(1, configuration.random_forest.n_trees);
+    options.max_depth = configuration.random_forest.max_depth;
+    options.min_leaf = configuration.random_forest.min_leaf;
+    options.seed = configuration.random_forest.seed;
+    options.compute_oob = configuration.random_forest.compute_oob;
+    const auto result = datalab::domain::statistics::fit_random_forest(
+        predictors, response, class_labels, predictor_names, options);
+
+    OutputPage page;
+    page.id = new_id("random_forest");
+    page.title = "随机森林";
+    page.method_name = "Random Forest";
+    page.configuration = configuration;
+    page.parameter_summary = std::string("任务 = ") + configuration.random_forest.task
+        + "    N = " + std::to_string(result.observation_count)
+        + "    树数 = " + std::to_string(result.n_trees)
+        + "    深度上限 = " + std::to_string(result.max_depth);
+    page.diagnostics = result.diagnostics;
+    if (source_rows.size() < table.rows.size()) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning, "missing_values",
+            "随机森林使用 complete-case（缺失≠0）；仅排除 excluded_rows，hidden≠excluded。"});
+    }
+    if (result.observation_count == 0) {
+        return finalize_page(std::move(page));
+    }
+
+    StatisticTable summary;
+    summary.title = "Model Summary";
+    summary.headers = {"Metric", "Value"};
+    summary.rows.push_back({"N", std::to_string(result.observation_count)});
+    summary.rows.push_back({"Predictors", std::to_string(result.predictor_count)});
+    summary.rows.push_back({"Trees", std::to_string(result.n_trees)});
+    summary.rows.push_back({
+        is_regression ? "Train RMSE" : "Train Accuracy",
+        format_number(result.train_metric)});
+    if (result.oob_metric.has_value()) {
+        summary.rows.push_back({
+            is_regression ? "OOB RMSE" : "OOB Accuracy",
+            format_number(*result.oob_metric)});
+    }
+    summary.rows.push_back({"Top Variable", result.top_variable});
+    summary.rows.push_back({"Disclosure", result.disclosure});
+    page.tables.push_back(std::move(summary));
+
+    StatisticTable importance;
+    importance.title = "Variable Importance";
+    importance.headers = {"Variable", "Mean Impurity Decrease"};
+    for (std::size_t index = 0; index < result.variable_importance.size(); ++index) {
+        importance.rows.push_back({
+            index < predictor_names.size() ? predictor_names[index]
+                                           : ("X" + std::to_string(index + 1)),
+            format_number(result.variable_importance[index])});
+    }
+    page.tables.push_back(std::move(importance));
+
+    if (!is_regression && !result.confusion.empty()) {
+        StatisticTable confusion;
+        confusion.title = "Confusion Matrix";
+        confusion.headers = {"Actual \\ Predicted"};
+        for (const std::string& label : class_labels) {
+            confusion.headers.push_back(label);
+        }
+        for (std::size_t actual = 0; actual < result.confusion.size(); ++actual) {
+            std::vector<std::string> row = {
+                actual < class_labels.size() ? class_labels[actual] : "?"};
+            for (std::size_t predicted = 0;
+                 predicted < result.confusion[actual].size(); ++predicted) {
+                row.push_back(std::to_string(result.confusion[actual][predicted]));
+            }
+            confusion.rows.push_back(std::move(row));
+        }
+        page.tables.push_back(std::move(confusion));
+    }
+
+    domain::RandomForestFacts facts;
+    facts.task = configuration.random_forest.task;
+    facts.n = result.observation_count;
+    facts.predictor_count = result.predictor_count;
+    facts.n_trees = result.n_trees;
+    facts.max_depth = result.max_depth;
+    facts.train_metric = result.train_metric;
+    facts.oob_metric = result.oob_metric;
+    facts.top_variable = result.top_variable;
+    facts.disclosure = result.disclosure;
+    page.facts.random_forest = facts;
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::weibayes(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (!configuration.weibayes.time_column.has_value()
+        || !configuration.weibayes.event_column.has_value()) {
+        return error_page("Weibayes", "Weibayes",
+                          "请选择时间列与事件/删失指示列。");
+    }
+    const auto times = extract_numeric_column(
+        table, *configuration.weibayes.time_column, configuration.excluded_rows);
+    const auto event_text = extract_text_column(
+        table, *configuration.weibayes.event_column);
+    std::vector<double> aligned_times;
+    std::vector<bool> events;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t i = 0; i < times.source_rows.size(); ++i) {
+        const std::size_t row = times.source_rows[i];
+        if (row >= event_text.size()) {
+            continue;
+        }
+        const auto parsed_event =
+            datalab::domain::statistics::parse_reliability_event(event_text[row]);
+        if (!parsed_event.has_value()) {
+            continue;
+        }
+        aligned_times.push_back(times.values[i]);
+        events.push_back(*parsed_event);
+        source_rows.push_back(row);
+    }
+    const auto result = datalab::domain::statistics::fit_weibayes(
+        aligned_times, events, source_rows,
+        {configuration.weibayes.shape_prior});
+
+    OutputPage page;
+    page.id = new_id("weibayes");
+    page.title = "Weibayes";
+    page.method_name = "Weibayes";
+    page.configuration = configuration;
+    page.parameter_summary = "β = " + format_number(result.shape_prior)
+        + "    N = " + std::to_string(result.n)
+        + "    Failures r = " + std::to_string(result.failure_count)
+        + "    Censored = " + std::to_string(result.censored_count);
+    page.diagnostics = result.diagnostics;
+    if (source_rows.size() < table.rows.size()) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning, "missing_values",
+            "Weibayes 使用 complete-case；仅 exact+right 删失主路径。"});
+    }
+
+    StatisticTable censor;
+    censor.title = "Censoring Summary";
+    censor.headers = {"Item", "Value"};
+    censor.rows.push_back({"N", std::to_string(result.n)});
+    censor.rows.push_back({"Failures (r)", std::to_string(result.failure_count)});
+    censor.rows.push_back({"Right censored", std::to_string(result.censored_count)});
+    censor.rows.push_back({"Zero-failure bound", result.zero_failure_bound ? "是" : "否"});
+    page.tables.push_back(std::move(censor));
+
+    StatisticTable params;
+    params.title = "Parameter Estimates";
+    params.headers = {"Parameter", "Estimate"};
+    params.rows.push_back({"Shape β (prior)", format_number(result.shape_prior)});
+    params.rows.push_back({
+        "Scale η",
+        result.scale.has_value() ? format_number(*result.scale) : "*"});
+    page.tables.push_back(std::move(params));
+
+    if (!result.percentiles.empty()) {
+        StatisticTable percentiles;
+        percentiles.title = "Percentiles";
+        percentiles.headers = {"Percentile", "Life"};
+        for (const auto& row : result.percentiles) {
+            percentiles.rows.push_back({
+                "B" + std::to_string(static_cast<int>(row.percentile)),
+                format_number(row.life)});
+        }
+        page.tables.push_back(std::move(percentiles));
+    }
+
+    domain::WeibayesFacts facts;
+    facts.n = result.n;
+    facts.failure_count = result.failure_count;
+    facts.censored_count = result.censored_count;
+    facts.shape_prior = result.shape_prior;
+    facts.scale = result.scale;
+    facts.zero_failure_bound = result.zero_failure_bound;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    for (const auto& row : result.percentiles) {
+        if (row.percentile == 10.0) {
+            facts.b10 = row.life;
+        } else if (row.percentile == 50.0) {
+            facts.b50 = row.life;
+        } else if (row.percentile == 90.0) {
+            facts.b90 = row.life;
+        }
+    }
+    page.facts.weibayes = facts;
+    page.analysis_command_id = "weibayes";
+    attach_computation_traces(page, "weibayes");
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::taguchi_orthogonal_design(
+    const DataTable&,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.taguchi_orthogonal.factor_names.empty()) {
+        return error_page("Taguchi 正交设计", "Taguchi Orthogonal Design",
+                          "请提供至少一个因子名称。");
+    }
+    std::vector<datalab::domain::statistics::DoeFactor> factors;
+    for (std::size_t index = 0;
+         index < configuration.taguchi_orthogonal.factor_names.size(); ++index) {
+        datalab::domain::statistics::DoeFactor factor;
+        factor.name = configuration.taguchi_orthogonal.factor_names[index];
+        factor.low_level = index < configuration.taguchi_orthogonal.low_levels.size()
+            ? configuration.taguchi_orthogonal.low_levels[index] : "-1";
+        factor.high_level = index < configuration.taguchi_orthogonal.high_levels.size()
+            ? configuration.taguchi_orthogonal.high_levels[index] : "+1";
+        if (index < configuration.taguchi_orthogonal.mid_levels.size()) {
+            factor.mid_level = configuration.taguchi_orthogonal.mid_levels[index];
+        }
+        factors.push_back(std::move(factor));
+    }
+    datalab::domain::statistics::TaguchiOrthogonalOptions options;
+    options.array = datalab::domain::statistics::parse_taguchi_array(
+        configuration.taguchi_orthogonal.array);
+    options.factors = factors;
+    options.randomize = configuration.taguchi_orthogonal.randomize;
+    options.random_seed = configuration.taguchi_orthogonal.random_seed;
+    const auto taguchi =
+        datalab::domain::statistics::generate_taguchi_orthogonal(options);
+    auto design = datalab::domain::statistics::taguchi_to_factorial_design(taguchi);
+    auto page = doe_design_page(configuration, taguchi.factors, design);
+    // New worksheet must not inherit prior excluded/hidden rows (A→B honesty).
+    page.configuration.excluded_rows.clear();
+    page.configuration.hidden_rows.clear();
+    page.title = "Taguchi 正交设计";
+    page.method_name = "Taguchi Orthogonal Design";
+    page.parameter_summary = "阵列 = " + taguchi.array_name
+        + "    因子 = " + std::to_string(taguchi.factor_count)
+        + "    运行 = " + std::to_string(taguchi.run_count)
+        + "    水平数 = " + std::to_string(taguchi.levels_per_factor);
+    domain::TaguchiOrthogonalFacts facts;
+    facts.array = taguchi.array_name;
+    facts.factor_count = taguchi.factor_count;
+    facts.run_count = taguchi.run_count;
+    facts.levels_per_factor = taguchi.levels_per_factor;
+    page.facts.taguchi_orthogonal = facts;
+    if (page.worksheet_export.has_value()) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::info, "taguchi_worksheet_export",
+            "已生成设计矩阵工作表（不含旧 excluded_rows/hidden_rows）。"
+            "本命令仅设计生成，不含完整 Taguchi ANOVA。"});
+    }
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::distribution_calculator(
+    const DataTable&,
+    const AnalysisConfiguration& configuration)
+{
+    datalab::domain::statistics::DistributionCalculatorOptions options;
+    options.distribution = datalab::domain::statistics::parse_distcalc_distribution(
+        configuration.distribution_calculator.distribution);
+    options.operation = datalab::domain::statistics::parse_distcalc_operation(
+        configuration.distribution_calculator.operation);
+    options.param1 = configuration.distribution_calculator.param1;
+    options.param2 = configuration.distribution_calculator.param2;
+    options.param3 = configuration.distribution_calculator.param3;
+    options.value = configuration.distribution_calculator.value;
+    const auto result =
+        datalab::domain::statistics::evaluate_distribution_calculator(options);
+
+    OutputPage page;
+    page.id = new_id("distribution_calculator");
+    page.title = "分布计算器";
+    page.method_name = "Distribution Calculator";
+    page.configuration = configuration;
+    page.parameter_summary = result.distribution + " / " + result.operation
+        + "    value = " + format_number(result.value);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable params;
+    params.title = "Parameters";
+    params.headers = {"Name", "Value"};
+    params.rows.push_back({"Distribution", result.distribution});
+    params.rows.push_back({"Operation", result.operation});
+    params.rows.push_back({"Param1", format_number(result.param1)});
+    params.rows.push_back({"Param2", format_number(result.param2)});
+    params.rows.push_back({"Param3", format_number(result.param3)});
+    params.rows.push_back({"Input value", format_number(result.value)});
+    page.tables.push_back(std::move(params));
+
+    StatisticTable outcome;
+    outcome.title = "Result";
+    outcome.headers = {"Quantity", "Value"};
+    outcome.rows.push_back({
+        result.operation,
+        result.result.has_value() ? format_number(*result.result) : "*"});
+    page.tables.push_back(std::move(outcome));
+
+    domain::DistributionCalculatorFacts facts;
+    facts.distribution = result.distribution;
+    facts.operation = result.operation;
+    facts.param1 = result.param1;
+    facts.param2 = result.param2;
+    facts.param3 = result.param3;
+    facts.value = result.value;
+    facts.result = result.result;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.distribution_calculator = facts;
+    return finalize_page(std::move(page));
+}
+
+namespace {
+
+StatisticTable taguchi_response_table(
+    const std::string& title,
+    const std::vector<datalab::domain::statistics::TaguchiFactorResponse>& factors)
+{
+    StatisticTable table;
+    table.title = title;
+    table.headers = {"Level"};
+    std::size_t max_levels = 0;
+    for (const auto& factor : factors) {
+        table.headers.push_back(factor.factor_name);
+        max_levels = std::max(max_levels, factor.level_averages.size());
+    }
+    for (std::size_t level_index = 0; level_index < max_levels; ++level_index) {
+        std::vector<std::string> row;
+        row.push_back(std::to_string(level_index + 1));
+        for (const auto& factor : factors) {
+            if (level_index < factor.level_averages.size()) {
+                row.push_back(format_number(factor.level_averages[level_index].average));
+            } else {
+                row.push_back("*");
+            }
+        }
+        table.rows.push_back(std::move(row));
+    }
+    std::vector<std::string> delta_row = {"Delta"};
+    std::vector<std::string> rank_row = {"Rank"};
+    for (const auto& factor : factors) {
+        delta_row.push_back(format_number(factor.delta));
+        rank_row.push_back(std::to_string(factor.rank));
+    }
+    table.rows.push_back(std::move(delta_row));
+    table.rows.push_back(std::move(rank_row));
+    return table;
+}
+
+PlotSpec taguchi_main_effects_plot(
+    const datalab::domain::statistics::TaguchiFactorResponse& factor,
+    const std::string& y_title)
+{
+    PlotSpec plot;
+    plot.kind = PlotKind::scatter;
+    plot.title = "主效应图 - " + factor.factor_name + " (" + y_title + ")";
+    plot.x_axis_title = factor.factor_name;
+    plot.y_axis_title = y_title;
+    PlotSeries series;
+    series.label = factor.factor_name;
+    series.show_points = true;
+    for (std::size_t i = 0; i < factor.level_averages.size(); ++i) {
+        const double x = static_cast<double>(i + 1);
+        plot.x_values.push_back(x);
+        plot.values.push_back(factor.level_averages[i].average);
+        series.x_values.push_back(x);
+        series.values.push_back(factor.level_averages[i].average);
+        plot.categories.push_back(factor.level_averages[i].level);
+        plot.point_labels.push_back(factor.level_averages[i].level);
+    }
+    plot.series = {std::move(series)};
+    return plot;
+}
+
+}  // namespace
+
+OutputPage AnalysisService::taguchi_analyze(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.taguchi_analyze.factor_columns.empty()
+        || configuration.taguchi_analyze.response_columns.empty()) {
+        return error_page("Taguchi 分析", "Analyze Taguchi Design",
+                          "请选择至少一个因子列与一个响应列。");
+    }
+
+    std::vector<domain::ExtractedNumericColumn> response_cols;
+    for (std::size_t col : configuration.taguchi_analyze.response_columns) {
+        response_cols.push_back(
+            extract_numeric_column(table, col, configuration.excluded_rows));
+    }
+    const auto aligned = align_complete_rows_with_source(response_cols);
+    if (aligned.values.empty()) {
+        return error_page("Taguchi 分析", "Analyze Taguchi Design",
+                          "无完整响应行（complete-case）。");
+    }
+
+    std::vector<std::string> factor_names;
+    for (std::size_t col : configuration.taguchi_analyze.factor_columns) {
+        if (col < table.columns.size()) {
+            factor_names.push_back(table.columns[col]);
+        } else {
+            factor_names.push_back("F" + std::to_string(col + 1));
+        }
+    }
+
+    std::vector<std::vector<std::string>> factor_levels;
+    std::vector<std::vector<double>> responses;
+    std::vector<std::size_t> source_rows;
+    factor_levels.reserve(aligned.source_rows.size());
+    responses.reserve(aligned.source_rows.size());
+
+    for (std::size_t i = 0; i < aligned.source_rows.size(); ++i) {
+        const std::size_t row = aligned.source_rows[i];
+        std::vector<std::string> levels;
+        bool skip = false;
+        for (std::size_t col : configuration.taguchi_analyze.factor_columns) {
+            if (row >= table.rows.size() || col >= table.rows[row].size()
+                || table.rows[row][col].empty()) {
+                skip = true;
+                break;
+            }
+            levels.push_back(table.rows[row][col]);
+        }
+        if (skip) {
+            continue;
+        }
+        factor_levels.push_back(std::move(levels));
+        responses.push_back(aligned.values[i]);
+        source_rows.push_back(row);
+    }
+
+    datalab::domain::statistics::TaguchiAnalyzeOptions options;
+    options.sn_type = datalab::domain::statistics::parse_taguchi_sn_type(
+        configuration.taguchi_analyze.sn_type);
+    const auto result = datalab::domain::statistics::analyze_taguchi_static(
+        factor_levels, responses, factor_names, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("taguchi_analyze");
+    page.title = "Taguchi 分析";
+    page.method_name = "Analyze Taguchi Design";
+    page.configuration = configuration;
+    page.parameter_summary = "S/N = " + result.sn_type_name
+        + "    因子 = " + std::to_string(result.factor_count)
+        + "    响应列 = " + std::to_string(result.response_count)
+        + "    运行 = " + std::to_string(result.run_count);
+    page.diagnostics = result.diagnostics;
+    if (source_rows.size() < table.rows.size()) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning, "missing_values",
+            "Taguchi 分析使用 complete-case；因子与响应均非空的行才纳入。"});
+    }
+
+    for (const auto& diagnostic : result.diagnostics) {
+        if (diagnostic.severity == DiagnosticMessage::Severity::error) {
+            page.facts.taguchi_analyze = domain::TaguchiAnalyzeFacts{};
+            page.facts.taguchi_analyze->sn_type = result.sn_type_name;
+            page.analysis_command_id = "taguchi_analyze";
+            return finalize_page(std::move(page));
+        }
+    }
+
+    page.tables.push_back(
+        taguchi_response_table("Response Table for Means", result.means_table));
+    page.tables.push_back(taguchi_response_table(
+        "Response Table for Signal to Noise Ratios", result.sn_table));
+
+    StatisticTable diagnostics_table;
+    diagnostics_table.title = "Diagnostics";
+    diagnostics_table.headers = {"Item", "Value"};
+    diagnostics_table.rows.push_back({"S/N type", result.sn_type_name});
+    diagnostics_table.rows.push_back({"Runs", std::to_string(result.run_count)});
+    diagnostics_table.rows.push_back(
+        {"Response columns", std::to_string(result.response_count)});
+    page.tables.push_back(std::move(diagnostics_table));
+
+    for (const auto& factor : result.means_table) {
+        if (!factor.level_averages.empty()) {
+            page.plots.push_back(taguchi_main_effects_plot(factor, "Mean"));
+        }
+    }
+    for (const auto& factor : result.sn_table) {
+        if (!factor.level_averages.empty()) {
+            page.plots.push_back(taguchi_main_effects_plot(factor, "S/N"));
+        }
+    }
+    if (page.plots.empty()) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::info, "taguchi_analyze_no_plot",
+            "无足够水平均值可绘制主效应图。"});
+    }
+
+    domain::TaguchiAnalyzeFacts facts;
+    facts.sn_type = result.sn_type_name;
+    facts.factor_count = result.factor_count;
+    facts.response_count = result.response_count;
+    facts.run_count = result.run_count;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    if (!result.sn_table.empty()) {
+        std::size_t top = 0;
+        for (std::size_t i = 1; i < result.sn_table.size(); ++i) {
+            if (result.sn_table[i].delta > result.sn_table[top].delta) {
+                top = i;
+            }
+        }
+        facts.top_delta = result.sn_table[top].delta;
+        facts.top_factor = result.sn_table[top].factor_name;
+    }
+    page.facts.taguchi_analyze = facts;
+    page.analysis_command_id = "taguchi_analyze";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::mixture_design(
+    const DataTable&,
+    const AnalysisConfiguration& configuration)
+{
+    datalab::domain::statistics::MixtureDesignOptions options;
+    options.component_count = configuration.mixture_design.component_count;
+    options.component_names = configuration.mixture_design.component_names;
+    options.randomize = configuration.mixture_design.randomize;
+    options.random_seed = configuration.mixture_design.random_seed;
+    const auto design =
+        datalab::domain::statistics::generate_mixture_simplex_lattice(options);
+
+    OutputPage page;
+    page.id = new_id("mixture_design");
+    page.title = "Mixture 设计";
+    page.method_name = "Mixture Design";
+    page.configuration = configuration;
+    // New worksheet must not inherit prior excluded/hidden rows (A→B honesty).
+    page.configuration.excluded_rows.clear();
+    page.configuration.hidden_rows.clear();
+    page.parameter_summary = "simplex-lattice m=2    q = "
+        + std::to_string(design.component_count)
+        + "    N = " + std::to_string(design.run_count);
+    page.diagnostics = design.diagnostics;
+
+    for (const auto& diagnostic : design.diagnostics) {
+        if (diagnostic.severity == DiagnosticMessage::Severity::error) {
+            domain::MixtureDesignFacts facts;
+            facts.component_count = design.component_count;
+            facts.degree = design.degree;
+            facts.run_count = design.run_count;
+            facts.design_kind = design.design_kind;
+            page.facts.mixture_design = facts;
+            page.analysis_command_id = "mixture_design";
+            return finalize_page(std::move(page));
+        }
+    }
+
+    StatisticTable info;
+    info.title = "Design Info";
+    info.headers = {"Property", "Value"};
+    info.rows.push_back({"Type", design.design_kind});
+    info.rows.push_back({"Components (q)", std::to_string(design.component_count)});
+    info.rows.push_back({"Degree (m)", std::to_string(design.degree)});
+    info.rows.push_back({"Points (N)", std::to_string(design.run_count)});
+    info.rows.push_back({"Formula", "N = q(q+1)/2"});
+    page.tables.push_back(std::move(info));
+
+    StatisticTable matrix;
+    matrix.title = "Design Matrix";
+    matrix.headers = {"StdOrder", "RunOrder"};
+    for (const auto& name : design.component_names) {
+        matrix.headers.push_back(name);
+    }
+    for (const auto& run : design.runs) {
+        std::vector<std::string> row = {
+            std::to_string(run.standard_order), std::to_string(run.run_order)};
+        for (double x : run.proportions) {
+            row.push_back(format_number(x));
+        }
+        matrix.rows.push_back(std::move(row));
+    }
+    page.tables.push_back(std::move(matrix));
+
+    DataTable export_table;
+    export_table.name = "mixture_design";
+    export_table.source_path = page.id;
+    for (const auto& name : design.component_names) {
+        export_table.columns.push_back(name);
+    }
+    export_table.columns.push_back("RunOrder");
+    export_table.columns.push_back("Response");
+    for (const auto& run : design.runs) {
+        std::vector<std::string> row;
+        for (double x : run.proportions) {
+            row.push_back(format_number(x));
+        }
+        row.push_back(std::to_string(run.run_order));
+        row.push_back("");
+        export_table.rows.push_back(std::move(row));
+    }
+    page.worksheet_export = std::move(export_table);
+    page.diagnostics.push_back({
+        DiagnosticMessage::Severity::info, "mixture_worksheet_export",
+        "已生成设计矩阵工作表（分量比例 + RunOrder + 空 Response）；"
+        "新表不携带旧 excluded_rows/hidden_rows。本命令仅设计生成。"});
+
+    domain::MixtureDesignFacts facts;
+    facts.component_count = design.component_count;
+    facts.degree = design.degree;
+    facts.run_count = design.run_count;
+    facts.design_kind = design.design_kind;
+    facts.evidence_type = design.evidence_type;
+    facts.algorithm_id = design.algorithm_id;
+    page.facts.mixture_design = facts;
+    page.analysis_command_id = "mixture_design";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::nhpp_repairable(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (!configuration.nhpp_repairable.time_column.has_value()) {
+        return error_page("可修复 NHPP", "NHPP Repairable System",
+                          "请选择累积失效时间列。");
+    }
+    const auto times = extract_numeric_column(
+        table, *configuration.nhpp_repairable.time_column, configuration.excluded_rows);
+    datalab::domain::statistics::NhppRepairableOptions options;
+    options.truncation_time = configuration.nhpp_repairable.truncation_time;
+    const auto result = datalab::domain::statistics::fit_nhpp_crow_amsaa(
+        times.values, times.source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("nhpp_repairable");
+    page.title = "可修复系统 NHPP";
+    page.method_name = "NHPP Crow-AMSAA";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.failure_count)
+        + "    T = " + format_number(result.truncation_time)
+        + (result.beta.has_value() ? ("    β ≈ " + format_number(*result.beta)) : "")
+        + (result.lambda.has_value() ? ("    λ ≈ " + format_number(*result.lambda)) : "");
+    page.diagnostics = result.diagnostics;
+    if (times.source_rows.size() < table.rows.size()) {
+        page.diagnostics.push_back({
+            DiagnosticMessage::Severity::warning, "missing_values",
+            "NHPP 使用 complete-case；仅正有限时间行纳入。"});
+    }
+
+    StatisticTable summary;
+    summary.title = "Observation Summary";
+    summary.headers = {"Item", "Value"};
+    summary.rows.push_back({"Failures (n)", std::to_string(result.failure_count)});
+    summary.rows.push_back({"Truncation T", format_number(result.truncation_time)});
+    page.tables.push_back(std::move(summary));
+
+    StatisticTable params;
+    params.title = "Parameter Estimates";
+    params.headers = {"Parameter", "Estimate"};
+    params.rows.push_back({
+        "Beta β",
+        result.beta.has_value() ? format_number(*result.beta) : "*"});
+    params.rows.push_back({
+        "Lambda λ",
+        result.lambda.has_value() ? format_number(*result.lambda) : "*"});
+    page.tables.push_back(std::move(params));
+
+    if (!result.intensity_curve.empty()) {
+        StatisticTable intensity;
+        intensity.title = "Intensity / Mean function";
+        intensity.headers = {"t", "lambda(t)", "M(t)"};
+        for (const auto& point : result.intensity_curve) {
+            intensity.rows.push_back({
+                format_number(point.t),
+                format_number(point.intensity),
+                format_number(point.mean_function)});
+        }
+        page.tables.push_back(std::move(intensity));
+    }
+
+    if (configuration.nhpp_repairable.include_duane_plot
+        && result.failure_times.size() >= 2) {
+        PlotSpec duane;
+        duane.kind = PlotKind::scatter;
+        duane.title = "Duane 图（累积 MTBF 趋势参考）";
+        duane.x_axis_title = "t (log)";
+        duane.y_axis_title = "t/i (log)";
+        PlotSeries series;
+        series.label = "Duane";
+        series.show_points = true;
+        for (std::size_t i = 0; i < result.failure_times.size(); ++i) {
+            const double t = result.failure_times[i];
+            const double mtbf = t / static_cast<double>(i + 1);
+            if (t > 0.0 && mtbf > 0.0) {
+                const double x = std::log10(t);
+                const double y = std::log10(mtbf);
+                duane.x_values.push_back(x);
+                duane.values.push_back(y);
+                series.x_values.push_back(x);
+                series.values.push_back(y);
+            }
+        }
+        duane.series = {std::move(series)};
+        if (!duane.x_values.empty()) {
+            page.plots.push_back(std::move(duane));
+        }
+    }
+
+    domain::NhppRepairableFacts facts;
+    facts.failure_count = result.failure_count;
+    facts.truncation_time = result.truncation_time;
+    facts.beta = result.beta;
+    facts.lambda = result.lambda;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.nhpp_repairable = facts;
+    page.analysis_command_id = "nhpp_repairable";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::reliability_test_plan(
+    const DataTable&,
+    const AnalysisConfiguration& configuration)
+{
+    datalab::domain::statistics::ReliabilityTestPlanOptions options;
+    options.shape_beta = configuration.reliability_test_plan.shape_beta;
+    options.target_reliability = configuration.reliability_test_plan.target_reliability;
+    options.confidence_level = configuration.reliability_test_plan.confidence_level;
+    options.test_time = configuration.reliability_test_plan.test_time;
+    options.mission_time = configuration.reliability_test_plan.mission_time;
+    options.allowed_failures = configuration.reliability_test_plan.allowed_failures;
+    const auto result =
+        datalab::domain::statistics::plan_reliability_demonstration(options);
+
+    OutputPage page;
+    page.id = new_id("reliability_test_plan");
+    page.title = "可靠性试验计划";
+    page.method_name = "Reliability Demonstration Test Plan";
+    page.configuration = configuration;
+    page.parameter_summary = "β = " + format_number(result.shape_beta)
+        + "    R = " + format_number(result.target_reliability)
+        + "    CL = " + format_number(result.confidence_level)
+        + (result.sample_size.has_value()
+               ? ("    n = " + std::to_string(*result.sample_size))
+               : "    n = *");
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable plan;
+    plan.title = "Test Plan";
+    plan.headers = {"Item", "Value"};
+    plan.rows.push_back({
+        "Sample size n",
+        result.sample_size.has_value() ? std::to_string(*result.sample_size) : "*"});
+    plan.rows.push_back(
+        {"Allowed failures r", std::to_string(result.allowed_failures)});
+    plan.rows.push_back({"Test time T0", format_number(result.test_time)});
+    plan.rows.push_back({"Mission time tm", format_number(result.mission_time)});
+    plan.rows.push_back({"Shape β (assumed)", format_number(result.shape_beta)});
+    plan.rows.push_back({"Target R", format_number(result.target_reliability)});
+    plan.rows.push_back({"Confidence CL", format_number(result.confidence_level)});
+    plan.rows.push_back({"Delta δ", format_number(result.time_ratio_delta)});
+    plan.rows.push_back({"R_test = R^δ", format_number(result.test_reliability)});
+    page.tables.push_back(std::move(plan));
+
+    StatisticTable assumptions;
+    assumptions.title = "Assumptions Summary";
+    assumptions.headers = {"Assumption", "Note"};
+    assumptions.rows.push_back(
+        {"Weibull shape β", "工程假设，非本命令从数据估计"});
+    assumptions.rows.push_back(
+        {"Demonstration", "以 CL 演示任务时间处可靠度 ≥ R"});
+    assumptions.rows.push_back(
+        {"Not estimation", "不输出寿命点估计；禁止「寿命已达标」"});
+    page.tables.push_back(std::move(assumptions));
+
+    domain::ReliabilityTestPlanFacts facts;
+    facts.shape_beta = result.shape_beta;
+    facts.target_reliability = result.target_reliability;
+    facts.confidence_level = result.confidence_level;
+    facts.test_time = result.test_time;
+    facts.mission_time = result.mission_time;
+    facts.time_ratio_delta = result.time_ratio_delta;
+    facts.allowed_failures = result.allowed_failures;
+    facts.sample_size = result.sample_size;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.reliability_test_plan = facts;
+    page.analysis_command_id = "reliability_test_plan";
+    return finalize_page(std::move(page));
+}
+
 OutputPage AnalysisService::doe_response_surface_design(
     const DataTable&,
     const AnalysisConfiguration& configuration)
@@ -16147,6 +17046,8 @@ OutputPage AnalysisService::capability(
             extracted.values, options);
         page.plots.push_back(control_plot("I 图", "测量值", dual.primary, extracted.source_rows));
     }
+    page.analysis_command_id = "capability";
+    attach_computation_traces(page, "capability");
     return finalize_page(std::move(page));
 }
 

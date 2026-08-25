@@ -2,7 +2,7 @@
 
 > 权威分类：[`ui-menu-ia-minitab-taxonomy-2026-08-23.md`](ui-menu-ia-minitab-taxonomy-2026-08-23.md) §3  
 > Researcher 交付（2026-08-23）；Implementer-A 按本表填写 `analysis_commands`。  
-> 合计 **137** 条；级联深度 = 1；顶层仅 统计 / 控制图 / 质量工具 / 图形。
+> 合计 **141** 条（含算法 Wave-5 四命令）；级联深度 = 1；顶层仅 统计 / 控制图 / 质量工具 / 图形。
 
 | id | menu_path | menu_group |
 |----|-----------|------------|
@@ -143,16 +143,24 @@
 | interval_plot | 图形 | 时间 / 条形 / 其他 |
 | marginal_plot | 图形 | 时间 / 条形 / 其他 |
 | eda_4plot | 图形 | 时间 / 条形 / 其他 |
+| random_forest | 统计 | 多变量 |
+| weibayes | 统计 | 可靠性 |
+| taguchi_orthogonal_design | 统计 | DOE |
+| distribution_calculator | 统计 | 推断 / 仿真 |
+| taguchi_analyze | 统计 | DOE |
+| mixture_design | 统计 | DOE |
+| nhpp_repairable | 统计 | 可靠性 |
+| reliability_test_plan | 统计 | 功效与样本量 |
 
 ## 计数
 
 | 顶层 | n |
 |------|---|
-| 统计 | 72 |
+| 统计 | 76 |
 | 控制图 | 20 |
 | 质量工具 | 23 |
 | 图形 | 22 |
-| **合计** | **137** |
+| **合计** | **141** |
 
 ## help.json 对齐规则
 

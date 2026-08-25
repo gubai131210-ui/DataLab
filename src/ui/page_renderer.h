@@ -28,6 +28,8 @@ struct PageRenderOptions {
         on_display_properties_changed;
     // 图表行选择回调（interactive_charts 时使用）。
     std::function<void(const std::vector<std::size_t>&)> on_rows_selected;
+    // G9：打开公式代入对话框（输出页标题行按钮）。
+    std::function<void(const datalab::domain::OutputPage&)> on_formula_substitution;
     // 报告/预览图表空态与占位文案 locale（默认 zh-CN；预览/PDF 应传入 ReportProfile locale）。
     std::string chart_language_tag = "zh-CN";
 };

@@ -19,6 +19,7 @@
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QObject>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QShortcut>
 #include <QTableView>
@@ -106,6 +107,14 @@ QWidget* build_page_widget(
         "font-size: 21px; font-weight: 700; color: #20343d; padding: 2px 0 0;"));
     title_row->addWidget(title);
     title_row->addStretch();
+    if (options.on_formula_substitution) {
+        auto* formula_button = new QPushButton(QStringLiteral("公式代入"), container);
+        QObject::connect(formula_button, &QPushButton::clicked, container,
+                         [callback = options.on_formula_substitution, page]() {
+                             callback(page);
+                         });
+        title_row->addWidget(formula_button);
+    }
     layout->addLayout(title_row);
 
     if (options.include_method) {

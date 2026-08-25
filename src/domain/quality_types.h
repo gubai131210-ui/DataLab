@@ -449,6 +449,70 @@ struct PlackettBurmanConfiguration {
     std::uint64_t random_seed = 0;
 };
 
+struct RandomForestConfiguration {
+    std::optional<std::size_t> response_column;
+    std::vector<std::size_t> predictor_columns;
+    std::string task = "classification";  // classification | regression
+    std::size_t n_trees = 50;
+    std::size_t max_depth = 5;
+    std::size_t min_leaf = 5;
+    std::uint32_t seed = 1;
+    bool compute_oob = true;
+};
+
+struct WeibayesConfiguration {
+    std::optional<std::size_t> time_column;
+    std::optional<std::size_t> event_column;
+    double shape_prior = 2.0;
+};
+
+struct TaguchiOrthogonalConfiguration {
+    std::string array = "L8";  // L8 | L9 | L12
+    std::vector<std::string> factor_names;
+    std::vector<std::string> low_levels;
+    std::vector<std::string> high_levels;
+    std::vector<std::string> mid_levels;  // L9
+    bool randomize = false;
+    std::uint64_t random_seed = 1;
+};
+
+struct DistributionCalculatorConfiguration {
+    std::string distribution = "normal";  // normal|t|chi_square|f|weibull
+    std::string operation = "cdf";        // pdf|cdf|quantile
+    double param1 = 0.0;
+    double param2 = 1.0;
+    double param3 = 1.0;
+    double value = 0.0;
+};
+
+struct TaguchiAnalyzeConfiguration {
+    std::vector<std::size_t> factor_columns;
+    std::vector<std::size_t> response_columns;
+    std::string sn_type = "larger";  // larger | smaller | nominal
+};
+
+struct MixtureDesignConfiguration {
+    std::size_t component_count = 3;  // q = 3..4
+    std::vector<std::string> component_names;
+    bool randomize = false;
+    std::uint64_t random_seed = 1;
+};
+
+struct NhppRepairableConfiguration {
+    std::optional<std::size_t> time_column;
+    std::optional<double> truncation_time;  // T; empty → max(ti)
+    bool include_duane_plot = true;
+};
+
+struct ReliabilityTestPlanConfiguration {
+    double shape_beta = 1.0;
+    double target_reliability = 0.9;
+    double confidence_level = 0.9;
+    double test_time = 1.0;
+    double mission_time = 1.0;
+    std::size_t allowed_failures = 0;
+};
+
 // Phase 4: CCD / BBD design generation (continuous factors only).
 struct ResponseSurfaceDesignConfiguration {
     std::string design_kind = "ccd";  // ccd | bbd
@@ -541,6 +605,14 @@ struct AnalysisConfiguration {
     BatchCapabilityConfiguration batch_capability;
     KmIntervalConfiguration km_interval;
     PlackettBurmanConfiguration plackett_burman;
+    RandomForestConfiguration random_forest;
+    WeibayesConfiguration weibayes;
+    TaguchiOrthogonalConfiguration taguchi_orthogonal;
+    DistributionCalculatorConfiguration distribution_calculator;
+    TaguchiAnalyzeConfiguration taguchi_analyze;
+    MixtureDesignConfiguration mixture_design;
+    NhppRepairableConfiguration nhpp_repairable;
+    ReliabilityTestPlanConfiguration reliability_test_plan;
     ResponseSurfaceDesignConfiguration response_surface_design;
     GraphConfiguration graph;
     std::vector<std::size_t> included_rows;
@@ -1600,6 +1672,98 @@ struct PlackettBurmanFacts {
     std::size_t center_point_count = 0;
 };
 
+struct RandomForestFacts {
+    std::string task = "classification";
+    std::size_t n = 0;
+    std::size_t predictor_count = 0;
+    std::size_t n_trees = 0;
+    std::size_t max_depth = 0;
+    std::optional<double> train_metric;
+    std::optional<double> oob_metric;
+    std::string top_variable;
+    std::string disclosure =
+        "Bagging CART ensemble; NOT TreeNet / Minitab Random Forests aligned.";
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "bagged_cart_random_forest";
+};
+
+struct WeibayesFacts {
+    std::size_t n = 0;
+    std::size_t failure_count = 0;
+    std::size_t censored_count = 0;
+    double shape_prior = 2.0;
+    std::optional<double> scale;
+    bool zero_failure_bound = false;
+    std::optional<double> b10;
+    std::optional<double> b50;
+    std::optional<double> b90;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "weibayes_fixed_shape";
+};
+
+struct TaguchiOrthogonalFacts {
+    std::string array = "L8";
+    std::size_t factor_count = 0;
+    std::size_t run_count = 0;
+    std::size_t levels_per_factor = 2;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "taguchi_orthogonal_l8_l9_l12";
+};
+
+struct DistributionCalculatorFacts {
+    std::string distribution = "normal";
+    std::string operation = "cdf";
+    double param1 = 0.0;
+    double param2 = 1.0;
+    double param3 = 1.0;
+    double value = 0.0;
+    std::optional<double> result;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "distribution_calculator_reuse";
+};
+
+struct TaguchiAnalyzeFacts {
+    std::string sn_type = "larger";
+    std::size_t factor_count = 0;
+    std::size_t response_count = 0;
+    std::size_t run_count = 0;
+    std::optional<double> top_delta;
+    std::string top_factor;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "taguchi_analyze_static_sn";
+};
+
+struct MixtureDesignFacts {
+    std::size_t component_count = 0;
+    std::size_t degree = 2;
+    std::size_t run_count = 0;
+    std::string design_kind = "simplex_lattice";
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "mixture_simplex_lattice_m2";
+};
+
+struct NhppRepairableFacts {
+    std::size_t failure_count = 0;
+    double truncation_time = 0.0;
+    std::optional<double> beta;
+    std::optional<double> lambda;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "nhpp_crow_amsaa_mle";
+};
+
+struct ReliabilityTestPlanFacts {
+    double shape_beta = 1.0;
+    double target_reliability = 0.9;
+    double confidence_level = 0.9;
+    double test_time = 1.0;
+    double mission_time = 1.0;
+    double time_ratio_delta = 1.0;
+    std::size_t allowed_failures = 0;
+    std::optional<std::size_t> sample_size;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "reliability_demo_test_plan_weibull";
+};
+
 struct DesignGenerationFacts {
     std::string design_kind;   // ccd | bbd
     std::string ccd_variant;   // ccc | cci | ccf | empty for BBD
@@ -1958,6 +2122,14 @@ struct InterpretationFacts {
     std::optional<BestSubsetsRegressionFacts> best_subsets_regression;
     std::optional<KmIntervalFacts> km_interval;
     std::optional<PlackettBurmanFacts> plackett_burman;
+    std::optional<RandomForestFacts> random_forest;
+    std::optional<WeibayesFacts> weibayes;
+    std::optional<TaguchiOrthogonalFacts> taguchi_orthogonal;
+    std::optional<DistributionCalculatorFacts> distribution_calculator;
+    std::optional<TaguchiAnalyzeFacts> taguchi_analyze;
+    std::optional<MixtureDesignFacts> mixture_design;
+    std::optional<NhppRepairableFacts> nhpp_repairable;
+    std::optional<ReliabilityTestPlanFacts> reliability_test_plan;
     std::optional<DesignGenerationFacts> design_generation;
     std::optional<VarianceFacts> variance;
     std::optional<MultiVariFacts> multi_vari;
@@ -1980,11 +2152,43 @@ struct InterpretationFacts {
     std::optional<CauseEffectFacts> cause_effect;
 };
 
+// G9 Formula Substitution (Show Your Work): runtime bindings for an OutputPage.
+struct FormulaBinding {
+    std::string symbol;
+    std::string label;
+    std::string value;  // display string
+    std::string role;   // input | intermediate | result
+};
+
+struct ComputationStep {
+    int order = 0;
+    std::string description;
+    std::string expression_before;
+    std::string expression_after;
+    std::string value;
+};
+
+struct ComputationTrace {
+    std::string formula_id;
+    std::string title;
+    std::string plain_formula;
+    std::string substituted_text;
+    std::vector<FormulaBinding> bindings;
+    std::vector<ComputationStep> steps;  // B-class optional
+    std::string result_symbol;
+    std::string result_value;
+    std::string evidence_type = "formula_reference";  // or display_summary
+    std::string primary_url;
+    std::string command_id;
+};
+
 struct OutputPage {
     std::string id;
     std::string title;
     std::string method_name;
     std::string parameter_summary;
+    // Stable analysis_commands id used by G9 attach / formula registry jump.
+    std::string analysis_command_id;
     AnalysisConfiguration configuration;
     std::vector<StatisticTable> tables;
     std::vector<PlotSpec> plots;
@@ -1994,6 +2198,7 @@ struct OutputPage {
     MethodMetadata method_metadata;
     // Optional worksheet payload for design generators (CCD/BBD) — UI may replace active sheet.
     std::optional<DataTable> worksheet_export;
+    std::vector<ComputationTrace> computation_traces;
 };
 
 }  // namespace datalab::domain

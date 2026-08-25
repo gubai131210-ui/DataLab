@@ -1680,6 +1680,149 @@ void InterpretationService::enrich(domain::OutputPage& page)
             + "。设计矩阵仅供筛选实验排布。");
         limitations.bullets.push_back("分辨率 III；非 CCD/BBD；非 Minitab golden。");
     }
+    if (page.facts.random_forest.has_value()) {
+        const auto& facts = *page.facts.random_forest;
+        std::string metric_text;
+        if (facts.train_metric.has_value()) {
+            metric_text = facts.task == "regression"
+                ? ("；训练集 RMSE ≈ " + std::to_string(*facts.train_metric))
+                : ("；训练集准确率 ≈ " + std::to_string(*facts.train_metric));
+        }
+        conclusion.bullets.push_back(
+            "随机森林（rf_summary）：任务 = " + facts.task
+            + "，N = " + std::to_string(facts.n)
+            + "，树数 = " + std::to_string(facts.n_trees)
+            + "，预测变量 = " + std::to_string(facts.predictor_count)
+            + (facts.top_variable.empty() ? "" : ("；主导变量 = " + facts.top_variable))
+            + metric_text
+            + "。");
+        if (!facts.top_variable.empty()) {
+            conclusion.bullets.push_back(
+                "变量重要性（rf_importance）以平均不纯度下降汇总；"
+                "不得写成 TreeNet/Minitab RF 对齐或过程合格。");
+        }
+        limitations.bullets.push_back(
+            "披露（rf_disclosure / rf_honesty）：" + facts.disclosure
+            + " 禁止 TreeNet/Minitab RF对齐 / 过程合格。");
+    }
+    if (page.facts.weibayes.has_value()) {
+        const auto& facts = *page.facts.weibayes;
+        conclusion.bullets.push_back(
+            "Weibayes（weibayes_summary）：N = " + std::to_string(facts.n)
+            + "，失效 r = " + std::to_string(facts.failure_count)
+            + "，右删失 = " + std::to_string(facts.censored_count)
+            + "；形状先验 β = " + std::to_string(facts.shape_prior)
+            + (facts.scale.has_value()
+                   ? ("；η ≈ " + std::to_string(*facts.scale))
+                   : "；η 未估计")
+            + "。");
+        conclusion.bullets.push_back(
+            "形状先验（shape_prior）固定；少失效/无失效走诚实边界（limits），"
+            "禁止「寿命已达标」。");
+        if (facts.zero_failure_bound) {
+            limitations.bullets.push_back(
+                "r = 0：仅保留先验与删失摘要，不宣称特征寿命点估计。");
+        }
+        limitations.bullets.push_back(
+            "formula_reference；非 Minitab Weibayes golden。");
+    }
+    if (page.facts.taguchi_orthogonal.has_value()) {
+        const auto& facts = *page.facts.taguchi_orthogonal;
+        conclusion.bullets.push_back(
+            "Taguchi 正交设计 taguchi_orthogonal_design（design_summary）：阵列 = "
+            + facts.array
+            + "，因子 = " + std::to_string(facts.factor_count)
+            + "，运行 = " + std::to_string(facts.run_count)
+            + "，水平数 = " + std::to_string(facts.levels_per_factor) + "。");
+        conclusion.bullets.push_back(
+            "导出提示（export_hint）：设计矩阵可写入工作表；"
+            "新表不携带旧 excluded_rows/hidden_rows。");
+        limitations.bullets.push_back(
+            "范围（scope）：仅设计生成，不是完整 Taguchi ANOVA / SN 分析套件。");
+    }
+    if (page.facts.distribution_calculator.has_value()) {
+        const auto& facts = *page.facts.distribution_calculator;
+        conclusion.bullets.push_back(
+            "分布计算器 distribution_calculator（distcalc_result）："
+            + facts.distribution
+            + " / " + facts.operation
+            + (facts.result.has_value()
+                   ? (" ≈ " + std::to_string(*facts.result))
+                   : "（无结果）")
+            + "。");
+        conclusion.bullets.push_back(
+            "参数（distcalc_params）：p1=" + std::to_string(facts.param1)
+            + "，p2=" + std::to_string(facts.param2)
+            + "，输入=" + std::to_string(facts.value) + "。");
+        limitations.bullets.push_back(
+            "范围（distcalc_scope）：工具计算 PDF/CDF/分位；"
+            "不改 GOF 数值核；禁止「分布已正态」。");
+    }
+    if (page.facts.taguchi_analyze.has_value()) {
+        const auto& facts = *page.facts.taguchi_analyze;
+        conclusion.bullets.push_back(
+            "Taguchi 分析（taguchi_analyze_summary）：S/N = " + facts.sn_type
+            + "，因子 = " + std::to_string(facts.factor_count)
+            + "，响应列 = " + std::to_string(facts.response_count)
+            + "，运行 = " + std::to_string(facts.run_count)
+            + (facts.top_factor.empty()
+                   ? ""
+                   : ("；S/N Delta 最大因子 = " + facts.top_factor))
+            + "。");
+        conclusion.bullets.push_back(
+            "信噪比表（taguchi_analyze_sn）给出水平均值、Delta 与 Rank；"
+            "仅描述相对效应，不宣称工艺已优化。");
+        limitations.bullets.push_back(
+            "范围（taguchi_analyze_scope）：静态 Taguchi；非动态噪声全交叉；"
+            "禁止「过程已优化 / 已合格」。");
+    }
+    if (page.facts.mixture_design.has_value()) {
+        const auto& facts = *page.facts.mixture_design;
+        conclusion.bullets.push_back(
+            "Mixture 设计（mixture_design_summary）："
+            + facts.design_kind + " m=" + std::to_string(facts.degree)
+            + "，q = " + std::to_string(facts.component_count)
+            + "，N = " + std::to_string(facts.run_count) + "。");
+        conclusion.bullets.push_back(
+            "导出提示（mixture_design_export_hint）：设计矩阵可写入工作表；"
+            "新表不携带旧 excluded_rows/hidden_rows。");
+        limitations.bullets.push_back(
+            "范围（mixture_design_scope）：仅设计生成；非 Scheffé 分析；"
+            "非 extreme-vertices。");
+    }
+    if (page.facts.nhpp_repairable.has_value()) {
+        const auto& facts = *page.facts.nhpp_repairable;
+        conclusion.bullets.push_back(
+            "可修复 NHPP（nhpp_summary）：失效 n = "
+            + std::to_string(facts.failure_count)
+            + "，T = " + std::to_string(facts.truncation_time)
+            + (facts.beta.has_value()
+                   ? ("，β ≈ " + std::to_string(*facts.beta))
+                   : "，β 未估计")
+            + (facts.lambda.has_value()
+                   ? ("，λ ≈ " + std::to_string(*facts.lambda))
+                   : "")
+            + "。");
+        conclusion.bullets.push_back(
+            "参数（nhpp_params）为 Crow–AMSAA MLE；强度/M(t) 表供趋势阅读。");
+        limitations.bullets.push_back(
+            "范围（nhpp_scope）：幂律 NHPP 窄化；禁止「ROCOF合格 / 已证明稳定」。");
+    }
+    if (page.facts.reliability_test_plan.has_value()) {
+        const auto& facts = *page.facts.reliability_test_plan;
+        conclusion.bullets.push_back(
+            "可靠性试验计划（rtp_summary）：β = " + std::to_string(facts.shape_beta)
+            + "，R = " + std::to_string(facts.target_reliability)
+            + "，CL = " + std::to_string(facts.confidence_level)
+            + (facts.sample_size.has_value()
+                   ? ("，n = " + std::to_string(*facts.sample_size))
+                   : "，n 未求得")
+            + "，允许失效 r = " + std::to_string(facts.allowed_failures) + "。");
+        conclusion.bullets.push_back(
+            "假设（rtp_assumptions）：β 为工程假设；演示型计划，非寿命估计。");
+        limitations.bullets.push_back(
+            "范围（rtp_scope）：禁止「寿命已达标 / 过程已优化」。");
+    }
     if (page.facts.design_generation.has_value()) {
         const auto& facts = *page.facts.design_generation;
         if (facts.design_kind == "bbd") {

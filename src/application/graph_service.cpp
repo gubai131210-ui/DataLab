@@ -1,4 +1,5 @@
 #include "application/graph_service.h"
+#include "application/computation_trace_attach.h"
 
 #include "domain/column_extract.h"
 #include "domain/graph_assembly.h"
@@ -334,58 +335,70 @@ OutputPage GraphService::run(
     const DataTable& table, const AnalysisConfiguration& configuration)
 {
     const std::string& kind = configuration.graph.graph_kind;
+    OutputPage page;
+    std::string command_id = "scatter_plot";
     if (kind == "interval") {
-        return interval(table, configuration);
+        page = interval(table, configuration);
+        command_id = "interval_plot";
+    } else if (kind == "correlation") {
+        page = correlation(table, configuration);
+        command_id = "correlation_plot";
+    } else if (kind == "bubble") {
+        page = bubble(table, configuration);
+        command_id = "bubble_plot";
+    } else if (kind == "probability") {
+        page = probability(table, configuration);
+        command_id = "probability_plot";
+    } else if (kind == "ecdf") {
+        page = ecdf(table, configuration);
+        command_id = "ecdf_plot";
+    } else if (kind == "matrix") {
+        page = matrix(table, configuration);
+        command_id = "matrix_plot";
+    } else if (kind == "marginal") {
+        page = marginal(table, configuration);
+        command_id = "marginal_plot";
+    } else if (kind == "parallel") {
+        page = parallel(table, configuration);
+        command_id = "parallel_plot";
+    } else if (kind == "heatmap") {
+        page = heatmap(table, configuration);
+        command_id = "heatmap_plot";
+    } else if (kind == "time_series") {
+        page = time_series(table, configuration);
+        command_id = "time_series_plot";
+    } else if (kind == "area") {
+        page = area(table, configuration);
+        command_id = "area_plot";
+    } else if (kind == "contour") {
+        page = contour(table, configuration);
+        command_id = "contour_plot";
+    } else if (kind == "pie") {
+        page = pie(table, configuration);
+        command_id = "pie_plot";
+    } else if (kind == "density") {
+        page = density(table, configuration);
+        command_id = "density_plot";
+    } else if (kind == "hexbin") {
+        page = hexbin(table, configuration);
+        command_id = "hexbin_plot";
+    } else if (kind == "violin") {
+        page = violin(table, configuration);
+        command_id = "violin_plot";
+    } else if (kind == "bar") {
+        page = bar(table, configuration);
+        command_id = "bar_chart";
+    } else {
+        page = scatter(table, configuration);
+        command_id = "scatter_plot";
     }
-    if (kind == "correlation") {
-        return correlation(table, configuration);
+    if (page.analysis_command_id.empty()) {
+        page.analysis_command_id = command_id;
     }
-    if (kind == "bubble") {
-        return bubble(table, configuration);
+    if (page.computation_traces.empty()) {
+        attach_computation_traces(page, page.analysis_command_id);
     }
-    if (kind == "probability") {
-        return probability(table, configuration);
-    }
-    if (kind == "ecdf") {
-        return ecdf(table, configuration);
-    }
-    if (kind == "matrix") {
-        return matrix(table, configuration);
-    }
-    if (kind == "marginal") {
-        return marginal(table, configuration);
-    }
-    if (kind == "parallel") {
-        return parallel(table, configuration);
-    }
-    if (kind == "heatmap") {
-        return heatmap(table, configuration);
-    }
-    if (kind == "time_series") {
-        return time_series(table, configuration);
-    }
-    if (kind == "area") {
-        return area(table, configuration);
-    }
-    if (kind == "contour") {
-        return contour(table, configuration);
-    }
-    if (kind == "pie") {
-        return pie(table, configuration);
-    }
-    if (kind == "density") {
-        return density(table, configuration);
-    }
-    if (kind == "hexbin") {
-        return hexbin(table, configuration);
-    }
-    if (kind == "violin") {
-        return violin(table, configuration);
-    }
-    if (kind == "bar") {
-        return bar(table, configuration);
-    }
-    return scatter(table, configuration);
+    return page;
 }
 
 OutputPage GraphService::scatter(

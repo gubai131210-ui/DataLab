@@ -76,6 +76,7 @@ struct DoeFactor {
     std::string name;
     std::string low_level;
     std::string high_level;
+    std::string mid_level;  // optional; Taguchi L9 coded 0
 };
 
 struct DoeDesignOptions {

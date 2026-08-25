@@ -16,6 +16,10 @@ MAP = ROOT / "docs" / "research" / "ui-menu-ia-command-taxonomy-map-2026-08-23.m
 # Explicit Wave corrections (must win if map ever drifts).
 OVERRIDE: dict[str, tuple[str, str]] = {
     "cox_regression": ("统计", "可靠性"),
+    "weibayes": ("统计", "可靠性"),
+    "random_forest": ("统计", "多变量"),
+    "taguchi_orthogonal_design": ("统计", "DOE"),
+    "distribution_calculator": ("统计", "推断 / 仿真"),
     "pareto": ("质量工具", "质量图 / 规划"),
     "doe_factorial": ("统计", "DOE"),
     "doe_response": ("统计", "DOE"),

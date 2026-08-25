@@ -55,6 +55,7 @@ add_library(datalab_domain STATIC
     src/domain/report_text_catalog_part14.cpp
     src/domain/report_text_catalog_part15.cpp
     src/domain/report_text_catalog_part16.cpp
+    src/domain/report_text_catalog_part17.cpp
     src/domain/quality_diagnostics.cpp
     src/domain/quality_diagnostics.h
     src/domain/statistics/descriptive_statistics.cpp
@@ -152,6 +153,22 @@ add_library(datalab_domain STATIC
     src/domain/statistics/kmeans.h
     src/domain/statistics/cart_tree.cpp
     src/domain/statistics/cart_tree.h
+    src/domain/statistics/random_forest.cpp
+    src/domain/statistics/random_forest.h
+    src/domain/statistics/weibayes.cpp
+    src/domain/statistics/weibayes.h
+    src/domain/statistics/taguchi_orthogonal.cpp
+    src/domain/statistics/taguchi_orthogonal.h
+    src/domain/statistics/distribution_calculator.cpp
+    src/domain/statistics/distribution_calculator.h
+    src/domain/statistics/taguchi_analyze.cpp
+    src/domain/statistics/taguchi_analyze.h
+    src/domain/statistics/mixture_design.cpp
+    src/domain/statistics/mixture_design.h
+    src/domain/statistics/nhpp_repairable.cpp
+    src/domain/statistics/nhpp_repairable.h
+    src/domain/statistics/reliability_test_plan.cpp
+    src/domain/statistics/reliability_test_plan.h
     src/domain/statistics/adf_test.cpp
     src/domain/statistics/adf_test.h
     src/domain/statistics/poisson_regression.cpp
@@ -240,6 +257,12 @@ add_library(datalab_application STATIC
     src/application/graph_service.h
     src/application/doe_pages.cpp
     src/application/doe_pages.h
+    src/application/computation_trace_attach.cpp
+    src/application/computation_trace_attach.h
+    src/application/computation_trace_attach_deep.cpp
+    src/application/computation_trace_attach_deep.h
+    src/application/computation_trace_helpers.cpp
+    src/application/computation_trace_helpers.h
     src/application/database/database_import_service.cpp
     src/application/database/database_import_service.h
     src/application/report_assembly_service.cpp
@@ -394,6 +417,16 @@ add_library(datalab_ui STATIC
     src/ui/formula_renderer.h
     src/ui/formula_registry_dialog.cpp
     src/ui/formula_registry_dialog.h
+    src/ui/formula_substitution_dialog.cpp
+    src/ui/formula_substitution_dialog.h
+    src/ui/taguchi_analyze_dialog.cpp
+    src/ui/taguchi_analyze_dialog.h
+    src/ui/mixture_design_dialog.cpp
+    src/ui/mixture_design_dialog.h
+    src/ui/nhpp_repairable_dialog.cpp
+    src/ui/nhpp_repairable_dialog.h
+    src/ui/reliability_test_plan_dialog.cpp
+    src/ui/reliability_test_plan_dialog.h
     src/ui/row_visibility_clipboard.cpp
     src/ui/row_visibility_clipboard.h
     src/ui/algorithm_help_types.h
@@ -596,6 +629,10 @@ add_datalab_test(algorithm_wave2_track_test tests/algorithm_wave2_track_test.cpp
 add_datalab_test(algorithm_wave2_hardening_test tests/algorithm_wave2_hardening_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave3_track_test tests/algorithm_wave3_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave4_track_test tests/algorithm_wave4_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave5_track_test tests/algorithm_wave5_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave6_track_test tests/algorithm_wave6_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(g9_formula_substitution_track_test tests/g9_formula_substitution_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(g9_show_your_work_deepen_track_test tests/g9_show_your_work_deepen_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(ui_menu_ia_track_test tests/ui_menu_ia_track_test.cpp datalab_ui)
 add_datalab_test(
     g6_command_wizard_track_test

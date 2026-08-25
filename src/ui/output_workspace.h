@@ -31,6 +31,7 @@ signals:
     void page_closed(const QString& id);
     void pages_changed();
     void copy_chart_requested();
+    void formula_substitution_requested(const datalab::domain::OutputPage& page);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;

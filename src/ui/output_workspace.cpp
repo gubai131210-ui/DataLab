@@ -159,6 +159,9 @@ void OutputWorkspace::add_page(const datalab::domain::OutputPage& page)
     options.on_rows_selected = [this](const std::vector<std::size_t>& rows) {
         emit rows_selected(rows);
     };
+    options.on_formula_substitution = [this](const datalab::domain::OutputPage& p) {
+        emit formula_substitution_requested(p);
+    };
     scroll->setWidget(page_renderer::build_page_widget(page, scroll, options));
     for (AnalysisChartWidget* chart : scroll->findChildren<AnalysisChartWidget*>()) {
         chart->installEventFilter(this);
