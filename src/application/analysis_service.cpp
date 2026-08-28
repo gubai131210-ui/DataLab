@@ -55,6 +55,14 @@
 #include "domain/statistics/mixture_design.h"
 #include "domain/statistics/nhpp_repairable.h"
 #include "domain/statistics/reliability_test_plan.h"
+#include "domain/statistics/mixture_analyze.h"
+#include "domain/statistics/glm_two_way.h"
+#include "domain/statistics/glm_three_factor.h"
+#include "domain/statistics/analyze_variability.h"
+#include "domain/statistics/factor_analysis.h"
+#include "domain/statistics/binary_response_doe.h"
+#include "domain/statistics/cluster_variables.h"
+#include "domain/statistics/life_data_regression.h"
 #include "domain/statistics/adf_test.h"
 #include "domain/statistics/poisson_regression.h"
 #include "domain/statistics/isolation_forest.h"
@@ -15506,6 +15514,886 @@ OutputPage AnalysisService::mixture_design(
     facts.algorithm_id = design.algorithm_id;
     page.facts.mixture_design = facts;
     page.analysis_command_id = "mixture_design";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::mixture_analyze(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.mixture_analyze.component_columns.empty()
+        || !configuration.mixture_analyze.response_column.has_value()) {
+        return error_page("Mixture 分析", "Analyze Mixture Design",
+                          "请选择分量列与响应列。");
+    }
+    std::vector<std::string> component_names;
+    for (std::size_t col : configuration.mixture_analyze.component_columns) {
+        component_names.push_back(column_label(table, col));
+    }
+    std::vector<std::vector<double>> components;
+    std::vector<double> response;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        std::vector<double> comp_row;
+        bool valid = true;
+        for (std::size_t col : configuration.mixture_analyze.component_columns) {
+            if (col >= table.rows[row].size()) {
+                valid = false;
+                break;
+            }
+            const auto parsed = parse_numeric_cell(table.rows[row][col]);
+            if (!parsed.has_value()) {
+                valid = false;
+                break;
+            }
+            comp_row.push_back(*parsed);
+        }
+        const std::size_t resp_col = *configuration.mixture_analyze.response_column;
+        if (!valid || resp_col >= table.rows[row].size()) {
+            continue;
+        }
+        const auto y = parse_numeric_cell(table.rows[row][resp_col]);
+        if (!y.has_value()) {
+            continue;
+        }
+        components.push_back(std::move(comp_row));
+        response.push_back(*y);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::MixtureAnalyzeOptions options;
+    options.model_order = datalab::domain::statistics::parse_mixture_model_order(
+        configuration.mixture_analyze.model_order);
+    const auto result = datalab::domain::statistics::analyze_mixture_scheffe(
+        components, response, component_names, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("mixture_analyze");
+    page.title = "Mixture 分析";
+    page.method_name = "Analyze Mixture Design";
+    page.configuration = configuration;
+    page.parameter_summary = "q = " + std::to_string(result.component_count)
+        + "    模型 = " + result.model_order
+        + "    N = " + std::to_string(result.observation_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable coef_table;
+    coef_table.title = "Coefficients";
+    coef_table.headers = {"Term", "Coef", "SE", "T", "P"};
+    for (const auto& coef : result.coefficients) {
+        coef_table.rows.push_back({
+            coef.term,
+            format_number(coef.coefficient),
+            format_number(coef.standard_error),
+            coef.t_statistic.has_value() ? format_number(*coef.t_statistic) : "*",
+            coef.p_value.has_value() ? format_number(*coef.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(coef_table));
+
+    StatisticTable anova;
+    anova.title = "ANOVA";
+    anova.headers = {"Source", "Seq SS", "Adj SS", "DF", "MS", "F", "P"};
+    for (const auto& effect : result.anova_effects) {
+        anova.rows.push_back({
+            effect.term,
+            effect.sequential_sum_of_squares.has_value()
+                ? format_number(*effect.sequential_sum_of_squares) : "*",
+            effect.adjusted_sum_of_squares.has_value()
+                ? format_number(*effect.adjusted_sum_of_squares) : "*",
+            std::to_string(effect.degrees_of_freedom),
+            effect.mean_square.has_value() ? format_number(*effect.mean_square) : "*",
+            effect.f_statistic.has_value() ? format_number(*effect.f_statistic) : "*",
+            effect.p_value.has_value() ? format_number(*effect.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(anova));
+
+    StatisticTable fits;
+    fits.title = "Fits and Residuals";
+    fits.headers = {"Source Row", "Observed", "Fitted", "Residual"};
+    for (const auto& fit : result.fits) {
+        fits.rows.push_back({
+            std::to_string(fit.source_row + 1),
+            format_number(fit.observed),
+            format_number(fit.fitted),
+            format_number(fit.residual)});
+    }
+    page.tables.push_back(std::move(fits));
+
+    domain::MixtureAnalyzeFacts facts;
+    facts.component_count = result.component_count;
+    facts.observation_count = result.observation_count;
+    facts.model_order = result.model_order;
+    facts.r_squared = result.r_squared;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.mixture_analyze = facts;
+    page.analysis_command_id = "mixture_analyze";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::glm_two_way(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (!configuration.glm_two_way.response_column.has_value()
+        || !configuration.glm_two_way.factor_a_column.has_value()
+        || !configuration.glm_two_way.factor_b_column.has_value()) {
+        return error_page("双因子 GLM", "GLM Two-Way",
+                          "请选择响应列与两个因子列。");
+    }
+    std::vector<std::string> factor_a;
+    std::vector<std::string> factor_b;
+    std::vector<double> response;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_a = *configuration.glm_two_way.factor_a_column;
+    const std::size_t col_b = *configuration.glm_two_way.factor_b_column;
+    const std::size_t col_y = *configuration.glm_two_way.response_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_a >= table.rows[row].size() || col_b >= table.rows[row].size()
+            || col_y >= table.rows[row].size()) {
+            continue;
+        }
+        if (table.rows[row][col_a].empty() || table.rows[row][col_b].empty()) {
+            continue;
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_y]);
+        if (!y.has_value()) {
+            continue;
+        }
+        factor_a.push_back(table.rows[row][col_a]);
+        factor_b.push_back(table.rows[row][col_b]);
+        response.push_back(*y);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::GlmTwoWayOptions options;
+    options.include_interaction = configuration.glm_two_way.include_interaction;
+    const auto result = datalab::domain::statistics::glm_two_way_analyze(
+        factor_a, factor_b, response, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("glm_two_way");
+    page.title = "双因子 GLM";
+    page.method_name = "GLM Two-Way";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + (result.include_interaction ? "    含交互" : "    主效应");
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable anova;
+    anova.title = "ANOVA (Type III Adj SS)";
+    anova.headers = {"Source", "Adj SS", "DF", "MS", "F", "P"};
+    for (const auto& effect : result.anova_effects) {
+        anova.rows.push_back({
+            effect.term,
+            effect.adjusted_sum_of_squares.has_value()
+                ? format_number(*effect.adjusted_sum_of_squares) : "*",
+            std::to_string(effect.degrees_of_freedom),
+            effect.mean_square.has_value() ? format_number(*effect.mean_square) : "*",
+            effect.f_statistic.has_value() ? format_number(*effect.f_statistic) : "*",
+            effect.p_value.has_value() ? format_number(*effect.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(anova));
+
+    StatisticTable fitted_means;
+    fitted_means.title = "Fitted Means";
+    fitted_means.headers = {"Factor", "Level", "N", "Fitted Mean"};
+    for (const auto& mean : result.fitted_means) {
+        fitted_means.rows.push_back({
+            mean.factor, mean.level, std::to_string(mean.count),
+            format_number(mean.fitted_mean)});
+    }
+    page.tables.push_back(std::move(fitted_means));
+
+    StatisticTable residuals;
+    residuals.title = "Residual Diagnostics";
+    residuals.headers = {"Source Row", "Fitted", "Residual"};
+    for (std::size_t i = 0; i < result.residuals.size(); ++i) {
+        residuals.rows.push_back({
+            i < result.observation_source_rows.size()
+                ? std::to_string(result.observation_source_rows[i] + 1) : "*",
+            i < result.fitted.size() ? format_number(result.fitted[i]) : "*",
+            format_number(result.residuals[i])});
+    }
+    page.tables.push_back(std::move(residuals));
+
+    domain::GlmTwoWayFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.include_interaction = result.include_interaction;
+    facts.design_balanced = result.design_balanced;
+    facts.residual_normality_p = result.residual_normality_p;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.glm_two_way = facts;
+    page.analysis_command_id = "glm_two_way";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::analyze_variability(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.analyze_variability.factor_columns.empty()
+        || configuration.analyze_variability.replicate_columns.empty()) {
+        return error_page("Analyze Variability", "Analyze Variability",
+                          "请选择因子列与重复响应列。");
+    }
+    std::vector<std::string> factor_names;
+    for (std::size_t col : configuration.analyze_variability.factor_columns) {
+        factor_names.push_back(column_label(table, col));
+    }
+    std::vector<std::vector<std::string>> factor_levels;
+    std::vector<std::vector<double>> replicates;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        std::vector<std::string> levels;
+        bool valid = true;
+        for (std::size_t col : configuration.analyze_variability.factor_columns) {
+            if (col >= table.rows[row].size() || table.rows[row][col].empty()) {
+                valid = false;
+                break;
+            }
+            levels.push_back(table.rows[row][col]);
+        }
+        std::vector<double> reps;
+        for (std::size_t col : configuration.analyze_variability.replicate_columns) {
+            if (col >= table.rows[row].size()) {
+                valid = false;
+                break;
+            }
+            const auto parsed = parse_numeric_cell(table.rows[row][col]);
+            if (!parsed.has_value()) {
+                valid = false;
+                break;
+            }
+            reps.push_back(*parsed);
+        }
+        if (!valid || reps.empty()) {
+            continue;
+        }
+        factor_levels.push_back(std::move(levels));
+        replicates.push_back(std::move(reps));
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::AnalyzeVariabilityOptions options;
+    options.estimation_method = configuration.analyze_variability.estimation_method;
+    const auto result = datalab::domain::statistics::analyze_variability_dispersion(
+        factor_levels, replicates, factor_names, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("analyze_variability");
+    page.title = "Analyze Variability";
+    page.method_name = "Analyze Variability";
+    page.configuration = configuration;
+    page.parameter_summary = "运行 = " + std::to_string(result.run_count)
+        + "    因子 = " + std::to_string(result.factor_count)
+        + "    重复 = " + std::to_string(result.replicate_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable std_table;
+    std_table.title = "Std Dev by Run";
+    std_table.headers = {"Source Row", "Std Dev", "ln(Std Dev)", "Replicates"};
+    for (const auto& run : result.runs) {
+        std_table.rows.push_back({
+            std::to_string(run.source_row + 1),
+            format_number(run.std_dev),
+            format_number(run.log_std_dev),
+            std::to_string(run.replicate_count)});
+    }
+    page.tables.push_back(std::move(std_table));
+
+    StatisticTable coef;
+    coef.title = "Dispersion Effects";
+    coef.headers = {"Term", "Coef", "Effect (2×Coef)", "SE"};
+    for (const auto& c : result.coefficients) {
+        coef.rows.push_back({
+            c.term, format_number(c.coefficient), format_number(c.effect),
+            c.standard_error.has_value() ? format_number(*c.standard_error) : "*"});
+    }
+    page.tables.push_back(std::move(coef));
+
+    domain::AnalyzeVariabilityFacts facts;
+    facts.run_count = result.run_count;
+    facts.factor_count = result.factor_count;
+    facts.replicate_count = result.replicate_count;
+    facts.estimation_method = result.estimation_method;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.analyze_variability = facts;
+    page.analysis_command_id = "analyze_variability";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::factor_analysis(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const std::vector<std::size_t>& columns =
+        configuration.factor_analysis.variable_columns.empty()
+            ? configuration.variable_columns
+            : configuration.factor_analysis.variable_columns;
+    if (columns.size() < 3) {
+        return error_page("因子分析", "Factor Analysis", "至少需要选择三个数值变量。");
+    }
+    std::vector<std::vector<double>> rows;
+    std::vector<std::string> names;
+    for (std::size_t col : columns) {
+        names.push_back(column_label(table, col));
+    }
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        std::vector<double> values;
+        bool valid = true;
+        for (std::size_t col : columns) {
+            if (col >= table.rows[row].size()) {
+                valid = false;
+                break;
+            }
+            const auto parsed = parse_numeric_cell(table.rows[row][col]);
+            if (!parsed.has_value()) {
+                valid = false;
+                break;
+            }
+            values.push_back(*parsed);
+        }
+        if (valid) {
+            rows.push_back(std::move(values));
+        }
+    }
+    datalab::domain::statistics::FactorAnalysisOptions options;
+    options.factor_count = configuration.factor_analysis.factor_count;
+    options.use_kaiser_rule = configuration.factor_analysis.use_kaiser_rule;
+    options.varimax_rotation = configuration.factor_analysis.varimax_rotation;
+    const auto result = datalab::domain::statistics::factor_analysis_extract(
+        rows, names, {}, options);
+
+    OutputPage page;
+    page.id = new_id("factor_analysis");
+    page.title = "因子分析";
+    page.method_name = "Factor Analysis";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    变量 = " + std::to_string(result.variable_count)
+        + "    因子 = " + std::to_string(result.retained_factor_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable loadings;
+    loadings.title = "Factor Loadings";
+    loadings.headers = {"Variable"};
+    for (std::size_t f = 0; f < result.retained_factor_count; ++f) {
+        loadings.headers.push_back("F" + std::to_string(f + 1));
+    }
+    loadings.headers.push_back("Communality");
+    for (const auto& row : result.loadings_table) {
+        std::vector<std::string> table_row = {row.variable};
+        for (double value : row.loadings) {
+            table_row.push_back(format_number(value));
+        }
+        table_row.push_back(format_number(row.communality));
+        loadings.rows.push_back(std::move(table_row));
+    }
+    page.tables.push_back(std::move(loadings));
+
+    StatisticTable variance;
+    variance.title = "Variance Explained";
+    variance.headers = {"Factor", "Eigenvalue", "% Var", "Cumulative %"};
+    for (const auto& row : result.variance_explained) {
+        variance.rows.push_back({
+            std::to_string(row.factor_index),
+            format_number(row.eigenvalue),
+            format_number(row.percent_variance),
+            format_number(row.cumulative_percent)});
+    }
+    page.tables.push_back(std::move(variance));
+
+    if (!result.eigenvalues.empty()) {
+        PlotSpec scree;
+        scree.kind = PlotKind::scatter;
+        scree.title = "Scree Plot";
+        scree.x_axis_title = "Component";
+        scree.y_axis_title = "Eigenvalue";
+        for (std::size_t i = 0; i < result.eigenvalues.size(); ++i) {
+            scree.x_values.push_back(static_cast<double>(i + 1));
+            scree.values.push_back(result.eigenvalues[i]);
+        }
+        page.plots.push_back(std::move(scree));
+    }
+
+    domain::FactorAnalysisFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.variable_count = result.variable_count;
+    facts.retained_factor_count = result.retained_factor_count;
+    facts.varimax_applied = result.varimax_applied;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.factor_analysis = facts;
+    page.analysis_command_id = "factor_analysis";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::binary_response_doe(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (configuration.binary_response_doe.factor_columns.empty()) {
+        return error_page("二值响应 DOE", "Binary Response DOE",
+                          "请至少选择一个因子列。");
+    }
+    const bool use_events_trials = configuration.binary_response_doe.use_events_trials;
+    if (use_events_trials) {
+        if (!configuration.binary_response_doe.events_column.has_value()
+            || !configuration.binary_response_doe.trials_column.has_value()) {
+            return error_page("二值响应 DOE", "Binary Response DOE",
+                              "events/trials 模式需要事件列与试验列。");
+        }
+    } else if (!configuration.binary_response_doe.binary_column.has_value()) {
+        return error_page("二值响应 DOE", "Binary Response DOE",
+                          "0/1 模式需要二值响应列。");
+    }
+
+    std::vector<std::vector<std::string>> factor_columns;
+    std::vector<std::string> factor_labels;
+    for (std::size_t col : configuration.binary_response_doe.factor_columns) {
+        factor_labels.push_back(column_label(table, col));
+        factor_columns.emplace_back();
+    }
+    std::vector<int> events;
+    std::vector<int> trials;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        bool valid = true;
+        for (std::size_t index = 0; index < configuration.binary_response_doe.factor_columns.size();
+             ++index) {
+            const std::size_t col = configuration.binary_response_doe.factor_columns[index];
+            if (col >= table.rows[row].size() || table.rows[row][col].empty()) {
+                valid = false;
+                break;
+            }
+            factor_columns[index].push_back(table.rows[row][col]);
+        }
+        if (!valid) {
+            continue;
+        }
+        if (use_events_trials) {
+            const auto event = parse_numeric_cell(
+                table.rows[row][*configuration.binary_response_doe.events_column]);
+            const auto trial = parse_numeric_cell(
+                table.rows[row][*configuration.binary_response_doe.trials_column]);
+            if (!event.has_value() || !trial.has_value()) {
+                continue;
+            }
+            events.push_back(static_cast<int>(*event));
+            trials.push_back(static_cast<int>(*trial));
+        } else {
+            const auto binary = parse_numeric_cell(
+                table.rows[row][*configuration.binary_response_doe.binary_column]);
+            if (!binary.has_value()) {
+                continue;
+            }
+            const int value = static_cast<int>(*binary);
+            events.push_back(value == 0 ? 0 : 1);
+            trials.push_back(1);
+        }
+        source_rows.push_back(row);
+    }
+
+    datalab::domain::statistics::BinaryResponseDoeOptions options;
+    options.include_ab_interaction =
+        configuration.binary_response_doe.include_ab_interaction;
+    options.use_events_trials = use_events_trials;
+    const auto result = datalab::domain::statistics::analyze_binary_response_doe(
+        factor_columns, events, trials, factor_labels, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("binary_response_doe");
+    page.title = "二值响应 DOE";
+    page.method_name = "Binary Response DOE";
+    page.configuration = configuration;
+    page.parameter_summary = "设计行 = " + std::to_string(result.design_row_count)
+        + "    展开 N = " + std::to_string(result.expanded_observation_count)
+        + "    Link = logit";
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable coef;
+    coef.title = "Coefficients (Logit IRWLS)";
+    coef.headers = {"Term", "Coef", "SE", "Z", "P", "Odds Ratio"};
+    for (const auto& row : result.coefficients) {
+        coef.rows.push_back({
+            row.term,
+            format_number(row.coefficient),
+            format_number(row.standard_error),
+            format_number(row.z_statistic),
+            format_number(row.p_value),
+            format_number(row.odds_ratio)});
+    }
+    page.tables.push_back(std::move(coef));
+
+    StatisticTable fit;
+    fit.title = "Goodness-of-Fit";
+    fit.headers = {"Metric", "Value"};
+    fit.rows.push_back({"Deviance", format_number(result.deviance)});
+    fit.rows.push_back({"AIC", format_number(result.aic)});
+    fit.rows.push_back({"Iterations", std::to_string(result.iteration_count)});
+    fit.rows.push_back({"Converged", result.converged ? "Yes" : "No"});
+    page.tables.push_back(std::move(fit));
+
+    domain::BinaryResponseDoeFacts facts;
+    facts.design_row_count = result.design_row_count;
+    facts.expanded_observation_count = result.expanded_observation_count;
+    facts.factor_count = result.factor_count;
+    facts.event_count = result.event_count;
+    facts.trial_count = result.trial_count;
+    facts.include_ab_interaction = result.include_ab_interaction;
+    facts.converged = result.converged;
+    facts.deviance = result.deviance;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.binary_response_doe = facts;
+    page.analysis_command_id = "binary_response_doe";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::cluster_variables(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const std::vector<std::size_t>& columns =
+        configuration.cluster_variables.variable_columns.empty()
+            ? configuration.variable_columns
+            : configuration.cluster_variables.variable_columns;
+    if (columns.size() < 3) {
+        return error_page("变量聚类", "Cluster Variables",
+                          "至少需要三个数值变量。");
+    }
+    std::vector<std::vector<double>> rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        std::vector<double> values;
+        bool valid = true;
+        for (std::size_t col : columns) {
+            if (col >= table.rows[row].size()) {
+                valid = false;
+                break;
+            }
+            const auto parsed = parse_numeric_cell(table.rows[row][col]);
+            if (!parsed.has_value()) {
+                valid = false;
+                break;
+            }
+            values.push_back(*parsed);
+        }
+        if (valid) {
+            rows.push_back(std::move(values));
+        }
+    }
+    std::vector<std::string> labels;
+    for (std::size_t col : columns) {
+        labels.push_back(column_label(table, col));
+    }
+    datalab::domain::statistics::ClusterVariablesOptions options;
+    options.linkage = configuration.cluster_variables.linkage;
+    options.use_absolute_correlation =
+        configuration.cluster_variables.use_absolute_correlation;
+    const auto result = datalab::domain::statistics::cluster_variables_analyze(
+        rows, labels, options);
+
+    OutputPage page;
+    page.id = new_id("cluster_variables");
+    page.title = "变量聚类";
+    page.method_name = "Cluster Variables";
+    page.configuration = configuration;
+    page.parameter_summary = "变量 = " + std::to_string(result.variable_count)
+        + "    N = " + std::to_string(result.observation_count)
+        + "    连结 = " + result.linkage;
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable merges;
+    merges.title = "Amalgamation Steps";
+    merges.headers = {"Step", "Left", "Right", "Height", "Similarity"};
+    for (const auto& merge : result.merges) {
+        merges.rows.push_back({
+            std::to_string(merge.step),
+            merge.left_label,
+            merge.right_label,
+            format_number(merge.height),
+            format_number(merge.similarity)});
+    }
+    page.tables.push_back(std::move(merges));
+
+    if (!result.merges.empty()) {
+        PlotSpec dendrogram;
+        dendrogram.kind = PlotKind::scatter;
+        dendrogram.title = "Dendrogram (Linkage Heights)";
+        dendrogram.x_axis_title = "Step";
+        dendrogram.y_axis_title = "Height";
+        for (const auto& merge : result.merges) {
+            dendrogram.x_values.push_back(static_cast<double>(merge.step));
+            dendrogram.values.push_back(merge.height);
+        }
+        page.plots.push_back(std::move(dendrogram));
+    }
+
+    domain::ClusterVariablesFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.variable_count = result.variable_count;
+    facts.merge_count = result.merges.size();
+    facts.linkage = result.linkage;
+    facts.max_distance = result.max_distance;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.cluster_variables = facts;
+    page.analysis_command_id = "cluster_variables";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::glm_three_factor(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (!configuration.glm_three_factor.response_column.has_value()
+        || !configuration.glm_three_factor.factor_a_column.has_value()
+        || !configuration.glm_three_factor.factor_b_column.has_value()
+        || !configuration.glm_three_factor.factor_c_column.has_value()) {
+        return error_page("三因子 GLM", "GLM Three-Factor",
+                          "请选择响应列与三个因子列。");
+    }
+    std::vector<std::string> factor_a;
+    std::vector<std::string> factor_b;
+    std::vector<std::string> factor_c;
+    std::vector<double> response;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_a = *configuration.glm_three_factor.factor_a_column;
+    const std::size_t col_b = *configuration.glm_three_factor.factor_b_column;
+    const std::size_t col_c = *configuration.glm_three_factor.factor_c_column;
+    const std::size_t col_y = *configuration.glm_three_factor.response_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_a >= table.rows[row].size() || col_b >= table.rows[row].size()
+            || col_c >= table.rows[row].size() || col_y >= table.rows[row].size()) {
+            continue;
+        }
+        if (table.rows[row][col_a].empty() || table.rows[row][col_b].empty()
+            || table.rows[row][col_c].empty()) {
+            continue;
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_y]);
+        if (!y.has_value()) {
+            continue;
+        }
+        factor_a.push_back(table.rows[row][col_a]);
+        factor_b.push_back(table.rows[row][col_b]);
+        factor_c.push_back(table.rows[row][col_c]);
+        response.push_back(*y);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::GlmThreeFactorOptions options;
+    options.include_ab_interaction =
+        configuration.glm_three_factor.include_ab_interaction;
+    options.include_ac_interaction =
+        configuration.glm_three_factor.include_ac_interaction;
+    options.include_bc_interaction =
+        configuration.glm_three_factor.include_bc_interaction;
+    const auto result = datalab::domain::statistics::glm_three_factor_analyze(
+        factor_a, factor_b, factor_c, response, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("glm_three_factor");
+    page.title = "三因子 GLM";
+    page.method_name = "GLM Three-Factor";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + (result.design_balanced ? "    平衡" : "    不平衡");
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable anova;
+    anova.title = "ANOVA (Type III Adj SS)";
+    anova.headers = {"Source", "Adj SS", "DF", "MS", "F", "P"};
+    for (const auto& effect : result.anova_effects) {
+        anova.rows.push_back({
+            effect.term,
+            effect.adjusted_sum_of_squares.has_value()
+                ? format_number(*effect.adjusted_sum_of_squares) : "*",
+            std::to_string(effect.degrees_of_freedom),
+            effect.mean_square.has_value() ? format_number(*effect.mean_square) : "*",
+            effect.f_statistic.has_value() ? format_number(*effect.f_statistic) : "*",
+            effect.p_value.has_value() ? format_number(*effect.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(anova));
+
+    StatisticTable fitted_means;
+    fitted_means.title = "Fitted Means";
+    fitted_means.headers = {"Factor", "Level", "N", "Fitted Mean"};
+    for (const auto& mean : result.fitted_means) {
+        fitted_means.rows.push_back({
+            mean.factor, mean.level, std::to_string(mean.count),
+            format_number(mean.fitted_mean)});
+    }
+    page.tables.push_back(std::move(fitted_means));
+
+    domain::GlmThreeFactorFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.include_ab_interaction = result.include_ab_interaction;
+    facts.include_ac_interaction = result.include_ac_interaction;
+    facts.include_bc_interaction = result.include_bc_interaction;
+    facts.design_balanced = result.design_balanced;
+    facts.residual_normality_p = result.residual_normality_p;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.glm_three_factor = facts;
+    page.analysis_command_id = "glm_three_factor";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::life_data_regression(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    if (!configuration.life_data_regression.time_column.has_value()
+        || !configuration.life_data_regression.censor_column.has_value()
+        || configuration.life_data_regression.covariate_columns.empty()) {
+        return error_page("寿命数据回归", "Life Data Regression",
+                          "请选择时间列、删失列与至少一个协变量。");
+    }
+    if (configuration.life_data_regression.covariate_columns.size() > 2) {
+        return error_page("寿命数据回归", "Life Data Regression",
+                          "窄化实现最多支持 2 个协变量。");
+    }
+    const std::size_t time_col = *configuration.life_data_regression.time_column;
+    const std::size_t censor_col = *configuration.life_data_regression.censor_column;
+    std::vector<double> times;
+    std::vector<bool> events;
+    std::vector<std::vector<double>> covariates;
+    std::vector<std::size_t> source_rows;
+    std::vector<std::string> covariate_labels;
+    for (std::size_t col : configuration.life_data_regression.covariate_columns) {
+        covariate_labels.push_back(column_label(table, col));
+    }
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (time_col >= table.rows[row].size()
+            || censor_col >= table.rows[row].size()) {
+            continue;
+        }
+        const auto time = parse_numeric_cell(table.rows[row][time_col]);
+        if (!time.has_value() || *time <= 0.0) {
+            continue;
+        }
+        const auto censor = parse_numeric_cell(table.rows[row][censor_col]);
+        if (!censor.has_value()) {
+            continue;
+        }
+        std::vector<double> cov;
+        bool valid = true;
+        for (std::size_t col : configuration.life_data_regression.covariate_columns) {
+            if (col >= table.rows[row].size()) {
+                valid = false;
+                break;
+            }
+            const auto parsed = parse_numeric_cell(table.rows[row][col]);
+            if (!parsed.has_value()) {
+                valid = false;
+                break;
+            }
+            cov.push_back(*parsed);
+        }
+        if (!valid) {
+            continue;
+        }
+        times.push_back(*time);
+        events.push_back(*censor > 0.5);
+        covariates.push_back(std::move(cov));
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::LifeDataRegressionOptions options;
+    options.percentile_levels = configuration.life_data_regression.percentile_levels;
+    const auto result = datalab::domain::statistics::fit_life_data_regression_weibull(
+        times, events, covariates, covariate_labels, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("life_data_regression");
+    page.title = "寿命数据回归";
+    page.method_name = "Life Data Regression";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    失败 = " + std::to_string(result.failure_count)
+        + "    删失 = " + std::to_string(result.censored_count)
+        + "    Shape = " + format_number(result.shape);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable regression;
+    regression.title = "Regression Table";
+    regression.headers = {"Term", "Coef", "SE", "Z", "P", "Lower", "Upper"};
+    for (const auto& row : result.coefficients) {
+        regression.rows.push_back({
+            row.term,
+            format_number(row.estimate),
+            format_number(row.standard_error),
+            format_number(row.z_statistic),
+            format_number(row.p_value),
+            format_number(row.confidence_lower),
+            format_number(row.confidence_upper)});
+    }
+    page.tables.push_back(std::move(regression));
+
+    if (!result.percentiles.empty()) {
+        StatisticTable percentiles;
+        percentiles.title = "Percentile Table";
+        percentiles.headers = {"Profile", "Percentile", "Life"};
+        for (const auto& row : result.percentiles) {
+            percentiles.rows.push_back({
+                row.covariate_profile,
+                format_number(row.percentile),
+                format_number(row.life)});
+        }
+        page.tables.push_back(std::move(percentiles));
+    }
+
+    domain::LifeDataRegressionFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.failure_count = result.failure_count;
+    facts.censored_count = result.censored_count;
+    facts.covariate_count = result.covariate_count;
+    facts.converged = result.converged;
+    facts.shape = result.shape;
+    facts.distribution = result.distribution;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.life_data_regression = facts;
+    page.analysis_command_id = "life_data_regression";
     return finalize_page(std::move(page));
 }
 

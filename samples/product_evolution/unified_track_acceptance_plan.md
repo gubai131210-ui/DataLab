@@ -112,6 +112,34 @@
 > DoD：[`docs/research/goal-wave-2026-08-25-algorithm-wave6.md`](../../docs/research/goal-wave-2026-08-25-algorithm-wave6.md)  
 > 门禁：`python tools/verify_algorithm_wave6_track.py`
 
+### 算法 Wave-7（2026-08-28 · ✅）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W7-1** | `mixture_analyze` Scheffé 分析 | ✅ | ✅ | ⏳ |
+| **W7-2** | `glm_two_way` Type III GLM | ✅ | ✅ | ⏳ |
+| **W7-3** | `analyze_variability` 分散效应 | ✅ | ✅ | ⏳ |
+| **W7-4** | `factor_analysis` 主成分提取 | ✅ | ✅ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-08-28-algorithm-wave7-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave7-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave7-market-formula-research-2026-08-28.md`](../../docs/research/algorithm-wave7-market-formula-research-2026-08-28.md)  
+> DoD：[`docs/research/goal-wave-2026-08-28-algorithm-wave7.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave7.md)  
+> 门禁：`python tools/verify_algorithm_wave7_track.py`
+
+### 算法 Wave-8（2026-08-28 · ✅）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W8-1** | `binary_response_doe` Logit IRWLS | ✅ | ✅ | ⏳ |
+| **W8-2** | `cluster_variables` 变量聚类 | ✅ | ✅ | ⏳ |
+| **W8-3** | `glm_three_factor` Type III GLM | ✅ | ✅ | ⏳ |
+| **W8-4** | `life_data_regression` Weibull 回归 | ✅ | ✅ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-08-28-algorithm-wave8-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave8-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave8-market-formula-research-2026-08-28.md`](../../docs/research/algorithm-wave8-market-formula-research-2026-08-28.md)  
+> DoD：[`docs/research/goal-wave-2026-08-28-algorithm-wave8.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave8.md)  
+> 门禁：`python tools/verify_algorithm_wave8_track.py`
+
 ### 报告产品 Phase（节选）
 
 ### UI 菜单 IA（2026-08-23）
@@ -156,6 +184,8 @@ python tools/verify_algorithm_wave3_track.py       # 算法 Wave-2.5 + Wave-3（
 python tools/verify_algorithm_wave4_track.py       # 算法 Wave-4 W4-0–W4-4（2026-08-22）
 python tools/verify_algorithm_wave5_track.py       # 算法 Wave-5 W5-1–W5-4（2026-08-23）
 python tools/verify_algorithm_wave6_track.py       # 算法 Wave-6 W6-1–W6-4（2026-08-25）
+python tools/verify_algorithm_wave7_track.py       # 算法 Wave-7 W7-1–W7-4（2026-08-28）
+python tools/verify_algorithm_wave8_track.py       # 算法 Wave-8 W8-1–W8-4（2026-08-28）
 python tools/verify_ui_menu_ia_track.py            # UI 菜单 IA U1–U3（2026-08-23）
 # 后续：python tools/verify_g6_command_wizard_track.py  # G6 命令 Wizard（Tester）
 # 后续：python tools/verify_g3_track.py 等（随 Track 增加）

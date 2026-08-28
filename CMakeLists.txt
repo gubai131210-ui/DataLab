@@ -56,6 +56,8 @@ add_library(datalab_domain STATIC
     src/domain/report_text_catalog_part15.cpp
     src/domain/report_text_catalog_part16.cpp
     src/domain/report_text_catalog_part17.cpp
+    src/domain/report_text_catalog_part18.cpp
+    src/domain/report_text_catalog_part19.cpp
     src/domain/quality_diagnostics.cpp
     src/domain/quality_diagnostics.h
     src/domain/statistics/descriptive_statistics.cpp
@@ -169,6 +171,22 @@ add_library(datalab_domain STATIC
     src/domain/statistics/nhpp_repairable.h
     src/domain/statistics/reliability_test_plan.cpp
     src/domain/statistics/reliability_test_plan.h
+    src/domain/statistics/mixture_analyze.cpp
+    src/domain/statistics/mixture_analyze.h
+    src/domain/statistics/glm_two_way.cpp
+    src/domain/statistics/glm_two_way.h
+    src/domain/statistics/analyze_variability.cpp
+    src/domain/statistics/analyze_variability.h
+    src/domain/statistics/factor_analysis.cpp
+    src/domain/statistics/factor_analysis.h
+    src/domain/statistics/binary_response_doe.cpp
+    src/domain/statistics/binary_response_doe.h
+    src/domain/statistics/cluster_variables.cpp
+    src/domain/statistics/cluster_variables.h
+    src/domain/statistics/glm_three_factor.cpp
+    src/domain/statistics/glm_three_factor.h
+    src/domain/statistics/life_data_regression.cpp
+    src/domain/statistics/life_data_regression.h
     src/domain/statistics/adf_test.cpp
     src/domain/statistics/adf_test.h
     src/domain/statistics/poisson_regression.cpp
@@ -427,6 +445,22 @@ add_library(datalab_ui STATIC
     src/ui/nhpp_repairable_dialog.h
     src/ui/reliability_test_plan_dialog.cpp
     src/ui/reliability_test_plan_dialog.h
+    src/ui/mixture_analyze_dialog.cpp
+    src/ui/mixture_analyze_dialog.h
+    src/ui/glm_two_way_dialog.cpp
+    src/ui/glm_two_way_dialog.h
+    src/ui/analyze_variability_dialog.cpp
+    src/ui/analyze_variability_dialog.h
+    src/ui/factor_analysis_dialog.cpp
+    src/ui/factor_analysis_dialog.h
+    src/ui/binary_response_doe_dialog.cpp
+    src/ui/binary_response_doe_dialog.h
+    src/ui/cluster_variables_dialog.cpp
+    src/ui/cluster_variables_dialog.h
+    src/ui/glm_three_factor_dialog.cpp
+    src/ui/glm_three_factor_dialog.h
+    src/ui/life_data_regression_dialog.cpp
+    src/ui/life_data_regression_dialog.h
     src/ui/row_visibility_clipboard.cpp
     src/ui/row_visibility_clipboard.h
     src/ui/algorithm_help_types.h
@@ -631,6 +665,8 @@ add_datalab_test(algorithm_wave3_track_test tests/algorithm_wave3_track_test.cpp
 add_datalab_test(algorithm_wave4_track_test tests/algorithm_wave4_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave5_track_test tests/algorithm_wave5_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave6_track_test tests/algorithm_wave6_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave7_track_test tests/algorithm_wave7_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave8_track_test tests/algorithm_wave8_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(g9_formula_substitution_track_test tests/g9_formula_substitution_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(g9_show_your_work_deepen_track_test tests/g9_show_your_work_deepen_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(ui_menu_ia_track_test tests/ui_menu_ia_track_test.cpp datalab_ui)

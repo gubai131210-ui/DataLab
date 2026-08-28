@@ -149,6 +149,14 @@
 | distribution_calculator | 统计 | 推断 / 仿真 |
 | taguchi_analyze | 统计 | DOE |
 | mixture_design | 统计 | DOE |
+| mixture_analyze | 统计 | DOE |
+| glm_two_way | 统计 | ANOVA |
+| analyze_variability | 统计 | DOE |
+| factor_analysis | 统计 | 多变量 |
+| binary_response_doe | 统计 | DOE |
+| cluster_variables | 统计 | 多变量 |
+| glm_three_factor | 统计 | ANOVA |
+| life_data_regression | 统计 | 可靠性 |
 | nhpp_repairable | 统计 | 可靠性 |
 | reliability_test_plan | 统计 | 功效与样本量 |
 

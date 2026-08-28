@@ -28,6 +28,14 @@
 #include "ui/mixture_design_dialog.h"
 #include "ui/nhpp_repairable_dialog.h"
 #include "ui/reliability_test_plan_dialog.h"
+#include "ui/mixture_analyze_dialog.h"
+#include "ui/glm_two_way_dialog.h"
+#include "ui/analyze_variability_dialog.h"
+#include "ui/factor_analysis_dialog.h"
+#include "ui/binary_response_doe_dialog.h"
+#include "ui/cluster_variables_dialog.h"
+#include "ui/glm_three_factor_dialog.h"
+#include "ui/life_data_regression_dialog.h"
 #include "ui/database_import_wizard.h"
 #include "ui/command_wizard_dialog.h"
 #include "ui/app_ui_tr.h"
@@ -1394,6 +1402,104 @@ void MainWindow::run_from_spec(const QString& id)
             configuration.chart_type = "reliability_test_plan";
             configuration.reliability_test_plan = dialog.configuration();
             publish_page(datalab::application::AnalysisService::reliability_test_plan(
+                table_, configuration));
+        }
+        return;
+    }
+
+    // Wave-7 dedicated multi-page dialogs.
+    if (id == QStringLiteral("mixture_analyze")) {
+        MixtureAnalyzeDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "Mixture 分析";
+            configuration.chart_type = "mixture_analyze";
+            configuration.mixture_analyze = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::mixture_analyze(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("glm_two_way")) {
+        GlmTwoWayDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "双因子 GLM";
+            configuration.chart_type = "glm_two_way";
+            configuration.glm_two_way = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::glm_two_way(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("analyze_variability")) {
+        AnalyzeVariabilityDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "Analyze Variability";
+            configuration.chart_type = "analyze_variability";
+            configuration.analyze_variability = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::analyze_variability(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("factor_analysis")) {
+        FactorAnalysisDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "因子分析";
+            configuration.chart_type = "factor_analysis";
+            configuration.factor_analysis = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::factor_analysis(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("binary_response_doe")) {
+        BinaryResponseDoeDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "二值响应 DOE";
+            configuration.chart_type = "binary_response_doe";
+            configuration.binary_response_doe = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::binary_response_doe(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("cluster_variables")) {
+        ClusterVariablesDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "变量聚类";
+            configuration.chart_type = "cluster_variables";
+            configuration.cluster_variables = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::cluster_variables(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("glm_three_factor")) {
+        GlmThreeFactorDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "三因子 GLM";
+            configuration.chart_type = "glm_three_factor";
+            configuration.glm_three_factor = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::glm_three_factor(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("life_data_regression")) {
+        LifeDataRegressionDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "寿命数据回归";
+            configuration.chart_type = "life_data_regression";
+            configuration.life_data_regression = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::life_data_regression(
                 table_, configuration));
         }
         return;

@@ -308,3 +308,29 @@ DoD：[`goal-wave-2026-08-25-algorithm-wave6.md`](goal-wave-2026-08-25-algorithm
 | W6-2 | `mixture_design` | Mixture 设计生成（simplex 窄化） ✅ |
 | W6-3 | `nhpp_repairable` | 可修复 NHPP 幂律 ✅ |
 | W6-4 | `reliability_test_plan` | 可靠性试验/演示样本量 ✅ |
+
+### 15.3 算法 Wave-7 锁定（2026-08-28 · ✅）
+
+计划与 Mega `/goal`：[`goal-wave-2026-08-28-algorithm-wave7-plan-and-mega-prompt.md`](goal-wave-2026-08-28-algorithm-wave7-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave7-market-formula-research-2026-08-28.md`](algorithm-wave7-market-formula-research-2026-08-28.md)  
+DoD：[`goal-wave-2026-08-28-algorithm-wave7.md`](goal-wave-2026-08-28-algorithm-wave7.md)
+
+| Wave-7 | id | 备注 |
+|--------|-----|------|
+| W7-1 | `mixture_analyze` | Mixture **分析**（Scheffé；设计已在 W6） ✅ |
+| W7-2 | `glm_two_way` | 不平衡双因子 GLM（Type III） ✅ |
+| W7-3 | `analyze_variability` | DOE 分散效应（2 水平窄化） ✅ |
+| W7-4 | `factor_analysis` | 因子分析（主成分提取窄化） ✅ |
+
+### 15.4 算法 Wave-8 锁定（2026-08-28 · ✅）
+
+计划与 Mega `/goal`：[`goal-wave-2026-08-28-algorithm-wave8-plan-and-mega-prompt.md`](goal-wave-2026-08-28-algorithm-wave8-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave8-market-formula-research-2026-08-28.md`](algorithm-wave8-market-formula-research-2026-08-28.md)  
+DoD：[`goal-wave-2026-08-28-algorithm-wave8.md`](goal-wave-2026-08-28-algorithm-wave8.md)
+
+| Wave-8 | id | 备注 |
+|--------|-----|------|
+| W8-1 | `binary_response_doe` | 析因二值响应 Logit IRWLS ✅ |
+| W8-2 | `cluster_variables` | 变量层次聚类 dendrogram ✅ |
+| W8-3 | `glm_three_factor` | 三因子不平衡 Type III（无 ABC 三阶） ✅ |
+| W8-4 | `life_data_regression` | Weibull + 协变量 + 右删失窄化 ✅ |

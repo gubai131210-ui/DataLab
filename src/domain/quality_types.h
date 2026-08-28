@@ -513,6 +513,65 @@ struct ReliabilityTestPlanConfiguration {
     std::size_t allowed_failures = 0;
 };
 
+struct MixtureAnalyzeConfiguration {
+    std::vector<std::size_t> component_columns;
+    std::optional<std::size_t> response_column;
+    std::string model_order = "linear";  // linear | quadratic
+};
+
+struct GlmTwoWayConfiguration {
+    std::optional<std::size_t> response_column;
+    std::optional<std::size_t> factor_a_column;
+    std::optional<std::size_t> factor_b_column;
+    bool include_interaction = true;
+};
+
+struct AnalyzeVariabilityConfiguration {
+    std::vector<std::size_t> factor_columns;
+    std::vector<std::size_t> replicate_columns;
+    std::string estimation_method = "lse";
+};
+
+struct FactorAnalysisConfiguration {
+    std::vector<std::size_t> variable_columns;
+    std::size_t factor_count = 0;  // 0 → Kaiser
+    bool use_kaiser_rule = true;
+    bool varimax_rotation = false;
+};
+
+struct BinaryResponseDoeConfiguration {
+    std::vector<std::size_t> factor_columns;
+    std::optional<std::size_t> events_column;
+    std::optional<std::size_t> trials_column;
+    std::optional<std::size_t> binary_column;
+    bool include_ab_interaction = true;
+    bool use_events_trials = false;
+};
+
+struct ClusterVariablesConfiguration {
+    std::vector<std::size_t> variable_columns;
+    std::string linkage = "complete";
+    bool use_absolute_correlation = true;
+};
+
+struct GlmThreeFactorConfiguration {
+    std::optional<std::size_t> response_column;
+    std::optional<std::size_t> factor_a_column;
+    std::optional<std::size_t> factor_b_column;
+    std::optional<std::size_t> factor_c_column;
+    bool include_ab_interaction = true;
+    bool include_ac_interaction = true;
+    bool include_bc_interaction = true;
+};
+
+struct LifeDataRegressionConfiguration {
+    std::optional<std::size_t> time_column;
+    std::optional<std::size_t> censor_column;
+    std::vector<std::size_t> covariate_columns;
+    std::vector<double> percentile_levels = {1.0, 5.0};
+    std::string distribution = "weibull";
+};
+
 // Phase 4: CCD / BBD design generation (continuous factors only).
 struct ResponseSurfaceDesignConfiguration {
     std::string design_kind = "ccd";  // ccd | bbd
@@ -613,6 +672,14 @@ struct AnalysisConfiguration {
     MixtureDesignConfiguration mixture_design;
     NhppRepairableConfiguration nhpp_repairable;
     ReliabilityTestPlanConfiguration reliability_test_plan;
+    MixtureAnalyzeConfiguration mixture_analyze;
+    GlmTwoWayConfiguration glm_two_way;
+    AnalyzeVariabilityConfiguration analyze_variability;
+    FactorAnalysisConfiguration factor_analysis;
+    BinaryResponseDoeConfiguration binary_response_doe;
+    ClusterVariablesConfiguration cluster_variables;
+    GlmThreeFactorConfiguration glm_three_factor;
+    LifeDataRegressionConfiguration life_data_regression;
     ResponseSurfaceDesignConfiguration response_surface_design;
     GraphConfiguration graph;
     std::vector<std::size_t> included_rows;
@@ -1764,6 +1831,88 @@ struct ReliabilityTestPlanFacts {
     std::string algorithm_id = "reliability_demo_test_plan_weibull";
 };
 
+struct MixtureAnalyzeFacts {
+    std::size_t component_count = 0;
+    std::size_t observation_count = 0;
+    std::string model_order = "linear";
+    std::optional<double> r_squared;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "mixture_scheffe_ols";
+};
+
+struct GlmTwoWayFacts {
+    std::size_t observation_count = 0;
+    bool include_interaction = true;
+    bool design_balanced = true;
+    std::optional<double> residual_normality_p;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "glm_two_way_type3";
+};
+
+struct AnalyzeVariabilityFacts {
+    std::size_t run_count = 0;
+    std::size_t factor_count = 0;
+    std::size_t replicate_count = 0;
+    std::string estimation_method = "lse";
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "analyze_variability_ln_sigma_lse";
+};
+
+struct FactorAnalysisFacts {
+    std::size_t observation_count = 0;
+    std::size_t variable_count = 0;
+    std::size_t retained_factor_count = 0;
+    bool varimax_applied = false;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "factor_analysis_pca_extraction";
+};
+
+struct BinaryResponseDoeFacts {
+    std::size_t design_row_count = 0;
+    std::size_t expanded_observation_count = 0;
+    std::size_t factor_count = 0;
+    std::size_t event_count = 0;
+    std::size_t trial_count = 0;
+    bool include_ab_interaction = true;
+    bool converged = false;
+    double deviance = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "binary_response_doe_logit_irwls";
+};
+
+struct ClusterVariablesFacts {
+    std::size_t observation_count = 0;
+    std::size_t variable_count = 0;
+    std::size_t merge_count = 0;
+    std::string linkage;
+    double max_distance = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "cluster_variables_corr_hclust";
+};
+
+struct GlmThreeFactorFacts {
+    std::size_t observation_count = 0;
+    bool include_ab_interaction = true;
+    bool include_ac_interaction = true;
+    bool include_bc_interaction = true;
+    bool design_balanced = true;
+    std::optional<double> residual_normality_p;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "glm_three_factor_type3";
+};
+
+struct LifeDataRegressionFacts {
+    std::size_t observation_count = 0;
+    std::size_t failure_count = 0;
+    std::size_t censored_count = 0;
+    std::size_t covariate_count = 0;
+    bool converged = false;
+    double shape = 0.0;
+    std::string distribution = "weibull";
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "life_data_regression_weibull_mle";
+};
+
 struct DesignGenerationFacts {
     std::string design_kind;   // ccd | bbd
     std::string ccd_variant;   // ccc | cci | ccf | empty for BBD
@@ -2130,6 +2279,14 @@ struct InterpretationFacts {
     std::optional<MixtureDesignFacts> mixture_design;
     std::optional<NhppRepairableFacts> nhpp_repairable;
     std::optional<ReliabilityTestPlanFacts> reliability_test_plan;
+    std::optional<MixtureAnalyzeFacts> mixture_analyze;
+    std::optional<GlmTwoWayFacts> glm_two_way;
+    std::optional<AnalyzeVariabilityFacts> analyze_variability;
+    std::optional<FactorAnalysisFacts> factor_analysis;
+    std::optional<BinaryResponseDoeFacts> binary_response_doe;
+    std::optional<ClusterVariablesFacts> cluster_variables;
+    std::optional<GlmThreeFactorFacts> glm_three_factor;
+    std::optional<LifeDataRegressionFacts> life_data_regression;
     std::optional<DesignGenerationFacts> design_generation;
     std::optional<VarianceFacts> variance;
     std::optional<MultiVariFacts> multi_vari;

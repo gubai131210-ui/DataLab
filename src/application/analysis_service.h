@@ -364,6 +364,38 @@ public:
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);
 
+    static domain::OutputPage mixture_analyze(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage glm_two_way(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage analyze_variability(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage factor_analysis(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage binary_response_doe(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage cluster_variables(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage glm_three_factor(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
+    static domain::OutputPage life_data_regression(
+        const domain::DataTable& table,
+        const domain::AnalysisConfiguration& configuration);
+
     static domain::OutputPage nhpp_repairable(
         const domain::DataTable& table,
         const domain::AnalysisConfiguration& configuration);

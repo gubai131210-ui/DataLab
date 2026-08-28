@@ -2814,6 +2814,301 @@ const std::vector<AnalysisCommand>& all()
             AnalysisService::mixture_design,
             QStringLiteral("DOE")},
         {
+            QStringLiteral("mixture_analyze"),
+            QStringLiteral("Mixture 分析"),
+            QStringLiteral("Analyze Mixture Design"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("components"), QStringLiteral("分量列"), true, false},
+             {QStringLiteral("response"), QStringLiteral("响应"), true, false}},
+            {{QStringLiteral("model_order"), QStringLiteral("linear/quadratic"),
+              QStringLiteral("linear")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto components = d.role_indices("components");
+                const auto responses = d.role_indices("response");
+                if (components.size() < 2 || responses.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要至少两个分量列与一个响应列。"));
+                }
+                c.chart_type = "mixture_analyze";
+                for (int col : components) {
+                    c.mixture_analyze.component_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                c.mixture_analyze.response_column =
+                    static_cast<std::size_t>(responses.front());
+                const std::string order = normalize(d.line_text("model_order"));
+                c.mixture_analyze.model_order = order.empty() ? "linear" : order;
+                return {};
+            },
+            AnalysisService::mixture_analyze,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("glm_two_way"),
+            QStringLiteral("双因子 GLM"),
+            QStringLiteral("GLM Two-Way"),
+            QStringLiteral("统计"),
+            QStringLiteral("anova_two_way"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("factor_a"), QStringLiteral("因子 A"), true, false},
+             {QStringLiteral("factor_b"), QStringLiteral("因子 B"), true, false}},
+            {{QStringLiteral("interaction"), QStringLiteral("含交互"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto response = d.role_indices("response");
+                const auto fa = d.role_indices("factor_a");
+                const auto fb = d.role_indices("factor_b");
+                if (response.empty() || fa.empty() || fb.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要响应列与两个因子列。"));
+                }
+                c.chart_type = "glm_two_way";
+                c.glm_two_way.response_column = static_cast<std::size_t>(response.front());
+                c.glm_two_way.factor_a_column = static_cast<std::size_t>(fa.front());
+                c.glm_two_way.factor_b_column = static_cast<std::size_t>(fb.front());
+                const std::string inter = normalize(d.line_text("interaction"));
+                c.glm_two_way.include_interaction =
+                    inter.empty() || inter == "true" || inter == "1" || inter == "yes";
+                return {};
+            },
+            AnalysisService::glm_two_way,
+            QStringLiteral("ANOVA")},
+        {
+            QStringLiteral("analyze_variability"),
+            QStringLiteral("Analyze Variability"),
+            QStringLiteral("Analyze Variability"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("factors"), QStringLiteral("因子列"), true, false},
+             {QStringLiteral("replicates"), QStringLiteral("重复列"), true, false}},
+            {{QStringLiteral("method"), QStringLiteral("估计方法"), QStringLiteral("lse")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto factors = d.role_indices("factors");
+                const auto replicates = d.role_indices("replicates");
+                if (factors.empty() || replicates.size() < 2) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要因子列与至少两个重复列。"));
+                }
+                c.chart_type = "analyze_variability";
+                for (int col : factors) {
+                    c.analyze_variability.factor_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                for (int col : replicates) {
+                    c.analyze_variability.replicate_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                const std::string method = normalize(d.line_text("method"));
+                c.analyze_variability.estimation_method =
+                    method.empty() ? "lse" : method;
+                return {};
+            },
+            AnalysisService::analyze_variability,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("factor_analysis"),
+            QStringLiteral("因子分析"),
+            QStringLiteral("Factor Analysis"),
+            QStringLiteral("统计"),
+            QStringLiteral("pca"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("变量列"), true, false}},
+            {{QStringLiteral("factors"), QStringLiteral("因子数（0=Kaiser）"), QStringLiteral("0")},
+             {QStringLiteral("varimax"), QStringLiteral("Varimax 旋转"), QStringLiteral("false")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto variables = d.role_indices("variables");
+                if (variables.size() < 3) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("至少需要三个数值变量。"));
+                }
+                c.chart_type = "factor_analysis";
+                for (int col : variables) {
+                    c.factor_analysis.variable_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                c.factor_analysis.factor_count = static_cast<std::size_t>(
+                    std::max(0, d.line_int("factors").value_or(0)));
+                c.factor_analysis.use_kaiser_rule = true;
+                const std::string varimax = normalize(d.line_text("varimax"));
+                c.factor_analysis.varimax_rotation =
+                    varimax == "true" || varimax == "1" || varimax == "yes";
+                return {};
+            },
+            AnalysisService::factor_analysis,
+            QStringLiteral("多变量")},
+        {
+            QStringLiteral("binary_response_doe"),
+            QStringLiteral("二值响应 DOE"),
+            QStringLiteral("Binary Response DOE"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("factors"), QStringLiteral("因子列"), true, false},
+             {QStringLiteral("events"), QStringLiteral("Events"), false, false},
+             {QStringLiteral("trials"), QStringLiteral("Trials"), false, false},
+             {QStringLiteral("binary"), QStringLiteral("Binary 0/1"), false, false}},
+            {{QStringLiteral("interaction"), QStringLiteral("A×B 交互"), QStringLiteral("true")},
+             {QStringLiteral("layout"), QStringLiteral("events_trials|binary"), QStringLiteral("events_trials")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto factors = d.role_indices("factors");
+                if (factors.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要至少一个因子列。"));
+                }
+                c.chart_type = "binary_response_doe";
+                for (int col : factors) {
+                    c.binary_response_doe.factor_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                const std::string layout = normalize(d.line_text("layout"));
+                c.binary_response_doe.use_events_trials =
+                    layout.empty() || layout == "events_trials";
+                if (c.binary_response_doe.use_events_trials) {
+                    const auto events = d.role_indices("events");
+                    const auto trials = d.role_indices("trials");
+                    if (events.empty() || trials.empty()) {
+                        return apply_error(QStringLiteral("列不足"),
+                                           QStringLiteral("events/trials 模式需要两列。"));
+                    }
+                    c.binary_response_doe.events_column =
+                        static_cast<std::size_t>(events.front());
+                    c.binary_response_doe.trials_column =
+                        static_cast<std::size_t>(trials.front());
+                } else {
+                    const auto binary = d.role_indices("binary");
+                    if (binary.empty()) {
+                        return apply_error(QStringLiteral("列不足"),
+                                           QStringLiteral("0/1 模式需要响应列。"));
+                    }
+                    c.binary_response_doe.binary_column =
+                        static_cast<std::size_t>(binary.front());
+                }
+                const std::string inter = normalize(d.line_text("interaction"));
+                c.binary_response_doe.include_ab_interaction =
+                    inter.empty() || inter == "true" || inter == "1" || inter == "yes";
+                return {};
+            },
+            AnalysisService::binary_response_doe,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("cluster_variables"),
+            QStringLiteral("变量聚类"),
+            QStringLiteral("Cluster Variables"),
+            QStringLiteral("统计"),
+            QStringLiteral("correlation"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("变量列"), true, false}},
+            {{QStringLiteral("linkage"), QStringLiteral("连结"), QStringLiteral("complete")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto variables = d.role_indices("variables");
+                if (variables.size() < 3) {
+                    return apply_error(QStringLiteral("变量不足"),
+                                       QStringLiteral("至少需要三个数值变量。"));
+                }
+                c.chart_type = "cluster_variables";
+                for (int col : variables) {
+                    c.cluster_variables.variable_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                const std::string linkage = normalize(d.line_text("linkage"));
+                c.cluster_variables.linkage = linkage.empty() ? "complete" : linkage;
+                return {};
+            },
+            AnalysisService::cluster_variables,
+            QStringLiteral("多变量")},
+        {
+            QStringLiteral("glm_three_factor"),
+            QStringLiteral("三因子 GLM"),
+            QStringLiteral("GLM Three-Factor"),
+            QStringLiteral("统计"),
+            QStringLiteral("anova_two_way"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("factor_a"), QStringLiteral("因子 A"), true, false},
+             {QStringLiteral("factor_b"), QStringLiteral("因子 B"), true, false},
+             {QStringLiteral("factor_c"), QStringLiteral("因子 C"), true, false}},
+            {{QStringLiteral("ab"), QStringLiteral("A×B"), QStringLiteral("true")},
+             {QStringLiteral("ac"), QStringLiteral("A×C"), QStringLiteral("true")},
+             {QStringLiteral("bc"), QStringLiteral("B×C"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto response = d.role_indices("response");
+                const auto fa = d.role_indices("factor_a");
+                const auto fb = d.role_indices("factor_b");
+                const auto fc = d.role_indices("factor_c");
+                if (response.empty() || fa.empty() || fb.empty() || fc.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要响应与三个因子列。"));
+                }
+                c.chart_type = "glm_three_factor";
+                c.glm_three_factor.response_column =
+                    static_cast<std::size_t>(response.front());
+                c.glm_three_factor.factor_a_column =
+                    static_cast<std::size_t>(fa.front());
+                c.glm_three_factor.factor_b_column =
+                    static_cast<std::size_t>(fb.front());
+                c.glm_three_factor.factor_c_column =
+                    static_cast<std::size_t>(fc.front());
+                auto flag = [&](const char* key) {
+                    const std::string value = normalize(d.line_text(key));
+                    return value.empty() || value == "true" || value == "1"
+                        || value == "yes";
+                };
+                c.glm_three_factor.include_ab_interaction = flag("ab");
+                c.glm_three_factor.include_ac_interaction = flag("ac");
+                c.glm_three_factor.include_bc_interaction = flag("bc");
+                return {};
+            },
+            AnalysisService::glm_three_factor,
+            QStringLiteral("ANOVA")},
+        {
+            QStringLiteral("life_data_regression"),
+            QStringLiteral("寿命数据回归"),
+            QStringLiteral("Life Data Regression"),
+            QStringLiteral("统计"),
+            QStringLiteral("reliability"),
+            false, true,
+            {{QStringLiteral("time"), QStringLiteral("时间"), true, false},
+             {QStringLiteral("censor"), QStringLiteral("删失"), true, false},
+             {QStringLiteral("covariates"), QStringLiteral("协变量"), true, false}},
+            {{QStringLiteral("percentiles"), QStringLiteral("百分位"), QStringLiteral("1,5")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto time = d.role_indices("time");
+                const auto censor = d.role_indices("censor");
+                const auto covariates = d.role_indices("covariates");
+                if (time.empty() || censor.empty() || covariates.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要时间、删失与协变量列。"));
+                }
+                if (covariates.size() > 2) {
+                    return apply_error(QStringLiteral("协变量过多"),
+                                       QStringLiteral("窄化实现最多 2 个协变量。"));
+                }
+                c.chart_type = "life_data_regression";
+                c.life_data_regression.time_column =
+                    static_cast<std::size_t>(time.front());
+                c.life_data_regression.censor_column =
+                    static_cast<std::size_t>(censor.front());
+                for (int col : covariates) {
+                    c.life_data_regression.covariate_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                c.life_data_regression.distribution = "weibull";
+                c.life_data_regression.percentile_levels = {1.0, 5.0};
+                return {};
+            },
+            AnalysisService::life_data_regression,
+            QStringLiteral("可靠性")},
+        {
             QStringLiteral("doe_ccd"),
             QStringLiteral("中心复合设计 CCD"),
             QStringLiteral("Central Composite Design"),

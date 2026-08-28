@@ -15221,6 +15221,267 @@
       "wiring": {"command_id": "mixture_design", "service_method": "mixture_design", "facts_type": "mixture_design", "primary_test": "algorithm_wave6_track_test"}
     },
     {
+      "id": "mixture_analyze",
+      "title": "Mixture 分析",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["mixture_analyze", "Analyze Mixture Design", "Scheffé"],
+      "implemented_status": "formula_reference",
+      "purpose": "对混料设计数据拟合 Scheffé 线性（可选二次）模型，输出系数、ANOVA 与残差。无常数项。",
+      "method_overview": "Y = Σ b_i x_i (+ Σ b_ij x_i x_j)；OLS b̂ = (X'X)⁻¹X'y。独立于 mixture_design 设计生成。",
+      "input_description": "分量比例列（∑≈1）+ 响应列；complete-case。",
+      "missing_value_policy": "分量或响应缺失则跳过该行；缺失≠0。",
+      "calculation_steps": ["complete-case", "构建 Scheffé 设计矩阵", "OLS QR", "ANOVA", "残差表"],
+      "symbol_definitions": [
+        {"symbol": "x_i", "meaning": "第 i 个分量比例"},
+        {"symbol": "b_i", "meaning": "线性 Scheffé 系数"},
+        {"symbol": "b_ij", "meaning": "二次交叉系数"}
+      ],
+      "decision_rules": ["禁止「配方已优化」；分量和偏离 1 报诊断不静默归一化。"],
+      "invalid_input_conditions": "分量列<2、无响应、N≤参数数、分量和非正。",
+      "output_description": "Coefficients、ANOVA、Fits and Residuals、Design Info。",
+      "output_interpretation": "先看系数符号与 ANOVA；残差用于模型诊断；不得写成已优化。",
+      "assumptions_and_boundaries": "无过程变量；非 extreme-vertices；非 Minitab golden。",
+      "interpretation_limits": "禁止配方已优化 / 过程已合格。",
+      "formula_blocks": [
+        {"title": "Scheffé linear", "plain_text": "Y = Σ b_i x_i", "explanation": "无常数项", "conditions": "Σ x_i = 1", "note": "formula_reference"},
+        {"title": "OLS", "plain_text": "b̂ = (X'X)⁻¹ X'y", "explanation": "", "conditions": "满秩", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab mixture models", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/supporting-topics/mixture-designs/models-terms-and-blending/", "accessed": "2026-08-28", "kind": "minitab"},
+        {"label": "Minitab mixture coefficients", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/mixtures/analyze-mixture-design/methods-and-formulas/coefficients/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P7 Mixture Analyze", "path": "docs/research/p7_mixture_analyze.md", "section": ""}],
+      "wiring": {"command_id": "mixture_analyze", "service_method": "mixture_analyze", "facts_type": "mixture_analyze", "primary_test": "algorithm_wave7_track_test"}
+    },
+    {
+      "id": "glm_two_way",
+      "title": "双因子 GLM",
+      "category": "ANOVA",
+      "menu_path": "统计 > ANOVA",
+      "aliases": ["glm_two_way", "GLM Two-Way", "unbalanced ANOVA"],
+      "implemented_status": "formula_reference",
+      "purpose": "不平衡双因子连续响应：Type III Adj SS、Fitted Means（回归预测按水平平均）与残差诊断。",
+      "method_overview": "虚拟变量编码 + OLS；Type III 通过缩减模型求 Adj SS；Fitted Means 为 ŷ 按因子水平平均。",
+      "input_description": "响应列 + 因子 A/B 列（文本分类）；complete-case。",
+      "missing_value_policy": "因子或响应缺失跳过；保留 source_row。",
+      "calculation_steps": ["complete-case", "编码设计矩阵", "全模型 OLS", "Type III Adj SS", "Fitted Means", "残差正态"],
+      "symbol_definitions": [
+        {"symbol": "Adj SS", "meaning": "Type III 调整平方和"},
+        {"symbol": "Fitted Mean", "meaning": "水平内平均预测值"}
+      ],
+      "decision_rules": ["禁止只报原始单元均值替代 Fitted Means。"],
+      "invalid_input_conditions": "因子各<2 水平、N<4、秩亏交互不可估计。",
+      "output_description": "ANOVA (Type III)、Fitted Means、Residual Diagnostics。",
+      "output_interpretation": "不平衡时以 Adj SS 与 Fitted Means 为主；残差用于假设检查。",
+      "assumptions_and_boundaries": "连续响应 GLM 窄化；非三因子 / 非协变量扩展。",
+      "interpretation_limits": "禁止过程已合格 / 已优化。",
+      "formula_blocks": [
+        {"title": "GLM", "plain_text": "Y = Xβ + ε；β̂ = (X'X)⁻¹X'y", "explanation": "", "conditions": "", "note": "formula_reference"},
+        {"title": "Type III", "plain_text": "Adj SS = RSS(reduced) − RSS(full)", "explanation": "其余项已在模型", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab balanced/unbalanced", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/supporting-topics/anova-models/balanced-and-unbalanced-designs/", "accessed": "2026-08-28", "kind": "minitab"},
+        {"label": "Minitab GLM methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/fit-general-linear-model/methods-and-formulas/methods/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P7 GLM Two-Way", "path": "docs/research/p7_glm_two_way.md", "section": ""}],
+      "wiring": {"command_id": "glm_two_way", "service_method": "glm_two_way", "facts_type": "glm_two_way", "primary_test": "algorithm_wave7_track_test"}
+    },
+    {
+      "id": "analyze_variability",
+      "title": "Analyze Variability",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["analyze_variability", "dispersion effects", "ln sigma"],
+      "implemented_status": "formula_reference",
+      "purpose": "2 水平 DOE：由重复列计算每运行标准差，拟合 ln(s) 分散模型并输出效应表。",
+      "method_overview": "s_i = 重复列样本标准差；ln s_i = Σ γ_j z_j（±1 编码）；效应 = 2×系数。",
+      "input_description": "2 水平因子列 + 多个重复响应列；complete-case。",
+      "missing_value_policy": "缺重复或因子缺失跳过；s≤0 报诊断。",
+      "calculation_steps": ["每运行 s", "ln(s)", "±1 编码", "LSE", "效应=2×coef"],
+      "symbol_definitions": [
+        {"symbol": "s_i", "meaning": "第 i 运行样本标准差"},
+        {"symbol": "γ_j", "meaning": "分散模型系数"},
+        {"symbol": "Effect", "meaning": "2γ（2 水平）"}
+      ],
+      "decision_rules": ["重复列语义为同运行重复测量；非 Taguchi。"],
+      "invalid_input_conditions": "因子非 2 水平、重复<2、有效运行不足。",
+      "output_description": "Std Dev by Run、Dispersion Effects、ANOVA、Diagnostics。",
+      "output_interpretation": "分散效应描述变异性驱动；与位置效应分析分开阅读。",
+      "assumptions_and_boundaries": "2 水平窄化；LSE 主路径；非自动权重链。",
+      "interpretation_limits": "禁止与 Taguchi 分析混读。",
+      "formula_blocks": [
+        {"title": "Dispersion model", "plain_text": "ln s_i = Σ γ_j z_ij", "explanation": "±1 编码", "conditions": "s_i > 0", "note": "formula_reference"},
+        {"title": "Effect", "plain_text": "Effect_j = 2 γ̂_j", "explanation": "2 水平", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab analyze variability", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/factorial/analyze-variability/before-you-start/overview/", "accessed": "2026-08-28", "kind": "minitab"},
+        {"label": "Minitab dispersion", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/supporting-topics/factorial-and-screening-designs/analyze-location-effects-and-dispersion-effects/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P7 Analyze Variability", "path": "docs/research/p7_analyze_variability.md", "section": ""}],
+      "wiring": {"command_id": "analyze_variability", "service_method": "analyze_variability", "facts_type": "analyze_variability", "primary_test": "algorithm_wave7_track_test"}
+    },
+    {
+      "id": "factor_analysis",
+      "title": "因子分析",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": ["factor_analysis", "Factor Analysis", "Varimax"],
+      "implemented_status": "formula_reference",
+      "purpose": "探索性因子分析：相关阵主成分提取、Loadings、% Var、Communalities 与 Scree 图；可选 Varimax。",
+      "method_overview": "R 特征分解；L = √λ·e；% Var = λ/Σλ；可选 Varimax。不含 Hotelling T²。",
+      "input_description": "≥3 数值变量；complete-case；标准化相关矩阵。",
+      "missing_value_policy": "含缺失整行排除。",
+      "calculation_steps": ["complete-case", "相关阵", "特征分解", "提取 m 因子", "可选 Varimax", "Scree"],
+      "symbol_definitions": [
+        {"symbol": "L", "meaning": "因子载荷"},
+        {"symbol": "λ", "meaning": "特征值"},
+        {"symbol": "h²", "meaning": "共同度"}
+      ],
+      "decision_rules": ["与 pca 命令区分：本命令无 T²。"],
+      "invalid_input_conditions": "变量<3、N<3、常数列。",
+      "output_description": "Factor Loadings、Variance Explained、Communalities、Scree Plot。",
+      "output_interpretation": "Scree 与 Kaiser 辅助确定因子数；载荷解释需结合旋转选项。",
+      "assumptions_and_boundaries": "主成分提取窄化；非 ML 因子分析全量。",
+      "interpretation_limits": "禁止宣称与 Minitab golden 对齐。",
+      "formula_blocks": [
+        {"title": "Loadings", "plain_text": "L_{:,i} = √λ_i · e_i", "explanation": "未旋转", "conditions": "", "note": "formula_reference"},
+        {"title": "% Variance", "plain_text": "%Var_i = 100 λ_i / Σλ", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab factor analysis", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/how-to/factor-analysis/methods-and-formulas/methods-and-formulas/", "accessed": "2026-08-28", "kind": "minitab"},
+        {"label": "Minitab PCA vs FA", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/supporting-topics/principal-components-and-factor-analysis/differences-between-pca-and-factor-analysis/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P7 Factor Analysis", "path": "docs/research/p7_factor_analysis.md", "section": ""}],
+      "wiring": {"command_id": "factor_analysis", "service_method": "factor_analysis", "facts_type": "factor_analysis", "primary_test": "algorithm_wave7_track_test"}
+    },
+    {
+      "id": "binary_response_doe",
+      "title": "二值响应 DOE",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["binary_response_doe", "Binary Response DOE", "logit DOE"],
+      "implemented_status": "formula_reference",
+      "purpose": "析因设计二值响应：Logit IRWLS；events/trials 或 0/1；输出系数、Odds Ratio 与拟合诊断。",
+      "method_overview": "η = Xβ；p = logit⁻¹(η)；IRWLS 迭代；OR = exp(β)。events/trials 展开为二项观测。",
+      "input_description": "2～4 因子列；events+trials 或 binary 0/1；complete-case。",
+      "missing_value_policy": "缺失因子或响应跳过；events≤trials 门禁。",
+      "calculation_steps": ["complete-case", "虚拟变量编码", "Logit IRWLS", "OR=exp(β)", "Deviance/AIC"],
+      "symbol_definitions": [
+        {"symbol": "η", "meaning": "线性预测子"},
+        {"symbol": "OR", "meaning": "exp(β)"}
+      ],
+      "decision_rules": ["禁止与 logistic_regression 对话框混用。"],
+      "invalid_input_conditions": "无因子、events>trials、展开 N<4、完全分离。",
+      "output_description": "Coefficients、Odds Ratios、Goodness-of-Fit。",
+      "output_interpretation": "读系数符号与 OR；配合 DOE 因子布局解读。",
+      "assumptions_and_boundaries": "Logit 窄化；主效应 + 可选 AB 交互。",
+      "interpretation_limits": "禁止过程已合格 / 已优化。",
+      "formula_blocks": [
+        {"title": "Logit", "plain_text": "p = e^η / (1+e^η)", "explanation": "", "conditions": "", "note": "formula_reference"},
+        {"title": "OR", "plain_text": "OR_j = exp(β_j)", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab binary response methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/factorial/analyze-binary-response/methods-and-formulas/methods/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P8 Binary Response DOE", "path": "docs/research/p8_binary_response_doe.md", "section": ""}],
+      "wiring": {"command_id": "binary_response_doe", "service_method": "binary_response_doe", "facts_type": "binary_response_doe", "primary_test": "algorithm_wave8_track_test"}
+    },
+    {
+      "id": "cluster_variables",
+      "title": "变量聚类",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": ["cluster_variables", "Cluster Variables", "variable clustering"],
+      "implemented_status": "formula_reference",
+      "purpose": "变量层次聚类：Pearson 相关距离、连结合并、dendrogram 与 amalgamation 表。",
+      "method_overview": "ρ_ij Pearson；d_ij = 1 − |ρ_ij|；Complete/Average/Single 连结；p−1 合并步。",
+      "input_description": "≥3 数值变量列；complete-case 行。",
+      "missing_value_policy": "含非有限值整行排除。",
+      "calculation_steps": ["相关矩阵", "距离矩阵", "层次连结", "amalgamation", "dendrogram"],
+      "symbol_definitions": [
+        {"symbol": "d_ij", "meaning": "1 − |ρ_ij|"},
+        {"symbol": "s_ij", "meaning": "100(1 − d_ij/d_max)"}
+      ],
+      "decision_rules": ["与 cluster_observations 区分。"],
+      "invalid_input_conditions": "变量<3、非有限值、N<2。",
+      "output_description": "Amalgamation Steps、Dendrogram。",
+      "output_interpretation": "读合并高度与变量相似结构。",
+      "assumptions_and_boundaries": "相关距离窄化；非 Minitab golden。",
+      "interpretation_limits": "禁止与观测量聚类混读。",
+      "formula_blocks": [
+        {"title": "Distance", "plain_text": "d_ij = 1 − |ρ_ij|", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab cluster variables distance", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/how-to/cluster-variables/methods-and-formulas/distance-measures/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P8 Cluster Variables", "path": "docs/research/p8_cluster_variables.md", "section": ""}],
+      "wiring": {"command_id": "cluster_variables", "service_method": "cluster_variables", "facts_type": "cluster_variables", "primary_test": "algorithm_wave8_track_test"}
+    },
+    {
+      "id": "glm_three_factor",
+      "title": "三因子 GLM",
+      "category": "ANOVA",
+      "menu_path": "统计 > ANOVA",
+      "aliases": ["glm_three_factor", "GLM Three-Factor", "three-way GLM"],
+      "implemented_status": "formula_reference",
+      "purpose": "不平衡三因子连续响应：Type III Adj SS、Fitted Means；可选 AB/AC/BC 两两交互。",
+      "method_overview": "Y = Xβ + ε；Type III Adj SS；Fitted Means 为 ŷ 按水平平均；无 ABC 三阶。",
+      "input_description": "响应 + 因子 A/B/C；complete-case。",
+      "missing_value_policy": "缺失跳过；保留 source_row。",
+      "calculation_steps": ["complete-case", "三因子编码", "全模型 OLS", "Type III", "Fitted Means"],
+      "symbol_definitions": [
+        {"symbol": "Adj SS", "meaning": "Type III 调整平方和"},
+        {"symbol": "Fitted Mean", "meaning": "水平内平均预测值"}
+      ],
+      "decision_rules": ["禁止 ABC 三阶交互；非 glm_two_way 对话框。"],
+      "invalid_input_conditions": "因子各<2 水平、N<6、秩亏。",
+      "output_description": "ANOVA Type III、Fitted Means、Residual Diagnostics。",
+      "output_interpretation": "不平衡以 Adj SS 与 Fitted Means 为主。",
+      "assumptions_and_boundaries": "三因子窄化；无 Tukey 全量。",
+      "interpretation_limits": "禁止过程已合格。",
+      "formula_blocks": [
+        {"title": "GLM", "plain_text": "Y = Xβ + ε", "explanation": "", "conditions": "", "note": "formula_reference"},
+        {"title": "Type III", "plain_text": "Adj SS = RSS(reduced) − RSS(full)", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab GLM methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/fit-general-linear-model/methods-and-formulas/methods/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P8 GLM Three-Factor", "path": "docs/research/p8_glm_three_factor.md", "section": ""}],
+      "wiring": {"command_id": "glm_three_factor", "service_method": "glm_three_factor", "facts_type": "glm_three_factor", "primary_test": "algorithm_wave8_track_test"}
+    },
+    {
+      "id": "life_data_regression",
+      "title": "寿命数据回归",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": ["life_data_regression", "Life Data Regression", "Weibull regression"],
+      "implemented_status": "formula_reference",
+      "purpose": "Weibull 寿命协变量回归：右删失 MLE、回归表与可选 1%/5% 百分位。",
+      "method_overview": "log Y_p = β₀ + Σβ_k x_k + σΦ⁻¹(p)；Newton-Raphson MLE；右删失似然。",
+      "input_description": "时间 + 删失指示 + 1～2 协变量；complete-case。",
+      "missing_value_policy": "非正时间或非有限协变量跳过。",
+      "calculation_steps": ["校验时间/删失", "Weibull MLE", "回归表", "百分位表"],
+      "symbol_definitions": [
+        {"symbol": "σ", "meaning": "1/shape"},
+        {"symbol": "Φ⁻¹(p)", "meaning": "标准极值分位"}
+      ],
+      "decision_rules": ["与 accelerated_life 区分；非 Cox 全量。"],
+      "invalid_input_conditions": "N<4、失败<2、协变量>2。",
+      "output_description": "Regression Table、Percentile Table、Shape。",
+      "output_interpretation": "读协变量系数与特征寿命百分位。",
+      "assumptions_and_boundaries": "Weibull + 1～2 协变量窄化。",
+      "interpretation_limits": "禁止寿命已达标 / 已证明稳定。",
+      "formula_blocks": [
+        {"title": "Percentile", "plain_text": "log Y_p = β₀ + Σβ_k x_k + σ Φ⁻¹(p)", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab life regression equations", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/regression-with-life-data/methods-and-formulas/equations/", "accessed": "2026-08-28", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P8 Life Data Regression", "path": "docs/research/p8_life_data_regression.md", "section": ""}],
+      "wiring": {"command_id": "life_data_regression", "service_method": "life_data_regression", "facts_type": "life_data_regression", "primary_test": "algorithm_wave8_track_test"}
+    },
+    {
       "id": "nhpp_repairable",
       "title": "可修复系统 NHPP",
       "category": "可靠性",

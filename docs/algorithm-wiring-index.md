@@ -130,6 +130,14 @@
 | distribution_calculator | distribution_calculator | distribution_calculator | algorithm_wave5_track_test |
 | taguchi_analyze | taguchi_analyze | taguchi_analyze | algorithm_wave6_track_test |
 | mixture_design | mixture_design | mixture_design | algorithm_wave6_track_test |
+| mixture_analyze | mixture_analyze | mixture_analyze | algorithm_wave7_track_test |
+| glm_two_way | glm_two_way | glm_two_way | algorithm_wave7_track_test |
+| analyze_variability | analyze_variability | analyze_variability | algorithm_wave7_track_test |
+| factor_analysis | factor_analysis | factor_analysis | algorithm_wave7_track_test |
+| binary_response_doe | binary_response_doe | binary_response_doe | algorithm_wave8_track_test |
+| cluster_variables | cluster_variables | cluster_variables | algorithm_wave8_track_test |
+| glm_three_factor | glm_three_factor | glm_three_factor | algorithm_wave8_track_test |
+| life_data_regression | life_data_regression | life_data_regression | algorithm_wave8_track_test |
 | nhpp_repairable | nhpp_repairable | nhpp_repairable | algorithm_wave6_track_test |
 | reliability_test_plan | reliability_test_plan | reliability_test_plan | algorithm_wave6_track_test |
 | doe_ccd | doe_response_surface_design | design_generation | response_surface_design_phase4_test |

@@ -1823,6 +1823,115 @@ void InterpretationService::enrich(domain::OutputPage& page)
         limitations.bullets.push_back(
             "范围（rtp_scope）：禁止「寿命已达标 / 过程已优化」。");
     }
+    if (page.facts.mixture_analyze.has_value()) {
+        const auto& facts = *page.facts.mixture_analyze;
+        conclusion.bullets.push_back(
+            "Mixture 分析（mixture_analyze_summary）：q = "
+            + std::to_string(facts.component_count)
+            + "，模型 = " + facts.model_order
+            + "，N = " + std::to_string(facts.observation_count)
+            + (facts.r_squared.has_value()
+                   ? ("，R² ≈ " + std::to_string(*facts.r_squared))
+                   : "")
+            + "。");
+        conclusion.bullets.push_back(
+            "系数表（mixture_analyze_coef）为 Scheffé OLS；ANOVA 与残差供模型诊断。");
+        limitations.bullets.push_back(
+            "范围（mixture_analyze_scope）：独立于 mixture_design；禁止「配方已优化」。");
+    }
+    if (page.facts.glm_two_way.has_value()) {
+        const auto& facts = *page.facts.glm_two_way;
+        conclusion.bullets.push_back(
+            "双因子 GLM（glm_two_way_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + (facts.include_interaction ? "，含交互" : "，主效应")
+            + (facts.design_balanced ? "，平衡" : "，不平衡") + "。");
+        conclusion.bullets.push_back(
+            "Fitted Means（glm_two_way_fitted）为回归预测按水平平均；非原始单元均值。");
+        limitations.bullets.push_back(
+            "范围（glm_two_way_scope）：Type III 窄化；禁止「过程已合格」。");
+    }
+    if (page.facts.analyze_variability.has_value()) {
+        const auto& facts = *page.facts.analyze_variability;
+        conclusion.bullets.push_back(
+            "Analyze Variability（analyze_variability_summary）：运行 = "
+            + std::to_string(facts.run_count)
+            + "，因子 = " + std::to_string(facts.factor_count)
+            + "，重复 = " + std::to_string(facts.replicate_count)
+            + "，方法 = " + facts.estimation_method + "。");
+        conclusion.bullets.push_back(
+            "分散效应（analyze_variability_effects）：ln(s) 模型；2 水平效应 = 2×系数。");
+        limitations.bullets.push_back(
+            "范围（analyze_variability_scope）：2 水平窄化；非 Taguchi 分析。");
+    }
+    if (page.facts.factor_analysis.has_value()) {
+        const auto& facts = *page.facts.factor_analysis;
+        conclusion.bullets.push_back(
+            "因子分析（factor_analysis_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，变量 = " + std::to_string(facts.variable_count)
+            + "，保留因子 = " + std::to_string(facts.retained_factor_count)
+            + (facts.varimax_applied ? "，Varimax" : "") + "。");
+        conclusion.bullets.push_back(
+            "载荷与 % Var（factor_analysis_loadings）为主成分提取；含 Scree 图。");
+        limitations.bullets.push_back(
+            "范围（factor_analysis_scope）：无 Hotelling T²；与 pca 命令区分。");
+    }
+    if (page.facts.binary_response_doe.has_value()) {
+        const auto& facts = *page.facts.binary_response_doe;
+        conclusion.bullets.push_back(
+            "二值响应 DOE（binary_response_doe_summary）：设计行 = "
+            + std::to_string(facts.design_row_count)
+            + "，展开 N = " + std::to_string(facts.expanded_observation_count)
+            + "，事件 = " + std::to_string(facts.event_count)
+            + "，试验 = " + std::to_string(facts.trial_count)
+            + (facts.converged ? "，已收敛" : "，未收敛") + "。");
+        conclusion.bullets.push_back(
+            "系数与 OR（binary_response_doe_or）：OR = exp(β)；读 Logit 系数与 Odds Ratio 表。");
+        limitations.bullets.push_back(
+            "范围（binary_response_doe_scope）：Logit IRWLS 窄化；非 logistic_regression 对话框。");
+    }
+    if (page.facts.cluster_variables.has_value()) {
+        const auto& facts = *page.facts.cluster_variables;
+        conclusion.bullets.push_back(
+            "变量聚类（cluster_variables_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，变量 = " + std::to_string(facts.variable_count)
+            + "，合并 = " + std::to_string(facts.merge_count)
+            + "，连结 = " + facts.linkage + "。");
+        conclusion.bullets.push_back(
+            "树状图（cluster_variables_dendrogram）：d_ij = 1 − |ρ_ij|；amalgamation 步数 = p − 1。");
+        limitations.bullets.push_back(
+            "范围（cluster_variables_scope）：变量聚类；非 cluster_observations。");
+    }
+    if (page.facts.glm_three_factor.has_value()) {
+        const auto& facts = *page.facts.glm_three_factor;
+        conclusion.bullets.push_back(
+            "三因子 GLM（glm_three_factor_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + (facts.design_balanced ? "，平衡" : "，不平衡")
+            + "，AB=" + (facts.include_ab_interaction ? "是" : "否")
+            + "，AC=" + (facts.include_ac_interaction ? "是" : "否")
+            + "，BC=" + (facts.include_bc_interaction ? "是" : "否") + "。");
+        conclusion.bullets.push_back(
+            "Fitted Means（glm_three_factor_fitted）：回归预测按水平平均；无 ABC 三阶交互。");
+        limitations.bullets.push_back(
+            "范围（glm_three_factor_scope）：Type III 窄化；非 glm_two_way 对话框。");
+    }
+    if (page.facts.life_data_regression.has_value()) {
+        const auto& facts = *page.facts.life_data_regression;
+        conclusion.bullets.push_back(
+            "寿命回归（life_data_regression_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，失败 = " + std::to_string(facts.failure_count)
+            + "，删失 = " + std::to_string(facts.censored_count)
+            + "，Shape = " + std::to_string(facts.shape)
+            + (facts.converged ? "，已收敛" : "，未收敛") + "。");
+        conclusion.bullets.push_back(
+            "回归表（life_data_regression_coef）：Weibull MLE；log Y_p = β₀ + Σβ_k x_k + σΦ⁻¹(p)。");
+        limitations.bullets.push_back(
+            "范围（life_data_regression_scope）：1～2 协变量窄化；非 accelerated_life。");
+    }
     if (page.facts.design_generation.has_value()) {
         const auto& facts = *page.facts.design_generation;
         if (facts.design_kind == "bbd") {
