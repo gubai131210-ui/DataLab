@@ -1,6 +1,6 @@
 # 算法 Wave-9 市场对照与公式入口（2026-08-28）
 
-> 访问日期：2026-08-28（UTC+8）  
+> 访问日期：2026-08-31（UTC+8）  
 > 用途：给 **算法 Wave-9 `/goal`** 的 Primary URL、公式口径、Minitab 表形参考；**本文件不写代码、不填 golden**。  
 > 状态权威：[`minitab-market-algorithm-backlog.md`](minitab-market-algorithm-backlog.md)  
 > 执行计划：[`goal-wave-2026-08-28-algorithm-wave9-plan-and-mega-prompt.md`](goal-wave-2026-08-28-algorithm-wave9-plan-and-mega-prompt.md)  
@@ -27,7 +27,7 @@
 
 ## §1 Minitab 市场对照摘要（2026-08-28 再访）
 
-Primary：[Minitab Feature List](https://www.minitab.com/en-us/products/minitab/features/)（访问 2026-08-28）
+Primary：[Minitab Feature List](https://www.minitab.com/en-us/products/minitab/features/)（访问 2026-08-31）
 
 ### 1.1 本 Wave 要吃的缝
 
@@ -157,4 +157,4 @@ Primary：[Minitab Feature List](https://www.minitab.com/en-us/products/minitab/
 
 ---
 
-**文档状态：** 2026-08-28 首版；供 Wave-9 `/goal` 锁定。
+**文档状态：** 2026-08-31 刷新（含 p9_*.md 公式入口）；供 Wave-9 `/goal` 锁定。
