@@ -157,6 +157,18 @@
 | cluster_variables | 统计 | 多变量 |
 | glm_three_factor | 统计 | ANOVA |
 | life_data_regression | 统计 | 可靠性 |
+| expanded_gage_unbalanced | 统计 | MSA |
+| split_plot_analyze | 统计 | DOE |
+| mixture_process_variable | 统计 | DOE |
+| manova_one_way | 统计 | ANOVA |
+| general_manova | 统计 | ANOVA |
+| mixed_effects_reml | 统计 | ANOVA |
+| binary_doe_probit | 统计 | DOE |
+| life_data_lognormal | 统计 | 可靠性 |
+| simple_correspondence | 统计 | 多变量 |
+| multiple_correspondence | 统计 | 多变量 |
+| nonlinear_regression | 统计 | 回归 |
+| split_plot_design | 统计 | DOE |
 | nhpp_repairable | 统计 | 可靠性 |
 | reliability_test_plan | 统计 | 功效与样本量 |
 
@@ -164,11 +176,11 @@
 
 | 顶层 | n |
 |------|---|
-| 统计 | 76 |
+| 统计 | 88 |
 | 控制图 | 20 |
 | 质量工具 | 23 |
 | 图形 | 22 |
-| **合计** | **141** |
+| **合计** | **153** |
 
 ## help.json 对齐规则
 

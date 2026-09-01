@@ -225,6 +225,8 @@ LifeDataRegressionResult fit_life_data_regression_weibull(
         log_times.cbegin(), log_times.cend(), 0.0)
         / static_cast<double>(log_times.size());
 
+    Matrix nr_cov;
+    bool have_nr_cov = false;
     for (int iteration = 0; iteration < 40; ++iteration) {
         Matrix information(param_count, std::vector<double>(param_count, 0.0));
         std::vector<double> gradient(param_count, 0.0);
@@ -264,6 +266,8 @@ LifeDataRegressionResult fit_life_data_regression_weibull(
         if (!invert_matrix(information, inverse)) {
             break;
         }
+        nr_cov = inverse;
+        have_nr_cov = true;
         std::vector<double> step(param_count, 0.0);
         for (std::size_t row = 0; row < param_count; ++row) {
             for (std::size_t column = 0; column < param_count; ++column) {
@@ -336,7 +340,9 @@ LifeDataRegressionResult fit_life_data_regression_weibull(
         (void)ll_minus;
     }
     Matrix cov;
-    if (invert_matrix(information, cov)) {
+    const bool have_cov = invert_matrix(information, cov)
+        || (have_nr_cov && (cov = nr_cov, true));
+    if (have_cov) {
         result.coefficients.push_back(make_coefficient(
             "Intercept", betas[0], std::sqrt(std::max(0.0, cov[0][0])),
             options.confidence_level));

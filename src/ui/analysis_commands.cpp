@@ -3109,6 +3109,435 @@ const std::vector<AnalysisCommand>& all()
             AnalysisService::life_data_regression,
             QStringLiteral("可靠性")},
         {
+            QStringLiteral("expanded_gage_unbalanced"),
+            QStringLiteral("不平衡 Expanded Gage R&R"),
+            QStringLiteral("Expanded Gage Unbalanced"),
+            QStringLiteral("统计"),
+            QStringLiteral("gage_rr"),
+            false, true,
+            {{QStringLiteral("measurement"), QStringLiteral("测量"), true, false},
+             {QStringLiteral("part"), QStringLiteral("Part"), true, false},
+             {QStringLiteral("operator"), QStringLiteral("Operator"), true, false}},
+            {{QStringLiteral("additional"), QStringLiteral("附加因子"), QStringLiteral("false")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto m = d.role_indices("measurement");
+                const auto p = d.role_indices("part");
+                const auto o = d.role_indices("operator");
+                if (m.empty() || p.empty() || o.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要测量、Part 与 Operator 列。"));
+                }
+                c.chart_type = "expanded_gage_unbalanced";
+                c.expanded_gage_unbalanced.measurement_column =
+                    static_cast<std::size_t>(m.front());
+                c.expanded_gage_unbalanced.part_column =
+                    static_cast<std::size_t>(p.front());
+                c.expanded_gage_unbalanced.operator_column =
+                    static_cast<std::size_t>(o.front());
+                const std::string add = normalize(d.line_text("additional"));
+                c.expanded_gage_unbalanced.include_additional_factor =
+                    add == "true" || add == "1" || add == "yes";
+                return {};
+            },
+            AnalysisService::expanded_gage_unbalanced,
+            QStringLiteral("MSA")},
+        {
+            QStringLiteral("split_plot_analyze"),
+            QStringLiteral("裂区析因分析"),
+            QStringLiteral("Split-Plot Analyze"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("htc"), QStringLiteral("难改因子"), true, false},
+             {QStringLiteral("etc_a"), QStringLiteral("易改因子 A"), true, false},
+             {QStringLiteral("wp"), QStringLiteral("Whole Plot"), true, false}},
+            {{QStringLiteral("etc_b"), QStringLiteral("易改因子 B"), QStringLiteral("")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto y = d.role_indices("response");
+                const auto htc = d.role_indices("htc");
+                const auto etc_a = d.role_indices("etc_a");
+                const auto wp = d.role_indices("wp");
+                if (y.empty() || htc.empty() || etc_a.empty() || wp.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要响应、难改/易改因子与 WP 列。"));
+                }
+                c.chart_type = "split_plot_analyze";
+                c.split_plot_analyze.response_column = static_cast<std::size_t>(y.front());
+                c.split_plot_analyze.htc_factor_column = static_cast<std::size_t>(htc.front());
+                c.split_plot_analyze.etc_factor_a_column =
+                    static_cast<std::size_t>(etc_a.front());
+                c.split_plot_analyze.whole_plot_column = static_cast<std::size_t>(wp.front());
+                return {};
+            },
+            AnalysisService::split_plot_analyze,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("mixture_process_variable"),
+            QStringLiteral("Mixture + 过程变量"),
+            QStringLiteral("Mixture Process Variable"),
+            QStringLiteral("统计"),
+            QStringLiteral("mixture_analyze"),
+            false, true,
+            {{QStringLiteral("components"), QStringLiteral("组分"), true, false},
+             {QStringLiteral("response"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("process"), QStringLiteral("过程变量"), true, false}},
+            {{QStringLiteral("order"), QStringLiteral("阶"), QStringLiteral("linear")},
+             {QStringLiteral("interaction"), QStringLiteral("组分×过程"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto components = d.role_indices("components");
+                const auto response = d.role_indices("response");
+                const auto process = d.role_indices("process");
+                if (components.size() < 2 || response.empty() || process.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要 2～4 组分、响应与过程变量列。"));
+                }
+                c.chart_type = "mixture_process_variable";
+                for (int col : components) {
+                    c.mixture_process_variable.component_columns.push_back(
+                        static_cast<std::size_t>(col));
+                }
+                c.mixture_process_variable.response_column =
+                    static_cast<std::size_t>(response.front());
+                c.mixture_process_variable.process_column =
+                    static_cast<std::size_t>(process.front());
+                const std::string order = normalize(d.line_text("order"));
+                c.mixture_process_variable.component_order =
+                    order.empty() ? "linear" : order;
+                const std::string inter = normalize(d.line_text("interaction"));
+                c.mixture_process_variable.include_component_process_interaction =
+                    inter.empty() || inter == "true" || inter == "1" || inter == "yes";
+                return {};
+            },
+            AnalysisService::mixture_process_variable,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("manova_one_way"),
+            QStringLiteral("单因子 MANOVA"),
+            QStringLiteral("MANOVA One-Way"),
+            QStringLiteral("统计"),
+            QStringLiteral("one_way_anova"),
+            false, true,
+            {{QStringLiteral("responses"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("factor"), QStringLiteral("因子"), true, false}},
+            {{QStringLiteral("wilks"), QStringLiteral("Wilks"), QStringLiteral("true")},
+             {QStringLiteral("pillai"), QStringLiteral("Pillai"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto responses = d.role_indices("responses");
+                const auto factor = d.role_indices("factor");
+                if (responses.size() < 2 || factor.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要 2～4 响应列与 1 因子列。"));
+                }
+                if (responses.size() > 4) {
+                    return apply_error(QStringLiteral("响应过多"),
+                                       QStringLiteral("窄化实现最多 4 个响应。"));
+                }
+                c.chart_type = "manova_one_way";
+                for (int col : responses) {
+                    c.manova_one_way.response_columns.push_back(static_cast<std::size_t>(col));
+                }
+                c.manova_one_way.factor_column = static_cast<std::size_t>(factor.front());
+                auto flag = [&](const char* key) {
+                    const std::string value = normalize(d.line_text(key));
+                    return value.empty() || value == "true" || value == "1" || value == "yes";
+                };
+                c.manova_one_way.wilks = flag("wilks");
+                c.manova_one_way.pillai = flag("pillai");
+                return {};
+            },
+            AnalysisService::manova_one_way,
+            QStringLiteral("ANOVA")},
+        {
+            QStringLiteral("general_manova"),
+            QStringLiteral("General MANOVA"),
+            QStringLiteral("General MANOVA"),
+            QStringLiteral("统计"),
+            QStringLiteral("one_way_anova"),
+            false, true,
+            {{QStringLiteral("responses"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("factor_a"), QStringLiteral("因子 A"), true, false}},
+            {{QStringLiteral("factor_b"), QStringLiteral("因子 B"), QStringLiteral("")},
+             {QStringLiteral("wilks"), QStringLiteral("Wilks"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto responses = d.role_indices("responses");
+                const auto factor_a = d.role_indices("factor_a");
+                if (responses.size() < 2 || factor_a.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要 2～4 响应与因子 A。"));
+                }
+                c.chart_type = "general_manova";
+                for (int col : responses) {
+                    c.general_manova.response_columns.push_back(static_cast<std::size_t>(col));
+                }
+                c.general_manova.factor_a_column = static_cast<std::size_t>(factor_a.front());
+                const auto factor_b = d.role_indices("factor_b");
+                if (!factor_b.empty()) {
+                    c.general_manova.factor_b_column = static_cast<std::size_t>(factor_b.front());
+                }
+                auto flag = [&](const char* key) {
+                    const std::string value = normalize(d.line_text(key));
+                    return value.empty() || value == "true" || value == "1" || value == "yes";
+                };
+                c.general_manova.wilks = flag("wilks");
+                c.general_manova.pillai = flag("pillai");
+                return {};
+            },
+            AnalysisService::general_manova,
+            QStringLiteral("ANOVA")},
+        {
+            QStringLiteral("mixed_effects_reml"),
+            QStringLiteral("混合效应 REML"),
+            QStringLiteral("Mixed Effects REML"),
+            QStringLiteral("统计"),
+            QStringLiteral("one_way_anova"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("random"), QStringLiteral("随机因子"), true, false}},
+            {{QStringLiteral("fixed_a"), QStringLiteral("固定因子 A"), QStringLiteral("")},
+             {QStringLiteral("reml_method"), QStringLiteral("REML 方法"), QStringLiteral("newton")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto response = d.role_indices("response");
+                const auto random = d.role_indices("random");
+                if (response.empty() || random.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要响应与随机因子列。"));
+                }
+                c.chart_type = "mixed_effects_reml";
+                c.mixed_effects_reml.response_column = static_cast<std::size_t>(response.front());
+                c.mixed_effects_reml.random_factor_column = static_cast<std::size_t>(random.front());
+                const auto fixed_a = d.role_indices("fixed_a");
+                if (!fixed_a.empty()) {
+                    c.mixed_effects_reml.fixed_factor_a_column =
+                        static_cast<std::size_t>(fixed_a.front());
+                }
+                const std::string method = normalize(d.line_text("reml_method"));
+                if (!method.empty()) {
+                    c.mixed_effects_reml.reml_method = method;
+                }
+                return {};
+            },
+            AnalysisService::mixed_effects_reml,
+            QStringLiteral("ANOVA")},
+        {
+            QStringLiteral("binary_doe_probit"),
+            QStringLiteral("二值 DOE Probit"),
+            QStringLiteral("Binary DOE Probit"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, true,
+            {{QStringLiteral("factors"), QStringLiteral("因子"), true, false},
+             {QStringLiteral("events"), QStringLiteral("Events"), false, false}},
+            {{QStringLiteral("trials"), QStringLiteral("Trials"), QStringLiteral("")},
+             {QStringLiteral("link"), QStringLiteral("Link"), QStringLiteral("probit")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto factors = d.role_indices("factors");
+                if (factors.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要至少一个因子列。"));
+                }
+                c.chart_type = "binary_doe_probit";
+                for (int col : factors) {
+                    c.binary_doe_probit.factor_columns.push_back(static_cast<std::size_t>(col));
+                }
+                const auto events = d.role_indices("events");
+                const auto trials = d.role_indices("trials");
+                if (!events.empty() && !trials.empty()) {
+                    c.binary_doe_probit.events_column = static_cast<std::size_t>(events.front());
+                    c.binary_doe_probit.trials_column = static_cast<std::size_t>(trials.front());
+                }
+                const std::string link = normalize(d.line_text("link"));
+                if (!link.empty()) {
+                    c.binary_doe_probit.link = link;
+                }
+                return {};
+            },
+            AnalysisService::binary_doe_probit,
+            QStringLiteral("DOE")},
+        {
+            QStringLiteral("life_data_lognormal"),
+            QStringLiteral("寿命 Lognormal"),
+            QStringLiteral("Life Data Lognormal"),
+            QStringLiteral("统计"),
+            QStringLiteral("life_data_regression"),
+            false, true,
+            {{QStringLiteral("time"), QStringLiteral("时间"), true, false},
+             {QStringLiteral("event"), QStringLiteral("删失"), true, false}},
+            {{QStringLiteral("covariates"), QStringLiteral("协变量（逗号列号）"), QStringLiteral("")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto time = d.role_indices("time");
+                const auto event = d.role_indices("event");
+                if (time.empty() || event.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要时间与删失列。"));
+                }
+                c.chart_type = "life_data_lognormal";
+                c.life_data_lognormal.time_column = static_cast<std::size_t>(time.front());
+                c.life_data_lognormal.event_column = static_cast<std::size_t>(event.front());
+                const std::string cov_text = normalize(d.line_text("covariates"));
+                if (!cov_text.empty()) {
+                    const QStringList parts =
+                        QString::fromStdString(cov_text).split(QLatin1Char(','),
+                                                                 Qt::SkipEmptyParts);
+                    for (const QString& part : parts) {
+                        c.life_data_lognormal.covariate_columns.push_back(
+                            static_cast<std::size_t>(part.trimmed().toUInt()));
+                    }
+                }
+                return {};
+            },
+            AnalysisService::life_data_lognormal,
+            QStringLiteral("可靠性")},
+        {
+            QStringLiteral("simple_correspondence"),
+            QStringLiteral("简单对应分析"),
+            QStringLiteral("Simple Correspondence"),
+            QStringLiteral("统计"),
+            QStringLiteral("factor_analysis"),
+            false, true,
+            {{QStringLiteral("row_var"), QStringLiteral("行变量"), true, false},
+             {QStringLiteral("col_var"), QStringLiteral("列变量"), true, false}},
+            {{QStringLiteral("components"), QStringLiteral("组件数"), QStringLiteral("2")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto row = d.role_indices("row_var");
+                const auto col = d.role_indices("col_var");
+                if (row.empty() || col.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要行变量与列变量。"));
+                }
+                c.chart_type = "simple_correspondence";
+                c.simple_correspondence.row_variable_column =
+                    static_cast<std::size_t>(row.front());
+                c.simple_correspondence.column_variable_column =
+                    static_cast<std::size_t>(col.front());
+                const std::string comp = normalize(d.line_text("components"));
+                if (!comp.empty()) {
+                    c.simple_correspondence.component_count =
+                        static_cast<std::size_t>(std::stoul(comp));
+                }
+                return {};
+            },
+            AnalysisService::simple_correspondence,
+            QStringLiteral("多变量")},
+        {
+            QStringLiteral("multiple_correspondence"),
+            QStringLiteral("多重对应分析"),
+            QStringLiteral("Multiple Correspondence"),
+            QStringLiteral("统计"),
+            QStringLiteral("factor_analysis"),
+            false, true,
+            {{QStringLiteral("variables"), QStringLiteral("分类变量（逗号列号）"), true, false}},
+            {{QStringLiteral("components"), QStringLiteral("组件数"), QStringLiteral("2")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const QStringList parts =
+                    QString::fromStdString(normalize(d.line_text("variables")))
+                        .split(QLatin1Char(','), Qt::SkipEmptyParts);
+                if (parts.size() < 3 || parts.size() > 6) {
+                    return apply_error(QStringLiteral("列数无效"),
+                                       QStringLiteral("需要 3～6 个分类变量列。"));
+                }
+                c.chart_type = "multiple_correspondence";
+                for (const QString& part : parts) {
+                    c.multiple_correspondence.categorical_columns.push_back(
+                        static_cast<std::size_t>(part.trimmed().toUInt()));
+                }
+                const std::string comp = normalize(d.line_text("components"));
+                if (!comp.empty()) {
+                    c.multiple_correspondence.component_count =
+                        static_cast<std::size_t>(std::stoul(comp));
+                }
+                return {};
+            },
+            AnalysisService::multiple_correspondence,
+            QStringLiteral("多变量")},
+        {
+            QStringLiteral("nonlinear_regression"),
+            QStringLiteral("非线性回归"),
+            QStringLiteral("Nonlinear Regression"),
+            QStringLiteral("统计"),
+            QStringLiteral("linear_regression"),
+            false, true,
+            {{QStringLiteral("response"), QStringLiteral("响应"), true, false},
+             {QStringLiteral("predictor"), QStringLiteral("预测"), true, false}},
+            {{QStringLiteral("model"), QStringLiteral("模型 growth/decay/..."), QStringLiteral("growth")},
+             {QStringLiteral("algorithm"), QStringLiteral("gn/lm"), QStringLiteral("gn")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const auto y = d.role_indices("response");
+                const auto x = d.role_indices("predictor");
+                if (y.empty() || x.empty()) {
+                    return apply_error(QStringLiteral("列不足"),
+                                       QStringLiteral("需要响应与预测列。"));
+                }
+                c.chart_type = "nonlinear_regression";
+                c.nonlinear_regression.response_column = static_cast<std::size_t>(y.front());
+                c.nonlinear_regression.predictor_column = static_cast<std::size_t>(x.front());
+                const std::string model = normalize(d.line_text("model"));
+                if (!model.empty()) {
+                    c.nonlinear_regression.model_id = model;
+                }
+                const std::string algo = normalize(d.line_text("algorithm"));
+                if (!algo.empty()) {
+                    c.nonlinear_regression.algorithm = algo;
+                }
+                return {};
+            },
+            AnalysisService::nonlinear_regression,
+            QStringLiteral("回归")},
+        {
+            QStringLiteral("split_plot_design"),
+            QStringLiteral("2 水平裂区设计"),
+            QStringLiteral("Split-Plot Design"),
+            QStringLiteral("统计"),
+            QStringLiteral("doe_factorial"),
+            false, false,
+            {},
+            {{QStringLiteral("factors"), QStringLiteral("因子名（逗号）"), QStringLiteral("A,B,C")},
+             {QStringLiteral("htc"), QStringLiteral("难改因子索引(0-based)"), QStringLiteral("0")},
+             {QStringLiteral("replicates"), QStringLiteral("Whole-plot 复制"), QStringLiteral("1")},
+             {QStringLiteral("randomize"), QStringLiteral("随机化"), QStringLiteral("true")}},
+            [](AnalysisConfiguration& c, const datalab::application::AnalysisIntent& d)
+                -> AnalysisApplyResult {
+                const QStringList names =
+                    QString::fromStdString(normalize(d.line_text("factors")))
+                        .split(QLatin1Char(','), Qt::SkipEmptyParts);
+                if (names.size() < 2 || names.size() > 4) {
+                    return apply_error(QStringLiteral("因子数无效"),
+                                       QStringLiteral("需要 2～4 个因子。"));
+                }
+                c.chart_type = "split_plot_design";
+                for (const QString& name : names) {
+                    c.split_plot_design.factor_names.push_back(name.trimmed().toStdString());
+                    c.split_plot_design.low_levels.push_back("-");
+                    c.split_plot_design.high_levels.push_back("+");
+                }
+                const std::string htc = normalize(d.line_text("htc"));
+                if (!htc.empty()) {
+                    c.split_plot_design.htc_factor_index =
+                        static_cast<std::size_t>(std::stoul(htc));
+                }
+                const std::string reps = normalize(d.line_text("replicates"));
+                if (!reps.empty()) {
+                    c.split_plot_design.whole_plot_replicates =
+                        static_cast<std::size_t>(std::stoul(reps));
+                }
+                const std::string rand = normalize(d.line_text("randomize"));
+                c.split_plot_design.randomize = rand != "false" && rand != "0";
+                return {};
+            },
+            AnalysisService::split_plot_design,
+            QStringLiteral("DOE")},
+        {
             QStringLiteral("doe_ccd"),
             QStringLiteral("中心复合设计 CCD"),
             QStringLiteral("Central Composite Design"),

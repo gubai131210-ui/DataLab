@@ -12213,6 +12213,26 @@
       "en_us": "Expanded Gage R&R"
     },
     {
+      "id": "page.expanded_gage_unbalanced",
+      "zh_cn": "不平衡 Expanded Gage R&R",
+      "en_us": "Expanded Gage Unbalanced"
+    },
+    {
+      "id": "page.split_plot_analyze",
+      "zh_cn": "裂区析因分析",
+      "en_us": "Split-Plot Analyze"
+    },
+    {
+      "id": "page.mixture_process_variable",
+      "zh_cn": "Mixture + 过程变量",
+      "en_us": "Mixture Process Variable"
+    },
+    {
+      "id": "page.manova_one_way",
+      "zh_cn": "单因子 MANOVA",
+      "en_us": "MANOVA One-Way"
+    },
+    {
       "id": "page.emp_crossed",
       "zh_cn": "EMP Crossed",
       "en_us": "EMP Crossed"

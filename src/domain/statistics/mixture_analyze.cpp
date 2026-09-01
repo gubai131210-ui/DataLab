@@ -255,7 +255,7 @@ MixtureAnalyzeResult analyze_mixture_scheffe(
         if (fit.error_df > 0 && fit.mse > 0.0) {
             coef.standard_error = std::sqrt(fit.mse);
             if (coef.standard_error > 0.0) {
-                coef.t_statistic = coef.coefficient / *coef.standard_error;
+                coef.t_statistic = coef.coefficient / coef.standard_error;
                 coef.p_value = 2.0 * (1.0 - student_t_cdf(
                     std::abs(*coef.t_statistic),
                     static_cast<double>(fit.error_df)));

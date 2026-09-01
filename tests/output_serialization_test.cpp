@@ -504,7 +504,11 @@ void OutputSerializationTest::preservesStructuredAnalysisFacts()
     page.facts.nonparametric->posthoc_method = "dunn";
     page.facts.nonparametric->posthoc_pair_count = 3;
     page.facts.nonparametric->grouping_letter_count = 3;
-    page.facts.variance = datalab::domain::VarianceFacts{"Levene", 2.2, 0.176, 2};
+    page.facts.variance = datalab::domain::VarianceFacts{};
+    page.facts.variance->method = "Levene";
+    page.facts.variance->statistic = 2.2;
+    page.facts.variance->p_value = 0.176;
+    page.facts.variance->group_count = 2;
     page.configuration.inference.variance_group_column = 3;
     const auto restored_new = datalab::infrastructure::output_page_from_json(
         datalab::infrastructure::output_page_to_json(page));

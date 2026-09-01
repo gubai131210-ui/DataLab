@@ -1932,6 +1932,156 @@ void InterpretationService::enrich(domain::OutputPage& page)
         limitations.bullets.push_back(
             "范围（life_data_regression_scope）：1～2 协变量窄化；非 accelerated_life。");
     }
+    if (page.facts.expanded_gage_unbalanced.has_value()) {
+        const auto& facts = *page.facts.expanded_gage_unbalanced;
+        conclusion.bullets.push_back(
+            "不平衡 Gage（expanded_gage_unbalanced_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，Part = " + std::to_string(facts.part_count)
+            + "，Operator = " + std::to_string(facts.operator_count)
+            + (facts.design_balanced ? "，平衡" : "，不平衡") + "。");
+        conclusion.bullets.push_back(
+            "方差分量（expanded_gage_unbalanced_varcomp）：读 VarComp 与 %Contribution 表；"
+            "NDC = max(1, floor(sqrt(2*σ²_P-P/σ²_GRR)))。");
+        limitations.bullets.push_back(
+            "范围（expanded_gage_unbalanced_scope）：不平衡 GLM 窄化；非 expanded_gage_rr 对话框。");
+    }
+    if (page.facts.split_plot_analyze.has_value()) {
+        const auto& facts = *page.facts.split_plot_analyze;
+        conclusion.bullets.push_back(
+            "裂区分析（split_plot_analyze_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，WP = " + std::to_string(facts.whole_plot_count)
+            + "，WP R² = " + std::to_string(facts.wp_r_squared) + "。");
+        conclusion.bullets.push_back(
+            "双误差（split_plot_analyze_errors）：难改因子 F 分母 MS_WP_Error；"
+            "易改因子 F 分母 MS_SP_Error。");
+        limitations.bullets.push_back(
+            "范围（split_plot_analyze_scope）：裂区窄化；非 doe_factorial 对话框。");
+    }
+    if (page.facts.mixture_process_variable.has_value()) {
+        const auto& facts = *page.facts.mixture_process_variable;
+        conclusion.bullets.push_back(
+            "Mixture 过程变量（mixture_process_variable_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，q = " + std::to_string(facts.component_count)
+            + "，R² = " + std::to_string(facts.r_squared) + "。");
+        conclusion.bullets.push_back(
+            "Scheffé（mixture_process_variable_scheffe）：无截距 OLS；"
+            "可选组分×过程交互项。");
+        limitations.bullets.push_back(
+            "范围（mixture_process_variable_scope）：1 过程变量窄化；非 mixture_analyze 对话框。");
+    }
+    if (page.facts.manova_one_way.has_value()) {
+        const auto& facts = *page.facts.manova_one_way;
+        conclusion.bullets.push_back(
+            "MANOVA（manova_one_way_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，响应 = " + std::to_string(facts.response_count)
+            + "，组 = " + std::to_string(facts.group_count) + "。");
+        conclusion.bullets.push_back(
+            "检验（manova_one_way_tests）：Wilks/Pillai/LH/Roy；"
+            "特征值为 E^{-1}H。");
+        limitations.bullets.push_back(
+            "范围（manova_one_way_scope）：单因子窄化；非 General MANOVA。");
+    }
+    if (page.facts.general_manova.has_value()) {
+        const auto& facts = *page.facts.general_manova;
+        conclusion.bullets.push_back(
+            "General MANOVA（general_manova_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，响应 = " + std::to_string(facts.response_count)
+            + "，效应 = " + std::to_string(facts.effect_count) + "。");
+        conclusion.bullets.push_back(
+            "检验（general_manova_tests）：Type III SSCP；Wilks/Pillai/LH/Roy。");
+        limitations.bullets.push_back(
+            "范围（general_manova_scope）：非 manova_one_way 窄化对话框。");
+    }
+    if (page.facts.mixed_effects_reml.has_value()) {
+        const auto& facts = *page.facts.mixed_effects_reml;
+        conclusion.bullets.push_back(
+            "混合效应 REML（mixed_effects_reml_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，随机水平 = " + std::to_string(facts.random_level_count)
+            + "，σ² = " + std::to_string(facts.residual_variance)
+            + "，σ_u² = " + std::to_string(facts.random_variance) + "。");
+        conclusion.bullets.push_back(
+            "方法（mixed_effects_reml_method）：REML " + facts.reml_method + "。");
+        limitations.bullets.push_back(
+            "范围（mixed_effects_reml_scope）：单随机项窄化；非单页 GLM 壳。");
+    }
+    if (page.facts.binary_doe_probit.has_value()) {
+        const auto& facts = *page.facts.binary_doe_probit;
+        conclusion.bullets.push_back(
+            "二值 DOE Probit（binary_doe_probit_summary）：N = "
+            + std::to_string(facts.expanded_observation_count)
+            + "，link = " + facts.link
+            + "，收敛 = " + (facts.converged ? "yes" : "no") + "。");
+        conclusion.bullets.push_back(
+            "方法（binary_doe_probit_irwls）：Probit/Gompit IRWLS。");
+        limitations.bullets.push_back(
+            "范围（binary_doe_probit_scope）：非 binary_response_doe logit 对话框。");
+    }
+    if (page.facts.life_data_lognormal.has_value()) {
+        const auto& facts = *page.facts.life_data_lognormal;
+        conclusion.bullets.push_back(
+            "寿命 Lognormal（life_data_lognormal_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，失败 = " + std::to_string(facts.failure_count)
+            + "，删失 = " + std::to_string(facts.censored_count) + "。");
+        conclusion.bullets.push_back(
+            "MLE（life_data_lognormal_mle）：log scale 回归 + 删失。");
+        limitations.bullets.push_back(
+            "范围（life_data_lognormal_scope）：非 life_data_regression Weibull。");
+    }
+    if (page.facts.simple_correspondence.has_value()) {
+        const auto& facts = *page.facts.simple_correspondence;
+        conclusion.bullets.push_back(
+            "简单对应（simple_correspondence_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，惯性 = " + std::to_string(facts.total_inertia)
+            + "，χ² = " + std::to_string(facts.chi_square) + "。");
+        conclusion.bullets.push_back(
+            "方法（simple_correspondence_method）：I = χ²/n；SVD 主坐标。");
+        limitations.bullets.push_back(
+            "范围（simple_correspondence_scope）：2 列分类；非 MCA 对话框。");
+    }
+    if (page.facts.multiple_correspondence.has_value()) {
+        const auto& facts = *page.facts.multiple_correspondence;
+        conclusion.bullets.push_back(
+            "多重对应（multiple_correspondence_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，变量 = " + std::to_string(facts.variable_count)
+            + "，惯性 = " + std::to_string(facts.total_inertia) + "。");
+        conclusion.bullets.push_back(
+            "方法（multiple_correspondence_method）：指示矩阵 MCA。");
+        limitations.bullets.push_back(
+            "范围（multiple_correspondence_scope）：3～6 列；非 SCA 对话框。");
+    }
+    if (page.facts.nonlinear_regression.has_value()) {
+        const auto& facts = *page.facts.nonlinear_regression;
+        conclusion.bullets.push_back(
+            "非线性回归（nonlinear_regression_summary）：N = "
+            + std::to_string(facts.observation_count)
+            + "，模型 = " + facts.model_id
+            + "，收敛 = " + (facts.converged ? "yes" : "no") + "。");
+        conclusion.bullets.push_back(
+            "方法（nonlinear_regression_method）：" + facts.algorithm + " 迭代。");
+        limitations.bullets.push_back(
+            "范围（nonlinear_regression_scope）：内置模型；非 linear 对话框。");
+    }
+    if (page.facts.split_plot_design.has_value()) {
+        const auto& facts = *page.facts.split_plot_design;
+        conclusion.bullets.push_back(
+            "裂区设计（split_plot_design_summary）：因子 = "
+            + std::to_string(facts.factor_count)
+            + "，Whole plots = " + std::to_string(facts.whole_plot_count)
+            + "，Runs = " + std::to_string(facts.run_count) + "。");
+        conclusion.bullets.push_back(
+            "方法（split_plot_design_method）：HTC = " + facts.htc_factor_name + "。");
+        limitations.bullets.push_back(
+            "范围（split_plot_design_scope）：设计生成；非 split_plot_analyze。");
+    }
     if (page.facts.design_generation.has_value()) {
         const auto& facts = *page.facts.design_generation;
         if (facts.design_kind == "bbd") {

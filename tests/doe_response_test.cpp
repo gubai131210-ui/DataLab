@@ -1,4 +1,5 @@
 #include "domain/statistics/doe_factorial.h"
+#include "domain/statistics/response_optimization.h"
 
 #include <QtTest/QtTest>
 

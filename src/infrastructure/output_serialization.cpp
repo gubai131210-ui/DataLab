@@ -1822,6 +1822,238 @@ void write_interpretation_facts(
                    QString::fromStdString(facts.life_data_regression->algorithm_id));
         serialized.insert(QStringLiteral("life_data_regression"), ldr);
     }
+    if (facts.expanded_gage_unbalanced.has_value()) {
+        QJsonObject egu;
+        egu.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.expanded_gage_unbalanced->observation_count));
+        egu.insert(QStringLiteral("part_count"),
+                   static_cast<int>(facts.expanded_gage_unbalanced->part_count));
+        egu.insert(QStringLiteral("operator_count"),
+                   static_cast<int>(facts.expanded_gage_unbalanced->operator_count));
+        egu.insert(QStringLiteral("design_balanced"),
+                   facts.expanded_gage_unbalanced->design_balanced);
+        egu.insert(QStringLiteral("has_additional_factor"),
+                   facts.expanded_gage_unbalanced->has_additional_factor);
+        egu.insert(QStringLiteral("ndc"), facts.expanded_gage_unbalanced->ndc);
+        egu.insert(QStringLiteral("ndc_available"),
+                   facts.expanded_gage_unbalanced->ndc_available);
+        egu.insert(QStringLiteral("gage_rr_percent_study_var"),
+                   facts.expanded_gage_unbalanced->gage_rr_percent_study_var);
+        egu.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.expanded_gage_unbalanced->evidence_type));
+        egu.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.expanded_gage_unbalanced->algorithm_id));
+        serialized.insert(QStringLiteral("expanded_gage_unbalanced"), egu);
+    }
+    if (facts.split_plot_analyze.has_value()) {
+        QJsonObject spa;
+        spa.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.split_plot_analyze->observation_count));
+        spa.insert(QStringLiteral("whole_plot_count"),
+                   static_cast<int>(facts.split_plot_analyze->whole_plot_count));
+        spa.insert(QStringLiteral("include_htc_etc_interaction"),
+                   facts.split_plot_analyze->include_htc_etc_interaction);
+        spa.insert(QStringLiteral("include_etc_interaction"),
+                   facts.split_plot_analyze->include_etc_interaction);
+        spa.insert(QStringLiteral("wp_r_squared"), facts.split_plot_analyze->wp_r_squared);
+        spa.insert(QStringLiteral("sp_r_squared"), facts.split_plot_analyze->sp_r_squared);
+        spa.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.split_plot_analyze->evidence_type));
+        spa.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.split_plot_analyze->algorithm_id));
+        serialized.insert(QStringLiteral("split_plot_analyze"), spa);
+    }
+    if (facts.mixture_process_variable.has_value()) {
+        QJsonObject mpv;
+        mpv.insert(QStringLiteral("component_count"),
+                   static_cast<int>(facts.mixture_process_variable->component_count));
+        mpv.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.mixture_process_variable->observation_count));
+        mpv.insert(QStringLiteral("component_order"),
+                   QString::fromStdString(facts.mixture_process_variable->component_order));
+        mpv.insert(QStringLiteral("include_component_process_interaction"),
+                   facts.mixture_process_variable->include_component_process_interaction);
+        mpv.insert(QStringLiteral("r_squared"), facts.mixture_process_variable->r_squared);
+        mpv.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.mixture_process_variable->evidence_type));
+        mpv.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.mixture_process_variable->algorithm_id));
+        serialized.insert(QStringLiteral("mixture_process_variable"), mpv);
+    }
+    if (facts.manova_one_way.has_value()) {
+        QJsonObject mow;
+        mow.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.manova_one_way->observation_count));
+        mow.insert(QStringLiteral("response_count"),
+                   static_cast<int>(facts.manova_one_way->response_count));
+        mow.insert(QStringLiteral("group_count"),
+                   static_cast<int>(facts.manova_one_way->group_count));
+        mow.insert(QStringLiteral("wilks"), facts.manova_one_way->wilks);
+        mow.insert(QStringLiteral("pillai"), facts.manova_one_way->pillai);
+        mow.insert(QStringLiteral("lawley_hotelling"),
+                   facts.manova_one_way->lawley_hotelling);
+        mow.insert(QStringLiteral("roy"), facts.manova_one_way->roy);
+        mow.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.manova_one_way->evidence_type));
+        mow.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.manova_one_way->algorithm_id));
+        serialized.insert(QStringLiteral("manova_one_way"), mow);
+    }
+    if (facts.general_manova.has_value()) {
+        QJsonObject gm;
+        gm.insert(QStringLiteral("observation_count"),
+                  static_cast<int>(facts.general_manova->observation_count));
+        gm.insert(QStringLiteral("response_count"),
+                  static_cast<int>(facts.general_manova->response_count));
+        gm.insert(QStringLiteral("effect_count"),
+                  static_cast<int>(facts.general_manova->effect_count));
+        gm.insert(QStringLiteral("has_covariate"), facts.general_manova->has_covariate);
+        gm.insert(QStringLiteral("has_interaction"), facts.general_manova->has_interaction);
+        gm.insert(QStringLiteral("wilks"), facts.general_manova->wilks);
+        gm.insert(QStringLiteral("pillai"), facts.general_manova->pillai);
+        gm.insert(QStringLiteral("lawley_hotelling"),
+                  facts.general_manova->lawley_hotelling);
+        gm.insert(QStringLiteral("roy"), facts.general_manova->roy);
+        gm.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.general_manova->evidence_type));
+        gm.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.general_manova->algorithm_id));
+        serialized.insert(QStringLiteral("general_manova"), gm);
+    }
+    if (facts.mixed_effects_reml.has_value()) {
+        QJsonObject mer;
+        mer.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.mixed_effects_reml->observation_count));
+        mer.insert(QStringLiteral("random_level_count"),
+                   static_cast<int>(facts.mixed_effects_reml->random_level_count));
+        mer.insert(QStringLiteral("fixed_term_count"),
+                   static_cast<int>(facts.mixed_effects_reml->fixed_term_count));
+        mer.insert(QStringLiteral("converged"), facts.mixed_effects_reml->converged);
+        mer.insert(QStringLiteral("residual_variance"),
+                   facts.mixed_effects_reml->residual_variance);
+        mer.insert(QStringLiteral("random_variance"),
+                   facts.mixed_effects_reml->random_variance);
+        mer.insert(QStringLiteral("reml_method"),
+                   QString::fromStdString(facts.mixed_effects_reml->reml_method));
+        mer.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.mixed_effects_reml->evidence_type));
+        mer.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.mixed_effects_reml->algorithm_id));
+        serialized.insert(QStringLiteral("mixed_effects_reml"), mer);
+    }
+    if (facts.binary_doe_probit.has_value()) {
+        QJsonObject bdp;
+        bdp.insert(QStringLiteral("design_row_count"),
+                   static_cast<int>(facts.binary_doe_probit->design_row_count));
+        bdp.insert(QStringLiteral("expanded_observation_count"),
+                   static_cast<int>(facts.binary_doe_probit->expanded_observation_count));
+        bdp.insert(QStringLiteral("factor_count"),
+                   static_cast<int>(facts.binary_doe_probit->factor_count));
+        bdp.insert(QStringLiteral("link"),
+                   QString::fromStdString(facts.binary_doe_probit->link));
+        bdp.insert(QStringLiteral("converged"), facts.binary_doe_probit->converged);
+        bdp.insert(QStringLiteral("iteration_count"),
+                   static_cast<int>(facts.binary_doe_probit->iteration_count));
+        bdp.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.binary_doe_probit->evidence_type));
+        bdp.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.binary_doe_probit->algorithm_id));
+        serialized.insert(QStringLiteral("binary_doe_probit"), bdp);
+    }
+    if (facts.life_data_lognormal.has_value()) {
+        QJsonObject ldl;
+        ldl.insert(QStringLiteral("observation_count"),
+                   static_cast<int>(facts.life_data_lognormal->observation_count));
+        ldl.insert(QStringLiteral("failure_count"),
+                   static_cast<int>(facts.life_data_lognormal->failure_count));
+        ldl.insert(QStringLiteral("censored_count"),
+                   static_cast<int>(facts.life_data_lognormal->censored_count));
+        ldl.insert(QStringLiteral("covariate_count"),
+                   static_cast<int>(facts.life_data_lognormal->covariate_count));
+        ldl.insert(QStringLiteral("converged"), facts.life_data_lognormal->converged);
+        ldl.insert(QStringLiteral("log_sigma"), facts.life_data_lognormal->log_sigma);
+        ldl.insert(QStringLiteral("log_likelihood"),
+                   facts.life_data_lognormal->log_likelihood);
+        ldl.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.life_data_lognormal->evidence_type));
+        ldl.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.life_data_lognormal->algorithm_id));
+        serialized.insert(QStringLiteral("life_data_lognormal"), ldl);
+    }
+    if (facts.simple_correspondence.has_value()) {
+        QJsonObject sc;
+        sc.insert(QStringLiteral("observation_count"),
+                  static_cast<int>(facts.simple_correspondence->observation_count));
+        sc.insert(QStringLiteral("row_level_count"),
+                  static_cast<int>(facts.simple_correspondence->row_level_count));
+        sc.insert(QStringLiteral("column_level_count"),
+                  static_cast<int>(facts.simple_correspondence->column_level_count));
+        sc.insert(QStringLiteral("component_count"),
+                  static_cast<int>(facts.simple_correspondence->component_count));
+        sc.insert(QStringLiteral("total_inertia"), facts.simple_correspondence->total_inertia);
+        sc.insert(QStringLiteral("chi_square"), facts.simple_correspondence->chi_square);
+        sc.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.simple_correspondence->evidence_type));
+        sc.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.simple_correspondence->algorithm_id));
+        serialized.insert(QStringLiteral("simple_correspondence"), sc);
+    }
+    if (facts.multiple_correspondence.has_value()) {
+        QJsonObject mc;
+        mc.insert(QStringLiteral("observation_count"),
+                  static_cast<int>(facts.multiple_correspondence->observation_count));
+        mc.insert(QStringLiteral("variable_count"),
+                  static_cast<int>(facts.multiple_correspondence->variable_count));
+        mc.insert(QStringLiteral("category_count"),
+                  static_cast<int>(facts.multiple_correspondence->category_count));
+        mc.insert(QStringLiteral("column_count"),
+                  static_cast<int>(facts.multiple_correspondence->column_count));
+        mc.insert(QStringLiteral("component_count"),
+                  static_cast<int>(facts.multiple_correspondence->component_count));
+        mc.insert(QStringLiteral("total_inertia"), facts.multiple_correspondence->total_inertia);
+        mc.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.multiple_correspondence->evidence_type));
+        mc.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.multiple_correspondence->algorithm_id));
+        serialized.insert(QStringLiteral("multiple_correspondence"), mc);
+    }
+    if (facts.nonlinear_regression.has_value()) {
+        QJsonObject nr;
+        nr.insert(QStringLiteral("observation_count"),
+                  static_cast<int>(facts.nonlinear_regression->observation_count));
+        nr.insert(QStringLiteral("model_id"),
+                  QString::fromStdString(facts.nonlinear_regression->model_id));
+        nr.insert(QStringLiteral("algorithm"),
+                  QString::fromStdString(facts.nonlinear_regression->algorithm));
+        nr.insert(QStringLiteral("converged"), facts.nonlinear_regression->converged);
+        nr.insert(QStringLiteral("iteration_count"),
+                  static_cast<int>(facts.nonlinear_regression->iteration_count));
+        nr.insert(QStringLiteral("sse"), facts.nonlinear_regression->sse);
+        nr.insert(QStringLiteral("s"), facts.nonlinear_regression->s);
+        nr.insert(QStringLiteral("evidence_type"),
+                  QString::fromStdString(facts.nonlinear_regression->evidence_type));
+        nr.insert(QStringLiteral("algorithm_id"),
+                  QString::fromStdString(facts.nonlinear_regression->algorithm_id));
+        serialized.insert(QStringLiteral("nonlinear_regression"), nr);
+    }
+    if (facts.split_plot_design.has_value()) {
+        QJsonObject spd;
+        spd.insert(QStringLiteral("factor_count"),
+                   static_cast<int>(facts.split_plot_design->factor_count));
+        spd.insert(QStringLiteral("whole_plot_count"),
+                   static_cast<int>(facts.split_plot_design->whole_plot_count));
+        spd.insert(QStringLiteral("run_count"),
+                   static_cast<int>(facts.split_plot_design->run_count));
+        spd.insert(QStringLiteral("htc_factor_index"),
+                   static_cast<int>(facts.split_plot_design->htc_factor_index));
+        spd.insert(QStringLiteral("htc_factor_name"),
+                   QString::fromStdString(facts.split_plot_design->htc_factor_name));
+        spd.insert(QStringLiteral("evidence_type"),
+                   QString::fromStdString(facts.split_plot_design->evidence_type));
+        spd.insert(QStringLiteral("algorithm_id"),
+                   QString::fromStdString(facts.split_plot_design->algorithm_id));
+        serialized.insert(QStringLiteral("split_plot_design"), spd);
+    }
     if (facts.design_generation.has_value()) {
         QJsonObject dg;
         dg.insert(QStringLiteral("design_kind"),
@@ -4183,6 +4415,327 @@ void read_interpretation_facts(
             life_data_regression.value(QStringLiteral("algorithm_id"))
                 .toString(QStringLiteral("life_data_regression_weibull_mle")).toStdString();
         facts.life_data_regression = std::move(value);
+    }
+    const QJsonObject expanded_gage_unbalanced_facts =
+        serialized.value(QStringLiteral("expanded_gage_unbalanced")).toObject();
+    if (!expanded_gage_unbalanced_facts.isEmpty()) {
+        domain::ExpandedGageUnbalancedFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            expanded_gage_unbalanced_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.part_count = static_cast<std::size_t>(
+            expanded_gage_unbalanced_facts.value(QStringLiteral("part_count")).toInt(0));
+        value.operator_count = static_cast<std::size_t>(
+            expanded_gage_unbalanced_facts.value(QStringLiteral("operator_count")).toInt(0));
+        value.design_balanced =
+            expanded_gage_unbalanced_facts.value(QStringLiteral("design_balanced")).toBool(true);
+        value.has_additional_factor =
+            expanded_gage_unbalanced_facts.value(QStringLiteral("has_additional_factor")).toBool(false);
+        value.ndc = expanded_gage_unbalanced_facts.value(QStringLiteral("ndc")).toDouble(0.0);
+        value.ndc_available =
+            expanded_gage_unbalanced_facts.value(QStringLiteral("ndc_available")).toBool(false);
+        value.gage_rr_percent_study_var =
+            expanded_gage_unbalanced_facts.value(QStringLiteral("gage_rr_percent_study_var")).toDouble(0.0);
+        value.evidence_type =
+            expanded_gage_unbalanced_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            expanded_gage_unbalanced_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("expanded_gage_unbalanced_glm_varcomp"))
+                .toStdString();
+        facts.expanded_gage_unbalanced = std::move(value);
+    }
+    const QJsonObject split_plot_analyze_facts =
+        serialized.value(QStringLiteral("split_plot_analyze")).toObject();
+    if (!split_plot_analyze_facts.isEmpty()) {
+        domain::SplitPlotAnalyzeFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            split_plot_analyze_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.whole_plot_count = static_cast<std::size_t>(
+            split_plot_analyze_facts.value(QStringLiteral("whole_plot_count")).toInt(0));
+        value.include_htc_etc_interaction =
+            split_plot_analyze_facts.value(QStringLiteral("include_htc_etc_interaction")).toBool(true);
+        value.include_etc_interaction =
+            split_plot_analyze_facts.value(QStringLiteral("include_etc_interaction")).toBool(true);
+        value.wp_r_squared =
+            split_plot_analyze_facts.value(QStringLiteral("wp_r_squared")).toDouble(0.0);
+        value.sp_r_squared =
+            split_plot_analyze_facts.value(QStringLiteral("sp_r_squared")).toDouble(0.0);
+        value.evidence_type =
+            split_plot_analyze_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            split_plot_analyze_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("split_plot_analyze_wp_sp"))
+                .toStdString();
+        facts.split_plot_analyze = std::move(value);
+    }
+    const QJsonObject mixture_process_variable_facts =
+        serialized.value(QStringLiteral("mixture_process_variable")).toObject();
+    if (!mixture_process_variable_facts.isEmpty()) {
+        domain::MixtureProcessVariableFacts value;
+        value.component_count = static_cast<std::size_t>(
+            mixture_process_variable_facts.value(QStringLiteral("component_count")).toInt(0));
+        value.observation_count = static_cast<std::size_t>(
+            mixture_process_variable_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.component_order =
+            mixture_process_variable_facts.value(QStringLiteral("component_order"))
+                .toString(QStringLiteral("linear"))
+                .toStdString();
+        value.include_component_process_interaction =
+            mixture_process_variable_facts.value(QStringLiteral("include_component_process_interaction"))
+                .toBool(true);
+        value.r_squared =
+            mixture_process_variable_facts.value(QStringLiteral("r_squared")).toDouble(0.0);
+        value.evidence_type =
+            mixture_process_variable_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            mixture_process_variable_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("mixture_process_variable_scheffe_ols"))
+                .toStdString();
+        facts.mixture_process_variable = std::move(value);
+    }
+    const QJsonObject manova_one_way_facts =
+        serialized.value(QStringLiteral("manova_one_way")).toObject();
+    if (!manova_one_way_facts.isEmpty()) {
+        domain::ManovaOneWayFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            manova_one_way_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.response_count = static_cast<std::size_t>(
+            manova_one_way_facts.value(QStringLiteral("response_count")).toInt(0));
+        value.group_count = static_cast<std::size_t>(
+            manova_one_way_facts.value(QStringLiteral("group_count")).toInt(0));
+        value.wilks = manova_one_way_facts.value(QStringLiteral("wilks")).toBool(true);
+        value.pillai = manova_one_way_facts.value(QStringLiteral("pillai")).toBool(true);
+        value.lawley_hotelling =
+            manova_one_way_facts.value(QStringLiteral("lawley_hotelling")).toBool(true);
+        value.roy = manova_one_way_facts.value(QStringLiteral("roy")).toBool(true);
+        value.evidence_type =
+            manova_one_way_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            manova_one_way_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("manova_one_way_multivariate"))
+                .toStdString();
+        facts.manova_one_way = std::move(value);
+    }
+    const QJsonObject general_manova_facts =
+        serialized.value(QStringLiteral("general_manova")).toObject();
+    if (!general_manova_facts.isEmpty()) {
+        domain::GeneralManovaFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            general_manova_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.response_count = static_cast<std::size_t>(
+            general_manova_facts.value(QStringLiteral("response_count")).toInt(0));
+        value.effect_count = static_cast<std::size_t>(
+            general_manova_facts.value(QStringLiteral("effect_count")).toInt(0));
+        value.has_covariate =
+            general_manova_facts.value(QStringLiteral("has_covariate")).toBool(false);
+        value.has_interaction =
+            general_manova_facts.value(QStringLiteral("has_interaction")).toBool(false);
+        value.wilks = general_manova_facts.value(QStringLiteral("wilks")).toBool(true);
+        value.pillai = general_manova_facts.value(QStringLiteral("pillai")).toBool(true);
+        value.lawley_hotelling =
+            general_manova_facts.value(QStringLiteral("lawley_hotelling")).toBool(true);
+        value.roy = general_manova_facts.value(QStringLiteral("roy")).toBool(true);
+        value.evidence_type =
+            general_manova_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            general_manova_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("general_manova_type3_sscp"))
+                .toStdString();
+        facts.general_manova = std::move(value);
+    }
+    const QJsonObject mixed_effects_reml_facts =
+        serialized.value(QStringLiteral("mixed_effects_reml")).toObject();
+    if (!mixed_effects_reml_facts.isEmpty()) {
+        domain::MixedEffectsRemlFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            mixed_effects_reml_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.random_level_count = static_cast<std::size_t>(
+            mixed_effects_reml_facts.value(QStringLiteral("random_level_count")).toInt(0));
+        value.fixed_term_count = static_cast<std::size_t>(
+            mixed_effects_reml_facts.value(QStringLiteral("fixed_term_count")).toInt(0));
+        value.converged = mixed_effects_reml_facts.value(QStringLiteral("converged")).toBool(false);
+        value.residual_variance =
+            mixed_effects_reml_facts.value(QStringLiteral("residual_variance")).toDouble(0.0);
+        value.random_variance =
+            mixed_effects_reml_facts.value(QStringLiteral("random_variance")).toDouble(0.0);
+        value.reml_method =
+            mixed_effects_reml_facts.value(QStringLiteral("reml_method"))
+                .toString(QStringLiteral("newton"))
+                .toStdString();
+        value.evidence_type =
+            mixed_effects_reml_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            mixed_effects_reml_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("mixed_effects_reml_variance"))
+                .toStdString();
+        facts.mixed_effects_reml = std::move(value);
+    }
+    const QJsonObject binary_doe_probit_facts =
+        serialized.value(QStringLiteral("binary_doe_probit")).toObject();
+    if (!binary_doe_probit_facts.isEmpty()) {
+        domain::BinaryDoeProbitFacts value;
+        value.design_row_count = static_cast<std::size_t>(
+            binary_doe_probit_facts.value(QStringLiteral("design_row_count")).toInt(0));
+        value.expanded_observation_count = static_cast<std::size_t>(
+            binary_doe_probit_facts.value(QStringLiteral("expanded_observation_count")).toInt(0));
+        value.factor_count = static_cast<std::size_t>(
+            binary_doe_probit_facts.value(QStringLiteral("factor_count")).toInt(0));
+        value.link =
+            binary_doe_probit_facts.value(QStringLiteral("link"))
+                .toString(QStringLiteral("probit"))
+                .toStdString();
+        value.converged =
+            binary_doe_probit_facts.value(QStringLiteral("converged")).toBool(false);
+        value.iteration_count = static_cast<std::size_t>(
+            binary_doe_probit_facts.value(QStringLiteral("iteration_count")).toInt(0));
+        value.evidence_type =
+            binary_doe_probit_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            binary_doe_probit_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("binary_doe_probit_irwls"))
+                .toStdString();
+        facts.binary_doe_probit = std::move(value);
+    }
+    const QJsonObject life_data_lognormal_facts =
+        serialized.value(QStringLiteral("life_data_lognormal")).toObject();
+    if (!life_data_lognormal_facts.isEmpty()) {
+        domain::LifeDataLognormalFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            life_data_lognormal_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.failure_count = static_cast<std::size_t>(
+            life_data_lognormal_facts.value(QStringLiteral("failure_count")).toInt(0));
+        value.censored_count = static_cast<std::size_t>(
+            life_data_lognormal_facts.value(QStringLiteral("censored_count")).toInt(0));
+        value.covariate_count = static_cast<std::size_t>(
+            life_data_lognormal_facts.value(QStringLiteral("covariate_count")).toInt(0));
+        value.converged =
+            life_data_lognormal_facts.value(QStringLiteral("converged")).toBool(false);
+        value.log_sigma =
+            life_data_lognormal_facts.value(QStringLiteral("log_sigma")).toDouble(0.0);
+        value.log_likelihood =
+            life_data_lognormal_facts.value(QStringLiteral("log_likelihood")).toDouble(0.0);
+        value.evidence_type =
+            life_data_lognormal_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            life_data_lognormal_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("life_data_lognormal_mle"))
+                .toStdString();
+        facts.life_data_lognormal = std::move(value);
+    }
+    const QJsonObject simple_correspondence_facts =
+        serialized.value(QStringLiteral("simple_correspondence")).toObject();
+    if (!simple_correspondence_facts.isEmpty()) {
+        domain::SimpleCorrespondenceFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            simple_correspondence_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.row_level_count = static_cast<std::size_t>(
+            simple_correspondence_facts.value(QStringLiteral("row_level_count")).toInt(0));
+        value.column_level_count = static_cast<std::size_t>(
+            simple_correspondence_facts.value(QStringLiteral("column_level_count")).toInt(0));
+        value.component_count = static_cast<std::size_t>(
+            simple_correspondence_facts.value(QStringLiteral("component_count")).toInt(0));
+        value.total_inertia =
+            simple_correspondence_facts.value(QStringLiteral("total_inertia")).toDouble(0.0);
+        value.chi_square =
+            simple_correspondence_facts.value(QStringLiteral("chi_square")).toDouble(0.0);
+        value.evidence_type =
+            simple_correspondence_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            simple_correspondence_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("simple_correspondence_svd"))
+                .toStdString();
+        facts.simple_correspondence = std::move(value);
+    }
+    const QJsonObject multiple_correspondence_facts =
+        serialized.value(QStringLiteral("multiple_correspondence")).toObject();
+    if (!multiple_correspondence_facts.isEmpty()) {
+        domain::MultipleCorrespondenceFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            multiple_correspondence_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.variable_count = static_cast<std::size_t>(
+            multiple_correspondence_facts.value(QStringLiteral("variable_count")).toInt(0));
+        value.column_count = static_cast<std::size_t>(
+            multiple_correspondence_facts.value(QStringLiteral("column_count")).toInt(0));
+        value.component_count = static_cast<std::size_t>(
+            multiple_correspondence_facts.value(QStringLiteral("component_count")).toInt(0));
+        value.total_inertia =
+            multiple_correspondence_facts.value(QStringLiteral("total_inertia")).toDouble(0.0);
+        value.evidence_type =
+            multiple_correspondence_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            multiple_correspondence_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("multiple_correspondence_burt"))
+                .toStdString();
+        facts.multiple_correspondence = std::move(value);
+    }
+    const QJsonObject nonlinear_regression_facts =
+        serialized.value(QStringLiteral("nonlinear_regression")).toObject();
+    if (!nonlinear_regression_facts.isEmpty()) {
+        domain::NonlinearRegressionFacts value;
+        value.observation_count = static_cast<std::size_t>(
+            nonlinear_regression_facts.value(QStringLiteral("observation_count")).toInt(0));
+        value.model_id =
+            nonlinear_regression_facts.value(QStringLiteral("model_id")).toString().toStdString();
+        value.algorithm =
+            nonlinear_regression_facts.value(QStringLiteral("algorithm")).toString().toStdString();
+        value.converged =
+            nonlinear_regression_facts.value(QStringLiteral("converged")).toBool(false);
+        value.iteration_count = static_cast<std::size_t>(
+            nonlinear_regression_facts.value(QStringLiteral("iteration_count")).toInt(0));
+        value.sse = nonlinear_regression_facts.value(QStringLiteral("sse")).toDouble(0.0);
+        value.s = nonlinear_regression_facts.value(QStringLiteral("s")).toDouble(0.0);
+        value.evidence_type =
+            nonlinear_regression_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            nonlinear_regression_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("nonlinear_regression_gn_lm"))
+                .toStdString();
+        facts.nonlinear_regression = std::move(value);
+    }
+    const QJsonObject split_plot_design_facts =
+        serialized.value(QStringLiteral("split_plot_design")).toObject();
+    if (!split_plot_design_facts.isEmpty()) {
+        domain::SplitPlotDesignFacts value;
+        value.factor_count = static_cast<std::size_t>(
+            split_plot_design_facts.value(QStringLiteral("factor_count")).toInt(0));
+        value.whole_plot_count = static_cast<std::size_t>(
+            split_plot_design_facts.value(QStringLiteral("whole_plot_count")).toInt(0));
+        value.run_count = static_cast<std::size_t>(
+            split_plot_design_facts.value(QStringLiteral("run_count")).toInt(0));
+        value.htc_factor_index = static_cast<std::size_t>(
+            split_plot_design_facts.value(QStringLiteral("htc_factor_index")).toInt(0));
+        value.htc_factor_name =
+            split_plot_design_facts.value(QStringLiteral("htc_factor_name")).toString().toStdString();
+        value.evidence_type =
+            split_plot_design_facts.value(QStringLiteral("evidence_type"))
+                .toString(QStringLiteral("formula_reference"))
+                .toStdString();
+        value.algorithm_id =
+            split_plot_design_facts.value(QStringLiteral("algorithm_id"))
+                .toString(QStringLiteral("split_plot_design_2level"))
+                .toStdString();
+        facts.split_plot_design = std::move(value);
     }
     const QJsonObject design_generation =
         serialized.value(QStringLiteral("design_generation")).toObject();

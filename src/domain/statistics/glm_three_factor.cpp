@@ -199,7 +199,7 @@ void add_fitted_means(
     std::vector<GlmFittedMean>& out)
 {
     auto accumulate = [&](char factor, const std::vector<std::string>& levels,
-                          const std::string& (Observation::*member)) {
+                          std::string Observation::*member) {
         std::map<std::string, std::pair<double, std::size_t>> sums;
         for (std::size_t i = 0; i < observations.size(); ++i) {
             auto& entry = sums[observations[i].*member];

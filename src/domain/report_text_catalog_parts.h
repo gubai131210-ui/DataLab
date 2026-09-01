@@ -25,5 +25,8 @@ void append_report_text_catalog_part16(std::vector<ReportTextEntry>& out);
 void append_report_text_catalog_part17(std::vector<ReportTextEntry>& out);
 void append_report_text_catalog_part18(std::vector<ReportTextEntry>& out);
 void append_report_text_catalog_part19(std::vector<ReportTextEntry>& out);
+void append_report_text_catalog_part20(std::vector<ReportTextEntry>& out);
+void append_report_text_catalog_part21(std::vector<ReportTextEntry>& out);
+void append_report_text_catalog_part22(std::vector<ReportTextEntry>& out);
 
 }  // namespace datalab::domain

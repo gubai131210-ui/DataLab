@@ -63,6 +63,18 @@
 #include "domain/statistics/binary_response_doe.h"
 #include "domain/statistics/cluster_variables.h"
 #include "domain/statistics/life_data_regression.h"
+#include "domain/statistics/expanded_gage_unbalanced.h"
+#include "domain/statistics/split_plot_analyze.h"
+#include "domain/statistics/mixture_process_variable.h"
+#include "domain/statistics/manova_one_way.h"
+#include "domain/statistics/general_manova.h"
+#include "domain/statistics/mixed_effects_reml.h"
+#include "domain/statistics/binary_doe_probit.h"
+#include "domain/statistics/life_data_lognormal.h"
+#include "domain/statistics/simple_correspondence.h"
+#include "domain/statistics/multiple_correspondence.h"
+#include "domain/statistics/nonlinear_regression.h"
+#include "domain/statistics/split_plot_design.h"
 #include "domain/statistics/adf_test.h"
 #include "domain/statistics/poisson_regression.h"
 #include "domain/statistics/isolation_forest.h"
@@ -16394,6 +16406,1304 @@ OutputPage AnalysisService::life_data_regression(
     facts.algorithm_id = result.algorithm_id;
     page.facts.life_data_regression = facts;
     page.analysis_command_id = "life_data_regression";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::expanded_gage_unbalanced(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.expanded_gage_unbalanced;
+    if (!cfg.measurement_column.has_value() || !cfg.part_column.has_value()
+        || !cfg.operator_column.has_value()) {
+        return error_page("不平衡 Expanded Gage R&R", "Expanded Gage Unbalanced",
+                          "请选择测量、Part 与 Operator 列。");
+    }
+    std::vector<double> measurements;
+    std::vector<std::string> parts;
+    std::vector<std::string> operators;
+    std::vector<std::string> additional;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_m = *cfg.measurement_column;
+    const std::size_t col_p = *cfg.part_column;
+    const std::size_t col_o = *cfg.operator_column;
+    const std::size_t col_a = cfg.additional_column.value_or(0);
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_m >= table.rows[row].size() || col_p >= table.rows[row].size()
+            || col_o >= table.rows[row].size()) {
+            continue;
+        }
+        if (table.rows[row][col_p].empty() || table.rows[row][col_o].empty()) {
+            continue;
+        }
+        if (cfg.include_additional_factor) {
+            if (col_a >= table.rows[row].size() || table.rows[row][col_a].empty()) {
+                continue;
+            }
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_m]);
+        if (!y.has_value()) {
+            continue;
+        }
+        measurements.push_back(*y);
+        parts.push_back(table.rows[row][col_p]);
+        operators.push_back(table.rows[row][col_o]);
+        additional.push_back(cfg.include_additional_factor ? table.rows[row][col_a] : std::string{});
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::ExpandedGageUnbalancedOptions options;
+    options.include_additional_factor = cfg.include_additional_factor;
+    options.part_random = cfg.part_random;
+    options.operator_random = cfg.operator_random;
+    options.additional_random = cfg.additional_random;
+    options.study_var_multiplier = cfg.study_var_multiplier;
+    const double tolerance = cfg.tolerance.value_or(0.0);
+    const auto result = datalab::domain::statistics::expanded_gage_unbalanced_analyze(
+        measurements, parts, operators, additional, tolerance, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("expanded_gage_unbalanced");
+    page.title = "不平衡 Expanded Gage R&R";
+    page.method_name = "Expanded Gage Unbalanced";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    Part = " + std::to_string(result.part_count)
+        + "    Operator = " + std::to_string(result.operator_count)
+        + (result.design_balanced ? "    平衡" : "    不平衡");
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable anova;
+    anova.title = "ANOVA";
+    anova.headers = {"Source", "DF", "SS", "MS", "F", "P"};
+    for (const auto& row : result.anova_rows) {
+        anova.rows.push_back({
+            row.source,
+            std::to_string(row.degrees_of_freedom),
+            format_number(row.sum_of_squares),
+            format_number(row.mean_square),
+            format_number(row.f_statistic),
+            row.p_value.has_value() ? format_number(*row.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(anova));
+
+    StatisticTable varcomp;
+    varcomp.title = "Gage R&R VarComp";
+    varcomp.headers = {"Source", "VarComp", "%Contribution", "Study Var", "%Study Var", "NDC"};
+    for (const auto& comp : result.variance_components) {
+        varcomp.rows.push_back({
+            comp.source,
+            format_number(comp.variance_component),
+            format_number(comp.percent_contribution),
+            format_number(comp.study_variation),
+            format_number(comp.percent_study_variation),
+            comp.source == "Total Gage R&R" && result.ndc_available
+                ? format_number(result.ndc) : ""});
+    }
+    page.tables.push_back(std::move(varcomp));
+
+    domain::ExpandedGageUnbalancedFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.part_count = result.part_count;
+    facts.operator_count = result.operator_count;
+    facts.design_balanced = result.design_balanced;
+    facts.has_additional_factor = result.has_additional_factor;
+    facts.ndc = result.ndc;
+    facts.ndc_available = result.ndc_available;
+    facts.gage_rr_percent_study_var = result.gage_rr_percent_study_var;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.expanded_gage_unbalanced = facts;
+    page.analysis_command_id = "expanded_gage_unbalanced";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::split_plot_analyze(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.split_plot_analyze;
+    if (!cfg.response_column.has_value() || !cfg.htc_factor_column.has_value()
+        || !cfg.etc_factor_a_column.has_value() || !cfg.whole_plot_column.has_value()) {
+        return error_page("裂区析因分析", "Split-Plot Analyze",
+                          "请选择响应、难改/易改因子与 WP 列。");
+    }
+    std::vector<double> response;
+    std::vector<std::string> htc;
+    std::vector<std::string> etc_a;
+    std::vector<std::string> etc_b;
+    std::vector<std::string> wp;
+    std::vector<std::size_t> source_rows;
+    const bool has_etc_b = cfg.etc_factor_b_column.has_value();
+    const std::size_t col_y = *cfg.response_column;
+    const std::size_t col_htc = *cfg.htc_factor_column;
+    const std::size_t col_etc_a = *cfg.etc_factor_a_column;
+    const std::size_t col_etc_b = cfg.etc_factor_b_column.value_or(0);
+    const std::size_t col_wp = *cfg.whole_plot_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_y >= table.rows[row].size() || col_htc >= table.rows[row].size()
+            || col_etc_a >= table.rows[row].size() || col_wp >= table.rows[row].size()) {
+            continue;
+        }
+        if (table.rows[row][col_htc].empty() || table.rows[row][col_etc_a].empty()
+            || table.rows[row][col_wp].empty()) {
+            continue;
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_y]);
+        if (!y.has_value()) {
+            continue;
+        }
+        if (has_etc_b) {
+            if (col_etc_b >= table.rows[row].size() || table.rows[row][col_etc_b].empty()) {
+                continue;
+            }
+            etc_b.push_back(table.rows[row][col_etc_b]);
+        }
+        response.push_back(*y);
+        htc.push_back(table.rows[row][col_htc]);
+        etc_a.push_back(table.rows[row][col_etc_a]);
+        wp.push_back(table.rows[row][col_wp]);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::SplitPlotAnalyzeOptions options;
+    options.include_htc_etc_interaction = cfg.include_htc_etc_interaction;
+    options.include_etc_interaction = cfg.include_etc_interaction;
+    const auto result = datalab::domain::statistics::split_plot_analyze(
+        response, htc, etc_a, wp, etc_b, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("split_plot_analyze");
+    page.title = "裂区析因分析";
+    page.method_name = "Split-Plot Analyze";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    WP = " + std::to_string(result.whole_plot_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable anova;
+    anova.title = "Split-Plot ANOVA";
+    anova.headers = {"Source", "Layer", "SS", "DF", "MS", "F", "P"};
+    for (const auto& effect : result.anova_effects) {
+        anova.rows.push_back({
+            effect.term,
+            effect.error_layer,
+            effect.sum_of_squares.has_value() ? format_number(*effect.sum_of_squares) : "*",
+            std::to_string(effect.degrees_of_freedom),
+            effect.mean_square.has_value() ? format_number(*effect.mean_square) : "*",
+            effect.f_statistic.has_value() ? format_number(*effect.f_statistic) : "*",
+            effect.p_value.has_value() ? format_number(*effect.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(anova));
+
+    StatisticTable fits;
+    fits.title = "Fits and Residuals";
+    fits.headers = {"Source Row", "WP", "Observed", "Fitted", "Residual", "WP Residual"};
+    for (const auto& row : result.fits) {
+        fits.rows.push_back({
+            std::to_string(row.source_row),
+            row.whole_plot_id,
+            format_number(row.observed),
+            format_number(row.fitted),
+            format_number(row.residual),
+            format_number(row.whole_plot_residual)});
+    }
+    page.tables.push_back(std::move(fits));
+
+    domain::SplitPlotAnalyzeFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.whole_plot_count = result.whole_plot_count;
+    facts.include_htc_etc_interaction = result.include_htc_etc_interaction;
+    facts.include_etc_interaction = result.include_etc_interaction;
+    facts.wp_r_squared = result.wp_r_squared;
+    facts.sp_r_squared = result.sp_r_squared;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.split_plot_analyze = facts;
+    page.analysis_command_id = "split_plot_analyze";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::mixture_process_variable(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.mixture_process_variable;
+    if (cfg.component_columns.size() < 2 || !cfg.response_column.has_value()
+        || !cfg.process_column.has_value()) {
+        return error_page("Mixture + 过程变量", "Mixture Process Variable",
+                          "请选择 2～4 个组分列、响应列与过程变量列。");
+    }
+    std::vector<std::vector<double>> components;
+    std::vector<double> process;
+    std::vector<double> response;
+    std::vector<std::size_t> source_rows;
+    std::vector<std::string> component_names;
+    for (std::size_t col : cfg.component_columns) {
+        component_names.push_back(
+            col < table.columns.size() ? table.columns[col] : ("x" + std::to_string(col + 1)));
+    }
+    const std::size_t col_y = *cfg.response_column;
+    const std::size_t col_x = *cfg.process_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_y >= table.rows[row].size() || col_x >= table.rows[row].size()) {
+            continue;
+        }
+        std::vector<double> comp_row;
+        bool ok = true;
+        for (std::size_t col : cfg.component_columns) {
+            if (col >= table.rows[row].size()) {
+                ok = false;
+                break;
+            }
+            const auto value = parse_numeric_cell(table.rows[row][col]);
+            if (!value.has_value()) {
+                ok = false;
+                break;
+            }
+            comp_row.push_back(*value);
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_y]);
+        const auto x = parse_numeric_cell(table.rows[row][col_x]);
+        if (!ok || !y.has_value() || !x.has_value()) {
+            continue;
+        }
+        components.push_back(comp_row);
+        process.push_back(*x);
+        response.push_back(*y);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::MixtureProcessVariableOptions options;
+    options.component_order =
+        datalab::domain::statistics::parse_mixture_model_order(cfg.component_order);
+    options.include_component_process_interaction =
+        cfg.include_component_process_interaction;
+    options.sum_tolerance = cfg.sum_tolerance;
+    const auto result = datalab::domain::statistics::analyze_mixture_process_variable(
+        components, process, response, component_names, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("mixture_process_variable");
+    page.title = "Mixture + 过程变量";
+    page.method_name = "Mixture Process Variable";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    q = " + std::to_string(result.component_count)
+        + "    R² = " + format_number(result.r_squared);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable coef;
+    coef.title = "Coefficients";
+    coef.headers = {"Term", "Coef", "SE", "T", "P"};
+    for (const auto& row : result.coefficients) {
+        coef.rows.push_back({
+            row.term,
+            format_number(row.coefficient),
+            row.standard_error > 0.0 ? format_number(row.standard_error) : "*",
+            row.t_statistic.has_value() ? format_number(*row.t_statistic) : "*",
+            row.p_value.has_value() ? format_number(*row.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(coef));
+
+    StatisticTable anova;
+    anova.title = "ANOVA";
+    anova.headers = {"Source", "Adj SS", "DF", "MS", "F", "P"};
+    for (const auto& effect : result.anova_effects) {
+        anova.rows.push_back({
+            effect.term,
+            effect.adjusted_sum_of_squares.has_value()
+                ? format_number(*effect.adjusted_sum_of_squares) : "*",
+            std::to_string(effect.degrees_of_freedom),
+            effect.mean_square.has_value() ? format_number(*effect.mean_square) : "*",
+            effect.f_statistic.has_value() ? format_number(*effect.f_statistic) : "*",
+            effect.p_value.has_value() ? format_number(*effect.p_value) : "*"});
+    }
+    page.tables.push_back(std::move(anova));
+
+    domain::MixtureProcessVariableFacts facts;
+    facts.component_count = result.component_count;
+    facts.observation_count = result.observation_count;
+    facts.component_order = result.component_order;
+    facts.include_component_process_interaction =
+        result.include_component_process_interaction;
+    facts.r_squared = result.r_squared;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.mixture_process_variable = facts;
+    page.analysis_command_id = "mixture_process_variable";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::manova_one_way(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.manova_one_way;
+    if (cfg.response_columns.size() < 2 || !cfg.factor_column.has_value()) {
+        return error_page("单因子 MANOVA", "MANOVA One-Way",
+                          "请选择 2～4 个响应列与 1 个因子列。");
+    }
+    std::vector<std::vector<double>> responses;
+    std::vector<std::string> factor;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_f = *cfg.factor_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_f >= table.rows[row].size() || table.rows[row][col_f].empty()) {
+            continue;
+        }
+        std::vector<double> y_row;
+        bool ok = true;
+        for (std::size_t col : cfg.response_columns) {
+            if (col >= table.rows[row].size()) {
+                ok = false;
+                break;
+            }
+            const auto value = parse_numeric_cell(table.rows[row][col]);
+            if (!value.has_value()) {
+                ok = false;
+                break;
+            }
+            y_row.push_back(*value);
+        }
+        if (!ok) {
+            continue;
+        }
+        responses.push_back(y_row);
+        factor.push_back(table.rows[row][col_f]);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::ManovaOneWayOptions options;
+    options.wilks = cfg.wilks;
+    options.pillai = cfg.pillai;
+    options.lawley_hotelling = cfg.lawley_hotelling;
+    options.roy = cfg.roy;
+    const auto result = datalab::domain::statistics::manova_one_way_analyze(
+        responses, factor, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("manova_one_way");
+    page.title = "单因子 MANOVA";
+    page.method_name = "MANOVA One-Way";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    响应 = " + std::to_string(result.response_count)
+        + "    组 = " + std::to_string(result.group_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable tests;
+    tests.title = "MANOVA Test Table";
+    tests.headers = {"Test", "Value", "F", "Num DF", "Den DF", "P", "Approx"};
+    for (const auto& row : result.test_rows) {
+        tests.rows.push_back({
+            row.test_name,
+            format_number(row.value),
+            row.f_statistic.has_value() ? format_number(*row.f_statistic) : "*",
+            row.numerator_df.has_value() ? format_number(*row.numerator_df) : "*",
+            row.denominator_df.has_value() ? format_number(*row.denominator_df) : "*",
+            row.p_value.has_value() ? format_number(*row.p_value) : "*",
+            row.approximate ? "yes" : "no"});
+    }
+    page.tables.push_back(std::move(tests));
+
+    StatisticTable means;
+    means.title = "Group Mean Vectors";
+    means.headers = {"Group", "N"};
+    for (std::size_t j = 0; j < result.response_count; ++j) {
+        means.headers.push_back("Y" + std::to_string(j + 1));
+    }
+    for (const auto& group : result.group_means) {
+        std::vector<std::string> row = {group.group, std::to_string(group.count)};
+        for (double value : group.means) {
+            row.push_back(format_number(value));
+        }
+        means.rows.push_back(row);
+    }
+    page.tables.push_back(std::move(means));
+
+    if (!result.eigenvalues.empty()) {
+        StatisticTable eigen;
+        eigen.title = "Eigen Analysis";
+        eigen.headers = {"Index", "Eigenvalue", "Proportion"};
+        for (const auto& row : result.eigenvalues) {
+            eigen.rows.push_back({
+                std::to_string(row.index),
+                format_number(row.eigenvalue),
+                format_number(row.proportion)});
+        }
+        page.tables.push_back(std::move(eigen));
+    }
+
+    domain::ManovaOneWayFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.response_count = result.response_count;
+    facts.group_count = result.group_count;
+    facts.wilks = cfg.wilks;
+    facts.pillai = cfg.pillai;
+    facts.lawley_hotelling = cfg.lawley_hotelling;
+    facts.roy = cfg.roy;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.manova_one_way = facts;
+    page.analysis_command_id = "manova_one_way";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::general_manova(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.general_manova;
+    if (cfg.response_columns.size() < 2 || !cfg.factor_a_column.has_value()) {
+        return error_page("General MANOVA", "General MANOVA",
+                          "请选择 2～4 个响应列与至少 1 个因子列。");
+    }
+    std::vector<std::vector<double>> responses;
+    std::vector<std::string> factor_a;
+    std::vector<std::string> factor_b;
+    std::vector<double> covariate;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_a = *cfg.factor_a_column;
+    const bool has_b = cfg.factor_b_column.has_value();
+    const std::size_t col_b = cfg.factor_b_column.value_or(0);
+    const bool has_cov = cfg.covariate_column.has_value();
+    const std::size_t col_cov = cfg.covariate_column.value_or(0);
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_a >= table.rows[row].size() || table.rows[row][col_a].empty()) {
+            continue;
+        }
+        if (has_b && (col_b >= table.rows[row].size() || table.rows[row][col_b].empty())) {
+            continue;
+        }
+        std::vector<double> y_row;
+        bool ok = true;
+        for (std::size_t col : cfg.response_columns) {
+            if (col >= table.rows[row].size()) {
+                ok = false;
+                break;
+            }
+            const auto value = parse_numeric_cell(table.rows[row][col]);
+            if (!value.has_value()) {
+                ok = false;
+                break;
+            }
+            y_row.push_back(*value);
+        }
+        if (!ok) {
+            continue;
+        }
+        if (has_cov) {
+            const auto cov = parse_numeric_cell(table.rows[row][col_cov]);
+            if (!cov.has_value()) {
+                continue;
+            }
+            covariate.push_back(*cov);
+        }
+        responses.push_back(y_row);
+        factor_a.push_back(table.rows[row][col_a]);
+        if (has_b) {
+            factor_b.push_back(table.rows[row][col_b]);
+        }
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::GeneralManovaOptions options;
+    options.include_interaction = cfg.include_interaction;
+    options.wilks = cfg.wilks;
+    options.pillai = cfg.pillai;
+    options.lawley_hotelling = cfg.lawley_hotelling;
+    options.roy = cfg.roy;
+    const auto result = datalab::domain::statistics::general_manova_analyze(
+        responses, factor_a, factor_b, covariate, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("general_manova");
+    page.title = "General MANOVA";
+    page.method_name = "General MANOVA";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    响应 = " + std::to_string(result.response_count)
+        + "    效应 = " + std::to_string(result.effect_tests.size());
+    page.diagnostics = result.diagnostics;
+
+    for (const auto& effect : result.effect_tests) {
+        StatisticTable tests;
+        tests.title = "MANOVA: " + effect.effect_name;
+        tests.headers = {"Test", "Value", "F", "Num DF", "Den DF", "P", "Approx"};
+        for (const auto& row : effect.test_rows) {
+            tests.rows.push_back({
+                row.test_name,
+                format_number(row.value),
+                row.f_statistic.has_value() ? format_number(*row.f_statistic) : "*",
+                row.numerator_df.has_value() ? format_number(*row.numerator_df) : "*",
+                row.denominator_df.has_value() ? format_number(*row.denominator_df) : "*",
+                row.p_value.has_value() ? format_number(*row.p_value) : "*",
+                row.approximate ? "yes" : "no"});
+        }
+        page.tables.push_back(std::move(tests));
+    }
+
+    if (!result.cell_means.empty()) {
+        StatisticTable means;
+        means.title = "Cell Mean Vectors";
+        means.headers = {"Cell", "N"};
+        for (std::size_t j = 0; j < result.response_count; ++j) {
+            means.headers.push_back("Y" + std::to_string(j + 1));
+        }
+        for (const auto& cell : result.cell_means) {
+            std::vector<std::string> row = {cell.cell_label, std::to_string(cell.count)};
+            for (double value : cell.means) {
+                row.push_back(format_number(value));
+            }
+            means.rows.push_back(row);
+        }
+        page.tables.push_back(std::move(means));
+    }
+
+    domain::GeneralManovaFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.response_count = result.response_count;
+    facts.effect_count = result.effect_tests.size();
+    facts.has_covariate = has_cov;
+    facts.has_interaction = cfg.include_interaction && has_b;
+    facts.wilks = cfg.wilks;
+    facts.pillai = cfg.pillai;
+    facts.lawley_hotelling = cfg.lawley_hotelling;
+    facts.roy = cfg.roy;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.general_manova = facts;
+    page.analysis_command_id = "general_manova";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::mixed_effects_reml(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.mixed_effects_reml;
+    if (!cfg.response_column.has_value() || !cfg.random_factor_column.has_value()) {
+        return error_page("混合效应 REML", "Mixed Effects REML",
+                          "请选择响应列与随机因子列。");
+    }
+    std::vector<double> response;
+    std::vector<std::string> random_factor;
+    std::vector<std::string> fixed_a;
+    std::vector<std::string> fixed_b;
+    std::vector<double> covariate;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_y = *cfg.response_column;
+    const std::size_t col_r = *cfg.random_factor_column;
+    const bool has_fa = cfg.fixed_factor_a_column.has_value();
+    const std::size_t col_fa = cfg.fixed_factor_a_column.value_or(0);
+    const bool has_fb = cfg.fixed_factor_b_column.has_value();
+    const std::size_t col_fb = cfg.fixed_factor_b_column.value_or(0);
+    const bool has_cov = cfg.covariate_column.has_value();
+    const std::size_t col_cov = cfg.covariate_column.value_or(0);
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_y >= table.rows[row].size() || col_r >= table.rows[row].size()) {
+            continue;
+        }
+        if (table.rows[row][col_r].empty()) {
+            continue;
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_y]);
+        if (!y.has_value()) {
+            continue;
+        }
+        if (has_fa && (col_fa >= table.rows[row].size() || table.rows[row][col_fa].empty())) {
+            continue;
+        }
+        if (has_fb && (col_fb >= table.rows[row].size() || table.rows[row][col_fb].empty())) {
+            continue;
+        }
+        if (has_cov) {
+            const auto cov = parse_numeric_cell(table.rows[row][col_cov]);
+            if (!cov.has_value()) {
+                continue;
+            }
+            covariate.push_back(*cov);
+        }
+        response.push_back(*y);
+        random_factor.push_back(table.rows[row][col_r]);
+        if (has_fa) {
+            fixed_a.push_back(table.rows[row][col_fa]);
+        }
+        if (has_fb) {
+            fixed_b.push_back(table.rows[row][col_fb]);
+        }
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::MixedEffectsRemlOptions options;
+    options.reml_method = cfg.reml_method;
+    const auto result = datalab::domain::statistics::mixed_effects_reml_analyze(
+        response, random_factor, fixed_a, fixed_b, covariate, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("mixed_effects_reml");
+    page.title = "混合效应 REML";
+    page.method_name = "Mixed Effects REML";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    随机水平 = " + std::to_string(result.random_level_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable varcomp;
+    varcomp.title = "Variance Components";
+    varcomp.headers = {"Source", "VarComp", "%Contribution"};
+    for (const auto& row : result.variance_components) {
+        varcomp.rows.push_back({
+            row.source,
+            format_number(row.variance_component),
+            format_number(row.percent_contribution)});
+    }
+    page.tables.push_back(std::move(varcomp));
+
+    StatisticTable fixed;
+    fixed.title = "Fixed Effects (BLUE)";
+    fixed.headers = {"Term", "Coef", "SE", "t", "P"};
+    for (const auto& row : result.fixed_effects) {
+        fixed.rows.push_back({
+            row.term,
+            format_number(row.coefficient),
+            format_number(row.standard_error),
+            format_number(row.t_statistic),
+            format_number(row.p_value)});
+    }
+    page.tables.push_back(std::move(fixed));
+
+    domain::MixedEffectsRemlFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.random_level_count = result.random_level_count;
+    facts.fixed_term_count = result.fixed_effects.size();
+    facts.converged = result.converged;
+    facts.residual_variance = result.residual_variance;
+    facts.random_variance = result.random_variance;
+    facts.reml_method = cfg.reml_method;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.mixed_effects_reml = facts;
+    page.analysis_command_id = "mixed_effects_reml";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::binary_doe_probit(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.binary_doe_probit;
+    if (cfg.factor_columns.empty()) {
+        return error_page("二值 DOE Probit", "Binary DOE Probit",
+                          "请至少选择一个因子列。");
+    }
+    const bool use_events_trials = cfg.events_column.has_value() && cfg.trials_column.has_value();
+    if (!use_events_trials && !cfg.binary_response_column.has_value()) {
+        return error_page("二值 DOE Probit", "Binary DOE Probit",
+                          "需要 Events/Trials 或 0/1 响应列。");
+    }
+
+    std::vector<std::vector<std::string>> factor_columns;
+    std::vector<std::string> factor_labels;
+    for (std::size_t col : cfg.factor_columns) {
+        factor_labels.push_back(column_label(table, col));
+        factor_columns.emplace_back();
+    }
+    std::vector<int> events;
+    std::vector<int> trials;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        bool valid = true;
+        for (std::size_t index = 0; index < cfg.factor_columns.size(); ++index) {
+            const std::size_t col = cfg.factor_columns[index];
+            if (col >= table.rows[row].size() || table.rows[row][col].empty()) {
+                valid = false;
+                break;
+            }
+            factor_columns[index].push_back(table.rows[row][col]);
+        }
+        if (!valid) {
+            continue;
+        }
+        if (use_events_trials) {
+            const auto event = parse_numeric_cell(table.rows[row][*cfg.events_column]);
+            const auto trial = parse_numeric_cell(table.rows[row][*cfg.trials_column]);
+            if (!event.has_value() || !trial.has_value()) {
+                continue;
+            }
+            events.push_back(static_cast<int>(*event));
+            trials.push_back(static_cast<int>(*trial));
+        } else {
+            const auto binary = parse_numeric_cell(
+                table.rows[row][*cfg.binary_response_column]);
+            if (!binary.has_value()) {
+                continue;
+            }
+            const int value = static_cast<int>(*binary);
+            events.push_back(value == 0 ? 0 : 1);
+            trials.push_back(1);
+        }
+        source_rows.push_back(row);
+    }
+
+    datalab::domain::statistics::BinaryDoeProbitOptions options;
+    options.link = cfg.link;
+    options.include_ab_interaction = cfg.include_ab_interaction;
+    const auto result = datalab::domain::statistics::analyze_binary_doe_probit(
+        factor_columns, events, trials, factor_labels, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("binary_doe_probit");
+    page.title = "二值 DOE Probit/Gompit";
+    page.method_name = "Binary DOE Probit";
+    page.configuration = configuration;
+    page.parameter_summary = "设计行 = " + std::to_string(result.design_row_count)
+        + "    N = " + std::to_string(result.expanded_observation_count)
+        + "    Link = " + result.link;
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable coef;
+    coef.title = "Coefficients (" + result.link + " IRWLS)";
+    coef.headers = {"Term", "Coef", "SE", "Z", "P"};
+    for (const auto& row : result.coefficients) {
+        coef.rows.push_back({
+            row.term,
+            format_number(row.coefficient),
+            format_number(row.standard_error),
+            format_number(row.z_statistic),
+            format_number(row.p_value)});
+    }
+    page.tables.push_back(std::move(coef));
+
+    StatisticTable fit;
+    fit.title = "Goodness-of-Fit";
+    fit.headers = {"Metric", "Value"};
+    fit.rows.push_back({"Deviance", format_number(result.deviance)});
+    fit.rows.push_back({"AIC", format_number(result.aic)});
+    fit.rows.push_back({"Iterations", std::to_string(result.iteration_count)});
+    fit.rows.push_back({"Converged", result.converged ? "Yes" : "No"});
+    page.tables.push_back(std::move(fit));
+
+    domain::BinaryDoeProbitFacts facts;
+    facts.design_row_count = result.design_row_count;
+    facts.expanded_observation_count = result.expanded_observation_count;
+    facts.factor_count = result.factor_count;
+    facts.link = result.link;
+    facts.converged = result.converged;
+    facts.iteration_count = result.iteration_count;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.binary_doe_probit = facts;
+    page.analysis_command_id = "binary_doe_probit";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::life_data_lognormal(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.life_data_lognormal;
+    if (!cfg.time_column.has_value() || !cfg.event_column.has_value()) {
+        return error_page("寿命 Lognormal", "Life Data Lognormal",
+                          "请选择时间与删失列。");
+    }
+    std::vector<double> times;
+    std::vector<bool> events;
+    std::vector<std::vector<double>> covariates;
+    std::vector<std::string> cov_labels;
+    std::vector<std::size_t> source_rows;
+    for (std::size_t col : cfg.covariate_columns) {
+        cov_labels.push_back(column_label(table, col));
+    }
+    const std::size_t col_t = *cfg.time_column;
+    const std::size_t col_e = *cfg.event_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_t >= table.rows[row].size() || col_e >= table.rows[row].size()) {
+            continue;
+        }
+        const auto t = parse_numeric_cell(table.rows[row][col_t]);
+        if (!t.has_value() || *t <= 0.0) {
+            continue;
+        }
+        const auto event_cell = parse_numeric_cell(table.rows[row][col_e]);
+        if (!event_cell.has_value()) {
+            continue;
+        }
+        std::vector<double> cov_row;
+        bool cov_ok = true;
+        for (std::size_t col : cfg.covariate_columns) {
+            if (col >= table.rows[row].size()) {
+                cov_ok = false;
+                break;
+            }
+            const auto v = parse_numeric_cell(table.rows[row][col]);
+            if (!v.has_value()) {
+                cov_ok = false;
+                break;
+            }
+            cov_row.push_back(*v);
+        }
+        if (!cov_ok) {
+            continue;
+        }
+        times.push_back(*t);
+        events.push_back(*event_cell != 0.0);
+        covariates.push_back(cov_row);
+        source_rows.push_back(row);
+    }
+
+    datalab::domain::statistics::LifeDataLognormalOptions options;
+    options.confidence_level = cfg.confidence_level;
+    options.percentile_levels = cfg.percentile_levels;
+    const auto result = datalab::domain::statistics::fit_life_data_lognormal(
+        times, events, covariates, cov_labels, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("life_data_lognormal");
+    page.title = "寿命数据 Lognormal";
+    page.method_name = "Life Data Lognormal";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    失败 = " + std::to_string(result.failure_count)
+        + "    删失 = " + std::to_string(result.censored_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable regression;
+    regression.title = "Regression Table (log scale)";
+    regression.headers = {"Term", "Coef", "SE", "Z", "P", "CI Lower", "CI Upper"};
+    for (const auto& row : result.coefficients) {
+        regression.rows.push_back({
+            row.term,
+            format_number(row.estimate),
+            format_number(row.standard_error),
+            format_number(row.z_statistic),
+            format_number(row.p_value),
+            format_number(row.confidence_lower),
+            format_number(row.confidence_upper)});
+    }
+    page.tables.push_back(std::move(regression));
+
+    if (!result.percentiles.empty()) {
+        StatisticTable pct;
+        pct.title = "Percentiles";
+        pct.headers = {"Percentile", "Life", "Profile"};
+        for (const auto& row : result.percentiles) {
+            pct.rows.push_back({
+                format_number(row.percentile),
+                format_number(row.life),
+                row.covariate_profile});
+        }
+        page.tables.push_back(std::move(pct));
+    }
+
+    StatisticTable dist;
+    dist.title = "Distribution Summary";
+    dist.headers = {"Parameter", "Estimate"};
+    dist.rows.push_back({"log(σ)", format_number(result.log_sigma)});
+    dist.rows.push_back({"Log-Likelihood", format_number(result.log_likelihood)});
+    dist.rows.push_back({"Converged", result.converged ? "Yes" : "No"});
+    page.tables.push_back(std::move(dist));
+
+    domain::LifeDataLognormalFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.failure_count = result.failure_count;
+    facts.censored_count = result.censored_count;
+    facts.covariate_count = result.covariate_count;
+    facts.converged = result.converged;
+    facts.log_sigma = result.log_sigma;
+    facts.log_likelihood = result.log_likelihood;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.life_data_lognormal = facts;
+    page.analysis_command_id = "life_data_lognormal";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::simple_correspondence(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.simple_correspondence;
+    if (!cfg.row_variable_column.has_value() || !cfg.column_variable_column.has_value()) {
+        return error_page("简单对应分析", "Simple Correspondence",
+                          "请选择行变量与列变量。");
+    }
+    std::vector<std::string> row_var;
+    std::vector<std::string> col_var;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_r = *cfg.row_variable_column;
+    const std::size_t col_c = *cfg.column_variable_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        if (col_r >= table.rows[row].size() || col_c >= table.rows[row].size()) {
+            continue;
+        }
+        if (table.rows[row][col_r].empty() || table.rows[row][col_c].empty()) {
+            continue;
+        }
+        row_var.push_back(table.rows[row][col_r]);
+        col_var.push_back(table.rows[row][col_c]);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::SimpleCorrespondenceOptions options;
+    options.component_count = cfg.component_count;
+    options.include_row_contributions = cfg.include_row_contributions;
+    options.include_column_contributions = cfg.include_column_contributions;
+    const auto result = datalab::domain::statistics::simple_correspondence_analyze(
+        row_var, col_var, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("simple_correspondence");
+    page.title = "简单对应分析";
+    page.method_name = "Simple Correspondence Analysis";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    惯性 = " + format_number(result.total_inertia)
+        + "    χ² = " + format_number(result.chi_square);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable summary;
+    summary.title = "Summary of Analysis";
+    summary.headers = {"Item", "Value"};
+    summary.rows.push_back({"Observations", std::to_string(result.observation_count)});
+    summary.rows.push_back({"Total Inertia", format_number(result.total_inertia)});
+    summary.rows.push_back({"Chi-Square", format_number(result.chi_square)});
+    summary.rows.push_back({"DF", std::to_string(result.chi_square_df)});
+    if (result.chi_square_p_value.has_value()) {
+        summary.rows.push_back({"P-Value", format_number(*result.chi_square_p_value)});
+    }
+    page.tables.push_back(std::move(summary));
+
+    if (!result.row_contributions.empty()) {
+        StatisticTable rows_table;
+        rows_table.title = "Row Contributions";
+        rows_table.headers = {"Row", "Quality", "Mass", "Inertia"};
+        for (const auto& row : result.row_contributions) {
+            rows_table.rows.push_back({
+                row.label, format_number(row.quality),
+                format_number(row.mass), format_number(row.inertia)});
+        }
+        page.tables.push_back(std::move(rows_table));
+    }
+    if (!result.column_contributions.empty()) {
+        StatisticTable cols_table;
+        cols_table.title = "Column Contributions";
+        cols_table.headers = {"Column", "Quality", "Mass", "Inertia"};
+        for (const auto& col : result.column_contributions) {
+            cols_table.rows.push_back({
+                col.label, format_number(col.quality),
+                format_number(col.mass), format_number(col.inertia)});
+        }
+        page.tables.push_back(std::move(cols_table));
+    }
+
+    domain::SimpleCorrespondenceFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.row_level_count = result.row_level_count;
+    facts.column_level_count = result.column_level_count;
+    facts.component_count = result.component_count;
+    facts.total_inertia = result.total_inertia;
+    facts.chi_square = result.chi_square;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.simple_correspondence = facts;
+    page.analysis_command_id = "simple_correspondence";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::multiple_correspondence(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.multiple_correspondence;
+    if (cfg.categorical_columns.size() < 3 || cfg.categorical_columns.size() > 6) {
+        return error_page("多重对应分析", "Multiple Correspondence",
+                          "请选择 3～6 个分类变量列。");
+    }
+    std::vector<std::vector<std::string>> columns(cfg.categorical_columns.size());
+    std::vector<std::size_t> source_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        bool valid = true;
+        for (std::size_t v = 0; v < cfg.categorical_columns.size(); ++v) {
+            const std::size_t col = cfg.categorical_columns[v];
+            if (col >= table.rows[row].size() || table.rows[row][col].empty()) {
+                valid = false;
+                break;
+            }
+            columns[v].push_back(table.rows[row][col]);
+        }
+        if (!valid) {
+            continue;
+        }
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::MultipleCorrespondenceOptions options;
+    options.component_count = cfg.component_count;
+    options.include_column_contributions = cfg.include_column_contributions;
+    const auto result = datalab::domain::statistics::multiple_correspondence_analyze(
+        columns, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("multiple_correspondence");
+    page.title = "多重对应分析";
+    page.method_name = "Multiple Correspondence Analysis";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    变量 = " + std::to_string(result.variable_count)
+        + "    惯性 = " + format_number(result.total_inertia);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable summary;
+    summary.title = "Summary of Analysis";
+    summary.headers = {"Item", "Value"};
+    summary.rows.push_back({"Observations", std::to_string(result.observation_count)});
+    summary.rows.push_back({"Variables", std::to_string(result.variable_count)});
+    summary.rows.push_back({"Categories", std::to_string(result.category_count)});
+    summary.rows.push_back({"Total Inertia", format_number(result.total_inertia)});
+    page.tables.push_back(std::move(summary));
+
+    if (!result.column_contributions.empty()) {
+        StatisticTable cols_table;
+        cols_table.title = "Column Contributions";
+        cols_table.headers = {"Column", "Quality", "Mass", "Inertia"};
+        for (const auto& col : result.column_contributions) {
+            cols_table.rows.push_back({
+                col.label, format_number(col.quality),
+                format_number(col.mass), format_number(col.inertia)});
+        }
+        page.tables.push_back(std::move(cols_table));
+    }
+
+    domain::MultipleCorrespondenceFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.variable_count = result.variable_count;
+    facts.category_count = result.category_count;
+    facts.column_count = result.category_count;
+    facts.component_count = result.component_count;
+    facts.total_inertia = result.total_inertia;
+    facts.chi_square = result.chi_square;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.multiple_correspondence = facts;
+    page.analysis_command_id = "multiple_correspondence";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::nonlinear_regression(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    const auto& cfg = configuration.nonlinear_regression;
+    if (!cfg.response_column.has_value() || !cfg.predictor_column.has_value()) {
+        return error_page("非线性回归", "Nonlinear Regression",
+                          "请选择响应列与预测列。");
+    }
+    std::vector<double> response;
+    std::vector<double> predictor;
+    std::vector<std::size_t> source_rows;
+    const std::size_t col_y = *cfg.response_column;
+    const std::size_t col_x = *cfg.predictor_column;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (std::find(configuration.excluded_rows.cbegin(),
+                      configuration.excluded_rows.cend(), row)
+            != configuration.excluded_rows.cend()) {
+            continue;
+        }
+        const auto y = parse_numeric_cell(table.rows[row][col_y]);
+        const auto x = parse_numeric_cell(table.rows[row][col_x]);
+        if (!y.has_value() || !x.has_value()) {
+            continue;
+        }
+        response.push_back(*y);
+        predictor.push_back(*x);
+        source_rows.push_back(row);
+    }
+    datalab::domain::statistics::NonlinearRegressionOptions options;
+    options.model_id = cfg.model_id;
+    options.algorithm = cfg.algorithm;
+    options.starting_values = cfg.starting_values;
+    options.max_iterations = cfg.max_iterations;
+    options.tolerance = cfg.tolerance;
+    options.lm_lambda = cfg.lm_lambda;
+    const auto result = datalab::domain::statistics::fit_nonlinear_regression(
+        response, predictor, source_rows, options);
+
+    OutputPage page;
+    page.id = new_id("nonlinear_regression");
+    page.title = "非线性回归";
+    page.method_name = "Nonlinear Regression";
+    page.configuration = configuration;
+    page.parameter_summary = "N = " + std::to_string(result.observation_count)
+        + "    模型 = " + result.model_id
+        + "    收敛 = " + (result.converged ? "是" : "否");
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable method;
+    method.title = "Method";
+    method.headers = {"Item", "Value"};
+    method.rows.push_back({"Algorithm", result.algorithm});
+    method.rows.push_back({"Iterations", std::to_string(result.iteration_count)});
+    method.rows.push_back({"Converged", result.converged ? "Yes" : "No"});
+    page.tables.push_back(std::move(method));
+
+    StatisticTable params;
+    params.title = "Parameter Estimates";
+    params.headers = {"Parameter", "Estimate", "SE", "Lower CI", "Upper CI"};
+    for (const auto& param : result.parameters) {
+        params.rows.push_back({
+            param.name, format_number(param.estimate),
+            format_number(param.standard_error),
+            param.lower_ci.has_value() ? format_number(*param.lower_ci) : "*",
+            param.upper_ci.has_value() ? format_number(*param.upper_ci) : "*"});
+    }
+    page.tables.push_back(std::move(params));
+
+    StatisticTable fit;
+    fit.title = "Summary of Fit";
+    fit.headers = {"Item", "Value"};
+    fit.rows.push_back({"SSE", format_number(result.sse)});
+    fit.rows.push_back({"DF", std::to_string(result.error_df)});
+    fit.rows.push_back({"MSE", format_number(result.mse)});
+    fit.rows.push_back({"S", format_number(result.s)});
+    fit.rows.push_back({"R-Sq", format_number(result.r_squared)});
+    page.tables.push_back(std::move(fit));
+
+    domain::NonlinearRegressionFacts facts;
+    facts.observation_count = result.observation_count;
+    facts.model_id = result.model_id;
+    facts.algorithm = result.algorithm;
+    facts.converged = result.converged;
+    facts.iteration_count = result.iteration_count;
+    facts.sse = result.sse;
+    facts.mse = result.mse;
+    facts.s = result.s;
+    facts.r_squared = result.r_squared;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.nonlinear_regression = facts;
+    page.analysis_command_id = "nonlinear_regression";
+    return finalize_page(std::move(page));
+}
+
+OutputPage AnalysisService::split_plot_design(
+    const DataTable& table,
+    const AnalysisConfiguration& configuration)
+{
+    (void)table;
+    const auto& cfg = configuration.split_plot_design;
+    if (cfg.factor_names.size() < 2 || cfg.factor_names.size() > 4) {
+        return error_page("裂区设计", "Split-Plot Design",
+                          "需要 2～4 个因子。");
+    }
+    datalab::domain::statistics::SplitPlotDesignOptions options;
+    options.htc_factor_index = cfg.htc_factor_index;
+    options.whole_plot_replicates = cfg.whole_plot_replicates;
+    options.randomize = cfg.randomize;
+    options.random_seed = cfg.random_seed;
+    options.etc_fraction_p = cfg.etc_fraction_p;
+    for (std::size_t i = 0; i < cfg.factor_names.size(); ++i) {
+        datalab::domain::statistics::DoeFactor factor;
+        factor.name = cfg.factor_names[i];
+        factor.low_level = i < cfg.low_levels.size() ? cfg.low_levels[i] : "-";
+        factor.high_level = i < cfg.high_levels.size() ? cfg.high_levels[i] : "+";
+        options.factors.push_back(factor);
+    }
+    const auto result = datalab::domain::statistics::generate_split_plot_design(options);
+
+    OutputPage page;
+    page.id = new_id("split_plot_design");
+    page.title = "2 水平裂区设计";
+    page.method_name = "Split-Plot Design";
+    page.configuration = configuration;
+    page.parameter_summary = "因子 = " + std::to_string(result.factor_count)
+        + "    Whole plots = " + std::to_string(result.whole_plot_count)
+        + "    Runs = " + std::to_string(result.run_count);
+    page.diagnostics = result.diagnostics;
+
+    StatisticTable summary;
+    summary.title = "Design Summary";
+    summary.headers = {"Item", "Value"};
+    summary.rows.push_back({"Factors", std::to_string(result.factor_count)});
+    summary.rows.push_back({"HTC Factor", result.htc_factor_name});
+    summary.rows.push_back({"Whole Plots", std::to_string(result.whole_plot_count)});
+    summary.rows.push_back({"Runs", std::to_string(result.run_count)});
+    page.tables.push_back(std::move(summary));
+
+    StatisticTable design;
+    design.title = "Design Table";
+    design.headers = {"StdOrder", "RunOrder", "WholePlot", "PointType"};
+    for (const auto& name : result.factor_names) {
+        design.headers.push_back(name);
+    }
+    for (const auto& run : result.runs) {
+        std::vector<std::string> row = {
+            std::to_string(run.standard_order),
+            std::to_string(run.run_order),
+            std::to_string(run.whole_plot),
+            run.point_type};
+        for (const auto& level : run.factor_levels) {
+            row.push_back(level);
+        }
+        design.rows.push_back(row);
+    }
+    page.tables.push_back(std::move(design));
+
+    domain::SplitPlotDesignFacts facts;
+    facts.factor_count = result.factor_count;
+    facts.whole_plot_count = result.whole_plot_count;
+    facts.run_count = result.run_count;
+    facts.htc_factor_index = result.htc_factor_index;
+    facts.htc_factor_name = result.htc_factor_name;
+    facts.randomized = result.randomized;
+    facts.random_seed = result.random_seed;
+    facts.evidence_type = result.evidence_type;
+    facts.algorithm_id = result.algorithm_id;
+    page.facts.split_plot_design = facts;
+    page.analysis_command_id = "split_plot_design";
     return finalize_page(std::move(page));
 }
 

@@ -49,25 +49,36 @@ double linkage_distance(
     int left,
     int right)
 {
-    double best = std::numeric_limits<double>::infinity();
-    double sum = 0.0;
-    std::size_t pair_count = 0;
+    if (linkage == "average") {
+        double sum = 0.0;
+        std::size_t pair_count = 0;
+        for (int i : members.at(left)) {
+            for (int j : members.at(right)) {
+                sum += distance[static_cast<std::size_t>(i)]
+                              [static_cast<std::size_t>(j)];
+                ++pair_count;
+            }
+        }
+        return pair_count > 0 ? sum / static_cast<double>(pair_count) : 0.0;
+    }
+    if (linkage == "single") {
+        double best = std::numeric_limits<double>::infinity();
+        for (int i : members.at(left)) {
+            for (int j : members.at(right)) {
+                const double value = distance[static_cast<std::size_t>(i)]
+                                           [static_cast<std::size_t>(j)];
+                best = std::min(best, value);
+            }
+        }
+        return best;
+    }
+    double best = -std::numeric_limits<double>::infinity();
     for (int i : members.at(left)) {
         for (int j : members.at(right)) {
             const double value = distance[static_cast<std::size_t>(i)]
-                                         [static_cast<std::size_t>(j)];
-            if (linkage == "single") {
-                best = std::min(best, value);
-            } else if (linkage == "average") {
-                sum += value;
-                ++pair_count;
-            } else {
-                best = std::max(best, value);
-            }
+                                       [static_cast<std::size_t>(j)];
+            best = std::max(best, value);
         }
-    }
-    if (linkage == "average") {
-        return pair_count > 0 ? sum / static_cast<double>(pair_count) : 0.0;
     }
     return best;
 }

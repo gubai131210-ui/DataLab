@@ -140,6 +140,48 @@
 > DoD：[`docs/research/goal-wave-2026-08-28-algorithm-wave8.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave8.md)  
 > 门禁：`python tools/verify_algorithm_wave8_track.py`
 
+### 算法 Wave-9（2026-08-28 · ✅）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W9-1** | `expanded_gage_unbalanced` 不平衡 Gage GLM | ✅ | ✅ | ⏳ |
+| **W9-2** | `split_plot_analyze` 裂区双误差 | ✅ | ✅ | ⏳ |
+| **W9-3** | `mixture_process_variable` Scheffé+过程 | ✅ | ✅ | ⏳ |
+| **W9-4** | `manova_one_way` 单因子 MANOVA | ✅ | ✅ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-08-28-algorithm-wave9-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave9-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave9-market-formula-research-2026-08-28.md`](../../docs/research/algorithm-wave9-market-formula-research-2026-08-28.md)  
+> DoD：[`docs/research/goal-wave-2026-08-28-algorithm-wave9.md`](../../docs/research/goal-wave-2026-08-28-algorithm-wave9.md)  
+> 门禁：`python tools/verify_algorithm_wave9_track.py`
+
+### 算法 Wave-10（2026-08-31 · ✅）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W10-1** | `general_manova` General MANOVA | ✅ | ✅ | ⏳ |
+| **W10-2** | `mixed_effects_reml` REML 方差分量 | ✅ | ✅ | ⏳ |
+| **W10-3** | `binary_doe_probit` Probit/Gompit IRWLS | ✅ | ✅ | ⏳ |
+| **W10-4** | `life_data_lognormal` Lognormal MLE | ✅ | ✅ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-08-31-algorithm-wave10-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-08-31-algorithm-wave10-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave10-market-formula-research-2026-08-31.md`](../../docs/research/algorithm-wave10-market-formula-research-2026-08-31.md)  
+> DoD：[`docs/research/goal-wave-2026-08-31-algorithm-wave10.md`](../../docs/research/goal-wave-2026-08-31-algorithm-wave10.md)  
+> 门禁：`python tools/verify_algorithm_wave10_track.py`
+
+### 算法 Wave-11（2026-09-01 · ✅）
+
+| 项 | 交付主题 | 脚本/文档预检 | Track 交付 | 统一验收（§3–5） |
+|----|----------|---------------|------------|------------------|
+| **W11-1** | `simple_correspondence` 简单对应分析 | ✅ | ✅ | ⏳ |
+| **W11-2** | `multiple_correspondence` 多重对应分析 | ✅ | ✅ | ⏳ |
+| **W11-3** | `nonlinear_regression` 非线性回归 GN/LM | ✅ | ✅ | ⏳ |
+| **W11-4** | `split_plot_design` 2 水平裂区设计 | ✅ | ✅ | ⏳ |
+
+> 计划：[`docs/research/goal-wave-2026-09-01-algorithm-wave11-plan-and-mega-prompt.md`](../../docs/research/goal-wave-2026-09-01-algorithm-wave11-plan-and-mega-prompt.md)  
+> 调研：[`docs/research/algorithm-wave11-market-formula-research-2026-09-01.md`](../../docs/research/algorithm-wave11-market-formula-research-2026-09-01.md)  
+> DoD：[`docs/research/goal-wave-2026-09-01-algorithm-wave11.md`](../../docs/research/goal-wave-2026-09-01-algorithm-wave11.md)  
+> 门禁：`python tools/verify_algorithm_wave11_track.py`
+
 ### 报告产品 Phase（节选）
 
 ### UI 菜单 IA（2026-08-23）
@@ -186,6 +228,9 @@ python tools/verify_algorithm_wave5_track.py       # 算法 Wave-5 W5-1–W5-4�
 python tools/verify_algorithm_wave6_track.py       # 算法 Wave-6 W6-1–W6-4（2026-08-25）
 python tools/verify_algorithm_wave7_track.py       # 算法 Wave-7 W7-1–W7-4（2026-08-28）
 python tools/verify_algorithm_wave8_track.py       # 算法 Wave-8 W8-1–W8-4（2026-08-28）
+python tools/verify_algorithm_wave9_track.py       # 算法 Wave-9 W9-1–W9-4（2026-08-28）
+python tools/verify_algorithm_wave10_track.py      # 算法 Wave-10 W10-1–W10-4（2026-08-31）
+python tools/verify_algorithm_wave11_track.py      # 算法 Wave-11 W11-1–W11-4（2026-09-01）
 python tools/verify_ui_menu_ia_track.py            # UI 菜单 IA U1–U3（2026-08-23）
 # 后续：python tools/verify_g6_command_wizard_track.py  # G6 命令 Wizard（Tester）
 # 后续：python tools/verify_g3_track.py 等（随 Track 增加）

@@ -36,6 +36,18 @@
 #include "ui/cluster_variables_dialog.h"
 #include "ui/glm_three_factor_dialog.h"
 #include "ui/life_data_regression_dialog.h"
+#include "ui/expanded_gage_unbalanced_dialog.h"
+#include "ui/split_plot_analyze_dialog.h"
+#include "ui/mixture_process_variable_dialog.h"
+#include "ui/manova_one_way_dialog.h"
+#include "ui/general_manova_dialog.h"
+#include "ui/mixed_effects_reml_dialog.h"
+#include "ui/binary_doe_probit_dialog.h"
+#include "ui/life_data_lognormal_dialog.h"
+#include "ui/simple_correspondence_dialog.h"
+#include "ui/multiple_correspondence_dialog.h"
+#include "ui/nonlinear_regression_dialog.h"
+#include "ui/split_plot_design_dialog.h"
 #include "ui/database_import_wizard.h"
 #include "ui/command_wizard_dialog.h"
 #include "ui/app_ui_tr.h"
@@ -1500,6 +1512,150 @@ void MainWindow::run_from_spec(const QString& id)
             configuration.chart_type = "life_data_regression";
             configuration.life_data_regression = dialog.configuration();
             publish_page(datalab::application::AnalysisService::life_data_regression(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("expanded_gage_unbalanced")) {
+        ExpandedGageUnbalancedDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "不平衡 Expanded Gage R&R";
+            configuration.chart_type = "expanded_gage_unbalanced";
+            configuration.expanded_gage_unbalanced = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::expanded_gage_unbalanced(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("split_plot_analyze")) {
+        SplitPlotAnalyzeDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "裂区析因分析";
+            configuration.chart_type = "split_plot_analyze";
+            configuration.split_plot_analyze = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::split_plot_analyze(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("mixture_process_variable")) {
+        MixtureProcessVariableDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "Mixture + 过程变量";
+            configuration.chart_type = "mixture_process_variable";
+            configuration.mixture_process_variable = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::mixture_process_variable(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("manova_one_way")) {
+        ManovaOneWayDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "单因子 MANOVA";
+            configuration.chart_type = "manova_one_way";
+            configuration.manova_one_way = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::manova_one_way(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("general_manova")) {
+        GeneralManovaDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "General MANOVA";
+            configuration.chart_type = "general_manova";
+            configuration.general_manova = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::general_manova(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("mixed_effects_reml")) {
+        MixedEffectsRemlDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "混合效应 REML";
+            configuration.chart_type = "mixed_effects_reml";
+            configuration.mixed_effects_reml = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::mixed_effects_reml(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("binary_doe_probit")) {
+        BinaryDoeProbitDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "二值 DOE Probit";
+            configuration.chart_type = "binary_doe_probit";
+            configuration.binary_doe_probit = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::binary_doe_probit(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("life_data_lognormal")) {
+        LifeDataLognormalDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "寿命 Lognormal";
+            configuration.chart_type = "life_data_lognormal";
+            configuration.life_data_lognormal = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::life_data_lognormal(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("simple_correspondence")) {
+        SimpleCorrespondenceDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "简单对应分析";
+            configuration.chart_type = "simple_correspondence";
+            configuration.simple_correspondence = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::simple_correspondence(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("multiple_correspondence")) {
+        MultipleCorrespondenceDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "多重对应分析";
+            configuration.chart_type = "multiple_correspondence";
+            configuration.multiple_correspondence = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::multiple_correspondence(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("nonlinear_regression")) {
+        NonlinearRegressionDialog dialog(column_labels(), this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "非线性回归";
+            configuration.chart_type = "nonlinear_regression";
+            configuration.nonlinear_regression = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::nonlinear_regression(
+                table_, configuration));
+        }
+        return;
+    }
+    if (id == QStringLiteral("split_plot_design")) {
+        SplitPlotDesignDialog dialog(this);
+        if (dialog.exec() == QDialog::Accepted && dialog.accepted_valid()) {
+            datalab::domain::AnalysisConfiguration configuration = base_configuration();
+            configuration.analysis_name = "2 水平裂区设计";
+            configuration.chart_type = "split_plot_design";
+            configuration.split_plot_design = dialog.configuration();
+            publish_page(datalab::application::AnalysisService::split_plot_design(
                 table_, configuration));
         }
         return;

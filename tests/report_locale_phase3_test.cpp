@@ -21,6 +21,7 @@ using datalab::application::build_report_document;
 using datalab::application::localize_report_document;
 using datalab::domain::CapabilityFacts;
 using datalab::domain::DataTable;
+using datalab::domain::DiagnosticMessage;
 using datalab::domain::OutputPage;
 using datalab::domain::ReportTemplateKind;
 using datalab::domain::make_report_profile;
@@ -7177,13 +7178,13 @@ private slots:
         profile.locale.language_tag = "en-US";
         auto document = build_report_document(sample_table(), {page}, profile);
         QVERIFY(!document.pages.empty());
-        document.pages[0].title = page.title;
+        document.pages[0].source_page.title = page.title;
         document.pages[0].visible_tables = page.tables;
         document.pages[0].visible_plots = page.plots;
         const auto localized = localize_report_document(document);
         QVERIFY(!localized.document.pages.empty());
 
-        QCOMPARE(QString::fromStdString(localized.document.pages[0].title),
+        QCOMPARE(QString::fromStdString(localized.document.pages[0].source_page.title),
                  QStringLiteral("1-Sample Equivalence Test"));
 
         const auto& tables = localized.document.pages[0].visible_tables;
@@ -7521,17 +7522,17 @@ private slots:
         profile.locale.language_tag = "en-US";
         auto document = build_report_document(sample_table(), {page}, profile);
         QVERIFY(!document.pages.empty());
-        document.pages[0].title = page.title;
+        document.pages[0].source_page.title = page.title;
         document.pages[0].visible_plots = page.plots;
         document.pages[0].visible_interpretation = page.interpretation;
         document.pages[0].visible_diagnostics = page.diagnostics;
         const auto localized = localize_report_document(document);
         QVERIFY(!localized.document.pages.empty());
 
-        QCOMPARE(QString::fromStdString(localized.document.pages[0].title),
+        QCOMPARE(QString::fromStdString(localized.document.pages[0].source_page.title),
                  QStringLiteral("Faceted Area Plot"));
-        QVERIFY2(localized.document.pages[0].title.find("Zone") == std::string::npos,
-                 localized.document.pages[0].title.c_str());
+        QVERIFY2(localized.document.pages[0].source_page.title.find("Zone") == std::string::npos,
+                 localized.document.pages[0].source_page.title.c_str());
 
         const auto& plots = localized.document.pages[0].visible_plots;
         QCOMPARE(static_cast<int>(plots.size()), 4);

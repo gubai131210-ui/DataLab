@@ -69,6 +69,9 @@ const std::vector<ReportTextEntry>& report_text_catalog()
         append_report_text_catalog_part17(entries);
         append_report_text_catalog_part18(entries);
         append_report_text_catalog_part19(entries);
+        append_report_text_catalog_part20(entries);
+        append_report_text_catalog_part21(entries);
+        append_report_text_catalog_part22(entries);
         return entries;
     }();
     return catalog;

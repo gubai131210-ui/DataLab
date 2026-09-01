@@ -15482,6 +15482,377 @@
       "wiring": {"command_id": "life_data_regression", "service_method": "life_data_regression", "facts_type": "life_data_regression", "primary_test": "algorithm_wave8_track_test"}
     },
     {
+      "id": "expanded_gage_unbalanced",
+      "title": "不平衡 Expanded Gage R&R",
+      "category": "MSA",
+      "menu_path": "统计 > MSA",
+      "aliases": ["expanded_gage_unbalanced", "Unbalanced Gage", "GLM Gage"],
+      "implemented_status": "formula_reference",
+      "purpose": "不平衡 Part×Operator（+可选附加因子）GLM 方差分量：VarComp、%Contribution、%Study Var、NDC。",
+      "method_overview": "随机效应 VarComp 由 ANOVA MS 估计；%Contribution=VarComp/Total；允许不等重复。",
+      "input_description": "测量 + Part + Operator；可选附加因子；complete-case。",
+      "missing_value_policy": "非有限测量或空标签跳过；保留 source_row。",
+      "calculation_steps": ["complete-case", "不平衡 ANOVA", "MS 方差分量", "VarComp 表", "NDC"],
+      "symbol_definitions": [
+        {"symbol": "VarComp", "meaning": "方差分量"},
+        {"symbol": "NDC", "meaning": "max(1, floor(sqrt(2*σ²_P-P/σ²_GRR)))"}
+      ],
+      "decision_rules": ["禁止并入 expanded_gage_rr 对话框。"],
+      "invalid_input_conditions": "Part/Operator<2 水平、无重复单元。",
+      "output_description": "ANOVA、Gage R&R VarComp、%Study Var。",
+      "output_interpretation": "读 VarComp 与 NDC；不作测量系统合格判定。",
+      "assumptions_and_boundaries": "不平衡 GLM 窄化；非 Minitab golden。",
+      "interpretation_limits": "禁止测量系统合格 / 过程已合格。",
+      "formula_blocks": [
+        {"title": "VarComp", "plain_text": "%Contribution = VarComp_source / VarComp_Total", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Expanded Gage methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/measurement-system-analysis/how-to/gage-study/expanded-gage-r-r-study/methods-and-formulas/methods-and-formulas/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P9 Expanded Gage Unbalanced", "path": "docs/research/p9_expanded_gage_unbalanced.md", "section": ""}],
+      "wiring": {"command_id": "expanded_gage_unbalanced", "service_method": "expanded_gage_unbalanced", "facts_type": "expanded_gage_unbalanced", "primary_test": "algorithm_wave9_track_test"}
+    },
+    {
+      "id": "split_plot_analyze",
+      "title": "裂区析因分析",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["split_plot_analyze", "Split-Plot", "split plot"],
+      "implemented_status": "formula_reference",
+      "purpose": "1 难改因子 + 1～2 易改因子；WP/SP 双误差 ANOVA；whole-plot residuals。",
+      "method_overview": "F_HTC=MS_term/MS_WP_Error；F_ETC=MS_term/MS_SP_Error；WP Resid=ŷ_full−ŷ_fixed。",
+      "input_description": "响应 + 难改/易改因子 + WP 指示；complete-case。",
+      "missing_value_policy": "缺失跳过；保留 source_row。",
+      "calculation_steps": ["complete-case", "WP/SP 分区 SS", "双误差 ANOVA", "拟合/残差"],
+      "symbol_definitions": [
+        {"symbol": "MS_WP_Error", "meaning": "Whole-plot 误差均方"},
+        {"symbol": "MS_SP_Error", "meaning": "Sub-plot 误差均方"}
+      ],
+      "decision_rules": ["禁止并入 doe_factorial 对话框。"],
+      "invalid_input_conditions": "因子<2 水平、WP<2。",
+      "output_description": "Split-Plot ANOVA、Fits/Residuals、WP Residual。",
+      "output_interpretation": "难改因子看 WP 误差；易改因子看 SP 误差。",
+      "assumptions_and_boundaries": "裂区窄化；非二值响应裂区。",
+      "interpretation_limits": "禁止设计已最优 / 过程已合格。",
+      "formula_blocks": [
+        {"title": "Split-plot F", "plain_text": "F_HTC = MS_term / MS_WP_Error; F_ETC = MS_term / MS_SP_Error", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab factorial ANOVA", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/factorial/analyze-factorial-design/methods-and-formulas/analysis-of-variance/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P9 Split Plot", "path": "docs/research/p9_split_plot_analyze.md", "section": ""}],
+      "wiring": {"command_id": "split_plot_analyze", "service_method": "split_plot_analyze", "facts_type": "split_plot_analyze", "primary_test": "algorithm_wave9_track_test"}
+    },
+    {
+      "id": "mixture_process_variable",
+      "title": "Mixture + 过程变量",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["mixture_process_variable", "Mixture process", "Scheffe process"],
+      "implemented_status": "formula_reference",
+      "purpose": "2～4 组分 + 1 过程变量；Scheffé 线性/二次 + 过程项 + 可选组分×过程交互。",
+      "method_overview": "Y=Σb_i x_i+Σb_ij x_i x_j+γX_1+Σδ_i x_i X_1；无截距 OLS；Σx_i≈1 容差。",
+      "input_description": "组分 + 响应 + 过程变量；complete-case。",
+      "missing_value_policy": "非有限或组分和越界报诊断。",
+      "calculation_steps": ["组分和检查", "设计矩阵", "Scheffé OLS", "ANOVA"],
+      "symbol_definitions": [
+        {"symbol": "b̂", "meaning": "(X'X)⁻¹X'y 无截距"},
+        {"symbol": "τ", "meaning": "组分和容差默认 0.05"}
+      ],
+      "decision_rules": ["禁止并入 mixture_analyze 对话框。"],
+      "invalid_input_conditions": "q∉[2,4]、秩亏、N≤p。",
+      "output_description": "Coefficients、ANOVA、Fits/Residuals。",
+      "output_interpretation": "读 Scheffé 系数与过程项。",
+      "assumptions_and_boundaries": "1 过程变量窄化；非 extreme-vertices 设计。",
+      "interpretation_limits": "禁止过程已合格。",
+      "formula_blocks": [
+        {"title": "Scheffé+Process", "plain_text": "Y = Σ b_i x_i + γ X_1 + Σ δ_i x_i X_1", "explanation": "", "conditions": "Σ x_i = 1", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab mixture analyze", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/mixtures/analyze-mixture-design/before-you-start/overview/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P9 Mixture Process", "path": "docs/research/p9_mixture_process_variable.md", "section": ""}],
+      "wiring": {"command_id": "mixture_process_variable", "service_method": "mixture_process_variable", "facts_type": "mixture_process_variable", "primary_test": "algorithm_wave9_track_test"}
+    },
+    {
+      "id": "manova_one_way",
+      "title": "单因子 MANOVA",
+      "category": "ANOVA",
+      "menu_path": "统计 > ANOVA",
+      "aliases": ["manova_one_way", "MANOVA", "one-way MANOVA"],
+      "implemented_status": "formula_reference",
+      "purpose": "2～4 连续响应 + 1 分类因子；Wilks/Pillai/LH/Roy；H/E SSCP 与特征值。",
+      "method_overview": "H/E SSCP；λ_i 为 E⁻¹H 特征值；Wilks Λ=Π1/(1+λ_i)；四检验 F 近似。",
+      "input_description": "2～4 响应列 + 1 因子；complete-case。",
+      "missing_value_policy": "非有限响应跳过；每组≥2。",
+      "calculation_steps": ["complete-case", "组均值向量", "H/E SSCP", "特征值", "四检验"],
+      "symbol_definitions": [
+        {"symbol": "H", "meaning": "组间 SSCP"},
+        {"symbol": "E", "meaning": "组内 SSCP"}
+      ],
+      "decision_rules": ["非 General MANOVA 全量。"],
+      "invalid_input_conditions": "响应∉[2,4]、组<2、组内 n<2。",
+      "output_description": "MANOVA Test Table、Group Mean Vectors、Eigen analysis。",
+      "output_interpretation": "读四检验 p 值与组均值向量。",
+      "assumptions_and_boundaries": "单因子窄化；s>2 时 F 为 approximate。",
+      "interpretation_limits": "禁止过程已合格 / 已证明差异。",
+      "formula_blocks": [
+        {"title": "Wilks", "plain_text": "Wilks Λ = Π 1/(1+λ_i)", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab MANOVA tests", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/general-manova/methods-and-formulas/manova-tests/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P9 MANOVA", "path": "docs/research/p9_manova_one_way.md", "section": ""}],
+      "wiring": {"command_id": "manova_one_way", "service_method": "manova_one_way", "facts_type": "manova_one_way", "primary_test": "algorithm_wave9_track_test"}
+    },
+    {
+      "id": "general_manova",
+      "title": "General MANOVA",
+      "category": "ANOVA",
+      "menu_path": "统计 > ANOVA",
+      "aliases": ["general_manova", "General MANOVA", "Type III MANOVA"],
+      "implemented_status": "formula_reference",
+      "purpose": "2～4 响应 + 1～2 因子 + 可选协变量；Type III SSCP；Wilks/Pillai/LH/Roy 按效应。",
+      "method_overview": "Type III H 分区；E 为残差 SSCP；λ_i 为 E⁻¹H 特征值；四检验 F 近似。",
+      "input_description": "2～4 响应 + 因子 A（必选）+ 因子 B/协变量（可选）；complete-case。",
+      "missing_value_policy": "非有限值跳过；设计奇异时报错。",
+      "calculation_steps": ["complete-case", "设计矩阵", "Type III SSCP", "特征值", "四检验"],
+      "symbol_definitions": [
+        {"symbol": "H", "meaning": "效应 SSCP"},
+        {"symbol": "E", "meaning": "残差 SSCP"}
+      ],
+      "decision_rules": ["非 manova_one_way 单因子窄化。"],
+      "invalid_input_conditions": "响应∉[2,4]、观测不足、设计奇异。",
+      "output_description": "按效应 MANOVA 表、Cell Mean Vectors。",
+      "output_interpretation": "读各效应四检验 p 值。",
+      "assumptions_and_boundaries": "多因子/协变量窄化；s>2 时 F 为 approximate。",
+      "interpretation_limits": "禁止过程已合格 / 已证明差异。",
+      "formula_blocks": [
+        {"title": "Type III", "plain_text": "H_effect from projection difference; E residual SSCP", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab General MANOVA", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/general-manova/methods-and-formulas/manova-tests/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P10 General MANOVA", "path": "docs/research/p10_general_manova.md", "section": ""}],
+      "wiring": {"command_id": "general_manova", "service_method": "general_manova", "facts_type": "general_manova", "primary_test": "algorithm_wave10_track_test"}
+    },
+    {
+      "id": "mixed_effects_reml",
+      "title": "混合效应 REML",
+      "category": "ANOVA",
+      "menu_path": "统计 > ANOVA",
+      "aliases": ["mixed_effects_reml", "REML", "mixed model"],
+      "implemented_status": "formula_reference",
+      "purpose": "1 随机因子 + 1～2 固定因子 + 可选协变量；REML 方差分量与固定效应 BLUE。",
+      "method_overview": "y=Xβ+Zμ+ε；V=σ²I+σ_u²ZZ'；REML 最大化 restricted likelihood。",
+      "input_description": "响应 + 随机因子（必选）+ 固定因子/协变量（可选）。",
+      "missing_value_policy": "非有限或空因子跳过。",
+      "calculation_steps": ["complete-case", "REML σ²/σ_u²", "GLS 固定效应", "方差分量表"],
+      "symbol_definitions": [
+        {"symbol": "σ²", "meaning": "残差方差"},
+        {"symbol": "σ_u²", "meaning": "随机效应方差"}
+      ],
+      "decision_rules": ["单随机项窄化。"],
+      "invalid_input_conditions": "随机水平<2、V 奇异、观测不足。",
+      "output_description": "Variance Components、Fixed Effects BLUE。",
+      "output_interpretation": "读方差分量与固定效应 t 检验。",
+      "assumptions_and_boundaries": "单随机因子 REML；非全混合模型壳。",
+      "interpretation_limits": "禁止测量系统合格判定。",
+      "formula_blocks": [
+        {"title": "REML", "plain_text": "y = Xβ + Zμ + ε; V = σ²I + σ_u²ZZ'", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Mixed Effects", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/anova/how-to/mixed-effects-model/methods-and-formulas/variance-components/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P10 Mixed REML", "path": "docs/research/p10_mixed_effects_reml.md", "section": ""}],
+      "wiring": {"command_id": "mixed_effects_reml", "service_method": "mixed_effects_reml", "facts_type": "mixed_effects_reml", "primary_test": "algorithm_wave10_track_test"}
+    },
+    {
+      "id": "binary_doe_probit",
+      "title": "二值 DOE Probit/Gompit",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["binary_doe_probit", "probit DOE", "gompit"],
+      "implemented_status": "formula_reference",
+      "purpose": "析因二值 DOE；Probit 或 Gompit link；IRWLS；Events/Trials 或 0/1。",
+      "method_overview": "Probit: Φ⁻¹(μ)=x'β；Gompit: log(-log(1-μ))=x'β；IRWLS。",
+      "input_description": "因子列 + Events/Trials 或 0/1 响应；complete-case 展开。",
+      "missing_value_policy": "无效 events/trials 报错；奇异信息矩阵报错。",
+      "calculation_steps": ["因子设计", "展开 trial", "IRWLS", "系数表"],
+      "symbol_definitions": [
+        {"symbol": "μ", "meaning": "成功概率"},
+        {"symbol": "η", "meaning": "线性预测值"}
+      ],
+      "decision_rules": ["非 binary_response_doe logit。"],
+      "invalid_input_conditions": "无因子、trial<4、events>trials。",
+      "output_description": "Coefficients、Deviance、AIC。",
+      "output_interpretation": "读系数 z 检验；probit 非 OR。",
+      "assumptions_and_boundaries": "Probit/Gompit 窄化；非 logit golden。",
+      "interpretation_limits": "禁止过程已合格。",
+      "formula_blocks": [
+        {"title": "Probit link", "plain_text": "Φ⁻¹(μ) = x'β", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab binary logistic methods", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/fit-binary-logistic-model/methods-and-formulas/methods/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P10 Binary Probit", "path": "docs/research/p10_binary_doe_probit.md", "section": ""}],
+      "wiring": {"command_id": "binary_doe_probit", "service_method": "binary_doe_probit", "facts_type": "binary_doe_probit", "primary_test": "algorithm_wave10_track_test"}
+    },
+    {
+      "id": "life_data_lognormal",
+      "title": "寿命数据 Lognormal",
+      "category": "可靠性",
+      "menu_path": "统计 > 可靠性",
+      "aliases": ["life_data_lognormal", "lognormal regression", "life lognormal"],
+      "implemented_status": "formula_reference",
+      "purpose": "Lognormal MLE；0～2 协变量；右删失；回归表 + 百分位。",
+      "method_overview": "log(T)~Normal(μ,σ²)；μ=β₀+Σβx；右删失 MLE。",
+      "input_description": "时间>0 + 删失(1=失败) + 可选协变量；complete-case。",
+      "missing_value_policy": "time≤0 或非有限跳过。",
+      "calculation_steps": ["complete-case", "Newton MLE", "回归表", "百分位"],
+      "symbol_definitions": [
+        {"symbol": "μ", "meaning": "对数尺度均值"},
+        {"symbol": "σ", "meaning": "对数尺度标准差"}
+      ],
+      "decision_rules": ["非 life_data_regression Weibull。"],
+      "invalid_input_conditions": "失败<2、信息矩阵奇异、time≤0。",
+      "output_description": "Regression Table、Percentiles、Distribution Summary。",
+      "output_interpretation": "读 log scale 系数与百分位寿命。",
+      "assumptions_and_boundaries": "Lognormal 窄化；右删失契约与 W8 一致。",
+      "interpretation_limits": "禁止可靠性合格承诺。",
+      "formula_blocks": [
+        {"title": "Lognormal", "plain_text": "log(Y_p) = β₀ + Σβx + σΦ⁻¹(p)", "explanation": "", "conditions": "T>0", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab life data regression", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/reliability/how-to/regression-with-life-data/methods-and-formulas/equations/", "accessed": "2026-08-31", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P10 Life Lognormal", "path": "docs/research/p10_life_data_lognormal.md", "section": ""}],
+      "wiring": {"command_id": "life_data_lognormal", "service_method": "life_data_lognormal", "facts_type": "life_data_lognormal", "primary_test": "algorithm_wave10_track_test"}
+    },
+    {
+      "id": "simple_correspondence",
+      "title": "简单对应分析",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": ["simple_correspondence", "SCA", "correspondence analysis"],
+      "implemented_status": "formula_reference",
+      "purpose": "2 列分类变量；列联表；惯性分解；行/列贡献；1～2 组件。",
+      "method_overview": "I=χ²/n；标准化矩阵 S 的 SVD 主坐标。",
+      "input_description": "行变量 + 列变量（分类）；complete-case。",
+      "missing_value_policy": "空分类跳过。",
+      "calculation_steps": ["列联表", "χ²与惯性", "SVD", "贡献表"],
+      "symbol_definitions": [
+        {"symbol": "I", "meaning": "总惯性 χ²/n"},
+        {"symbol": "S", "meaning": "标准化残差矩阵"}
+      ],
+      "decision_rules": ["非 multiple_correspondence 对话框。"],
+      "invalid_input_conditions": "列联表<2×2、观测<2。",
+      "output_description": "Summary、Row/Column Contributions。",
+      "output_interpretation": "读惯性与贡献表。",
+      "assumptions_and_boundaries": "2 列分类窄化。",
+      "interpretation_limits": "禁止因果结论。",
+      "formula_blocks": [
+        {"title": "Inertia", "plain_text": "I = chi2/n; SVD of standardized contingency", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Simple CA", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/how-to/simple-correspondence-analysis/methods-and-formulas/method/", "accessed": "2026-09-01", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P11 Simple CA", "path": "docs/research/p11_simple_correspondence.md", "section": ""}],
+      "wiring": {"command_id": "simple_correspondence", "service_method": "simple_correspondence", "facts_type": "simple_correspondence", "primary_test": "algorithm_wave11_track_test"}
+    },
+    {
+      "id": "multiple_correspondence",
+      "title": "多重对应分析",
+      "category": "多变量",
+      "menu_path": "统计 > 多变量",
+      "aliases": ["multiple_correspondence", "MCA"],
+      "implemented_status": "formula_reference",
+      "purpose": "3～6 列分类；指示矩阵；Column Contributions。",
+      "method_overview": "指示矩阵 MCA；Burt 表特征分解。",
+      "input_description": "3～6 分类列；complete-case。",
+      "missing_value_policy": "任一变元缺失则跳过行。",
+      "calculation_steps": ["指示展开", "Burt/MCA", "Column Contributions"],
+      "symbol_definitions": [
+        {"symbol": "Z", "meaning": "指示矩阵"}
+      ],
+      "decision_rules": ["非 simple_correspondence 对话框。"],
+      "invalid_input_conditions": "变量<3或>6、水平<2。",
+      "output_description": "Summary、Column Contributions。",
+      "output_interpretation": "读列贡献与组件惯性。",
+      "assumptions_and_boundaries": "3～6 变量窄化。",
+      "interpretation_limits": "禁止全量 MCA 宣称。",
+      "formula_blocks": [
+        {"title": "MCA", "plain_text": "Indicator matrix weighted PCA; max dims sum(c_j-1)", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab MCA", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/multivariate/how-to/multiple-correspondence-analysis/methods-and-formulas/method/", "accessed": "2026-09-01", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P11 MCA", "path": "docs/research/p11_multiple_correspondence.md", "section": ""}],
+      "wiring": {"command_id": "multiple_correspondence", "service_method": "multiple_correspondence", "facts_type": "multiple_correspondence", "primary_test": "algorithm_wave11_track_test"}
+    },
+    {
+      "id": "nonlinear_regression",
+      "title": "非线性回归",
+      "category": "回归",
+      "menu_path": "统计 > 回归",
+      "aliases": ["nonlinear_regression", "NLR"],
+      "implemented_status": "formula_reference",
+      "purpose": "单 Y + 单 X；内置模型；GN/LM；参数表 + Summary of Fit。",
+      "method_overview": "GN: δ=(J'J)⁻¹J'r；LM: (J'J+λD)δ=J'r。",
+      "input_description": "响应 + 预测（数值）；模型与初值。",
+      "missing_value_policy": "非有限跳过。",
+      "calculation_steps": ["模型选择", "雅可比", "GN/LM 迭代", "参数 SE"],
+      "symbol_definitions": [
+        {"symbol": "J", "meaning": "雅可比矩阵"},
+        {"symbol": "δ", "meaning": "参数更新"}
+      ],
+      "decision_rules": ["非 linear_regression 对话框。"],
+      "invalid_input_conditions": "N≤p、初值非法、雅可比奇异。",
+      "output_description": "Method、Parameter Estimates、Summary of Fit。",
+      "output_interpretation": "读收敛与参数 CI。",
+      "assumptions_and_boundaries": "内置 5 模型窄化；非任意表达式。",
+      "interpretation_limits": "禁止外推无验证。",
+      "formula_blocks": [
+        {"title": "GN", "plain_text": "delta = (J'J)^-1 J' r; theta_{k+1} = theta_k + delta", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Nonlinear", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/regression/how-to/nonlinear-regression/methods-and-formulas/methods/", "accessed": "2026-09-01", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P11 Nonlinear", "path": "docs/research/p11_nonlinear_regression.md", "section": ""}],
+      "wiring": {"command_id": "nonlinear_regression", "service_method": "nonlinear_regression", "facts_type": "nonlinear_regression", "primary_test": "algorithm_wave11_track_test"}
+    },
+    {
+      "id": "split_plot_design",
+      "title": "2 水平裂区设计",
+      "category": "DOE",
+      "menu_path": "统计 > DOE",
+      "aliases": ["split_plot_design", "split-plot design"],
+      "implemented_status": "formula_reference",
+      "purpose": "2～4 因子、1 HTC；设计矩阵 + Whole plot 列。",
+      "method_overview": "HTC 定 whole plot；ETC 因子全析因；可复制与随机化。",
+      "input_description": "因子名与水平；HTC 索引；复制数。",
+      "missing_value_policy": "设计生成不读响应。",
+      "calculation_steps": ["因子校验", "HTC/ETC 组合", "Whole plot 赋值", "随机化"],
+      "symbol_definitions": [
+        {"symbol": "HTC", "meaning": "难改因子"},
+        {"symbol": "ETC", "meaning": "易改因子"}
+      ],
+      "decision_rules": ["非 split_plot_analyze 对话框。"],
+      "invalid_input_conditions": "因子<2或>4、HTC 索引无效。",
+      "output_description": "Design Summary、Design Table（含 WholePlot）。",
+      "output_interpretation": "生成矩阵后可接 split_plot_analyze。",
+      "assumptions_and_boundaries": "2 水平窄化；非 7 因子全表。",
+      "interpretation_limits": "禁止宣称最优设计。",
+      "formula_blocks": [
+        {"title": "Split-plot", "plain_text": "Whole plots from HTC levels; ETC full factorial within WP", "explanation": "", "conditions": "", "note": "formula_reference"}
+      ],
+      "reference_links": [
+        {"label": "Minitab Split-Plot Design", "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistical-modeling/doe/how-to/factorial/create-factorial-design/create-2-level-split-plot/before-you-start/overview/", "accessed": "2026-09-01", "kind": "minitab"}
+      ],
+      "source_documents": [{"label": "P11 Split Design", "path": "docs/research/p11_split_plot_design.md", "section": ""}],
+      "wiring": {"command_id": "split_plot_design", "service_method": "split_plot_design", "facts_type": "split_plot_design", "primary_test": "algorithm_wave11_track_test"}
+    },
+    {
       "id": "nhpp_repairable",
       "title": "可修复系统 NHPP",
       "category": "可靠性",

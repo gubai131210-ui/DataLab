@@ -572,6 +572,124 @@ struct LifeDataRegressionConfiguration {
     std::string distribution = "weibull";
 };
 
+struct ExpandedGageUnbalancedConfiguration {
+    std::optional<std::size_t> measurement_column;
+    std::optional<std::size_t> part_column;
+    std::optional<std::size_t> operator_column;
+    std::optional<std::size_t> additional_column;
+    bool include_additional_factor = false;
+    bool part_random = true;
+    bool operator_random = true;
+    bool additional_random = true;
+    std::optional<double> tolerance;
+    double study_var_multiplier = 6.0;
+};
+
+struct SplitPlotAnalyzeConfiguration {
+    std::optional<std::size_t> response_column;
+    std::optional<std::size_t> htc_factor_column;
+    std::optional<std::size_t> etc_factor_a_column;
+    std::optional<std::size_t> etc_factor_b_column;
+    std::optional<std::size_t> whole_plot_column;
+    bool include_htc_etc_interaction = true;
+    bool include_etc_interaction = true;
+};
+
+struct MixtureProcessVariableConfiguration {
+    std::vector<std::size_t> component_columns;
+    std::optional<std::size_t> response_column;
+    std::optional<std::size_t> process_column;
+    std::string component_order = "linear";
+    bool include_component_process_interaction = true;
+    double sum_tolerance = 0.05;
+};
+
+struct ManovaOneWayConfiguration {
+    std::vector<std::size_t> response_columns;
+    std::optional<std::size_t> factor_column;
+    bool wilks = true;
+    bool pillai = true;
+    bool lawley_hotelling = true;
+    bool roy = true;
+};
+
+struct GeneralManovaConfiguration {
+    std::vector<std::size_t> response_columns;
+    std::optional<std::size_t> factor_a_column;
+    std::optional<std::size_t> factor_b_column;
+    std::optional<std::size_t> covariate_column;
+    bool include_interaction = true;
+    bool wilks = true;
+    bool pillai = true;
+    bool lawley_hotelling = true;
+    bool roy = true;
+};
+
+struct MixedEffectsRemlConfiguration {
+    std::optional<std::size_t> response_column;
+    std::optional<std::size_t> random_factor_column;
+    std::optional<std::size_t> fixed_factor_a_column;
+    std::optional<std::size_t> fixed_factor_b_column;
+    std::optional<std::size_t> covariate_column;
+    std::string reml_method = "newton";
+};
+
+struct BinaryDoeProbitConfiguration {
+    std::vector<std::size_t> factor_columns;
+    std::optional<std::size_t> events_column;
+    std::optional<std::size_t> trials_column;
+    std::optional<std::size_t> binary_response_column;
+    std::string link = "probit";  // probit | gompit
+    bool include_ab_interaction = true;
+};
+
+struct LifeDataLognormalConfiguration {
+    std::optional<std::size_t> time_column;
+    std::optional<std::size_t> event_column;
+    std::vector<std::size_t> covariate_columns;
+    double confidence_level = 0.95;
+    std::vector<double> percentile_levels = {1.0, 5.0, 50.0, 95.0, 99.0};
+};
+
+struct SimpleCorrespondenceConfiguration {
+    std::optional<std::size_t> row_variable_column;
+    std::optional<std::size_t> column_variable_column;
+    std::size_t component_count = 2;
+    bool include_row_contributions = true;
+    bool include_column_contributions = true;
+    bool include_row_plot = true;
+    bool include_column_plot = true;
+};
+
+struct MultipleCorrespondenceConfiguration {
+    std::vector<std::size_t> categorical_columns;
+    std::size_t component_count = 2;
+    bool include_column_contributions = true;
+    bool include_column_plot = true;
+};
+
+struct NonlinearRegressionConfiguration {
+    std::optional<std::size_t> response_column;
+    std::optional<std::size_t> predictor_column;
+    std::string model_id = "growth";
+    std::string algorithm = "gn";
+    std::vector<double> starting_values;
+    std::size_t max_iterations = 100;
+    double tolerance = 1.0e-6;
+    double lm_lambda = 0.01;
+};
+
+struct SplitPlotDesignConfiguration {
+    std::vector<std::string> factor_names;
+    std::vector<std::string> low_levels;
+    std::vector<std::string> high_levels;
+    std::size_t htc_factor_index = 0;
+    std::size_t whole_plot_replicates = 1;
+    bool randomize = true;
+    std::uint64_t random_seed = 1;
+    std::size_t etc_fraction_p = 0;
+};
+
 // Phase 4: CCD / BBD design generation (continuous factors only).
 struct ResponseSurfaceDesignConfiguration {
     std::string design_kind = "ccd";  // ccd | bbd
@@ -680,6 +798,18 @@ struct AnalysisConfiguration {
     ClusterVariablesConfiguration cluster_variables;
     GlmThreeFactorConfiguration glm_three_factor;
     LifeDataRegressionConfiguration life_data_regression;
+    ExpandedGageUnbalancedConfiguration expanded_gage_unbalanced;
+    SplitPlotAnalyzeConfiguration split_plot_analyze;
+    MixtureProcessVariableConfiguration mixture_process_variable;
+    ManovaOneWayConfiguration manova_one_way;
+    GeneralManovaConfiguration general_manova;
+    MixedEffectsRemlConfiguration mixed_effects_reml;
+    BinaryDoeProbitConfiguration binary_doe_probit;
+    LifeDataLognormalConfiguration life_data_lognormal;
+    SimpleCorrespondenceConfiguration simple_correspondence;
+    MultipleCorrespondenceConfiguration multiple_correspondence;
+    NonlinearRegressionConfiguration nonlinear_regression;
+    SplitPlotDesignConfiguration split_plot_design;
     ResponseSurfaceDesignConfiguration response_surface_design;
     GraphConfiguration graph;
     std::vector<std::size_t> included_rows;
@@ -1913,6 +2043,153 @@ struct LifeDataRegressionFacts {
     std::string algorithm_id = "life_data_regression_weibull_mle";
 };
 
+struct ExpandedGageUnbalancedFacts {
+    std::size_t observation_count = 0;
+    std::size_t part_count = 0;
+    std::size_t operator_count = 0;
+    bool design_balanced = true;
+    bool has_additional_factor = false;
+    double ndc = 0.0;
+    bool ndc_available = false;
+    double gage_rr_percent_study_var = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "expanded_gage_unbalanced_glm_varcomp";
+};
+
+struct SplitPlotAnalyzeFacts {
+    std::size_t observation_count = 0;
+    std::size_t whole_plot_count = 0;
+    bool include_htc_etc_interaction = true;
+    bool include_etc_interaction = true;
+    double wp_r_squared = 0.0;
+    double sp_r_squared = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "split_plot_analyze_wp_sp";
+};
+
+struct MixtureProcessVariableFacts {
+    std::size_t component_count = 0;
+    std::size_t observation_count = 0;
+    std::string component_order = "linear";
+    bool include_component_process_interaction = true;
+    double r_squared = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "mixture_process_variable_scheffe_ols";
+};
+
+struct ManovaOneWayFacts {
+    std::size_t observation_count = 0;
+    std::size_t response_count = 0;
+    std::size_t group_count = 0;
+    bool wilks = true;
+    bool pillai = true;
+    bool lawley_hotelling = true;
+    bool roy = true;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "manova_one_way_multivariate";
+};
+
+struct GeneralManovaFacts {
+    std::size_t observation_count = 0;
+    std::size_t response_count = 0;
+    std::size_t effect_count = 0;
+    bool has_covariate = false;
+    bool has_interaction = false;
+    bool wilks = true;
+    bool pillai = true;
+    bool lawley_hotelling = true;
+    bool roy = true;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "general_manova_type3_sscp";
+};
+
+struct MixedEffectsRemlFacts {
+    std::size_t observation_count = 0;
+    std::size_t random_level_count = 0;
+    std::size_t fixed_term_count = 0;
+    bool converged = false;
+    double residual_variance = 0.0;
+    double random_variance = 0.0;
+    std::string reml_method = "newton";
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "mixed_effects_reml_variance";
+};
+
+struct BinaryDoeProbitFacts {
+    std::size_t design_row_count = 0;
+    std::size_t expanded_observation_count = 0;
+    std::size_t factor_count = 0;
+    std::string link = "probit";
+    bool converged = false;
+    std::size_t iteration_count = 0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "binary_doe_probit_irwls";
+};
+
+struct LifeDataLognormalFacts {
+    std::size_t observation_count = 0;
+    std::size_t failure_count = 0;
+    std::size_t censored_count = 0;
+    std::size_t covariate_count = 0;
+    bool converged = false;
+    double log_sigma = 0.0;
+    double log_likelihood = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "life_data_lognormal_mle";
+};
+
+struct SimpleCorrespondenceFacts {
+    std::size_t observation_count = 0;
+    std::size_t row_level_count = 0;
+    std::size_t column_level_count = 0;
+    std::size_t component_count = 0;
+    double total_inertia = 0.0;
+    double chi_square = 0.0;
+    bool include_row_plot = true;
+    bool include_column_plot = true;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "simple_correspondence_svd";
+};
+
+struct MultipleCorrespondenceFacts {
+    std::size_t observation_count = 0;
+    std::size_t variable_count = 0;
+    std::size_t category_count = 0;
+    std::size_t column_count = 0;
+    std::size_t component_count = 0;
+    double total_inertia = 0.0;
+    double chi_square = 0.0;
+    bool include_column_plot = true;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "multiple_correspondence_burt";
+};
+
+struct NonlinearRegressionFacts {
+    std::size_t observation_count = 0;
+    std::string model_id;
+    std::string algorithm;
+    bool converged = false;
+    std::size_t iteration_count = 0;
+    double sse = 0.0;
+    double mse = 0.0;
+    double s = 0.0;
+    double r_squared = 0.0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "nonlinear_regression_gn_lm";
+};
+
+struct SplitPlotDesignFacts {
+    std::size_t factor_count = 0;
+    std::size_t run_count = 0;
+    std::size_t whole_plot_count = 0;
+    std::size_t htc_factor_index = 0;
+    std::string htc_factor_name;
+    bool randomized = false;
+    std::uint64_t random_seed = 0;
+    std::string evidence_type = "formula_reference";
+    std::string algorithm_id = "split_plot_design_2level";
+};
+
 struct DesignGenerationFacts {
     std::string design_kind;   // ccd | bbd
     std::string ccd_variant;   // ccc | cci | ccf | empty for BBD
@@ -2287,6 +2564,18 @@ struct InterpretationFacts {
     std::optional<ClusterVariablesFacts> cluster_variables;
     std::optional<GlmThreeFactorFacts> glm_three_factor;
     std::optional<LifeDataRegressionFacts> life_data_regression;
+    std::optional<ExpandedGageUnbalancedFacts> expanded_gage_unbalanced;
+    std::optional<SplitPlotAnalyzeFacts> split_plot_analyze;
+    std::optional<MixtureProcessVariableFacts> mixture_process_variable;
+    std::optional<ManovaOneWayFacts> manova_one_way;
+    std::optional<GeneralManovaFacts> general_manova;
+    std::optional<MixedEffectsRemlFacts> mixed_effects_reml;
+    std::optional<BinaryDoeProbitFacts> binary_doe_probit;
+    std::optional<LifeDataLognormalFacts> life_data_lognormal;
+    std::optional<SimpleCorrespondenceFacts> simple_correspondence;
+    std::optional<MultipleCorrespondenceFacts> multiple_correspondence;
+    std::optional<NonlinearRegressionFacts> nonlinear_regression;
+    std::optional<SplitPlotDesignFacts> split_plot_design;
     std::optional<DesignGenerationFacts> design_generation;
     std::optional<VarianceFacts> variance;
     std::optional<MultiVariFacts> multi_vari;

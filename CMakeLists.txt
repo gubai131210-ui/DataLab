@@ -22,6 +22,10 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test Concurren
 
 qt_standard_project_setup()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # 分层目标（依赖方向：ui → {application, infrastructure, reporting} → domain）
 # 注意：include 根统一为 src/，分层由链接依赖 + tools/check_layering.ps1 约束。
 
@@ -58,6 +62,9 @@ add_library(datalab_domain STATIC
     src/domain/report_text_catalog_part17.cpp
     src/domain/report_text_catalog_part18.cpp
     src/domain/report_text_catalog_part19.cpp
+    src/domain/report_text_catalog_part20.cpp
+    src/domain/report_text_catalog_part21.cpp
+    src/domain/report_text_catalog_part22.cpp
     src/domain/quality_diagnostics.cpp
     src/domain/quality_diagnostics.h
     src/domain/statistics/descriptive_statistics.cpp
@@ -187,6 +194,30 @@ add_library(datalab_domain STATIC
     src/domain/statistics/glm_three_factor.h
     src/domain/statistics/life_data_regression.cpp
     src/domain/statistics/life_data_regression.h
+    src/domain/statistics/expanded_gage_unbalanced.cpp
+    src/domain/statistics/expanded_gage_unbalanced.h
+    src/domain/statistics/split_plot_analyze.cpp
+    src/domain/statistics/split_plot_analyze.h
+    src/domain/statistics/mixture_process_variable.cpp
+    src/domain/statistics/mixture_process_variable.h
+    src/domain/statistics/manova_one_way.cpp
+    src/domain/statistics/manova_one_way.h
+    src/domain/statistics/general_manova.cpp
+    src/domain/statistics/general_manova.h
+    src/domain/statistics/mixed_effects_reml.cpp
+    src/domain/statistics/mixed_effects_reml.h
+    src/domain/statistics/binary_doe_probit.cpp
+    src/domain/statistics/binary_doe_probit.h
+    src/domain/statistics/life_data_lognormal.cpp
+    src/domain/statistics/life_data_lognormal.h
+    src/domain/statistics/simple_correspondence.cpp
+    src/domain/statistics/simple_correspondence.h
+    src/domain/statistics/multiple_correspondence.cpp
+    src/domain/statistics/multiple_correspondence.h
+    src/domain/statistics/nonlinear_regression.cpp
+    src/domain/statistics/nonlinear_regression.h
+    src/domain/statistics/split_plot_design.cpp
+    src/domain/statistics/split_plot_design.h
     src/domain/statistics/adf_test.cpp
     src/domain/statistics/adf_test.h
     src/domain/statistics/poisson_regression.cpp
@@ -461,6 +492,30 @@ add_library(datalab_ui STATIC
     src/ui/glm_three_factor_dialog.h
     src/ui/life_data_regression_dialog.cpp
     src/ui/life_data_regression_dialog.h
+    src/ui/expanded_gage_unbalanced_dialog.cpp
+    src/ui/expanded_gage_unbalanced_dialog.h
+    src/ui/split_plot_analyze_dialog.cpp
+    src/ui/split_plot_analyze_dialog.h
+    src/ui/mixture_process_variable_dialog.cpp
+    src/ui/mixture_process_variable_dialog.h
+    src/ui/manova_one_way_dialog.cpp
+    src/ui/manova_one_way_dialog.h
+    src/ui/general_manova_dialog.cpp
+    src/ui/general_manova_dialog.h
+    src/ui/mixed_effects_reml_dialog.cpp
+    src/ui/mixed_effects_reml_dialog.h
+    src/ui/binary_doe_probit_dialog.cpp
+    src/ui/binary_doe_probit_dialog.h
+    src/ui/life_data_lognormal_dialog.cpp
+    src/ui/life_data_lognormal_dialog.h
+    src/ui/simple_correspondence_dialog.cpp
+    src/ui/simple_correspondence_dialog.h
+    src/ui/multiple_correspondence_dialog.cpp
+    src/ui/multiple_correspondence_dialog.h
+    src/ui/nonlinear_regression_dialog.cpp
+    src/ui/nonlinear_regression_dialog.h
+    src/ui/split_plot_design_dialog.cpp
+    src/ui/split_plot_design_dialog.h
     src/ui/row_visibility_clipboard.cpp
     src/ui/row_visibility_clipboard.h
     src/ui/algorithm_help_types.h
@@ -635,7 +690,7 @@ add_datalab_test(regression_output_test tests/regression_output_test.cpp datalab
 add_datalab_test(reliability_msa_power_test tests/reliability_msa_power_test.cpp datalab_domain datalab_application)
 
 add_datalab_test(doe_response_test tests/doe_response_test.cpp datalab_domain)
-add_datalab_test(doe_factorial_output_test tests/doe_factorial_output_test.cpp datalab_domain datalab_application)
+add_datalab_test(doe_factorial_output_test tests/doe_factorial_output_test.cpp datalab_domain datalab_application datalab_infrastructure)
 
 add_datalab_test(graph_visuals_test tests/graph_visuals_test.cpp datalab_domain)
 add_datalab_test(graph_service_test tests/graph_service_test.cpp datalab_application)
@@ -667,6 +722,9 @@ add_datalab_test(algorithm_wave5_track_test tests/algorithm_wave5_track_test.cpp
 add_datalab_test(algorithm_wave6_track_test tests/algorithm_wave6_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave7_track_test tests/algorithm_wave7_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave8_track_test tests/algorithm_wave8_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave9_track_test tests/algorithm_wave9_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave10_track_test tests/algorithm_wave10_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave11_track_test tests/algorithm_wave11_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(g9_formula_substitution_track_test tests/g9_formula_substitution_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(g9_show_your_work_deepen_track_test tests/g9_show_your_work_deepen_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(ui_menu_ia_track_test tests/ui_menu_ia_track_test.cpp datalab_ui)

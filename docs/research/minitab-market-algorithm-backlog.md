@@ -334,3 +334,42 @@ DoD：[`goal-wave-2026-08-28-algorithm-wave8.md`](goal-wave-2026-08-28-algorithm
 | W8-2 | `cluster_variables` | 变量层次聚类 dendrogram ✅ |
 | W8-3 | `glm_three_factor` | 三因子不平衡 Type III（无 ABC 三阶） ✅ |
 | W8-4 | `life_data_regression` | Weibull + 协变量 + 右删失窄化 ✅ |
+
+### 15.5 算法 Wave-9 锁定（2026-08-28 · ✅）
+
+计划与 Mega `/goal`：[`goal-wave-2026-08-28-algorithm-wave9-plan-and-mega-prompt.md`](goal-wave-2026-08-28-algorithm-wave9-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave9-market-formula-research-2026-08-28.md`](algorithm-wave9-market-formula-research-2026-08-28.md)  
+DoD：[`goal-wave-2026-08-28-algorithm-wave9.md`](goal-wave-2026-08-28-algorithm-wave9.md)
+
+| Wave-9 | id | 备注 |
+|--------|-----|------|
+| W9-1 | `expanded_gage_unbalanced` | 不平衡 Expanded Gage GLM 方差分量 ✅ |
+| W9-2 | `split_plot_analyze` | 裂区 WP/SP 双误差 ANOVA ✅ |
+| W9-3 | `mixture_process_variable` | Scheffé + 过程变量 + 可选交互 ✅ |
+| W9-4 | `manova_one_way` | 单因子 MANOVA 四检验 ✅ |
+
+### 15.6 算法 Wave-10 锁定（2026-08-31 · ✅）
+
+计划与 Mega `/goal`：[`goal-wave-2026-08-31-algorithm-wave10-plan-and-mega-prompt.md`](goal-wave-2026-08-31-algorithm-wave10-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave10-market-formula-research-2026-08-31.md`](algorithm-wave10-market-formula-research-2026-08-31.md)  
+DoD：[`goal-wave-2026-08-31-algorithm-wave10.md`](goal-wave-2026-08-31-algorithm-wave10.md)
+
+| Wave-10 | id | 备注 |
+|--------|-----|------|
+| W10-1 | `general_manova` | General MANOVA Type III SSCP ✅ |
+| W10-2 | `mixed_effects_reml` | 单随机 REML 方差分量 ✅ |
+| W10-3 | `binary_doe_probit` | Probit/Gompit IRWLS ✅ |
+| W10-4 | `life_data_lognormal` | Lognormal MLE + 删失 ✅ |
+
+### 15.7 算法 Wave-11 锁定（2026-09-01 · ✅）
+
+计划与 Mega `/goal`：[`goal-wave-2026-09-01-algorithm-wave11-plan-and-mega-prompt.md`](goal-wave-2026-09-01-algorithm-wave11-plan-and-mega-prompt.md)  
+调研：[`algorithm-wave11-market-formula-research-2026-09-01.md`](algorithm-wave11-market-formula-research-2026-09-01.md)  
+DoD：[`goal-wave-2026-09-01-algorithm-wave11.md`](goal-wave-2026-09-01-algorithm-wave11.md)
+
+| Wave-11 | id | 备注 |
+|--------|-----|------|
+| W11-1 | `simple_correspondence` | 简单对应分析（2 列分类）✅ |
+| W11-2 | `multiple_correspondence` | 多重对应分析（3～6 列）✅ |
+| W11-3 | `nonlinear_regression` | 非线性回归内置模型 GN/LM ✅ |
+| W11-4 | `split_plot_design` | 2 水平裂区设计生成 ✅ |
