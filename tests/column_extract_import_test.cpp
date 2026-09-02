@@ -1,4 +1,5 @@
 #include "domain/column_extract.h"
+#include "domain/graph_assembly.h"
 #include "infrastructure/csv_importer.h"
 #include "infrastructure/data_import_service.h"
 
@@ -18,6 +19,8 @@ private slots:
     void preservesMultilineQuotedCsvFields();
     void validatesImportedTableContract();
     void rejectsDuplicateRowIds();
+    void parseTimeCellAcceptsMesDatetimeFormats();
+    void assembleTimeSeriesColumnsParsesTextTimeColumn();
 };
 
 void ColumnExtractImportTest::rejectsTrailingCharactersInNumericCells()
@@ -181,6 +184,40 @@ void ColumnExtractImportTest::rejectsDuplicateRowIds()
     datalab::domain::populate_data_table_contract(table);
     table.row_ids = {0, 0};
     QVERIFY(!datalab::domain::validate_data_table_contract(table).empty());
+}
+
+void ColumnExtractImportTest::parseTimeCellAcceptsMesDatetimeFormats()
+{
+    double epoch = 0.0;
+    std::string original;
+    QVERIFY(datalab::domain::parse_time_cell_to_epoch(
+        "2024/01/02 12:30:00", epoch, original));
+    QCOMPARE(original, std::string("2024/01/02 12:30:00"));
+    QVERIFY(epoch > 1.0e9);
+
+    QVERIFY(datalab::domain::parse_time_cell_to_epoch(
+        "2024-01-02 12:30:00", epoch, original));
+    QVERIFY(!datalab::domain::parse_time_cell_to_epoch("not-a-date", epoch, original));
+}
+
+void ColumnExtractImportTest::assembleTimeSeriesColumnsParsesTextTimeColumn()
+{
+    datalab::domain::DataTable table;
+    table.columns = {"过站时间", "测试参数值"};
+    table.rows = {
+        {"2024/01/01 08:00:00", "1.5"},
+        {"2024/01/02 12:30:00", "2.5"},
+    };
+    datalab::domain::populate_data_table_contract(table);
+
+    const auto assembled = datalab::domain::assemble_time_series_columns(
+        table, 0, 1, std::nullopt, std::nullopt, {});
+    QCOMPARE(assembled.first.size(), std::size_t{2});
+    QCOMPARE(assembled.second.size(), std::size_t{2});
+    QCOMPARE(assembled.categories.size(), std::size_t{2});
+    QVERIFY(assembled.first[0] < assembled.first[1]);
+    QCOMPARE(assembled.second[0], 1.5);
+    QCOMPARE(assembled.second[1], 2.5);
 }
 
 QTEST_APPLESS_MAIN(ColumnExtractImportTest)

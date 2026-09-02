@@ -82,6 +82,61 @@ AssembledGraphColumns assemble_graph_columns(
     return result;
 }
 
+AssembledGraphColumns assemble_time_series_columns(
+    const DataTable& table,
+    const std::size_t time_column,
+    const std::size_t value_column,
+    const std::optional<std::size_t>& group_column,
+    const std::optional<std::size_t>& label_column,
+    const std::vector<std::size_t>& excluded_rows)
+{
+    AssembledGraphColumns result;
+    for (std::size_t row_index = 0; row_index < table.rows.size(); ++row_index) {
+        if (std::find(excluded_rows.cbegin(), excluded_rows.cend(), row_index)
+            != excluded_rows.cend()) {
+            continue;
+        }
+        const auto& row = table.rows[row_index];
+        const auto cell_at = [&](const std::size_t column) -> std::string {
+            return column < row.size() ? row[column] : std::string();
+        };
+        if (time_column >= row.size() || value_column >= row.size()) {
+            ++result.skipped_count;
+            continue;
+        }
+        const std::string time_cell = cell_at(time_column);
+        double time_value = 0.0;
+        std::string time_label;
+        const bool time_is_numeric = parse_finite_number(time_cell, time_value)
+            && !cell_looks_like_time(time_cell);
+        if (!time_is_numeric) {
+            if (!parse_time_cell_to_epoch(time_cell, time_value, time_label)) {
+                ++result.skipped_count;
+                continue;
+            }
+        } else {
+            time_label = time_cell;
+        }
+        double value = 0.0;
+        if (is_missing_cell(cell_at(value_column))
+            || !parse_finite_number(cell_at(value_column), value)) {
+            ++result.skipped_count;
+            continue;
+        }
+        result.first.push_back(time_value);
+        result.second.push_back(value);
+        result.source_rows.push_back(row_index);
+        result.categories.push_back(time_label.empty() ? time_cell : time_label);
+        if (group_column.has_value()) {
+            result.groups.push_back(cell_at(*group_column));
+        }
+        if (label_column.has_value()) {
+            result.labels.push_back(cell_at(*label_column));
+        }
+    }
+    return result;
+}
+
 AssembledMatrixColumns assemble_numeric_matrix(
     const DataTable& table,
     const std::vector<std::size_t>& columns,

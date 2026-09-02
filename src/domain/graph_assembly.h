@@ -38,6 +38,14 @@ AssembledGraphColumns assemble_graph_columns(
     const std::vector<std::size_t>& excluded_rows,
     bool require_numeric_first = true);
 
+AssembledGraphColumns assemble_time_series_columns(
+    const DataTable& table,
+    std::size_t time_column,
+    std::size_t value_column,
+    const std::optional<std::size_t>& group_column,
+    const std::optional<std::size_t>& label_column,
+    const std::vector<std::size_t>& excluded_rows);
+
 AssembledMatrixColumns assemble_numeric_matrix(
     const DataTable& table,
     const std::vector<std::size_t>& columns,

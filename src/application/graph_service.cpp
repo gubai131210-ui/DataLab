@@ -1,4 +1,5 @@
 #include "application/graph_service.h"
+#include "application/analysis_service.h"
 #include "application/computation_trace_attach.h"
 
 #include "domain/column_extract.h"
@@ -10,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <string>
 #include <unordered_set>
 
@@ -17,6 +19,10 @@ namespace datalab::application {
 namespace {
 
 using datalab::domain::AnalysisConfiguration;
+using datalab::domain::GraphConfiguration;
+using datalab::domain::GraphGalleryFacts;
+using datalab::domain::ChiSquareMosaicLinkFacts;
+using datalab::domain::ChiSquareMosaicLinkConfiguration;
 using datalab::domain::AssembledGraphColumns;
 using datalab::domain::AssembledMatrixColumns;
 using datalab::domain::DataTable;
@@ -26,7 +32,11 @@ using datalab::domain::OutputPage;
 using datalab::domain::PlotKind;
 using datalab::domain::PlotSpec;
 using datalab::domain::assemble_graph_columns;
+using datalab::domain::assemble_time_series_columns;
 using datalab::domain::assemble_numeric_matrix;
+using datalab::domain::extract_numeric_column;
+using datalab::domain::extract_text_column;
+using datalab::domain::ExtractedNumericColumn;
 using datalab::domain::parse_finite_number;
 using datalab::domain::summarize_row_visibility;
 using datalab::domain::to_row_set;
@@ -318,6 +328,56 @@ AssembledGraphColumns slice_graph_columns(
     return slice;
 }
 
+std::vector<std::size_t> panel_source_rows_from_member_indices(
+    const AssembledGraphColumns& facet_base,
+    const std::vector<std::size_t>& member_indices)
+{
+    std::vector<std::size_t> panel_source_rows;
+    panel_source_rows.reserve(member_indices.size());
+    for (const std::size_t index : member_indices) {
+        if (index < facet_base.source_rows.size()) {
+            panel_source_rows.push_back(facet_base.source_rows[index]);
+        }
+    }
+    return panel_source_rows;
+}
+
+AssembledGraphColumns slice_graph_columns_by_source_rows(
+    const AssembledGraphColumns& columns,
+    const std::vector<std::size_t>& panel_source_rows)
+{
+    AssembledGraphColumns slice;
+    for (const std::size_t source_row : panel_source_rows) {
+        for (std::size_t index = 0; index < columns.source_rows.size(); ++index) {
+            if (columns.source_rows[index] != source_row) {
+                continue;
+            }
+            if (index < columns.first.size()) {
+                slice.first.push_back(columns.first[index]);
+            }
+            if (index < columns.second.size()) {
+                slice.second.push_back(columns.second[index]);
+            }
+            if (index < columns.third.size()) {
+                slice.third.push_back(columns.third[index]);
+            }
+            if (index < columns.groups.size()) {
+                slice.groups.push_back(columns.groups[index]);
+            }
+            if (index < columns.labels.size()) {
+                slice.labels.push_back(columns.labels[index]);
+            }
+            if (index < columns.categories.size()) {
+                slice.categories.push_back(columns.categories[index]);
+            }
+            slice.source_rows.push_back(source_row);
+            break;
+        }
+    }
+    slice.skipped_count = columns.skipped_count;
+    return slice;
+}
+
 PlotSpec base_plot(const PlotKind kind, const std::string& title,
                    const std::string& x_title, const std::string& y_title)
 {
@@ -361,6 +421,9 @@ OutputPage GraphService::run(
     } else if (kind == "parallel") {
         page = parallel(table, configuration);
         command_id = "parallel_plot";
+    } else if (kind == "dotplot") {
+        page = dotplot(table, configuration);
+        command_id = "dotplot";
     } else if (kind == "heatmap") {
         page = heatmap(table, configuration);
         command_id = "heatmap_plot";
@@ -388,6 +451,18 @@ OutputPage GraphService::run(
     } else if (kind == "bar") {
         page = bar(table, configuration);
         command_id = "bar_chart";
+    } else if (kind == "simplex") {
+        page = simplex_design_plot(table, configuration);
+        command_id = "simplex_design_plot";
+    } else if (kind == "mosaic") {
+        page = mosaic(table, configuration);
+        command_id = "mosaic_plot";
+    } else if (kind == "histogram") {
+        page = histogram(table, configuration);
+        command_id = "histogram";
+    } else if (kind == "box") {
+        page = box(table, configuration);
+        command_id = "boxplot";
     } else {
         page = scatter(table, configuration);
         command_id = "scatter_plot";
@@ -405,7 +480,137 @@ OutputPage GraphService::scatter(
     const DataTable& table, const AnalysisConfiguration& configuration)
 {
     const auto& graph = configuration.graph;
-    if (!graph.x_column.has_value() || !graph.y_column.has_value()) {
+    if (!graph.x_column.has_value()) {
+        return error_page("散点图", "请选择 X 变量。");
+    }
+    const std::vector<std::size_t> y_columns =
+        !graph.variable_columns.empty()
+            ? graph.variable_columns
+            : (graph.y_column.has_value()
+                   ? std::vector<std::size_t>{*graph.y_column}
+                   : std::vector<std::size_t>{});
+    if (y_columns.empty()) {
+        return error_page("散点图", "请选择 Y 变量。");
+    }
+
+    if (y_columns.size() > 1 && !graph.facet_column.has_value()) {
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "散点图";
+        page.method_name = "Scatter Plot";
+        PlotSpec plot = base_plot(
+            PlotKind::scatter, "散点图",
+            label(table, *graph.x_column), "Y");
+        plot.values.clear();
+        plot.x_values.clear();
+        static const char* k_series_colors[] = {
+            "#1565c0", "#c62828", "#2e7d32", "#6a1b9a", "#ef6c00", "#00838f"};
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        for (std::size_t index = 0; index < y_columns.size(); ++index) {
+            const std::size_t y_column = y_columns[index];
+            const AssembledGraphColumns columns = assemble_graph_columns(
+                table, *graph.x_column, y_column, graph.size_column,
+                graph.by_column, graph.label_column, configuration.excluded_rows, true);
+            analysis_n = std::max(analysis_n, columns.source_rows.size());
+            AssembledGraphColumns display_columns =
+                filter_hidden_from_columns(columns, configuration.hidden_rows);
+            display_n += display_columns.first.size();
+            datalab::domain::PlotSeries series;
+            series.role = datalab::domain::PlotSeriesRole::generic;
+            series.label = label(table, y_column);
+            series.style.color = k_series_colors[index % 6];
+            series.style.visible = true;
+            series.show_points = true;
+            series.style.point_style = datalab::domain::PlotPointStyle::circle;
+            series.style.point_size = 3.5;
+            series.x_values = display_columns.first;
+            series.values = display_columns.second;
+            plot.series.push_back(std::move(series));
+        }
+        page.plots.push_back(std::move(plot));
+        page.parameter_summary = "X = " + label(table, *graph.x_column)
+            + "    Y 列数 = " + count_text(y_columns.size())
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n);
+        attach_visibility_facts(page, "scatter", table, configuration, display_n, analysis_n);
+        return page;
+    }
+
+    if (y_columns.size() > 1 && graph.facet_column.has_value()) {
+        const AssembledGraphColumns facet_base = assemble_graph_columns(
+            table, *graph.x_column, y_columns.front(), graph.size_column,
+            graph.by_column, graph.label_column, configuration.excluded_rows, true);
+        std::vector<std::string> facet_labels;
+        facet_labels.reserve(facet_base.source_rows.size());
+        for (const std::size_t row : facet_base.source_rows) {
+            if (row >= table.rows.size() || *graph.facet_column >= table.rows[row].size()) {
+                facet_labels.emplace_back();
+            } else {
+                facet_labels.push_back(table.rows[row][*graph.facet_column]);
+            }
+        }
+        const auto partition = domain::partition_facet_levels(
+            facet_labels, graph.facet_max_panels);
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "散点图（分面）";
+        page.method_name = "Faceted Scatter Plot";
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        static const char* k_series_colors[] = {
+            "#1565c0", "#c62828", "#2e7d32", "#6a1b9a", "#ef6c00", "#00838f"};
+        for (const auto& panel : partition.panels) {
+            const std::vector<std::size_t> panel_source_rows =
+                panel_source_rows_from_member_indices(facet_base, panel.member_indices);
+            PlotSpec plot = base_plot(
+                PlotKind::scatter,
+                "散点图 · " + panel.level,
+                label(table, *graph.x_column),
+                "Y");
+            plot.subtitle = "facet = " + panel.level
+                + "    分析 N(水平) = " + count_text(panel_source_rows.size());
+            for (std::size_t y_index = 0; y_index < y_columns.size(); ++y_index) {
+                const std::size_t y_column = y_columns[y_index];
+                const AssembledGraphColumns columns = assemble_graph_columns(
+                    table, *graph.x_column, y_column, graph.size_column,
+                    graph.by_column, graph.label_column, configuration.excluded_rows, true);
+                analysis_n = std::max(analysis_n, columns.source_rows.size());
+                const AssembledGraphColumns slice =
+                    slice_graph_columns_by_source_rows(columns, panel_source_rows);
+                AssembledGraphColumns display_slice =
+                    filter_hidden_from_columns(slice, configuration.hidden_rows);
+                display_n += display_slice.first.size();
+                datalab::domain::PlotSeries series;
+                series.role = datalab::domain::PlotSeriesRole::generic;
+                series.label = label(table, y_column);
+                series.style.color = k_series_colors[y_index % 6];
+                series.style.visible = true;
+                series.show_points = true;
+                series.style.point_style = datalab::domain::PlotPointStyle::circle;
+                series.style.point_size = 3.5;
+                series.x_values = display_slice.first;
+                series.values = display_slice.second;
+                plot.series.push_back(std::move(series));
+            }
+            page.plots.push_back(std::move(plot));
+        }
+        page.diagnostics.insert(
+            page.diagnostics.end(), partition.diagnostics.begin(), partition.diagnostics.end());
+        page.parameter_summary = "X = " + label(table, *graph.x_column)
+            + "    Y 列数 = " + count_text(y_columns.size())
+            + "    分面 = " + label(table, *graph.facet_column)
+            + "    面板 = " + count_text(page.plots.size())
+            + "/" + count_text(partition.level_count)
+            + "    max_panels = " + std::to_string(std::clamp(graph.facet_max_panels, 1, 12))
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n);
+        attach_visibility_facts(page, "scatter", table, configuration, display_n, analysis_n);
+        apply_facet_facts(page, partition, graph.facet_max_panels);
+        return page;
+    }
+
+    if (!graph.y_column.has_value()) {
         return error_page("散点图", "请选择 X 变量和 Y 变量。");
     }
     const AssembledGraphColumns columns = xy_columns(table, configuration);
@@ -762,9 +967,12 @@ OutputPage GraphService::bubble(
                                       const AssembledGraphColumns& analysis_slice,
                                       const std::string& title,
                                       const std::string& subtitle) {
+        domain::statistics::BubblePlotOptions bubble_options;
+        bubble_options.size_mode = graph.bubble_size_mode;
         auto result = domain::statistics::bubble_plot(
             analysis_slice.first, analysis_slice.second, analysis_slice.third,
-            analysis_slice.source_rows, analysis_slice.groups, analysis_slice.labels);
+            analysis_slice.source_rows, analysis_slice.groups, analysis_slice.labels,
+            bubble_options);
         const std::size_t analysis_n = result.points.source_rows.size();
         filter_hidden_from_bubble_sizes(result, configuration.hidden_rows);
         page.diagnostics.insert(
@@ -1217,6 +1425,11 @@ OutputPage GraphService::parallel(
     const AssembledMatrixColumns analysis_assembled = assemble_numeric_matrix(
         table, graph.variable_columns, graph.by_column, configuration.excluded_rows, false);
 
+    domain::statistics::ParallelPlotOptions plot_options;
+    plot_options.y_scale_mode = graph.y_scale_mode;
+    plot_options.sort_by_variation = graph.sort_by_variation;
+    plot_options.parallel_layout = graph.parallel_layout;
+
     const auto push_parallel_plot = [&](OutputPage& page,
                                         const AssembledMatrixColumns& analysis_slice,
                                         const std::string& title,
@@ -1225,10 +1438,10 @@ OutputPage GraphService::parallel(
             filter_hidden_from_matrix(analysis_slice, configuration.hidden_rows);
         const auto analysis_result = domain::statistics::parallel_plot(
             analysis_slice.columns, analysis_slice.names,
-            analysis_slice.source_rows, analysis_slice.groups);
+            analysis_slice.source_rows, analysis_slice.groups, plot_options);
         const auto result = domain::statistics::parallel_plot(
             display_slice.columns, display_slice.names,
-            display_slice.source_rows, display_slice.groups);
+            display_slice.source_rows, display_slice.groups, plot_options);
         page.diagnostics.insert(
             page.diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
         page.diagnostics.insert(
@@ -1257,9 +1470,12 @@ OutputPage GraphService::parallel(
         page.parameter_summary = "变量数 = " + count_text(analysis_assembled.names.size())
             + "    显示 N = " + count_text(display_n)
             + "    分析 N = " + count_text(analysis_assembled.source_rows.size())
-            + "    坐标已按各变量最小-最大范围标准化"
+            + "    y_scale = " + graph.y_scale_mode
+            + "    layout = " + graph.parallel_layout
+            + "    sort_variation = " + (graph.sort_by_variation ? "yes" : "no")
             + "    excluded = " + count_text(configuration.excluded_rows.size())
             + "    hidden = " + count_text(configuration.hidden_rows.size());
+        page.analysis_command_id = "parallel_plot";
         attach_visibility_facts(page, "parallel", table, configuration, display_n,
                                 analysis_assembled.source_rows.size());
         return page;
@@ -1291,12 +1507,88 @@ OutputPage GraphService::parallel(
         + "    max_panels = " + std::to_string(std::clamp(graph.facet_max_panels, 1, 12))
         + "    显示 N = " + count_text(display_n)
         + "    分析 N = " + count_text(analysis_assembled.source_rows.size())
-        + "    坐标已按各变量最小-最大范围标准化"
+        + "    y_scale = " + graph.y_scale_mode
+        + "    layout = " + graph.parallel_layout
+        + "    sort_variation = " + (graph.sort_by_variation ? "yes" : "no")
         + "    excluded = " + count_text(configuration.excluded_rows.size())
         + "    hidden = " + count_text(configuration.hidden_rows.size());
+    page.analysis_command_id = "parallel_plot";
     attach_visibility_facts(page, "parallel", table, configuration, display_n,
                             analysis_assembled.source_rows.size());
     apply_facet_facts(page, partition, graph.facet_max_panels);
+    return page;
+}
+
+OutputPage GraphService::dotplot(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    const auto& graph = configuration.graph;
+    const std::vector<std::size_t> y_columns =
+        !graph.variable_columns.empty()
+            ? graph.variable_columns
+            : (graph.y_column.has_value()
+                   ? std::vector<std::size_t>{*graph.y_column}
+                   : std::vector<std::size_t>{});
+    if (y_columns.empty()) {
+        return error_page("点图", "请选择 Y 变量。");
+    }
+
+    OutputPage page;
+    page.configuration = configuration;
+    page.title = "点图";
+    page.method_name = "Dotplot";
+    std::size_t display_n = 0;
+
+    for (std::size_t column : y_columns) {
+        const auto values_col = extract_numeric_column(
+            table, column, configuration.excluded_rows);
+        if (values_col.values.empty()) {
+            continue;
+        }
+        std::vector<std::string> groups;
+        if (graph.by_column.has_value()) {
+            for (const std::size_t row : values_col.source_rows) {
+                groups.push_back(table.rows[row][*graph.by_column]);
+            }
+        }
+        domain::statistics::DotplotOptions options;
+        options.layout_mode = graph.dotplot_layout_mode;
+        options.jitter = graph.dotplot_jitter;
+        const auto result = domain::statistics::dotplot(
+            values_col.values, values_col.source_rows, groups, options);
+
+        page.diagnostics.insert(
+            page.diagnostics.end(), result.diagnostics.begin(), result.diagnostics.end());
+
+        PlotSpec plot = base_plot(
+            PlotKind::scatter,
+            y_columns.size() > 1 ? "点图 · " + label(table, column) : "点图",
+            "位置",
+            label(table, column));
+        plot.subtitle = "layout = " + result.layout_mode
+            + (result.jitter ? "    jitter = yes" : "    jitter = no");
+        plot.values = result.values;
+        plot.x_values = result.positions;
+        for (std::size_t i = 0; i < result.jitter_offsets.size(); ++i) {
+            plot.x_values[i] += result.jitter_offsets[i];
+        }
+        plot.source_rows = result.source_rows;
+        plot.point_groups = result.groups;
+        page.plots.push_back(std::move(plot));
+        display_n += result.values.size();
+    }
+
+    if (page.plots.empty()) {
+        return error_page("点图", "所选列没有数值观测。");
+    }
+
+    page.parameter_summary = "Y 列数 = " + count_text(y_columns.size())
+        + "    图数 = " + count_text(page.plots.size())
+        + "    显示 N = " + count_text(display_n)
+        + "    excluded = " + count_text(configuration.excluded_rows.size())
+        + "    hidden = " + count_text(configuration.hidden_rows.size());
+    page.analysis_command_id = "dotplot";
+    attach_visibility_facts(page, "dotplot", table, configuration, display_n, display_n);
     return page;
 }
 
@@ -1567,14 +1859,144 @@ OutputPage GraphService::time_series(
     const DataTable& table, const AnalysisConfiguration& configuration)
 {
     const auto& graph = configuration.graph;
-    if (!graph.y_column.has_value()) {
+    const std::vector<std::size_t> value_columns =
+        !graph.variable_columns.empty()
+            ? graph.variable_columns
+            : (graph.y_column.has_value()
+                   ? std::vector<std::size_t>{*graph.y_column}
+                   : std::vector<std::size_t>{});
+    if (value_columns.empty()) {
         return error_page("时间序列图", "请选择数值变量。");
     }
     const std::size_t time_column = graph.time_column.value_or(
-        graph.x_column.value_or(*graph.y_column));
-    const AssembledGraphColumns analysis_columns = assemble_graph_columns(
-        table, time_column, graph.y_column, {}, graph.by_column, graph.label_column,
-        configuration.excluded_rows, true);
+        graph.x_column.value_or(value_columns.front()));
+
+    if (value_columns.size() > 1 && !graph.facet_column.has_value()) {
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "时间序列图";
+        page.method_name = "Time Series Plot";
+        PlotSpec plot = base_plot(
+            PlotKind::time_series, "时间序列图",
+            label(table, time_column), "数值");
+        static const char* k_series_colors[] = {
+            "#1565c0", "#c62828", "#2e7d32", "#6a1b9a", "#ef6c00", "#00838f"};
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        for (std::size_t index = 0; index < value_columns.size(); ++index) {
+            const std::size_t value_column = value_columns[index];
+            const AssembledGraphColumns columns = assemble_time_series_columns(
+                table, time_column, value_column, graph.by_column,
+                graph.label_column, configuration.excluded_rows);
+            analysis_n = std::max(analysis_n, columns.source_rows.size());
+            AssembledGraphColumns display_columns =
+                filter_hidden_from_columns(columns, configuration.hidden_rows);
+            display_n += display_columns.first.size();
+            datalab::domain::PlotSeries series;
+            series.role = datalab::domain::PlotSeriesRole::generic;
+            series.label = label(table, value_column);
+            series.style.color = k_series_colors[index % 6];
+            series.style.visible = true;
+            series.style.line_width = graph.connect_missing ? 1.8 : 0.0;
+            series.show_points = true;
+            series.style.point_style = datalab::domain::PlotPointStyle::circle;
+            series.style.point_size = 3.5;
+            series.x_values = display_columns.first;
+            series.values = display_columns.second;
+            plot.series.push_back(std::move(series));
+            for (std::size_t point = 0; point < display_columns.first.size(); ++point) {
+                plot.x_values.push_back(display_columns.first[point]);
+                plot.values.push_back(display_columns.second[point]);
+                plot.source_rows.push_back(display_columns.source_rows[point]);
+            }
+        }
+        page.plots.push_back(std::move(plot));
+        page.parameter_summary = "时间 = " + label(table, time_column)
+            + "    数值列数 = " + count_text(value_columns.size())
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n);
+        attach_visibility_facts(page, "time_series", table, configuration, display_n, analysis_n);
+        return page;
+    }
+
+    if (value_columns.size() > 1 && graph.facet_column.has_value()) {
+        const AssembledGraphColumns facet_base = assemble_time_series_columns(
+            table, time_column, value_columns.front(), graph.by_column,
+            graph.label_column, configuration.excluded_rows);
+        const auto facet_labels = facet_labels_for_rows(
+            table, facet_base.source_rows, *graph.facet_column);
+        const auto partition = domain::partition_facet_levels(
+            facet_labels, graph.facet_max_panels);
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "时间序列图（分面）";
+        page.method_name = "Faceted Time Series Plot";
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        static const char* k_series_colors[] = {
+            "#1565c0", "#c62828", "#2e7d32", "#6a1b9a", "#ef6c00", "#00838f"};
+        for (const auto& panel : partition.panels) {
+            const std::vector<std::size_t> panel_source_rows =
+                panel_source_rows_from_member_indices(facet_base, panel.member_indices);
+            PlotSpec plot = base_plot(
+                PlotKind::time_series,
+                "时间序列图 · " + panel.level,
+                label(table, time_column),
+                "数值");
+            plot.subtitle = "facet = " + panel.level
+                + "    分析 N(水平) = " + count_text(panel_source_rows.size());
+            for (std::size_t value_index = 0; value_index < value_columns.size(); ++value_index) {
+                const std::size_t value_column = value_columns[value_index];
+                const AssembledGraphColumns columns = assemble_time_series_columns(
+                    table, time_column, value_column, graph.by_column,
+                    graph.label_column, configuration.excluded_rows);
+                analysis_n = std::max(analysis_n, columns.source_rows.size());
+                const AssembledGraphColumns slice =
+                    slice_graph_columns_by_source_rows(columns, panel_source_rows);
+                AssembledGraphColumns display_slice =
+                    filter_hidden_from_columns(slice, configuration.hidden_rows);
+                display_n += display_slice.first.size();
+                datalab::domain::PlotSeries series;
+                series.role = datalab::domain::PlotSeriesRole::generic;
+                series.label = label(table, value_column);
+                series.style.color = k_series_colors[value_index % 6];
+                series.style.visible = true;
+                series.style.line_width = graph.connect_missing ? 1.8 : 0.0;
+                series.show_points = true;
+                series.style.point_style = datalab::domain::PlotPointStyle::circle;
+                series.style.point_size = 3.5;
+                series.x_values = display_slice.first;
+                series.values = display_slice.second;
+                plot.series.push_back(std::move(series));
+                for (std::size_t point = 0; point < display_slice.first.size(); ++point) {
+                    plot.x_values.push_back(display_slice.first[point]);
+                    plot.values.push_back(display_slice.second[point]);
+                    plot.source_rows.push_back(display_slice.source_rows[point]);
+                }
+            }
+            page.plots.push_back(std::move(plot));
+        }
+        page.diagnostics.insert(
+            page.diagnostics.end(), partition.diagnostics.begin(), partition.diagnostics.end());
+        page.parameter_summary = "时间 = " + label(table, time_column)
+            + "    数值列数 = " + count_text(value_columns.size())
+            + "    分面 = " + label(table, *graph.facet_column)
+            + "    面板 = " + count_text(page.plots.size())
+            + "/" + count_text(partition.level_count)
+            + "    max_panels = " + std::to_string(std::clamp(graph.facet_max_panels, 1, 12))
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n);
+        attach_visibility_facts(page, "time_series", table, configuration, display_n, analysis_n);
+        apply_facet_facts(page, partition, graph.facet_max_panels);
+        return page;
+    }
+
+    if (!graph.y_column.has_value()) {
+        return error_page("时间序列图", "请选择数值变量。");
+    }
+    const AssembledGraphColumns analysis_columns = assemble_time_series_columns(
+        table, time_column, *graph.y_column, graph.by_column, graph.label_column,
+        configuration.excluded_rows);
 
     const auto push_ts_plot = [&](OutputPage& page,
                                   const AssembledGraphColumns& analysis_slice,
@@ -1603,6 +2025,7 @@ OutputPage GraphService::time_series(
         plot.source_rows = result.source_rows;
         plot.point_groups = result.groups;
         plot.point_labels = result.time_labels;
+        plot.categories = result.time_labels;
         if (!graph.connect_missing) {
             plot.value_style.line_width = 0.0;
         }
@@ -2166,16 +2589,24 @@ OutputPage GraphService::violin(
     const DataTable& table, const AnalysisConfiguration& configuration)
 {
     const auto& graph = configuration.graph;
-    if (!graph.y_column.has_value()) {
+    const std::vector<std::size_t> variable_columns =
+        !graph.variable_columns.empty()
+            ? graph.variable_columns
+            : (graph.y_column.has_value()
+                   ? std::vector<std::size_t>{*graph.y_column}
+                   : std::vector<std::size_t>{});
+    if (variable_columns.empty()) {
         return error_page("小提琴图", "请选择响应变量。");
     }
-    const AssembledGraphColumns analysis_columns = assemble_graph_columns(
-        table, *graph.y_column, {}, {}, graph.by_column, {}, configuration.excluded_rows, true);
+
+    const bool has_by = graph.by_column.has_value();
+    const bool multiple_variables = variable_columns.size() > 1;
 
     const auto push_violin_plot = [&](OutputPage& page,
                                       const AssembledGraphColumns& analysis_slice,
                                       const std::string& title,
-                                      const std::string& subtitle) {
+                                      const std::string& subtitle,
+                                      const std::string& y_axis_title) {
         AssembledGraphColumns display_slice =
             filter_hidden_from_columns(analysis_slice, configuration.hidden_rows);
         const auto analysis_violin = domain::statistics::violin_plot(
@@ -2189,7 +2620,7 @@ OutputPage GraphService::violin(
             analysis_violin.diagnostics.begin(),
             analysis_violin.diagnostics.end());
         PlotSpec plot = base_plot(
-            PlotKind::violin, title, "分组", label(table, *graph.y_column));
+            PlotKind::violin, title, has_by ? "分组" : "变量", y_axis_title);
         plot.subtitle = subtitle;
         for (const auto& group : result.groups) {
             plot.box_labels.push_back(group.label);
@@ -2214,78 +2645,234 @@ OutputPage GraphService::violin(
             std::make_pair(analysis_violin.groups.size(), result.bandwidth));
     };
 
-    if (!graph.facet_column.has_value()) {
+    const auto build_slice_from_extracted = [&](const ExtractedNumericColumn& extracted) {
+        AssembledGraphColumns slice;
+        slice.first = extracted.values;
+        slice.source_rows = extracted.source_rows;
+        if (has_by) {
+            const std::vector<std::string> by_values =
+                extract_text_column(table, *graph.by_column);
+            for (const std::size_t row : extracted.source_rows) {
+                slice.groups.push_back(row < by_values.size() ? by_values[row] : "*");
+            }
+        }
+        return slice;
+    };
+
+    const auto append_variable_violins = [&](PlotSpec& plot,
+                                             const ExtractedNumericColumn& extracted) {
+        AssembledGraphColumns slice = build_slice_from_extracted(extracted);
+        AssembledGraphColumns display_slice =
+            filter_hidden_from_columns(slice, configuration.hidden_rows);
+        const auto result = domain::statistics::violin_plot(
+            display_slice.first, display_slice.groups, display_slice.source_rows);
+        for (const auto& group : result.groups) {
+            const std::string group_label = has_by ? group.label : extracted.name;
+            plot.box_labels.push_back(group_label);
+            plot.box_min.push_back(group.whisker_low);
+            plot.box_q1.push_back(group.q1);
+            plot.box_median.push_back(group.median);
+            plot.box_q3.push_back(group.q3);
+            plot.box_max.push_back(group.whisker_high);
+            if (!group.source_rows.empty()) {
+                plot.source_rows.push_back(group.source_rows.front());
+            }
+            plot.member_source_rows.push_back(group.source_rows);
+            domain::PlotSeries density;
+            density.label = group_label;
+            density.x_values = group.density_values;
+            density.values = group.density_y;
+            plot.series.push_back(std::move(density));
+        }
+        return std::make_pair(display_slice.first.size(), result);
+    };
+
+    if (graph.facet_column.has_value()) {
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "小提琴图（分面）";
+        page.method_name = "Faceted Violin Plot";
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        std::size_t analysis_group_count = 0;
+        domain::FacetPartitionResult last_partition;
+        for (const std::size_t column : variable_columns) {
+            const AssembledGraphColumns analysis_columns = assemble_graph_columns(
+                table, column, {}, {}, graph.by_column, {}, configuration.excluded_rows, true);
+            analysis_n = std::max(analysis_n, analysis_columns.first.size());
+            const auto facet_labels = facet_labels_for_rows(
+                table, analysis_columns.source_rows, *graph.facet_column);
+            const auto partition = domain::partition_facet_levels(
+                facet_labels, graph.facet_max_panels);
+            last_partition = partition;
+            page.diagnostics.insert(
+                page.diagnostics.end(),
+                partition.diagnostics.begin(),
+                partition.diagnostics.end());
+            const std::string y_label = label(table, column);
+            for (const auto& panel : partition.panels) {
+                AssembledGraphColumns slice;
+                for (const std::size_t index : panel.member_indices) {
+                    if (index >= analysis_columns.source_rows.size()) {
+                        continue;
+                    }
+                    if (index < analysis_columns.first.size()) {
+                        slice.first.push_back(analysis_columns.first[index]);
+                    }
+                    if (index < analysis_columns.groups.size()) {
+                        slice.groups.push_back(analysis_columns.groups[index]);
+                    }
+                    slice.source_rows.push_back(analysis_columns.source_rows[index]);
+                }
+                const std::string panel_title = multiple_variables
+                    ? "小提琴图 · " + y_label + " · " + panel.level
+                    : "小提琴图 · " + panel.level;
+                const auto pushed = push_violin_plot(
+                    page,
+                    slice,
+                    panel_title,
+                    "facet = " + panel.level
+                        + "    分析 N(水平) = " + count_text(panel.member_indices.size()),
+                    y_label);
+                display_n += pushed.first;
+                analysis_group_count = std::max(analysis_group_count, pushed.second.first);
+            }
+        }
+        page.parameter_summary = "变量数 = " + count_text(variable_columns.size())
+            + (graph.by_column.has_value()
+                   ? "    分组 = " + label(table, *graph.by_column) : "")
+            + "    分面 = " + label(table, *graph.facet_column)
+            + "    面板 = " + count_text(page.plots.size())
+            + "/" + count_text(last_partition.level_count)
+            + "    max_panels = " + std::to_string(std::clamp(graph.facet_max_panels, 1, 12))
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n)
+            + "    excluded = " + count_text(configuration.excluded_rows.size())
+            + "    hidden = " + count_text(configuration.hidden_rows.size());
+        attach_visibility_facts(page, "violin", table, configuration, display_n,
+                                analysis_n, analysis_group_count);
+        apply_facet_facts(page, last_partition, graph.facet_max_panels);
+        return page;
+    }
+
+    if (has_by && multiple_variables) {
         OutputPage page;
         page.configuration = configuration;
         page.title = "小提琴图";
         page.method_name = "Violin Plot";
-        const auto pushed = push_violin_plot(page, analysis_columns, "小提琴图", "");
-        page.parameter_summary = "响应 = " + label(table, *graph.y_column)
-            + (graph.by_column.has_value()
-                   ? "    分组 = " + label(table, *graph.by_column) : "")
-            + "    显示组数 = " + std::to_string(pushed.second.first)
-            + "    显示 N = " + count_text(pushed.first)
-            + "    分析 N = " + count_text(analysis_columns.first.size())
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        std::size_t analysis_group_count = 0;
+        double bandwidth = 0.0;
+        for (const std::size_t column : variable_columns) {
+            const ExtractedNumericColumn extracted =
+                extract_numeric_column(table, column, configuration.excluded_rows);
+            if (extracted.values.empty()) {
+                continue;
+            }
+            analysis_n = std::max(analysis_n, extracted.source_rows.size());
+            const auto pushed = push_violin_plot(
+                page,
+                build_slice_from_extracted(extracted),
+                extracted.name,
+                "",
+                extracted.name);
+            display_n += pushed.first;
+            analysis_group_count = std::max(analysis_group_count, pushed.second.first);
+            bandwidth = pushed.second.second;
+        }
+        if (page.plots.empty()) {
+            return error_page("小提琴图", "所选列没有数值观测。");
+        }
+        page.parameter_summary = "变量数 = " + count_text(variable_columns.size())
+            + "    分组 = " + label(table, *graph.by_column)
+            + "    显示组数 = " + std::to_string(analysis_group_count)
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n)
             + "    excluded = " + count_text(configuration.excluded_rows.size())
             + "    hidden = " + count_text(configuration.hidden_rows.size());
-        attach_visibility_facts(page, "violin", table, configuration, pushed.first,
-                                analysis_columns.first.size(), pushed.second.first);
+        attach_visibility_facts(page, "violin", table, configuration, display_n,
+                                analysis_n, analysis_group_count);
         if (page.facts.eda.has_value()) {
-            page.facts.eda->bandwidth = pushed.second.second;
-            page.facts.eda->category_count = pushed.second.first;
+            page.facts.eda->bandwidth = bandwidth;
+            page.facts.eda->category_count = analysis_group_count;
         }
         return page;
     }
 
-    const auto facet_labels = facet_labels_for_rows(
-        table, analysis_columns.source_rows, *graph.facet_column);
-    const auto partition = domain::partition_facet_levels(
-        facet_labels, graph.facet_max_panels);
-    OutputPage page;
-    page.configuration = configuration;
-    page.title = "小提琴图（分面）";
-    page.method_name = "Faceted Violin Plot";
-    std::size_t display_n = 0;
-    std::size_t analysis_group_count = 0;
-    for (const auto& panel : partition.panels) {
-        AssembledGraphColumns slice;
-        for (const std::size_t index : panel.member_indices) {
-            if (index >= analysis_columns.source_rows.size()) {
+    if (!has_by && multiple_variables) {
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "小提琴图";
+        page.method_name = "Violin Plot";
+        PlotSpec plot;
+        plot.kind = PlotKind::violin;
+        plot.title = "小提琴图";
+        plot.x_axis_title = "变量";
+        plot.y_axis_title = "数值";
+        std::size_t display_n = 0;
+        std::size_t analysis_n = 0;
+        double bandwidth = 0.0;
+        for (const std::size_t column : variable_columns) {
+            const ExtractedNumericColumn extracted =
+                extract_numeric_column(table, column, configuration.excluded_rows);
+            if (extracted.values.empty()) {
                 continue;
             }
-            if (index < analysis_columns.first.size()) {
-                slice.first.push_back(analysis_columns.first[index]);
-            }
-            if (index < analysis_columns.groups.size()) {
-                slice.groups.push_back(analysis_columns.groups[index]);
-            }
-            slice.source_rows.push_back(analysis_columns.source_rows[index]);
+            analysis_n = std::max(analysis_n, extracted.source_rows.size());
+            const auto appended = append_variable_violins(plot, extracted);
+            display_n += appended.first;
+            page.diagnostics.insert(
+                page.diagnostics.end(),
+                appended.second.diagnostics.begin(),
+                appended.second.diagnostics.end());
+            bandwidth = appended.second.bandwidth;
         }
-        const auto pushed = push_violin_plot(
-            page,
-            slice,
-            "小提琴图 · " + panel.level,
-            "facet = " + panel.level
-                + "    分析 N(水平) = " + count_text(panel.member_indices.size()));
-        display_n += pushed.first;
-        analysis_group_count = std::max(analysis_group_count, pushed.second.first);
+        if (plot.box_labels.empty()) {
+            return error_page("小提琴图", "所选列没有数值观测。");
+        }
+        page.plots.push_back(std::move(plot));
+        page.parameter_summary = "变量数 = " + count_text(variable_columns.size())
+            + "    显示 N = " + count_text(display_n)
+            + "    分析 N = " + count_text(analysis_n)
+            + "    excluded = " + count_text(configuration.excluded_rows.size())
+            + "    hidden = " + count_text(configuration.hidden_rows.size());
+        attach_visibility_facts(page, "violin", table, configuration, display_n, analysis_n,
+                                plot.box_labels.size());
+        if (page.facts.eda.has_value()) {
+            page.facts.eda->bandwidth = bandwidth;
+            page.facts.eda->category_count = plot.box_labels.size();
+        }
+        return page;
     }
-    page.diagnostics.insert(
-        page.diagnostics.end(), partition.diagnostics.begin(), partition.diagnostics.end());
-    page.parameter_summary = "响应 = " + label(table, *graph.y_column)
+
+    const AssembledGraphColumns analysis_columns = assemble_graph_columns(
+        table, variable_columns.front(), {}, {}, graph.by_column, {}, configuration.excluded_rows,
+        true);
+    OutputPage page;
+    page.configuration = configuration;
+    page.title = "小提琴图";
+    page.method_name = "Violin Plot";
+    const auto pushed = push_violin_plot(
+        page,
+        analysis_columns,
+        "小提琴图",
+        "",
+        label(table, variable_columns.front()));
+    page.parameter_summary = "响应 = " + label(table, variable_columns.front())
         + (graph.by_column.has_value()
                ? "    分组 = " + label(table, *graph.by_column) : "")
-        + "    分面 = " + label(table, *graph.facet_column)
-        + "    面板 = " + count_text(page.plots.size())
-        + "/" + count_text(partition.level_count)
-        + "    max_panels = " + std::to_string(std::clamp(graph.facet_max_panels, 1, 12))
-        + "    显示 N = " + count_text(display_n)
+        + "    显示组数 = " + std::to_string(pushed.second.first)
+        + "    显示 N = " + count_text(pushed.first)
         + "    分析 N = " + count_text(analysis_columns.first.size())
         + "    excluded = " + count_text(configuration.excluded_rows.size())
         + "    hidden = " + count_text(configuration.hidden_rows.size());
-    attach_visibility_facts(page, "violin", table, configuration, display_n,
-                            analysis_columns.first.size(), analysis_group_count);
-    apply_facet_facts(page, partition, graph.facet_max_panels);
+    attach_visibility_facts(page, "violin", table, configuration, pushed.first,
+                            analysis_columns.first.size(), pushed.second.first);
+    if (page.facts.eda.has_value()) {
+        page.facts.eda->bandwidth = pushed.second.second;
+        page.facts.eda->category_count = pushed.second.first;
+    }
     return page;
 }
 
@@ -2298,6 +2885,98 @@ OutputPage GraphService::bar(
     }
     const auto excluded = to_row_set(configuration.excluded_rows);
     const auto hidden = to_row_set(configuration.hidden_rows);
+
+    const std::vector<std::size_t> measure_columns =
+        !graph.variable_columns.empty()
+            ? graph.variable_columns
+            : (graph.y_column.has_value() && !graph.weight_column.has_value()
+                   ? std::vector<std::size_t>{*graph.y_column}
+                   : std::vector<std::size_t>{});
+
+    if (!measure_columns.empty()) {
+        std::vector<std::string> category_order;
+        std::map<std::string, std::size_t> category_index;
+        std::vector<std::vector<double>> sums;
+        const auto ensure_category = [&](const std::string& category) -> std::size_t {
+            const auto found = category_index.find(category);
+            if (found != category_index.end()) {
+                return found->second;
+            }
+            const std::size_t index = category_order.size();
+            category_index.emplace(category, index);
+            category_order.push_back(category);
+            sums.emplace_back(measure_columns.size(), 0.0);
+            return index;
+        };
+
+        std::size_t analysis_rows = 0;
+        for (std::size_t row = 0; row < table.rows.size(); ++row) {
+            if (excluded.count(row) != 0) {
+                continue;
+            }
+            if (*graph.x_column >= table.rows[row].size()) {
+                continue;
+            }
+            const std::string category = table.rows[row][*graph.x_column];
+            const std::size_t category_slot = ensure_category(category);
+            bool has_measure = false;
+            for (std::size_t measure_index = 0; measure_index < measure_columns.size();
+                 ++measure_index) {
+                const std::size_t column = measure_columns[measure_index];
+                if (column >= table.rows[row].size()) {
+                    continue;
+                }
+                double value = 0.0;
+                if (!parse_finite_number(table.rows[row][column], value)) {
+                    continue;
+                }
+                sums[category_slot][measure_index] += value;
+                has_measure = true;
+            }
+            if (has_measure) {
+                ++analysis_rows;
+            }
+        }
+
+        if (category_order.empty()) {
+            return error_page("条形图", "所选列没有有效数值。");
+        }
+
+        PlotSpec plot = base_plot(
+            PlotKind::bar, "条形图", label(table, *graph.x_column), "数值");
+        static const char* k_series_colors[] = {
+            "#1565c0", "#c62828", "#2e7d32", "#6a1b9a", "#ef6c00", "#00838f"};
+        for (std::size_t measure_index = 0; measure_index < measure_columns.size();
+             ++measure_index) {
+            datalab::domain::PlotSeries series;
+            series.role = datalab::domain::PlotSeriesRole::generic;
+            series.label = label(table, measure_columns[measure_index]);
+            series.style.color = k_series_colors[measure_index % 6];
+            series.style.visible = true;
+            for (const std::vector<double>& row_sums : sums) {
+                series.values.push_back(row_sums[measure_index]);
+            }
+            plot.series.push_back(std::move(series));
+        }
+        plot.categories = category_order;
+        if (measure_columns.size() == 1 && !plot.series.empty()) {
+            plot.category_values = plot.series.front().values;
+        }
+
+        OutputPage page;
+        page.configuration = configuration;
+        page.title = "条形图";
+        page.method_name = "Bar Chart";
+        page.parameter_summary = "类别 = " + label(table, *graph.x_column)
+            + "    数值列数 = " + count_text(measure_columns.size())
+            + "    类别数 = " + count_text(category_order.size())
+            + "    分析行 = " + count_text(analysis_rows)
+            + "    excluded = " + count_text(configuration.excluded_rows.size())
+            + "    hidden = " + count_text(configuration.hidden_rows.size());
+        page.plots.push_back(std::move(plot));
+        attach_visibility_facts(page, "bar", table, configuration, analysis_rows, analysis_rows);
+        return page;
+    }
 
     struct BarObservation {
         std::string category;
@@ -2498,6 +3177,451 @@ OutputPage GraphService::bar(
     attach_visibility_facts(page, "bar", table, configuration, display_n, analysis_obs.size(),
                             analysis_category_count);
     apply_facet_facts(page, partition, graph.facet_max_panels);
+    return page;
+}
+
+OutputPage GraphService::simplex_design_plot(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    const auto& graph = configuration.graph;
+    if (graph.variable_columns.size() < 3 || graph.variable_columns.size() > 4) {
+        return error_page("混料三角图", "请选择 3～4 个分量列。");
+    }
+    const AssembledMatrixColumns assembled = assemble_numeric_matrix(
+        table, graph.variable_columns, {}, configuration.excluded_rows);
+    std::vector<std::vector<double>> component_rows;
+    component_rows.reserve(assembled.source_rows.size());
+    for (std::size_t row_index = 0; row_index < assembled.source_rows.size(); ++row_index) {
+        std::vector<double> row;
+        for (const auto& column : assembled.columns) {
+            row.push_back(row_index < column.size() ? column[row_index] : 0.0);
+        }
+        component_rows.push_back(std::move(row));
+    }
+    std::vector<std::string> point_labels;
+    if (graph.simplex_label_mode == "label_column" && graph.label_column.has_value()) {
+        for (const std::size_t source_row : assembled.source_rows) {
+            if (source_row < table.rows.size()
+                && *graph.label_column < table.rows[source_row].size()) {
+                point_labels.push_back(table.rows[source_row][*graph.label_column]);
+            } else {
+                point_labels.emplace_back();
+            }
+        }
+    }
+
+    domain::statistics::SimplexDesignPlotOptions options;
+    options.layout_mode = graph.simplex_layout_mode;
+    options.unit_mode = graph.simplex_unit_mode;
+    options.label_mode = graph.simplex_label_mode;
+
+    const auto hidden = to_row_set(configuration.hidden_rows);
+    const auto analysis_result = domain::statistics::simplex_design_plot(
+        component_rows, assembled.source_rows, point_labels, options);
+
+    OutputPage page;
+    page.configuration = configuration;
+    page.title = "混料三角图";
+    page.method_name = "Simplex Design Plot";
+    page.diagnostics = analysis_result.diagnostics;
+    page.analysis_command_id = "simplex_design_plot";
+    std::size_t display_n = 0;
+    for (const auto& panel : analysis_result.panels) {
+        std::vector<double> xs;
+        std::vector<double> ys;
+        std::vector<std::size_t> rows;
+        std::vector<std::string> labels;
+        for (std::size_t index = 0; index < panel.points.source_rows.size(); ++index) {
+            const std::size_t source_row = panel.points.source_rows[index];
+            if (hidden.count(source_row) != 0) {
+                continue;
+            }
+            if (index < panel.points.x_values.size()) {
+                xs.push_back(panel.points.x_values[index]);
+            }
+            if (index < panel.points.y_values.size()) {
+                ys.push_back(panel.points.y_values[index]);
+            }
+            rows.push_back(source_row);
+            if (index < panel.points.point_labels.size()) {
+                labels.push_back(panel.points.point_labels[index]);
+            }
+        }
+        display_n += xs.size();
+        PlotSpec plot = base_plot(
+            PlotKind::scatter, "混料三角图 · " + panel.title, "X", "Y");
+        plot.subtitle = "layout = " + analysis_result.layout_mode
+            + "    q = " + std::to_string(analysis_result.component_count);
+        plot.x_values = std::move(xs);
+        plot.values = std::move(ys);
+        plot.source_rows = std::move(rows);
+        plot.point_labels = std::move(labels);
+        page.plots.push_back(std::move(plot));
+    }
+    page.parameter_summary = "分量数 = " + count_text(graph.variable_columns.size())
+        + "    布局 = " + graph.simplex_layout_mode
+        + "    显示 N = " + count_text(display_n)
+        + "    分析 N = " + count_text(assembled.source_rows.size())
+        + "    excluded = " + count_text(configuration.excluded_rows.size())
+        + "    hidden = " + count_text(configuration.hidden_rows.size());
+    attach_visibility_facts(page, "simplex", table, configuration, display_n,
+                            assembled.source_rows.size());
+    return page;
+}
+
+OutputPage GraphService::mosaic(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    const auto& graph = configuration.graph;
+    if (graph.variable_columns.size() < 2 || graph.variable_columns.size() > 3) {
+        return error_page("马赛克图", "请选择 2～3 个分类列。");
+    }
+    const auto excluded = to_row_set(configuration.excluded_rows);
+    const auto hidden = to_row_set(configuration.hidden_rows);
+    const std::size_t column_count = graph.variable_columns.size();
+    std::vector<std::vector<std::string>> analysis_categories(column_count);
+    std::vector<std::vector<std::string>> display_categories(column_count);
+    std::vector<std::size_t> analysis_rows;
+    std::vector<std::size_t> display_rows;
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        if (excluded.count(row) != 0) {
+            continue;
+        }
+        std::vector<std::string> row_values;
+        bool complete = true;
+        for (const std::size_t column_index : graph.variable_columns) {
+            if (column_index >= table.rows[row].size()
+                || table.rows[row][column_index].empty()) {
+                complete = false;
+                break;
+            }
+            row_values.push_back(table.rows[row][column_index]);
+        }
+        if (!complete) {
+            continue;
+        }
+        analysis_rows.push_back(row);
+        for (std::size_t col = 0; col < column_count; ++col) {
+            analysis_categories[col].push_back(row_values[col]);
+        }
+        if (hidden.count(row) == 0) {
+            display_rows.push_back(row);
+            for (std::size_t col = 0; col < column_count; ++col) {
+                display_categories[col].push_back(row_values[col]);
+            }
+        }
+    }
+
+    domain::statistics::MosaicPlotOptions options;
+    options.measure_mode = graph.mosaic_measure_mode;
+    options.sort_mode = graph.mosaic_sort_mode;
+    options.max_combinations =
+        static_cast<std::size_t>(std::clamp(graph.mosaic_max_combinations, 5, 30));
+
+    const auto analysis_mosaic = domain::statistics::mosaic_plot(
+        analysis_categories, analysis_rows, options);
+    const auto result = domain::statistics::mosaic_plot(
+        display_categories, display_rows, options);
+
+    OutputPage page;
+    page.configuration = configuration;
+    page.title = "马赛克图";
+    page.method_name = "Mosaic Plot";
+    page.diagnostics = result.diagnostics;
+    page.diagnostics.insert(
+        page.diagnostics.end(),
+        analysis_mosaic.diagnostics.begin(),
+        analysis_mosaic.diagnostics.end());
+    page.analysis_command_id = "mosaic_plot";
+    page.parameter_summary = "分类列 = " + count_text(column_count)
+        + "    组合 = " + count_text(result.combination_count)
+        + "    measure = " + graph.mosaic_measure_mode
+        + "    显示 N = " + count_text(display_rows.size())
+        + "    分析 N = " + count_text(analysis_rows.size())
+        + "    excluded = " + count_text(configuration.excluded_rows.size())
+        + "    hidden = " + count_text(configuration.hidden_rows.size());
+
+    PlotSpec plot = base_plot(PlotKind::bar, "马赛克图", "组合", "值");
+    plot.categories = result.combination_labels;
+    plot.category_values = result.values;
+    plot.member_source_rows = result.member_source_rows;
+    plot.source_rows.assign(
+        plot.member_source_rows.size(), std::numeric_limits<std::size_t>::max());
+    for (std::size_t index = 0; index < plot.member_source_rows.size(); ++index) {
+        if (!plot.member_source_rows[index].empty()) {
+            plot.source_rows[index] = plot.member_source_rows[index].front();
+        }
+    }
+    page.plots.push_back(std::move(plot));
+    attach_visibility_facts(page, "mosaic", table, configuration, display_rows.size(),
+                            analysis_rows.size());
+    return page;
+}
+
+namespace {
+
+std::string gallery_kind_title(const std::string& kind)
+{
+    if (kind == "scatter") {
+        return "散点图";
+    }
+    if (kind == "bar") {
+        return "条形图";
+    }
+    if (kind == "box") {
+        return "箱线图";
+    }
+    if (kind == "histogram") {
+        return "直方图";
+    }
+    if (kind == "dotplot") {
+        return "点图";
+    }
+    return kind;
+}
+
+AnalysisConfiguration build_gallery_delegated(const AnalysisConfiguration& configuration)
+{
+    AnalysisConfiguration delegated = configuration;
+    const auto& gallery = configuration.graph_gallery;
+    delegated.graph = GraphConfiguration{};
+    delegated.variable_columns.clear();
+    delegated.by_column.reset();
+    delegated.graph.variable_columns.clear();
+
+    const auto gallery_y_columns = [&]() -> std::vector<std::size_t> {
+        if (!gallery.y_columns.empty()) {
+            return gallery.y_columns;
+        }
+        if (gallery.y_column.has_value()) {
+            return {*gallery.y_column};
+        }
+        return {};
+    };
+
+    if (gallery.gallery_kind == "scatter") {
+        delegated.graph.graph_kind = "scatter";
+        delegated.graph.x_column = gallery.x_column;
+        const std::vector<std::size_t> y_columns = gallery_y_columns();
+        delegated.graph.variable_columns = y_columns;
+        if (!y_columns.empty()) {
+            delegated.graph.y_column = y_columns.front();
+        }
+        if (gallery.by_column.has_value()) {
+            delegated.graph.by_column = gallery.by_column;
+        }
+    } else if (gallery.gallery_kind == "bar") {
+        delegated.graph.graph_kind = "bar";
+        delegated.graph.x_column = gallery.category_column;
+        if (gallery.weight_column.has_value()) {
+            delegated.graph.weight_column = gallery.weight_column;
+        }
+    } else if (gallery.gallery_kind == "box") {
+        delegated.graph.graph_kind = "box";
+        delegated.variable_columns = gallery_y_columns();
+        if (gallery.by_column.has_value()) {
+            delegated.by_column = gallery.by_column;
+        }
+    } else if (gallery.gallery_kind == "histogram") {
+        delegated.graph.graph_kind = "histogram";
+        delegated.variable_columns = gallery_y_columns();
+        delegated.graph.bin_count = gallery.bin_count;
+        if (gallery.by_column.has_value()) {
+            delegated.by_column = gallery.by_column;
+            delegated.graph.by_column = gallery.by_column;
+        }
+    } else if (gallery.gallery_kind == "dotplot") {
+        delegated.graph.graph_kind = "dotplot";
+        const std::vector<std::size_t> y_columns = gallery_y_columns();
+        delegated.graph.variable_columns = y_columns;
+        if (!y_columns.empty()) {
+            delegated.graph.y_column = y_columns.front();
+        }
+        if (gallery.by_column.has_value()) {
+            delegated.graph.by_column = gallery.by_column;
+        }
+        delegated.graph.dotplot_layout_mode = gallery.dotplot_layout_mode;
+        delegated.graph.dotplot_jitter = gallery.dotplot_jitter;
+    } else {
+        delegated.graph.graph_kind = gallery.gallery_kind;
+    }
+    return delegated;
+}
+
+}  // namespace
+
+OutputPage GraphService::histogram(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    return AnalysisService::histogram(table, configuration);
+}
+
+OutputPage GraphService::box(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    return AnalysisService::boxplot(table, configuration);
+}
+
+OutputPage GraphService::graph_gallery(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    const auto& gallery = configuration.graph_gallery;
+    if (gallery.gallery_kind == "scatter") {
+        const bool has_y = !gallery.y_columns.empty() || gallery.y_column.has_value();
+        if (!gallery.x_column.has_value() || !has_y) {
+            return error_page(
+                "探索性图形",
+                "散点图需要 X 与至少一个 Y 数值列。");
+        }
+    } else if (gallery.gallery_kind == "bar") {
+        if (!gallery.category_column.has_value()) {
+            return error_page(
+                "探索性图形",
+                "条形图需要类别列。");
+        }
+    } else if (gallery.gallery_kind == "box"
+               || gallery.gallery_kind == "histogram"
+               || gallery.gallery_kind == "dotplot") {
+        const bool has_y = !gallery.y_columns.empty() || gallery.y_column.has_value();
+        if (!has_y) {
+            return error_page(
+                "探索性图形",
+                "所选图型需要至少一个 Y 数值列。");
+        }
+    } else {
+        return error_page(
+            "探索性图形",
+            "不支持的画廊图型：" + gallery.gallery_kind);
+    }
+
+    const AnalysisConfiguration delegated = build_gallery_delegated(configuration);
+    OutputPage page = run(table, delegated);
+    const std::string delegated_command = page.analysis_command_id;
+    page.configuration = configuration;
+    page.analysis_command_id = "graph_gallery";
+    page.title = "探索性图形 · " + gallery_kind_title(gallery.gallery_kind);
+    page.method_name = "Graph Gallery";
+
+    GraphGalleryFacts facts;
+    facts.gallery_kind = gallery.gallery_kind;
+    facts.delegated_command_id = delegated_command;
+    facts.plot_count = page.plots.size();
+    facts.evidence_type = "graph_reference";
+    page.facts.graph_gallery = facts;
+
+    if (page.computation_traces.empty()) {
+        attach_computation_traces(page, "graph_gallery");
+    }
+    return page;
+}
+
+OutputPage GraphService::chi_square_mosaic_link(
+    const DataTable& table, const AnalysisConfiguration& configuration)
+{
+    const ChiSquareMosaicLinkConfiguration& link = configuration.chi_square_mosaic_link;
+    if (!link.row_category_column.has_value() || !link.column_category_column.has_value()) {
+        return error_page("卡方–马赛克联动", "请选择行分类列和列分类列。");
+    }
+    if (*link.row_category_column == *link.column_category_column) {
+        return error_page("卡方–马赛克联动", "行分类列与列分类列必须不同。");
+    }
+
+    AnalysisConfiguration chi_config = configuration;
+    chi_config.chart_type = "chi_square";
+    chi_config.inference.row_category_column = link.row_category_column;
+    chi_config.inference.column_category_column = link.column_category_column;
+    OutputPage chi_page = AnalysisService::chi_square(table, chi_config);
+
+    AnalysisConfiguration mosaic_config = configuration;
+    mosaic_config.chart_type = "mosaic_plot";
+    mosaic_config.graph = GraphConfiguration{};
+    mosaic_config.graph.graph_kind = "mosaic";
+    mosaic_config.graph.variable_columns = {
+        *link.row_category_column, *link.column_category_column};
+    if (link.third_category_column.has_value()
+        && *link.third_category_column != *link.row_category_column
+        && *link.third_category_column != *link.column_category_column) {
+        mosaic_config.graph.variable_columns.push_back(*link.third_category_column);
+    }
+    mosaic_config.graph.mosaic_measure_mode = link.mosaic_measure_mode;
+    mosaic_config.graph.mosaic_sort_mode = link.mosaic_sort_mode;
+    mosaic_config.graph.mosaic_max_combinations =
+        std::clamp(link.mosaic_max_combinations, 5, 30);
+    OutputPage mosaic_page = mosaic(table, mosaic_config);
+
+    OutputPage page;
+    page.configuration = configuration;
+    page.analysis_command_id = "chi_square_mosaic_link";
+    page.title = "卡方–马赛克联动";
+    page.method_name = "Chi-Square Mosaic Link";
+    page.diagnostics = chi_page.diagnostics;
+    page.diagnostics.insert(
+        page.diagnostics.end(),
+        mosaic_page.diagnostics.begin(),
+        mosaic_page.diagnostics.end());
+
+    for (const auto& table_block : chi_page.tables) {
+        if (link.table_mode == "counts_only"
+            && table_block.title != "观察频数") {
+            continue;
+        }
+        if (!link.include_percent_tables
+            && (table_block.title == "行百分比"
+                || table_block.title == "列百分比"
+                || table_block.title == "合计百分比")) {
+            continue;
+        }
+        if (!link.include_cell_statistics && table_block.title == "单元格统计") {
+            continue;
+        }
+        page.tables.push_back(table_block);
+    }
+
+    if (link.include_adjusted_residual_heatmap) {
+        for (const auto& plot : chi_page.plots) {
+            if (plot.title == "调整残差热图" || plot.title == "观察频数热图") {
+                page.plots.push_back(plot);
+            }
+        }
+    }
+    if (link.include_mosaic_plot) {
+        for (const auto& plot : mosaic_page.plots) {
+            page.plots.push_back(plot);
+        }
+    }
+
+    page.parameter_summary = "行 = "
+        + std::to_string(*link.row_category_column)
+        + "    列 = " + std::to_string(*link.column_category_column)
+        + "    table_mode = " + link.table_mode
+        + "    mosaic_measure = " + link.mosaic_measure_mode
+        + "    表数 = " + std::to_string(page.tables.size())
+        + "    图数 = " + std::to_string(page.plots.size());
+
+    ChiSquareMosaicLinkFacts facts;
+    facts.category_column_count = mosaic_config.graph.variable_columns.size();
+    facts.table_count = page.tables.size();
+    facts.plot_count = page.plots.size();
+    facts.table_mode = link.table_mode;
+    facts.mosaic_available = link.include_mosaic_plot && !mosaic_page.plots.empty();
+    if (facts.mosaic_available && !mosaic_page.plots.empty()) {
+        facts.mosaic_combination_count = mosaic_page.plots.front().categories.size();
+    }
+    if (chi_page.facts.chi_square.has_value()) {
+        const auto& chi_facts = *chi_page.facts.chi_square;
+        facts.chi_square_available = true;
+        facts.chi_square_statistic = chi_facts.statistic;
+        facts.chi_square_p_value = chi_facts.p_value;
+        facts.max_abs_adjusted_residual = chi_facts.max_abs_adjusted_residual;
+        facts.residual_heatmap_available =
+            link.include_adjusted_residual_heatmap && chi_facts.residual_heatmap_available;
+        page.facts.chi_square = chi_facts;
+    }
+    page.facts.chi_square_mosaic_link = facts;
+
+    if (page.computation_traces.empty()) {
+        attach_computation_traces(page, "chi_square_mosaic_link");
+    }
     return page;
 }
 

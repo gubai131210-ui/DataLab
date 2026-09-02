@@ -5,11 +5,13 @@
 #include "domain/statistics/special_cause_rule_catalog.h"
 #include "reporting/chart_coordinate_mapper.h"
 #include "reporting/chart_geometry.h"
+#include "reporting/chart_plot_context.h"
 
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
 #include <QPolygonF>
+#include <QDateTime>
 #include <QtCore/QHash>
 
 #include <algorithm>
@@ -216,7 +218,6 @@ void draw_title_and_axes(
 
 void render_control(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
     const ChartSeries* first_series = nullptr;
     for (const ChartSeries& series : model.series) {
         if (!series.values.empty() || !series.lower.empty() || !series.upper.empty()) {
@@ -230,91 +231,25 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
         return;
     }
 
-    QVector<double> all_values = finite_values(model.values);
-    for (const double value : finite_values(model.lower)) {
-        all_values.append(value);
-    }
-    for (const double value : finite_values(model.upper)) {
-        all_values.append(value);
-    }
-    for (const double value : finite_values(model.center)) {
-        all_values.append(value);
-    }
-    for (const ChartSeries& series : model.series) {
-        for (const double value : finite_values(series.values)) {
-            all_values.append(value);
-        }
-        for (const double value : finite_values(series.lower)) {
-            all_values.append(value);
-        }
-        for (const double value : finite_values(series.upper)) {
-            all_values.append(value);
-        }
-    }
-    if (all_values.isEmpty()) {
+    const ChartPlotContext plot_context = build_control_plot_context(model, area);
+    if (!plot_context.valid) {
         return;
     }
-    auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
-    double minimum = *minimum_it;
-    double maximum = *maximum_it;
-    if (qFuzzyCompare(minimum, maximum)) {
-        minimum -= 1.0;
-        maximum += 1.0;
-    } else {
-        const double padding = (maximum - minimum) * 0.08;
-        minimum -= padding;
-        maximum += padding;
-    }
-    apply_custom_y_range(minimum, maximum, model);
+    const QRectF plot = plot_context.plot;
+    const ChartCoordinateMapper& mapper = plot_context.mapper;
+    const double minimum = mapper.y_min();
+    const double maximum = mapper.y_max();
+    const double x_min = mapper.x_min();
+    const double x_max = mapper.x_max();
 
     const auto x_at = [&](std::size_t index) {
         return model.x_values.size() == model.values.size()
             ? model.x_values[index] : static_cast<double>(index);
     };
-    const std::vector<double>& base_values = model.values.empty()
-        ? (!first_series->values.empty()
-               ? first_series->values
-               : (!first_series->lower.empty() ? first_series->lower : first_series->upper))
-        : model.values;
     const auto series_x_at = [](const ChartSeries& series, std::size_t index) {
         return index < series.x_values.size()
             ? series.x_values[index] : static_cast<double>(index);
     };
-    double x_min = model.values.empty() ? series_x_at(*first_series, 0) : x_at(0);
-    double x_max = x_min;
-    if (!model.values.empty() && model.x_values.size() == model.values.size()) {
-        const auto x_range = std::minmax_element(
-            model.x_values.cbegin(), model.x_values.cend());
-        x_min = *x_range.first;
-        x_max = *x_range.second;
-    } else {
-        x_max = model.values.empty()
-            ? series_x_at(*first_series, base_values.size() - 1)
-            : x_at(model.values.size() - 1);
-    }
-    for (const ChartSeries& series : model.series) {
-        if (series.values.empty()) {
-            continue;
-        }
-        double series_min = series_x_at(series, 0);
-        double series_max = series_min;
-        if (series.x_values.size() == series.values.size()) {
-            const auto range = std::minmax_element(
-                series.x_values.cbegin(), series.x_values.cend());
-            series_min = *range.first;
-            series_max = *range.second;
-        } else {
-            series_max = series_x_at(series, series.values.size() - 1);
-        }
-        x_min = std::min(x_min, series_min);
-        x_max = std::max(x_max, series_max);
-    }
-    apply_custom_x_range(x_min, x_max, model);
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(x_min, std::max(x_min + 1.0, x_max),
-                          minimum, maximum);
-    mapper.zoom(model.view.zoom_factor, plot.center());
-    mapper.pan(model.view.pan_offset);
 
     painter.setPen(QPen(theme_colors(model).grid, 1.0));
     for (int tick = 0; tick <= 5; ++tick) {
@@ -556,23 +491,34 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
 {
     const QRectF plot = plot_rect(area);
     const std::size_t count = std::min(model.x_values.size(), model.values.size());
-    if (count == 0) {
+    if (count == 0 && model.series.empty()) {
+        painter.setPen(theme_colors(model).muted_text);
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
-    const auto x_range = std::minmax_element(
-        model.x_values.cbegin(), model.x_values.cbegin() + count);
-    const auto y_range = std::minmax_element(
-        model.values.cbegin(), model.values.cbegin() + count);
-    double x_min = *x_range.first;
-    double x_max = *x_range.second;
-    double y_min = *y_range.first;
-    double y_max = *y_range.second;
+    double x_min = 0.0;
+    double x_max = 1.0;
+    double y_min = 0.0;
+    double y_max = 1.0;
+    bool have_range = false;
+    if (count > 0) {
+        const auto x_range = std::minmax_element(
+            model.x_values.cbegin(), model.x_values.cbegin() + count);
+        const auto y_range = std::minmax_element(
+            model.values.cbegin(), model.values.cbegin() + count);
+        x_min = *x_range.first;
+        x_max = *x_range.second;
+        y_min = *y_range.first;
+        y_max = *y_range.second;
+        have_range = true;
+    }
     for (const ChartSeries& series : model.series) {
         const std::size_t series_count = series.values.size();
         const std::size_t interval_count = std::max(series.lower.size(), series.upper.size());
         if (series_count == 0 && interval_count == 0) {
             continue;
         }
+        have_range = true;
         if (series_count > 0) {
             const auto series_y_range = std::minmax_element(
                 series.values.cbegin(), series.values.cend());
@@ -597,6 +543,11 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
             x_min = std::min(x_min, *series_x_range.first);
             x_max = std::max(x_max, *series_x_range.second);
         }
+    }
+    if (!have_range) {
+        painter.setPen(theme_colors(model).muted_text);
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
+        return;
     }
     if (x_min == x_max) {
         x_min -= 1.0;
@@ -691,6 +642,17 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
             }
             band.closeSubpath();
             painter.fillPath(band, QColor(144, 202, 249, 75));
+        }
+        if (series.show_points) {
+            painter.setBrush(series_color(series));
+            painter.setPen(Qt::NoPen);
+            for (std::size_t index = 0; index < series.values.size(); ++index) {
+                if (!std::isfinite(series.values[index])) {
+                    continue;
+                }
+                const QPointF point = mapper.to_pixel(x_at(index), series.values[index]);
+                painter.drawEllipse(point, series.style.point_size, series.style.point_size);
+            }
         }
     }
     painter.setPen(theme_colors(model).text);
@@ -830,26 +792,25 @@ void render_probability(QPainter& painter, const QRectF& area, const ChartModel&
 
 void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
     if (model.histogram_counts.empty() || model.histogram_edges.size() < 2) {
         painter.setPen(theme_colors(model).muted_text);
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
+    const ChartPlotContext context = build_histogram_plot_context(model, area);
+    const QRectF plot = context.plot;
+    const ChartCoordinateMapper& mapper = context.mapper;
     const double x_min = model.histogram_edges.front();
     const double x_max = model.histogram_edges.back();
-    double y_max = *std::max_element(model.histogram_counts.begin(), model.histogram_counts.end());
-    if (y_max <= 0.0) {
-        y_max = 1.0;
+    double label_y_max = *std::max_element(
+        model.histogram_counts.begin(), model.histogram_counts.end());
+    if (label_y_max <= 0.0) {
+        label_y_max = 1.0;
     }
-    y_max *= 1.15;
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(x_min, x_max, 0.0, y_max);
-    mapper.zoom(model.view.zoom_factor, plot.center());
-    mapper.pan(model.view.pan_offset);
+    label_y_max *= 1.15;
 
     for (int tick = 0; tick <= 5; ++tick) {
-        const double value = y_max * static_cast<double>(tick) / 5.0;
+        const double value = label_y_max * static_cast<double>(tick) / 5.0;
         const QPointF point = mapper.to_pixel(x_min, value);
         if (model.show_grid) {
             painter.setPen(QPen(theme_colors(model).grid, 1.0));
@@ -886,7 +847,7 @@ void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& m
             return;
         }
         painter.setPen(QPen(color, 1.4, Qt::DashLine));
-        const QPointF top = mapper.to_pixel(*value, y_max);
+        const QPointF top = mapper.to_pixel(*value, label_y_max);
         const QPointF bottom = mapper.to_pixel(*value, 0.0);
         painter.drawLine(top, bottom);
         painter.drawText(top + QPointF(3.0, 12.0), label);
@@ -969,33 +930,17 @@ void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& m
 
 void render_boxplot(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
-    const std::size_t box_count = std::min({
-        model.box_min.size(), model.box_q1.size(), model.box_median.size(),
-        model.box_q3.size(), model.box_max.size()});
-    if (box_count == 0) {
+    const ChartPlotContext plot_context = build_box_plot_context(model, area);
+    if (!plot_context.valid) {
         painter.setPen(theme_colors(model).muted_text);
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
-    QVector<double> all_values;
-    for (const auto& series : {model.box_min, model.box_max, model.box_q1, model.box_q3}) {
-        for (const double value : series) {
-            all_values.append(value);
-        }
-    }
-    for (const ChartSeries& series : model.series) {
-        for (const double value : series.values) {
-            all_values.append(value);
-        }
-    }
-    auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
-    double minimum = *minimum_it;
-    double maximum = *maximum_it;
-    const double padding = std::max(0.08 * (maximum - minimum), 1.0e-6);
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(-0.5, static_cast<double>(box_count) - 0.5,
-                          minimum - padding, maximum + padding);
+    const QRectF plot = plot_context.plot;
+    const ChartCoordinateMapper& mapper = plot_context.mapper;
+    const std::size_t box_count = std::min({
+        model.box_min.size(), model.box_q1.size(), model.box_median.size(),
+        model.box_q3.size(), model.box_max.size()});
     painter.setPen(QPen(theme_colors(model).axis, 1.2));
     painter.drawLine(plot.bottomLeft(), plot.topLeft());
     painter.drawLine(plot.bottomLeft(), plot.bottomRight());
@@ -1054,12 +999,118 @@ void render_boxplot(QPainter& painter, const QRectF& area, const ChartModel& mod
 
 void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = pareto_plot_rect(area);
-    if (model.category_values.empty() || plot.width() <= 1.0 || plot.height() <= 1.0) {
+    if (!model.series.empty() && !model.categories.empty()) {
+        const QRectF plot = pareto_plot_rect(area);
+        if (plot.width() <= 1.0 || plot.height() <= 1.0) {
+            painter.setPen(theme_colors(model).muted_text);
+            painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
+            return;
+        }
+        double y_max_value = 1.0;
+        for (const ChartSeries& series : model.series) {
+            for (double value : series.values) {
+                if (std::isfinite(value)) {
+                    y_max_value = std::max(y_max_value, value);
+                }
+            }
+        }
+        const double tick_step = std::max(1.0, std::ceil(y_max_value / 5.0));
+        const double y_max = tick_step * 5.0;
+        const std::size_t category_count = model.categories.size();
+        const std::size_t series_count = model.series.size();
+        ChartCoordinateMapper mapper(plot);
+        mapper.set_data_range(
+            -0.5,
+            static_cast<double>(category_count) - 0.5,
+            0.0,
+            y_max);
+
+        painter.setPen(theme_colors(model).text);
+        painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), 11, QFont::Bold));
+        painter.drawText(QRectF(area.left(), area.top(), area.width(), 26.0),
+                         Qt::AlignCenter, model.title);
+        painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), 8));
+
+        for (int tick = 0; tick <= 5; ++tick) {
+            const double value = tick_step * static_cast<double>(tick);
+            const QPointF point = mapper.to_pixel(-0.5, value);
+            if (model.show_grid) {
+                painter.setPen(QPen(theme_colors(model).grid, 1.0));
+                painter.drawLine(QPointF(plot.left(), point.y()), QPointF(plot.right(), point.y()));
+            }
+            painter.setPen(theme_colors(model).muted_text);
+            painter.drawText(QRectF(area.left() + 18.0, point.y() - 10.0, 42.0, 20.0),
+                             Qt::AlignRight | Qt::AlignVCenter,
+                             QString::number(static_cast<qint64>(std::llround(value))));
+        }
+
+        painter.setPen(QPen(theme_colors(model).axis, 1.2));
+        painter.drawLine(plot.bottomLeft(), plot.topLeft());
+        painter.drawLine(plot.bottomLeft(), plot.bottomRight());
+
+        const double cluster_width =
+            std::min(48.0, plot.width() / static_cast<double>(category_count) * 0.7);
+        const double bar_width =
+            cluster_width / static_cast<double>(std::max<std::size_t>(1, series_count)) * 0.85;
+        for (std::size_t category_index = 0; category_index < category_count; ++category_index) {
+            for (std::size_t series_index = 0; series_index < series_count; ++series_index) {
+                const ChartSeries& series = model.series[series_index];
+                if (category_index >= series.values.size()) {
+                    continue;
+                }
+                const double value = series.values[category_index];
+                if (!std::isfinite(value)) {
+                    continue;
+                }
+                const double slot =
+                    static_cast<double>(category_index)
+                    + (static_cast<double>(series_index)
+                       - static_cast<double>(series_count - 1) / 2.0)
+                          * (bar_width / cluster_width);
+                const QPointF top = mapper.to_pixel(slot, value);
+                const QPointF bottom = mapper.to_pixel(slot, 0.0);
+                const QColor fill = series_color(series);
+                painter.fillRect(QRectF(QPointF(top.x() - bar_width / 2.0, top.y()),
+                                        QPointF(bottom.x() + bar_width / 2.0, bottom.y())),
+                                 fill);
+                painter.setPen(fill.darker(120));
+                painter.drawRect(QRectF(QPointF(top.x() - bar_width / 2.0, top.y()),
+                                        QPointF(bottom.x() + bar_width / 2.0, bottom.y())));
+            }
+            painter.setPen(QColor("#455a64"));
+            painter.drawText(
+                QRectF(plot.left() + static_cast<double>(category_index) * plot.width()
+                           / static_cast<double>(category_count) - 20.0,
+                       plot.bottom() + 4.0,
+                       plot.width() / static_cast<double>(category_count) + 40.0,
+                       20.0),
+                Qt::AlignCenter,
+                model.categories[category_index]);
+        }
+        if (model.show_legend) {
+            double legend_y = area.top() + 30.0;
+            for (std::size_t series_index = 0; series_index < series_count; ++series_index) {
+                const ChartSeries& series = model.series[series_index];
+                painter.setBrush(series_color(series));
+                painter.setPen(Qt::NoPen);
+                painter.drawRect(QRectF(area.right() - 140.0, legend_y, 12.0, 12.0));
+                painter.setPen(theme_colors(model).text);
+                painter.drawText(QRectF(area.right() - 124.0, legend_y - 2.0, 120.0, 16.0),
+                                 Qt::AlignLeft | Qt::AlignVCenter, series.label);
+                legend_y += 18.0;
+            }
+        }
+        return;
+    }
+
+    const ChartPlotContext plot_context = build_pareto_plot_context(model, area);
+    if (!plot_context.valid) {
         painter.setPen(theme_colors(model).muted_text);
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
+    const QRectF plot = plot_context.plot;
+    const ChartCoordinateMapper& mapper = plot_context.mapper;
     const bool show_cumulative = !model.cumulative_percent.empty();
     const double maximum_count =
         *std::max_element(model.category_values.begin(), model.category_values.end());
@@ -1067,16 +1118,11 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
         model.category_values.begin(), model.category_values.end(), 0.0);
     const double reference = !model.center.empty() && std::isfinite(model.center.front())
         ? model.center.front() : 0.0;
-    // Minitab-style dual axis: left scale tops out at total count so the first
-    // cumulative point sits on the first bar top (count/total == first cum%).
-    // Effects Pareto omits cumulative and scales to the largest bar / reference.
     const double scale_top = show_cumulative
         ? std::max({1.0, maximum_count, total_count})
         : std::max({1.0, maximum_count, reference});
     const double tick_step = std::max(1.0, std::ceil(scale_top / 5.0));
     const double y_max = tick_step * 5.0;
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(-0.5, static_cast<double>(model.category_values.size()) - 0.5, 0.0, y_max);
 
     painter.setPen(theme_colors(model).text);
     painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), 11, QFont::Bold));
@@ -1224,30 +1270,21 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
 
 void render_interval(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
-    const std::size_t count = std::min({
-        model.values.size(), model.interval_lower.size(), model.interval_upper.size()});
-    if (count == 0) {
+    const ChartPlotContext plot_context = build_interval_plot_context(model, area);
+    if (!plot_context.valid) {
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
-    double minimum = *std::min_element(model.interval_lower.cbegin(),
-                                       model.interval_lower.cbegin() + count);
-    double maximum = *std::max_element(model.interval_upper.cbegin(),
-                                       model.interval_upper.cbegin() + count);
-    if (qFuzzyCompare(minimum, maximum)) {
-        minimum -= 1.0;
-        maximum += 1.0;
-    }
-    const double padding = (maximum - minimum) * 0.08;
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(-0.5, static_cast<double>(count) - 0.5,
-                          minimum - padding, maximum + padding);
-    painter.setPen(QPen(theme_colors(model).grid, 1.0));
+    const QRectF plot = plot_context.plot;
+    const ChartCoordinateMapper& mapper = plot_context.mapper;
+    const std::size_t count = std::min({
+        model.values.size(), model.interval_lower.size(), model.interval_upper.size()});
+    const double minimum = mapper.y_min();
+    const double maximum = mapper.y_max();
     if (model.show_grid) {
+        painter.setPen(QPen(theme_colors(model).grid, 1.0));
         for (int tick = 0; tick <= 5; ++tick) {
-            const double value = minimum - padding
-                + (maximum - minimum + 2.0 * padding) * tick / 5.0;
+            const double value = minimum + (maximum - minimum) * tick / 5.0;
             const double y = mapper.to_pixel(0.0, value).y();
             painter.drawLine(QPointF(plot.left(), y), QPointF(plot.right(), y));
             painter.setPen(theme_colors(model).muted_text);
@@ -1404,20 +1441,15 @@ QColor group_color(const QString& group)
 
 void render_ecdf(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
-    if (model.x_values.empty() || model.values.empty()) {
+    const ChartPlotContext plot_context = build_ecdf_plot_context(model, area);
+    if (!plot_context.valid) {
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
+    const QRectF plot = plot_context.plot;
+    const ChartCoordinateMapper& mapper = plot_context.mapper;
     const std::size_t count = std::min(model.x_values.size(), model.values.size());
-    double x_min = *std::min_element(model.x_values.cbegin(), model.x_values.cbegin() + count);
-    double x_max = *std::max_element(model.x_values.cbegin(), model.x_values.cbegin() + count);
-    if (qFuzzyCompare(x_min, x_max)) {
-        x_min -= 1.0;
-        x_max += 1.0;
-    }
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(x_min, x_max, 0.0, 1.05);
+    const double x_max = mapper.x_max();
     painter.setPen(QPen(theme_colors(model).axis, 1.2));
     painter.drawLine(plot.bottomLeft(), plot.topLeft());
     painter.drawLine(plot.bottomLeft(), plot.bottomRight());
@@ -1627,12 +1659,101 @@ void render_heatmap(QPainter& painter, const QRectF& area, const ChartModel& mod
                      Qt::AlignCenter, model.title);
 }
 
+QString format_time_series_x_tick_label(double x_value)
+{
+    if (x_value < 1.0e9 || x_value > 1.0e11) {
+        return QString::number(x_value, 'g', 4);
+    }
+    const qint64 seconds = static_cast<qint64>(std::llround(x_value));
+    const QDateTime date_time = QDateTime::fromSecsSinceEpoch(seconds);
+    if (!date_time.isValid()) {
+        return QString::number(x_value, 'g', 4);
+    }
+    return date_time.toString(QStringLiteral("yyyy/MM/dd HH:mm"));
+}
+
+void draw_time_series_x_axis_labels(
+    QPainter& painter,
+    const QRectF& area,
+    const ChartModel& model)
+{
+    const QRectF plot = plot_rect(area);
+    double x_min = 0.0;
+    double x_max = 1.0;
+    double y_min = 0.0;
+    double y_max = 1.0;
+    bool have_range = false;
+    const std::size_t point_count = std::min(model.x_values.size(), model.values.size());
+    if (point_count > 0) {
+        const auto x_range = std::minmax_element(
+            model.x_values.cbegin(), model.x_values.cbegin() + point_count);
+        const auto y_range = std::minmax_element(
+            model.values.cbegin(), model.values.cbegin() + point_count);
+        x_min = *x_range.first;
+        x_max = *x_range.second;
+        y_min = *y_range.first;
+        y_max = *y_range.second;
+        have_range = true;
+    }
+    for (const ChartSeries& series : model.series) {
+        if (series.x_values.empty()) {
+            continue;
+        }
+        have_range = true;
+        const auto x_range = std::minmax_element(
+            series.x_values.cbegin(), series.x_values.cend());
+        x_min = std::min(x_min, *x_range.first);
+        x_max = std::max(x_max, *x_range.second);
+        if (!series.values.empty()) {
+            const auto y_range = std::minmax_element(
+                series.values.cbegin(), series.values.cend());
+            y_min = std::min(y_min, *y_range.first);
+            y_max = std::max(y_max, *y_range.second);
+        }
+    }
+    if (!have_range) {
+        return;
+    }
+    if (x_min == x_max) {
+        x_min -= 1.0;
+        x_max += 1.0;
+    }
+    if (y_min == y_max) {
+        y_min -= 1.0;
+        y_max += 1.0;
+    }
+    const double x_padding = 0.05 * (x_max - x_min);
+    x_min -= x_padding;
+    x_max += x_padding;
+    apply_custom_x_range(x_min, x_max, model);
+    apply_custom_y_range(y_min, y_max, model);
+    ChartCoordinateMapper mapper(plot);
+    mapper.set_data_range(x_min, x_max, y_min, y_max);
+    mapper.zoom(model.view.zoom_factor, plot.center());
+    mapper.pan(model.view.pan_offset);
+    painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), model.axis_font_size));
+    painter.setPen(theme_colors(model).muted_text);
+    for (int tick = 0; tick <= 5; ++tick) {
+        const double fraction = static_cast<double>(tick) / 5.0;
+        const double x_value = x_min + (x_max - x_min) * fraction;
+        const QPointF pixel = mapper.to_pixel(x_value, y_min);
+        painter.drawText(
+            QRectF(pixel.x() - 44.0, plot.bottom() + 4.0, 88.0, 16.0),
+            Qt::AlignCenter,
+            format_time_series_x_tick_label(x_value));
+    }
+}
+
 void render_time_series(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
     ChartModel line = model;
     line.kind = ChartKind::Scatter;
     line.value_style.point_style = ChartPointStyle::Circle;
     render_scatter(painter, area, line);
+    draw_time_series_x_axis_labels(painter, area, model);
+    if (!model.series.empty()) {
+        return;
+    }
     if (model.x_values.size() < 2 || model.values.size() < 2) {
         return;
     }
@@ -1718,31 +1839,22 @@ void render_contour(QPainter& painter, const QRectF& area, const ChartModel& mod
 
 void render_violin(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
-    const std::size_t box_count = std::min({
-        model.box_min.size(), model.box_q1.size(), model.box_median.size(),
-        model.box_q3.size(), model.box_max.size()});
-    if (box_count == 0 || model.series.empty()) {
+    if (model.series.empty()) {
         painter.setPen(theme_colors(model).muted_text);
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
-    QVector<double> all_values;
-    for (const auto& series : {model.box_min, model.box_max}) {
-        for (const double value : series) {
-            all_values.append(value);
-        }
+    const ChartPlotContext plot_context = build_violin_plot_context(model, area);
+    if (!plot_context.valid) {
+        painter.setPen(theme_colors(model).muted_text);
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
+        return;
     }
-    for (const ChartSeries& series : model.series) {
-        for (const double value : series.values) {
-            all_values.append(value);
-        }
-    }
-    auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
-    const double padding = std::max(0.08 * (*maximum_it - *minimum_it), 1.0e-6);
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(-0.5, static_cast<double>(box_count) - 0.5,
-                          *minimum_it - padding, *maximum_it + padding);
+    const QRectF plot = plot_context.plot;
+    const ChartCoordinateMapper& mapper = plot_context.mapper;
+    const std::size_t box_count = std::min({
+        model.box_min.size(), model.box_q1.size(), model.box_median.size(),
+        model.box_q3.size(), model.box_max.size()});
     painter.setPen(QPen(theme_colors(model).axis, 1.2));
     painter.drawLine(plot.bottomLeft(), plot.topLeft());
     painter.drawLine(plot.bottomLeft(), plot.bottomRight());
@@ -1919,6 +2031,7 @@ void render_pie(QPainter& painter, const QRectF& area, const ChartModel& model)
     painter.drawText(QRectF(area.left(), area.top() + 8.0, area.width(), 24.0),
                      Qt::AlignCenter, model.title);
 }
+
 }  // namespace
 
 void ChartRenderer::render(QPainter& painter, const QRectF& area, const ChartModel& model)

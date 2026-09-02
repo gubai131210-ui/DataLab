@@ -10,6 +10,11 @@ namespace datalab::domain {
 
 bool is_missing_cell(const std::string& cell);
 bool parse_finite_number(const std::string& cell, double& value);
+bool parse_time_cell_to_epoch(
+    const std::string& cell,
+    double& epoch_seconds,
+    std::string& original_text);
+bool cell_looks_like_time(const std::string& cell);
 void populate_data_table_contract(DataTable& table);
 std::string validate_data_table_contract(const DataTable& table);
 

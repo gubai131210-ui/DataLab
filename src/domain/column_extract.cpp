@@ -1,9 +1,11 @@
 #include "domain/column_extract.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <functional>
 #include <sstream>
 #include <string>
@@ -63,6 +65,53 @@ bool parse_finite_number(const std::string& cell, double& value)
         && std::isfinite(value);
 }
 
+bool parse_time_cell_to_epoch(
+    const std::string& cell,
+    double& epoch_seconds,
+    std::string& original_text)
+{
+    const std::string trimmed = trim_copy(cell);
+    if (trimmed.empty() || is_missing_cell(trimmed)) {
+        return false;
+    }
+    original_text = trimmed;
+
+    int year = 0;
+    int month = 0;
+    int day = 0;
+    int hour = 0;
+    int minute = 0;
+    int second = 0;
+    const auto parse_parts = [&](const char* format) -> bool {
+        std::tm tm_value{};
+        const char* cursor = trimmed.c_str();
+        if (std::sscanf(cursor, format, &year, &month, &day, &hour, &minute, &second) < 3) {
+            return false;
+        }
+        tm_value.tm_year = year - 1900;
+        tm_value.tm_mon = month - 1;
+        tm_value.tm_mday = day;
+        tm_value.tm_hour = hour;
+        tm_value.tm_min = minute;
+        tm_value.tm_sec = second;
+        tm_value.tm_isdst = -1;
+        const std::time_t seconds = std::mktime(&tm_value);
+        if (seconds < 0) {
+            return false;
+        }
+        epoch_seconds = static_cast<double>(seconds);
+        return std::isfinite(epoch_seconds);
+    };
+
+    if (parse_parts("%d/%d/%d %d:%d:%d")
+        || parse_parts("%d-%d-%d %d:%d:%d")
+        || parse_parts("%d/%d/%d %d:%d")
+        || parse_parts("%d-%d-%d %d:%d")) {
+        return true;
+    }
+    return false;
+}
+
 bool is_missing_cell(const std::string& cell)
 {
     const std::string trimmed = trim_copy(cell);
@@ -71,6 +120,11 @@ bool is_missing_cell(const std::string& cell)
     }
     const std::string upper = to_upper(trimmed);
     return upper == "NA" || upper == "N/A" || upper == "NAN" || upper == "NULL";
+}
+
+bool cell_looks_like_time(const std::string& value)
+{
+    return looks_like_time(value);
 }
 
 void populate_data_table_contract(DataTable& table)
