@@ -1,0 +1,130 @@
+{
+  "title": "不平衡 Expanded Gage R&R",
+  "used_for": "不平衡扩展量具（公式参考；菜单在统计）。",
+  "not_for": "平衡三因子用 expanded_gage_rr。dataset 空。",
+  "scenario": "需要测量/Part/Operator；附加因子为输入开关。本波空表。",
+  "related_ids": [
+    "expanded_gage_rr",
+    "gage_rr"
+  ],
+  "dialog_fill": {},
+  "click_steps": [
+    "打开「帮助」→「学习中心」，选择本教程「不平衡 Expanded Gage R&R」。",
+    "注意：当前版本可能无此菜单项或仅为公式参考；公式见「算法、公式与参考资料」。",
+    "若菜单可用：统计 → 不平衡 Expanded Gage R&R。本课不提供专用演示表（dataset 空），步骤保持诚实。",
+    "对照下方 dialog_fill_detail 核对该命令真实 roles/inputs；勿虚构字段。",
+    "输出解读禁止：过程合格 / 必须停线 / 已证明正态 / 量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量 (`measurement`)",
+      "put": "（无表）测量列",
+      "meaning": "Y。"
+    },
+    {
+      "field": "Part (`part`)",
+      "put": "零件列",
+      "meaning": "必选。"
+    },
+    {
+      "field": "Operator (`operator`)",
+      "put": "操作员列",
+      "meaning": "必选。"
+    },
+    {
+      "field": "附加因子 (`additional`)",
+      "put": "false",
+      "meaning": "input 开关，不是列。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "不平衡",
+      "plain": "各组合重复数不齐。",
+      "remember": "与平衡课分开。"
+    },
+    {
+      "term": "菜单路径",
+      "plain": "在「统计」而非质量工具包。",
+      "remember": "对照真实 menu_path。"
+    },
+    {
+      "term": "附加因子开关",
+      "plain": "input `additional` true/false。",
+      "remember": "不是列角色。"
+    }
+  ],
+  "buried_signals": [],
+  "output_guide": [
+    {
+      "name": "帮助/公式页",
+      "meaning": "只陈述定义与边界；禁止过程合格；禁止必须停线；禁止已证明正态；禁止量具通过。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "偷偷挂 msa_expanded_crossed"
+  ],
+  "skill_mission": "能指出本命令在统计菜单，并区分平衡 Expanded 课。",
+  "prereq_quiz": [
+    {
+      "q": "菜单在？",
+      "good": "统计",
+      "bad": "质量工具"
+    },
+    {
+      "q": "本波有表？",
+      "good": "无",
+      "bad": "msa_expanded_crossed"
+    },
+    {
+      "q": "量具通过？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看 menu_path",
+      "prompt": "为何不进质量工具波的共享表？"
+    },
+    {
+      "after": "读 additional",
+      "prompt": "它是角色还是 input？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "本课无演示表：对照 §4 字段清单与公式帮助，写清菜单可能不可用。",
+      "scaffold": "dialog_fill_detail + 公式帮助路径。"
+    },
+    {
+      "level": 1,
+      "student": "不看 detail，默写本命令真实 roles/inputs 名称（对照 analysis_commands）。",
+      "scaffold": "只给 menu_path。"
+    },
+    {
+      "level": 2,
+      "student": "写一段：本课为何空 dataset，以及误用一句禁止句。",
+      "scaffold": "仅 skill_mission。"
+    }
+  ],
+  "retrieval_quiz": [
+    "菜单？",
+    "additional？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "可与平衡表共享",
+      "right": "锁表空 dataset；结构不同。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

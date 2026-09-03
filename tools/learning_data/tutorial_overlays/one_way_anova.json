@@ -1,0 +1,141 @@
+{
+  "title": "单因素 ANOVA",
+  "used_for": "单因子多组均值。",
+  "not_for": "双因子用 two_factor_anova。",
+  "scenario": "三腔位。导入 demo_anova_one_cavity。",
+  "related_ids": [
+    "kruskal_wallis",
+    "two_factor_anova"
+  ],
+  "dialog_fill": {
+    "response": "厚度_um",
+    "factor": "腔位"
+  },
+  "click_steps": [
+    "导入 `demo_anova_one_cavity`。",
+    "菜单：统计 → 单因素 ANOVA。",
+    "响应=厚度_um；因子=腔位。",
+    "对照腔3偏低。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "响应变量 (`response`)",
+      "put": "厚度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "因子/分组列 (`factor`)",
+      "put": "腔位",
+      "meaning": "因子。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "H0（ANOVA）",
+      "plain": "各腔位（因子水平）总体均值全部相等。备择是「至少有一组不同」。",
+      "remember": "显著只说「不全相等」，不自动指出该停哪条线。"
+    },
+    {
+      "term": "F / p 值",
+      "plain": "F≈组间方差÷组内方差；p 小说明组间差异相对噪声更突出。",
+      "remember": "p 小≠过程合格判定；下一步才是看哪一组（对照埋点腔3）。"
+    },
+    {
+      "term": "组间 vs 组内",
+      "plain": "组间=腔位均值彼此拉开；组内=同一腔内片子之间的抖动。",
+      "remember": "腔3 偏低会抬高组间平方和。"
+    },
+    {
+      "term": "显著 ≠ 必须停线",
+      "plain": "统计显著是调查线索，不是放行/停线命令。",
+      "remember": "禁止把 F 显著写成「必须停线 / 已证明合格」。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 31,
+      "what": "腔位3偏低块开始",
+      "expect": "F显著线索"
+    },
+    {
+      "row": 45,
+      "what": "腔3末行",
+      "expect": "对照三组均值"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "ANOVA 表（F / p）",
+      "meaning": "对照腔3 行31–45 偏低：期望组间差异抬高、p 偏小。显著后回表看哪一组，禁止写成必须停线。"
+    },
+    {
+      "name": "组均值",
+      "meaning": "三腔均值中腔3 应明显偏低；这是埋点，不是规格判定。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成单因素ANOVA并对照腔3。",
+  "prereq_quiz": [
+    {
+      "q": "因子列？",
+      "good": "腔位",
+      "bad": "无"
+    },
+    {
+      "q": "dataset？",
+      "good": "anova_one_cavity",
+      "bad": "旧共享宽表"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看F",
+      "prompt": "显著后下一步？"
+    },
+    {
+      "after": "对照KW",
+      "prompt": "非正态担忧时？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_anova_one_cavity`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_anova_one_cavity`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "ANOVA？",
+    "腔3",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "F显著=必须停线",
+      "right": "禁止必须停线。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

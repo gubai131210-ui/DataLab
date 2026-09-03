@@ -1,0 +1,135 @@
+{
+  "title": "非正态过程能力",
+  "used_for": "选定非正态族后的能力（公式参考）。",
+  "not_for": "稳定正态课；先识别分布。dataset 空。",
+  "scenario": "需要变量+规格+分布枚举；本波不灌表。",
+  "related_ids": [
+    "distribution_identification",
+    "capability",
+    "box_cox"
+  ],
+  "dialog_fill": {},
+  "click_steps": [
+    "打开「帮助」→「学习中心」，选择本教程「非正态过程能力」。",
+    "注意：当前版本可能无此菜单项或仅为公式参考；公式见「算法、公式与参考资料」。",
+    "若菜单可用：质量工具 → 非正态过程能力。本课不提供专用演示表（dataset 空），步骤保持诚实。",
+    "对照下方 dialog_fill_detail 核对该命令真实 roles/inputs；勿虚构字段。",
+    "输出解读禁止：过程合格 / 必须停线 / 已证明正态 / 量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variables`)",
+      "put": "（无表）测量列",
+      "meaning": "Y。"
+    },
+    {
+      "field": "LSL (`lsl`)",
+      "put": "规格下限",
+      "meaning": "规格。"
+    },
+    {
+      "field": "USL (`usl`)",
+      "put": "规格上限",
+      "meaning": "规格。"
+    },
+    {
+      "field": "Target (`target`)",
+      "put": "可选",
+      "meaning": "目标。"
+    },
+    {
+      "field": "分布 (`distribution`)",
+      "put": "目录默认",
+      "meaning": "nonnormal_capability_distribution。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "非正态能力",
+      "plain": "按选定分布算能力。",
+      "remember": "分布选择先于指数。"
+    },
+    {
+      "term": "distribution 输入",
+      "plain": "目录枚举。",
+      "remember": "勿虚构。"
+    },
+    {
+      "term": "公式参考",
+      "plain": "菜单可能不可用。",
+      "remember": "步骤诚实。"
+    }
+  ],
+  "buried_signals": [],
+  "output_guide": [
+    {
+      "name": "帮助/公式页",
+      "meaning": "只陈述定义与边界；禁止过程合格；禁止必须停线；禁止已证明正态；禁止量具通过。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能列出非正态能力字段，并指向分布识别课。",
+  "prereq_quiz": [
+    {
+      "q": "先做什么？",
+      "good": "分布识别/变换讨论",
+      "bad": "直接写过程合格"
+    },
+    {
+      "q": "本波表？",
+      "good": "空",
+      "bad": "cap_stable_spec"
+    },
+    {
+      "q": "已证明正态？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读分布输入",
+      "prompt": "为何要目录枚举？"
+    },
+    {
+      "after": "对照识别课",
+      "prompt": "为何不共享偏态表到本课？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "本课无演示表：对照 §4 字段清单与公式帮助，写清菜单可能不可用。",
+      "scaffold": "dialog_fill_detail + 公式帮助路径。"
+    },
+    {
+      "level": 1,
+      "student": "不看 detail，默写本命令真实 roles/inputs 名称（对照 analysis_commands）。",
+      "scaffold": "只给 menu_path。"
+    },
+    {
+      "level": 2,
+      "student": "写一段：本课为何空 dataset，以及误用一句禁止句。",
+      "scaffold": "仅 skill_mission。"
+    }
+  ],
+  "retrieval_quiz": [
+    "字段？",
+    "related_ids？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "选了 Weibull=已证明",
+      "right": "禁止已证明正态/合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

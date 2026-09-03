@@ -1,0 +1,137 @@
+{
+  "title": "Kruskal-Wallis 检验",
+  "used_for": "≥3 独立组位置（秩）。",
+  "not_for": "区组设计用 Friedman。",
+  "scenario": "三腔位。导入 demo_kw_three_cavity。",
+  "related_ids": [
+    "one_way_anova",
+    "friedman"
+  ],
+  "dialog_fill": {
+    "response": "厚度_um",
+    "factor": "腔位"
+  },
+  "click_steps": [
+    "导入 `demo_kw_three_cavity`。",
+    "菜单：统计 → Kruskal-Wallis 检验。",
+    "测量值=厚度_um；分组=腔位；多重比较可关。",
+    "对照腔位3偏低。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`response`)",
+      "put": "厚度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "分组列 (`factor`)",
+      "put": "腔位",
+      "meaning": "因子。"
+    },
+    {
+      "field": "多重比较 (`posthoc`)",
+      "put": "无/目录默认",
+      "meaning": "kruskal_posthoc。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "KW",
+      "plain": "多样本位置秩检验。",
+      "remember": "ANOVA非参数对照。"
+    },
+    {
+      "term": "腔位3",
+      "plain": "本课偏低。",
+      "remember": "埋点行31–45。"
+    },
+    {
+      "term": "独立组",
+      "plain": "非区组。",
+      "remember": "区组走Friedman。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 31,
+      "what": "腔位3块开始（偏低）",
+      "expect": "KW 拒绝组间无差"
+    },
+    {
+      "row": 45,
+      "what": "腔位3末行",
+      "expect": "对照三组位置"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "H/p",
+      "meaning": "对照腔3；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成 KW 并对照腔位3埋点。",
+  "prereq_quiz": [
+    {
+      "q": "区组？",
+      "good": "否（独立）",
+      "bad": "是"
+    },
+    {
+      "q": "dataset？",
+      "good": "kw_three_cavity",
+      "bad": "anova共享"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "对照ANOVA",
+      "prompt": "为何专用表不共享？"
+    },
+    {
+      "after": "看腔3",
+      "prompt": "行号如何对应？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_kw_three_cavity`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_kw_three_cavity`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "KW？",
+    "腔3",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "KW=已证明正态不需要故过程合格",
+      "right": "禁止过程合格与已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "title": "C 图",
+  "used_for": "固定检验单位下监视缺陷计数 c。本课只练「固定单位 + 缺陷台阶」读特殊原因线索。",
+  "not_for": "单位大小变化应选 u 图；合格/不合格件数应选 p/np。不能把 UCL 当 USL。",
+  "scenario": "回流焊每炉固定检 1 托盘。批26起焊点缺陷数抬高。只用 C 图看是否出现特殊原因线索。",
+  "related_ids": [
+    "u_chart",
+    "np_chart",
+    "imr"
+  ],
+  "dialog_fill": {
+    "defects": "焊点缺陷数"
+  },
+  "click_steps": [
+    "打开「帮助」→「学习中心」，选择本教程「C 图」。",
+    "导入测试数据，工作表 `demo_c_chart_defect_step`。",
+    "菜单：控制图 → C 图。",
+    "缺陷数=`焊点缺陷数`；每个子组单位数=1；阶段列输入留空；规则默认；tests 留空。",
+    "对照埋点：批26起缺陷数抬高；口头区分 UCL ≠ USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "缺陷数 (`defects`)",
+      "put": "焊点缺陷数",
+      "meaning": "固定托盘内缺陷计数 Y。"
+    },
+    {
+      "field": "每个子组单位数 (`units`)",
+      "put": "1",
+      "meaning": "本集固定单位；代码里 units 是 input 不是角色。"
+    },
+    {
+      "field": "阶段列 (`stage`)",
+      "put": "留空",
+      "meaning": "本软件把 stage 放在 inputs；本课不分阶段，以免吃掉台阶。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈attribute）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "c（缺陷数）",
+      "plain": "固定检验单位内的缺陷计数。",
+      "remember": "单位一变就该改 u 图。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 26,
+      "what": "批26起缺陷数由基线约3抬到约8",
+      "expect": "C 图后段上移或越 UCL。不要写成过程合格或必须停线。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "C 图",
+      "meaning": "指着 CL/UCL：批26后上移。UCL ≠ USL。"
+    },
+    {
+      "name": "逐点表",
+      "meaning": "核对触发行号与备注列「缺陷台阶」。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "批量大小时变仍用 c 图",
+    "把不合格品数当缺陷数"
+  ],
+  "skill_mission": "用 C 图在固定单位缺陷计数上找出批26台阶，并区分 UCL 与 USL。",
+  "prereq_quiz": [
+    {
+      "q": "C 图适合什么数据？",
+      "good": "固定检验单位的缺陷计数",
+      "bad": "检验单位大小随批变化"
+    },
+    {
+      "q": "UCL 是规格上限吗？",
+      "good": "否，UCL 是过程警戒线",
+      "bad": "是，点出 UCL 就是废品"
+    },
+    {
+      "q": "单位大小变化应改用？",
+      "good": "U 图",
+      "bad": "继续用 C 图硬画"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "为什么本课单位数固定为1？"
+    },
+    {
+      "after": "读批26",
+      "prompt": "点越 UCL 能写成超规格吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_c_chart_defect_step`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_c_chart_defect_step`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "UCL 与 USL 差一句？",
+    "批26期望看见什么？",
+    "何时改用 u 图？"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "缺陷数=不合格品数",
+      "right": "一件可有多缺陷；不合格品是件计数，应 p/np。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

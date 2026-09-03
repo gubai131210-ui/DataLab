@@ -1,0 +1,137 @@
+{
+  "title": "配对 t 检验",
+  "used_for": "配对两列均值差。返工前后抬高。",
+  "not_for": "独立两样本用 two_sample_t；等价用 paired_equivalence。",
+  "scenario": "返工前/后高度。导入 demo_infer_paired_shift。",
+  "related_ids": [
+    "wilcoxon_signed_rank",
+    "sign_test",
+    "paired_equivalence"
+  ],
+  "dialog_fill": {
+    "variables": "返工前_um,返工后_um"
+  },
+  "click_steps": [
+    "导入 `demo_infer_paired_shift`。",
+    "菜单：统计 → 配对 t 检验。",
+    "配对变量多选两列：返工前_um,返工后_um；置信=95%。",
+    "对照行1–40 正差主导；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "配对变量（两列）(`variables`)",
+      "put": "返工前_um,返工后_um",
+      "meaning": "恰好两列。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "差值区间。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "配对 t",
+      "plain": "同单元前后差。",
+      "remember": "不是独立两列乱配。"
+    },
+    {
+      "term": "差值",
+      "plain": "后−前。",
+      "remember": "本课正差主导。"
+    },
+    {
+      "term": "同构族",
+      "plain": "与 Wilcoxon/符号检验共享表。",
+      "remember": "不含等价。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "返工后相对前抬高开始",
+      "expect": "配对差>0 线索"
+    },
+    {
+      "row": 40,
+      "what": "末对仍呈正差",
+      "expect": "拒绝无差 H0 线索"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "配对 t / 差值区间",
+      "meaning": "对照正差埋点；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能多选两列完成配对 t 并对照正差埋点。",
+  "prereq_quiz": [
+    {
+      "q": "列数？",
+      "good": "恰好2",
+      "bad": "1"
+    },
+    {
+      "q": "共享？",
+      "good": "infer_paired_shift",
+      "bad": "equiv_paired"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看差值",
+      "prompt": "配对与独立两样本差在哪？"
+    },
+    {
+      "after": "对照等价",
+      "prompt": "为何不共享等价表？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_infer_paired_shift`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_infer_paired_shift`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "两列？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "显著=必须停线",
+      "right": "禁止必须停线。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

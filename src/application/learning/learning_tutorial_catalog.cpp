@@ -5,12 +5,101 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
+#include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QUuid>
 
 namespace datalab::application::learning {
 namespace {
+
+const QStringList& wanted_tutorial_columns()
+{
+    static const QStringList kColumns = {
+        QStringLiteral("command_id"),
+        QStringLiteral("title"),
+        QStringLiteral("category"),
+        QStringLiteral("menu_path"),
+        QStringLiteral("implemented_status"),
+        QStringLiteral("used_for"),
+        QStringLiteral("not_for"),
+        QStringLiteral("scenario"),
+        QStringLiteral("dataset_id"),
+        QStringLiteral("click_steps"),
+        QStringLiteral("dialog_fill"),
+        QStringLiteral("output_guide"),
+        QStringLiteral("common_mistakes"),
+        QStringLiteral("related_ids"),
+        QStringLiteral("glossary"),
+        QStringLiteral("dialog_fill_detail"),
+        QStringLiteral("buried_signals"),
+        QStringLiteral("prereq_quiz"),
+        QStringLiteral("self_explain"),
+        QStringLiteral("fade_levels"),
+        QStringLiteral("retrieval_quiz"),
+        QStringLiteral("misconceptions"),
+        QStringLiteral("skill_mission"),
+    };
+    return kColumns;
+}
+
+QStringList available_tutorial_columns(QSqlDatabase& database)
+{
+    QSet<QString> names;
+    QSqlQuery pragma(database);
+    if (pragma.exec(QStringLiteral("PRAGMA table_info(tutorials)"))) {
+        while (pragma.next()) {
+            names.insert(pragma.value(1).toString());
+        }
+    }
+    QStringList selected;
+    for (const QString& name : wanted_tutorial_columns()) {
+        if (names.contains(name)) {
+            selected.push_back(name);
+        }
+    }
+    return selected;
+}
+
+QString column_text(const QSqlQuery& query, const QString& name)
+{
+    const int index = query.record().indexOf(name);
+    if (index < 0) {
+        return {};
+    }
+    return query.value(index).toString();
+}
+
+QJsonDocument parse_json_document(const QString& text)
+{
+    return QJsonDocument::fromJson(text.toUtf8());
+}
+
+QJsonArray parse_json_array(const QString& text)
+{
+    if (text.trimmed().isEmpty()) {
+        return {};
+    }
+    const QJsonDocument document = parse_json_document(text);
+    if (!document.isArray()) {
+        return {};
+    }
+    return document.array();
+}
+
+QJsonObject parse_json_object(const QString& text)
+{
+    if (text.trimmed().isEmpty()) {
+        return {};
+    }
+    const QJsonDocument document = parse_json_document(text);
+    if (!document.isObject()) {
+        return {};
+    }
+    return document.object();
+}
 
 QStringList parse_string_array(const QJsonArray& array)
 {
@@ -43,40 +132,160 @@ QVector<LearningOutputGuideItem> parse_output_guide(const QJsonArray& array)
     return items;
 }
 
+QVector<LearningGlossaryItem> parse_glossary(const QJsonArray& array)
+{
+    QVector<LearningGlossaryItem> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningGlossaryItem item;
+        item.term = object.value(QStringLiteral("term")).toString();
+        item.plain = object.value(QStringLiteral("plain")).toString();
+        item.remember = object.value(QStringLiteral("remember")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+QVector<LearningDialogFillDetail> parse_dialog_fill_detail(const QJsonArray& array)
+{
+    QVector<LearningDialogFillDetail> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningDialogFillDetail item;
+        item.field = object.value(QStringLiteral("field")).toString();
+        item.put = object.value(QStringLiteral("put")).toString();
+        item.meaning = object.value(QStringLiteral("meaning")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+int json_int(const QJsonObject& object, const QString& key)
+{
+    const QJsonValue value = object.value(key);
+    if (value.isDouble()) {
+        return value.toInt();
+    }
+    if (value.isString()) {
+        bool ok = false;
+        const int parsed = value.toString().toInt(&ok);
+        return ok ? parsed : 0;
+    }
+    return 0;
+}
+
+QVector<LearningBuriedSignal> parse_buried_signals(const QJsonArray& array)
+{
+    QVector<LearningBuriedSignal> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningBuriedSignal item;
+        item.row = json_int(object, QStringLiteral("row"));
+        item.what = object.value(QStringLiteral("what")).toString();
+        item.expect = object.value(QStringLiteral("expect")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+QVector<LearningPrereqItem> parse_prereq_quiz(const QJsonArray& array)
+{
+    QVector<LearningPrereqItem> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningPrereqItem item;
+        item.q = object.value(QStringLiteral("q")).toString();
+        item.good = object.value(QStringLiteral("good")).toString();
+        item.bad = object.value(QStringLiteral("bad")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+QVector<LearningSelfExplain> parse_self_explain(const QJsonArray& array)
+{
+    QVector<LearningSelfExplain> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningSelfExplain item;
+        item.after = object.value(QStringLiteral("after")).toString();
+        item.prompt = object.value(QStringLiteral("prompt")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+QVector<LearningFadeLevel> parse_fade_levels(const QJsonArray& array)
+{
+    QVector<LearningFadeLevel> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningFadeLevel item;
+        item.level = json_int(object, QStringLiteral("level"));
+        item.student = object.value(QStringLiteral("student")).toString();
+        item.scaffold = object.value(QStringLiteral("scaffold")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+QVector<LearningMisconception> parse_misconceptions(const QJsonArray& array)
+{
+    QVector<LearningMisconception> items;
+    for (const QJsonValue& value : array) {
+        const QJsonObject object = value.toObject();
+        LearningMisconception item;
+        item.wrong = object.value(QStringLiteral("wrong")).toString();
+        item.right = object.value(QStringLiteral("right")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
 LearningTutorialEntry parse_tutorial_row(QSqlQuery& query)
 {
     LearningTutorialEntry entry;
-    entry.command_id = query.value(QStringLiteral("command_id")).toString();
-    entry.title = query.value(QStringLiteral("title")).toString();
-    entry.category = query.value(QStringLiteral("category")).toString();
-    entry.menu_path = query.value(QStringLiteral("menu_path")).toString();
-    entry.implemented_status = query.value(QStringLiteral("implemented_status")).toString();
-    entry.used_for = query.value(QStringLiteral("used_for")).toString();
-    entry.not_for = query.value(QStringLiteral("not_for")).toString();
-    entry.scenario = query.value(QStringLiteral("scenario")).toString();
+    entry.command_id = column_text(query, QStringLiteral("command_id"));
+    entry.title = column_text(query, QStringLiteral("title"));
+    entry.category = column_text(query, QStringLiteral("category"));
+    entry.menu_path = column_text(query, QStringLiteral("menu_path"));
+    entry.implemented_status = column_text(query, QStringLiteral("implemented_status"));
+    entry.used_for = column_text(query, QStringLiteral("used_for"));
+    entry.not_for = column_text(query, QStringLiteral("not_for"));
+    entry.scenario = column_text(query, QStringLiteral("scenario"));
 
-    const QString dataset_id = query.value(QStringLiteral("dataset_id")).toString();
+    const QString dataset_id = column_text(query, QStringLiteral("dataset_id"));
     if (!dataset_id.isEmpty()) {
         entry.dataset_id = dataset_id;
     }
 
-    const auto parse_json = [](const QString& text) {
-        return QJsonDocument::fromJson(text.toUtf8()).array();
-    };
-    const auto parse_json_object = [](const QString& text) {
-        return QJsonDocument::fromJson(text.toUtf8()).object();
-    };
-
-    entry.click_steps = parse_string_array(parse_json(
-        query.value(QStringLiteral("click_steps")).toString()));
+    entry.click_steps = parse_string_array(parse_json_array(
+        column_text(query, QStringLiteral("click_steps"))));
     entry.dialog_fill = parse_dialog_fill(parse_json_object(
-        query.value(QStringLiteral("dialog_fill")).toString()));
-    entry.output_guide = parse_output_guide(parse_json(
-        query.value(QStringLiteral("output_guide")).toString()));
-    entry.common_mistakes = parse_string_array(parse_json(
-        query.value(QStringLiteral("common_mistakes")).toString()));
-    entry.related_ids = parse_string_array(parse_json(
-        query.value(QStringLiteral("related_ids")).toString()));
+        column_text(query, QStringLiteral("dialog_fill"))));
+    entry.output_guide = parse_output_guide(parse_json_array(
+        column_text(query, QStringLiteral("output_guide"))));
+    entry.common_mistakes = parse_string_array(parse_json_array(
+        column_text(query, QStringLiteral("common_mistakes"))));
+    entry.related_ids = parse_string_array(parse_json_array(
+        column_text(query, QStringLiteral("related_ids"))));
+    entry.glossary = parse_glossary(parse_json_array(
+        column_text(query, QStringLiteral("glossary"))));
+    entry.dialog_fill_detail = parse_dialog_fill_detail(parse_json_array(
+        column_text(query, QStringLiteral("dialog_fill_detail"))));
+    entry.buried_signals = parse_buried_signals(parse_json_array(
+        column_text(query, QStringLiteral("buried_signals"))));
+    entry.prereq_quiz = parse_prereq_quiz(parse_json_array(
+        column_text(query, QStringLiteral("prereq_quiz"))));
+    entry.self_explain = parse_self_explain(parse_json_array(
+        column_text(query, QStringLiteral("self_explain"))));
+    entry.fade_levels = parse_fade_levels(parse_json_array(
+        column_text(query, QStringLiteral("fade_levels"))));
+    entry.retrieval_quiz = parse_string_array(parse_json_array(
+        column_text(query, QStringLiteral("retrieval_quiz"))));
+    entry.misconceptions = parse_misconceptions(parse_json_array(
+        column_text(query, QStringLiteral("misconceptions"))));
+    entry.skill_mission = column_text(query, QStringLiteral("skill_mission"));
     return entry;
 }
 
@@ -100,12 +309,11 @@ std::vector<LearningTutorialEntry> query_all_tutorials(QString* error_message)
         return entries;
     }
 
+    const QStringList columns = available_tutorial_columns(database);
     QSqlQuery query(database);
-    if (!query.exec(QStringLiteral(
-            "SELECT command_id, title, category, menu_path, implemented_status, "
-            "used_for, not_for, scenario, dataset_id, click_steps, dialog_fill, "
-            "output_guide, common_mistakes, related_ids FROM tutorials "
-            "ORDER BY category, title"))) {
+    const QString sql = QStringLiteral("SELECT %1 FROM tutorials ORDER BY category, title")
+                            .arg(columns.join(QStringLiteral(", ")));
+    if (columns.isEmpty() || !query.exec(sql)) {
         if (error_message != nullptr) {
             *error_message = query.lastError().text();
         }

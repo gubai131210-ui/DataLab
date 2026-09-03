@@ -1,0 +1,114 @@
+{
+  "title": "t 检验功效/样本量",
+  "used_for": "规划 t 检验样本量/功效（公式参考，可能无数据角色）。",
+  "not_for": "不是对已采集数据做检验；空表。",
+  "scenario": "输入效应量/α/功效；本波空表且可能无 roles。",
+  "related_ids": [
+    "one_sample_t",
+    "two_sample_t"
+  ],
+  "dialog_fill": {},
+  "click_steps": [
+    "打开「帮助」→「学习中心」，选择本教程「t 检验功效/样本量」。",
+    "注意：当前版本可能无此菜单项或仅为公式参考；公式见「算法、公式与参考资料」。",
+    "若菜单可用：统计 → 功效与样本量（t）。本课不提供专用演示表（dataset 空），步骤保持诚实。",
+    "对照下方 dialog_fill_detail 核对该命令真实 roles/inputs；勿虚构字段。",
+    "输出解读禁止：过程合格 / 必须停线 / 已证明正态 / 量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "（可能无列角色）",
+      "put": "效应量/α/功效等 inputs",
+      "meaning": "对照帮助；t_power 可能无 roles。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "功效",
+      "plain": "真实效应存在时拒绝H0的概率。",
+      "remember": "规划用。"
+    },
+    {
+      "term": "样本量",
+      "plain": "由效应量与α/功效推。",
+      "remember": "≠事后洗白。"
+    },
+    {
+      "term": "空表",
+      "plain": "通常不导入演示表。",
+      "remember": "诚实。"
+    }
+  ],
+  "buried_signals": [],
+  "output_guide": [
+    {
+      "name": "帮助/公式页",
+      "meaning": "只陈述定义与边界；禁止过程合格；禁止必须停线；禁止已证明正态；禁止量具通过。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能区分功效规划与对已有数据做 t 检验。",
+  "prereq_quiz": [
+    {
+      "q": "需要导入演示表？",
+      "good": "通常否",
+      "bad": "必须"
+    },
+    {
+      "q": "等于做t检验？",
+      "good": "否（规划）",
+      "bad": "是"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读帮助",
+      "prompt": "功效规划输入有哪些？"
+    },
+    {
+      "after": "对照 one_sample_t",
+      "prompt": "用途差在哪？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "本课无演示表：对照 §4 字段清单与公式帮助，写清菜单可能不可用。",
+      "scaffold": "dialog_fill_detail + 公式帮助路径。"
+    },
+    {
+      "level": 1,
+      "student": "不看 detail，默写本命令真实 roles/inputs 名称（对照 analysis_commands）。",
+      "scaffold": "只给 menu_path。"
+    },
+    {
+      "level": 2,
+      "student": "写一段：本课为何空 dataset，以及误用一句禁止句。",
+      "scaffold": "仅 skill_mission。"
+    }
+  ],
+  "retrieval_quiz": [
+    "功效？",
+    "空表",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "功效高=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

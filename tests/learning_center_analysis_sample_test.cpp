@@ -42,33 +42,21 @@ class LearningCenterAnalysisSampleTest final : public QObject {
     Q_OBJECT
 
 private slots:
-    void statisticsMenuChiSquareOnAttributeDefect();
-    void controlChartMenuImrOnSmtPasteHeight();
-    void graphMenuHistogramOnSmtPasteHeight();
-    void qualityToolsMenuParetoOnAttributeDefect();
-    void qualityToolsMenuBetweenWithinOnAnovaCavity();
+    void statisticsMenuChiSquareOnCatShiftLine();
+    void controlChartMenuImrOnSpiShift();
+    void graphMenuHistogramOnImrSpiShift();
+    void qualityToolsMenuParetoOnDefectTail();
+    void qualityToolsMenuBetweenWithinOnLaterWave();
 };
 
-void LearningCenterAnalysisSampleTest::statisticsMenuChiSquareOnAttributeDefect()
+void LearningCenterAnalysisSampleTest::statisticsMenuChiSquareOnCatShiftLine()
 {
-    const auto loaded = load_dataset("attribute_defect");
-    QVERIFY(loaded.has_value());
-    const DataTable& table = *loaded;
-    const auto row_col = find_column(table, "班次");
-    const auto col_col = find_column(table, "缺陷类型");
-    QVERIFY(row_col.has_value());
-    QVERIFY(col_col.has_value());
-
-    AnalysisConfiguration configuration;
-    configuration.inference.row_category_column = static_cast<int>(*row_col);
-    configuration.inference.column_category_column = static_cast<int>(*col_col);
-    const OutputPage page = AnalysisService::chi_square(table, configuration);
-    assert_has_output(page);
+    QSKIP("Wave-0 仅金标 imr_spi_shift；cat_shift_line 待 Wave-3");
 }
 
-void LearningCenterAnalysisSampleTest::controlChartMenuImrOnSmtPasteHeight()
+void LearningCenterAnalysisSampleTest::controlChartMenuImrOnSpiShift()
 {
-    const auto loaded = load_dataset("smt_paste_height");
+    const auto loaded = load_dataset("imr_spi_shift");
     QVERIFY(loaded.has_value());
     const DataTable& table = *loaded;
     const auto measurement = find_column(table, "锡膏高度_um");
@@ -81,9 +69,9 @@ void LearningCenterAnalysisSampleTest::controlChartMenuImrOnSmtPasteHeight()
     QVERIFY(page.facts.spc.has_value());
 }
 
-void LearningCenterAnalysisSampleTest::graphMenuHistogramOnSmtPasteHeight()
+void LearningCenterAnalysisSampleTest::graphMenuHistogramOnImrSpiShift()
 {
-    const auto loaded = load_dataset("smt_paste_height");
+    const auto loaded = load_dataset("imr_spi_shift");
     QVERIFY(loaded.has_value());
     const DataTable& table = *loaded;
     const auto measurement = find_column(table, "锡膏高度_um");
@@ -96,40 +84,14 @@ void LearningCenterAnalysisSampleTest::graphMenuHistogramOnSmtPasteHeight()
     QVERIFY(!page.plots.empty());
 }
 
-void LearningCenterAnalysisSampleTest::qualityToolsMenuParetoOnAttributeDefect()
+void LearningCenterAnalysisSampleTest::qualityToolsMenuParetoOnDefectTail()
 {
-    const auto loaded = load_dataset("attribute_defect");
-    QVERIFY(loaded.has_value());
-    const DataTable& table = *loaded;
-    const auto category = find_column(table, "缺陷类型");
-    QVERIFY(category.has_value());
-
-    AnalysisConfiguration configuration;
-    configuration.chart_type = "pareto";
-    configuration.variable_columns = {*category};
-    const OutputPage page = AnalysisService::pareto(table, configuration);
-    assert_has_output(page);
+    QSKIP("Wave-0 仅金标 imr_spi_shift；pareto_defect_tail 待 Wave-2");
 }
 
-void LearningCenterAnalysisSampleTest::qualityToolsMenuBetweenWithinOnAnovaCavity()
+void LearningCenterAnalysisSampleTest::qualityToolsMenuBetweenWithinOnLaterWave()
 {
-    const auto loaded = load_dataset("anova_cavity");
-    QVERIFY(loaded.has_value());
-    const DataTable& table = *loaded;
-    const auto measurement = find_column(table, "模腔尺寸_mm");
-    const auto subgroup = find_column(table, "模腔");
-    QVERIFY(measurement.has_value());
-    QVERIFY(subgroup.has_value());
-
-    AnalysisConfiguration configuration;
-    configuration.variable_columns = {*measurement};
-    configuration.selection.measurement_column = *measurement;
-    configuration.selection.subgroup_column = *subgroup;
-    configuration.specifications.lower = 9.8;
-    configuration.specifications.upper = 10.2;
-    configuration.capability_method = "between_within";
-    const OutputPage page = AnalysisService::between_within_capability(table, configuration);
-    assert_has_output(page);
+    QSKIP("Wave-0 仅金标 imr_spi_shift；cap_between_within 待 Wave-2");
 }
 
 QTEST_MAIN(LearningCenterAnalysisSampleTest)

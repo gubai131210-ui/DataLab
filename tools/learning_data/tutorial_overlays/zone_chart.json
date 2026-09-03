@@ -1,0 +1,147 @@
+{
+  "title": "区域图",
+  "used_for": "按 Zone 积分配分识别同侧游程等模式。",
+  "not_for": "不要当成能力分析；本课不是尖峰课。",
+  "scenario": "片24–33 连续同侧偏高。",
+  "related_ids": [
+    "imr",
+    "special_cause_rules"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_zone_chart_runs`。",
+    "菜单：控制图 → 区域图。",
+    "测量值=`厚度_um`；MR长度=2；历史限留空。",
+    "对照片24–33 积分抬高；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "单值 Y。"
+    },
+    {
+      "field": "移动极差长度 (`mr_length`)",
+      "put": "2",
+      "meaning": "分区尺度来自短期 σ。"
+    },
+    {
+      "field": "历史均值 (`historical_center`)",
+      "put": "留空",
+      "meaning": "用本集。"
+    },
+    {
+      "field": "历史 Sigma (`historical_sigma`)",
+      "put": "留空",
+      "meaning": "用本集。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "Zone（区域）",
+      "plain": "把控制限内分成 A/B/C 等带。",
+      "remember": "同侧游程会积分配分。"
+    },
+    {
+      "term": "区域积分",
+      "plain": "按落点区域累加分数触发警戒。",
+      "remember": "不是规格扣分。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 24,
+      "what": "片24–33 同侧游程",
+      "expect": "区域累计分抬高。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "区域图",
+      "meaning": "片24–33 积分抬高。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "把区域分当缺陷扣分"
+  ],
+  "skill_mission": "用区域图识别片24–33 同侧游程积分。",
+  "prereq_quiz": [
+    {
+      "q": "本课主信号？",
+      "good": "同侧游程",
+      "bad": "单点大尖峰"
+    },
+    {
+      "q": "区域分=规格扣分？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读游程",
+      "prompt": "为何不是片55尖峰课？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_zone_chart_runs`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_zone_chart_runs`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "片24–33",
+    "Zone 含义",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "积分高必须停线",
+      "right": "禁止「必须停线」；积分是调查触发器。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

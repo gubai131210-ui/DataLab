@@ -3,7 +3,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Often 20–40+ units across 2–3 stress levels; NIST: ≥10 failures total preferred.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Wrong life-stress model",
       "not checking activation energy",
@@ -28,7 +28,7 @@
     "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
     "not_for": "不能替代 SPC 或 MSA 证据。",
     "typical_sample_size": "ANSI/ASQ Z1.4 tables: n depends on lot size and inspection level (e.g., n=32–125 for common lots).",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "",
     "common_mistakes": [
       "Switching rules ignored",
       "non-random sampling",
@@ -53,7 +53,7 @@
     "used_for": "识别 AR/MA 阶数、季节周期与自相关结构（诊断图）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 图形解读主观；不替代 Ljung-Box 检验；非平稳序列需先差分。",
     "typical_sample_size": "≥50；季节识别需≥2 季节。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "非平稳直接看 ACF",
       "滞后截断误判阶数",
@@ -79,7 +79,7 @@
     "used_for": "检验序列单位根/非平稳性，为差分或 ARIMA 定阶提供证据。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 低功效；临界值依赖规格；不能单独定模型阶。",
     "typical_sample_size": "≥50 较稳；短序列功效低。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "p>0.05 就当平稳",
       "结构突变未处理",
@@ -104,7 +104,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Inherits DSD run count; recommend +4 fake-factor runs.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Overfitting with many active effects",
       "not using specialized analysis",
@@ -128,7 +128,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Factorial structure with ≥2 replicates per cell for variance estimates; often 16–32+ runs.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Few replicates making variance unstable",
       "ignoring lognormal nature of SD",
@@ -152,7 +152,7 @@
     "used_for": "在单因素多水平比较中，将各组均值与总均值对比，识别哪些组均值显著偏离整体水平（图形化多重比较，平衡设计常用）。",
     "not_for": "不能替代方差分析整体检验；对非正态/不等方差敏感；不能用于属性数据（用属性 ANOM）；未控制多重比较风险时需结合实验目的。",
     "typical_sample_size": "每组 n=5–15 常见；总组数 k 不宜过大；与 ANOVA 共用同一数据集。",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "",
     "common_mistakes": [
       "不做整体 F 检验直接看 ANOM",
       "把落在控制限内当成「完全相同」",
@@ -184,7 +184,7 @@
     "used_for": "多组二项不良率或泊松缺陷率的 ANOM 比较，识别哪几组率值偏离整体水平（属性版均值分析）。",
     "not_for": "不能用于连续测量；小样本率不稳定；需满足二项/泊松近似条件；不能替代属性控制图的过程监控。",
     "typical_sample_size": "二项：各组 n≥50 且 np≥5；泊松：各组暴露量足够使 λ̂ 稳定；组数适中。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "",
     "common_mistakes": [
       "组样本量差异极大仍直接比率",
       "低不良率小样本误判",
@@ -215,7 +215,7 @@
     "used_for": "时间或类别轴上展示累积量、构成变化（描述性模式）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 堆叠面积难比较非底层系列。",
     "typical_sample_size": "时间点≥12；类别不宜过多。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_area_time",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "堆叠面积比较中间系列",
@@ -240,7 +240,7 @@
     "used_for": "平稳/差分后序列的 ARIMA 建模与预测，捕捉自回归移动平均结构。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 短序列定阶不稳；外生变量用 ARIMAX；不保证优于简单法。",
     "typical_sample_size": "≥50；定阶需 ACF/PACF 与信息准则。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "非平稳未差分",
       "过拟合高阶",
@@ -265,7 +265,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "Minitab minimum: 50 samples × 3 appraisers × 2 replicates; AIAG attribute study often 30–50 parts with known standards.",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "",
     "common_mistakes": [
       "Samples not spanning good/bad borderline",
       "appraisers see previous ratings",
@@ -290,7 +290,7 @@
     "used_for": "展示分类计数或汇总均值/合计的比较（描述性模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 截断纵轴可夸大差异；连续变量不宜强行分箱条图代替直方图。",
     "typical_sample_size": "类别级：每类至少 5 次观测；汇总条图依赖底层 n。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_bar_category",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "纵轴不从零误导",
@@ -315,7 +315,7 @@
     "used_for": "批次间能力评估。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥20–30 batches with 3–10 measurements per batch; total n often 100–300 depending on batch-to-batch variation.",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "",
     "common_mistakes": [
       "Treating batch means as replicates",
       "ignoring batch size imbalance",
@@ -340,7 +340,7 @@
     "used_for": "枚举（或限规模）比较不同子集模型的 R²、Cp、BIC 等，选简约模型。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 候选>15 不可穷举；仍有过拟合风险。",
     "typical_sample_size": "n≥40；候选变量≤15。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "只看 R² 不看 Mallows Cp",
       "样本小仍多变量",
@@ -365,7 +365,7 @@
     "used_for": "分解组间/组内变异的能力。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥25 subgroups with 3–5 units each (≥75–125 total); subgroups must represent intentional process structure (batch, roll, cavity).",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "cap_between_within",
     "common_mistakes": [
       "Wrong subgroup definition",
       "pooling between-batch variation into within sigma",
@@ -390,7 +390,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Similar to binary DOE: 50–100+ with multiple trials per factor setting preferred.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Too few events per cell",
       "extrapolating probit beyond data",
@@ -414,7 +414,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Power-dependent: often 40–100+ runs; replicate at corner/center for stability.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Analyzing as continuous",
       "separation problems (all pass at a setting)",
@@ -438,7 +438,7 @@
     "used_for": "二项不良率能力。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "Enough trials to observe expected defects: rule of thumb n≥5/p for estimating p; often 200–1000+ inspections for low p.",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "cap_binomial_lots",
     "common_mistakes": [
       "Pooling heterogeneous lots",
       "ignoring inspection ambiguity",
@@ -463,7 +463,7 @@
     "used_for": "重抽样估计均值置信区间，弱分布假设下推断。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关/分层数据需专门 bootstrap；不能修复偏倚设计。",
     "typical_sample_size": "原始 n≥20；重抽样 B≥1000。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "有放回当无放回混淆",
       "时间序列独立 bootstrap 失真",
@@ -488,7 +488,7 @@
     "used_for": "两独立样本均值差 bootstrap CI，非正态或方差不齐时的补充。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不替代随机化/配对设计；小样本功效仍低。",
     "typical_sample_size": "每组 n≥15；B≥2000。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "配对数据当独立",
       "不等 n 解释不当",
@@ -514,7 +514,7 @@
     "used_for": "Box-Cox 变换辅助正态化。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥30; preferably ≥50 for stable λ estimation.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "dist_skew_boxcox",
     "common_mistakes": [
       "Applying λ from one dataset to another without re-checking",
       "back-transforming capability incorrectly",
@@ -538,7 +538,7 @@
     "used_for": "比较多组位置、散布与离群点；快速看中位数差异与对称性（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 围栏外点不等于必须删除。",
     "typical_sample_size": "每组 n≥5 有意义；n≥20 更稳；极小样本箱线不稳定。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "graph_two_group_box",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "把须线外点当测量错误必删",
@@ -563,7 +563,7 @@
     "used_for": "散点加第三维大小编码，观察三维关系模式。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 气泡面积感知非线性易误判。",
     "typical_sample_size": "n≥30；标签过多会重叠。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_bubble_xyz",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "气泡半径与数值非线性映射",
@@ -588,7 +588,7 @@
     "used_for": "用于泊松型缺陷计数、固定“检验单位/面积/样本量”下监视总缺陷数 c；应关注缺陷数突增、同侧偏高及限不对称（常无 LCL）等模式，用于识别系统性缺陷源，但不替代泊松率检验或缺陷率置信区间推断。",
     "not_for": "不能用于检验单位大小变化（应选 u 图）、不能用于合格/不合格判定（应选 p/np 图）、不能区分缺陷严重度权重。",
     "typical_sample_size": "固定检验单位（如每批 100 件或每卷 50 m²）；平均缺陷数 c̄ 通常 ≥5",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "c_chart_defect_step",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "批量大小时变仍用 c 图",
@@ -617,7 +617,7 @@
     "used_for": "估计 Cp/Cpk 等相对规格的能力指数。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "Minimum 30 individual values; NIST recommends ~50 for valid indices and n≥100 for reliable Cpk confidence intervals; PPAP often expects 100+ measurements over production variation.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "cap_stable_spec",
     "common_mistakes": [
       "Computing Cpk on out-of-control data",
       "using within-subgroup sigma for overall performance",
@@ -649,7 +649,7 @@
     "used_for": "能力六合一图形诊断。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "Same as underlying capability analysis: typically ≥30, preferably ≥50–100 subgrouped or individual values.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "cap_stable_spec",
     "common_mistakes": [
       "Reading only Cpk without checking control chart",
       "ignoring probability plot failures",
@@ -674,7 +674,7 @@
     "used_for": "可解释的单树分类/回归，规则分段与变量重要性（探索/基线模型）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 单树易过拟合；不稳定；不能外推连续关系。",
     "typical_sample_size": "n≥100；叶最小样本≥5。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "深度过大过拟合",
       "不做剪枝或 CV",
@@ -699,7 +699,7 @@
     "used_for": "头脑风暴阶段整理人/机/料/法/环/测等潜在原因（结构化思考，非统计检验）。",
     "not_for": "不能证明哪条原因成立；不替代 DOE 或回归验证；非数据驱动排序。",
     "typical_sample_size": "不适用；依赖团队知识与现场证据。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "fishbone_solder_causes",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "鱼骨图当根因结论",
@@ -724,7 +724,7 @@
     "used_for": "两序列互相关，找领先/滞后关系与同步性。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 伪相关风险；需平稳或去趋势；不能证明因果。",
     "typical_sample_size": "≥50 对齐点；预白化有时必要。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "非平稳伪相关",
       "不对齐时间戳",
@@ -749,7 +749,7 @@
     "used_for": "检验两个分类变量是否独立，或比较多个组的分类比例是否相同（列联表分析）。",
     "not_for": "期望频数过小需 Fisher 精确或合并类别；不能用于连续测量；配对二元数据用 McNemar；不能推断因果。",
     "typical_sample_size": "期望频数≥5 的格子占多数；总样本常≥50；2×2 小样本用精确法。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "cat_shift_line",
     "common_mistakes": [
       "期望过小仍用 Pearson 卡方",
       "把关联当成因果",
@@ -780,7 +780,7 @@
     "used_for": "检验观测分类频数是否符合指定理论比例（如缺陷类型是否符合历史分布、班次产量分类是否符合计划比例）。",
     "not_for": "不能用于连续数据；参数需从数据估计时损失自由度；期望频数过小需合并类别；不能验证复杂分布族。",
     "typical_sample_size": "各类期望≥5；总样本≥50 较常见；类别数不宜过多。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "gof_category_bias",
     "common_mistakes": [
       "用样本比例当理论比例未校正自由度",
       "类别划分过细",
@@ -811,7 +811,7 @@
     "used_for": "马赛克图与卡方检验联动：看图找模式，用检验量化关联。",
     "not_for": "不能单靠图断言显著；期望频数过小检验失效。",
     "typical_sample_size": "总 n≥50；2×2 至少每格≥5。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "只看图不做检验",
@@ -836,7 +836,7 @@
     "used_for": "无监督地把相似观测分群，生成树状图与簇标签（探索分组）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 簇数主观；不能证明工艺类别；结果对距离/链接敏感。",
     "typical_sample_size": "n=30–500；维数不宜过高。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "k 随意选",
       "未标准化",
@@ -861,7 +861,7 @@
     "used_for": "对变量按相关结构聚类，简化多变量集或选代表变量。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能替代领域知识删变量。",
     "typical_sample_size": "n≥50；变量数 5–30。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "样本小相关不稳",
       "混用 Pearson/Spearman",
@@ -886,7 +886,7 @@
     "used_for": "随机区组设计中，多个相关二元处理（成功/失败）的比例是否相同，如多名评价者对多种方案的是/否判定。",
     "not_for": "仅适用于二元响应；不能用于连续测量；区组内处理数≥3；不能替代重复测量二项模型。",
     "typical_sample_size": "区组数 b≥10、处理数 k≥3 较常见；每格期望成功/失败不宜过小。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "cochran_three_repeat",
     "common_mistakes": [
       "把独立样本当区组",
       "用于非二元数据",
@@ -917,7 +917,7 @@
     "used_for": "两连续因子响应面等高线，看最优区域与坡度（DOE/回归可视化）。",
     "not_for": "不外推实验域；不替代回归显著性检验；需足够设计点支撑曲面。",
     "typical_sample_size": "响应面设计至少 13 点（CCD）或等价；因子 2–3 个常见。",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "graph_contour_xy",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "在未试验区域外推最优",
@@ -942,7 +942,7 @@
     "used_for": "量化两个连续变量之间的线性关联强度与方向（如温度与尺寸偏移、压力与焊点强度），用于探索性分析与回归建模前筛查。",
     "not_for": "不能推断因果关系；不能替代实验设计验证因子效应；对非线性关系线性相关系数可能接近零；不能替代测量系统分析。",
     "typical_sample_size": "探索性分析 n≥25–30 较稳定；报告相关时常用 n=30–100；极端值会强烈影响 Pearson r。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "corr_temp_offset_y",
     "common_mistakes": [
       "把显著相关当成因果",
       "忽略散点图直接看 r",
@@ -973,7 +973,7 @@
     "used_for": "矩阵散点或相关视图，浏览多变量两两关系模式。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 多重比较未校正；相关≠因果。",
     "typical_sample_size": "每个变量对 n≥30；变量数 p 不宜过大（≤10 探索）。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_corr_matrix",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "p 个变量看 p(p-1)/2 对却不校正",
@@ -998,7 +998,7 @@
     "used_for": "多变量相关矩阵热图，总览线性关系强度（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。",
     "typical_sample_size": "n≥30；变量≤15 可读。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "不标显著性",
       "非线性关系误判为无关",
@@ -1024,7 +1024,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Multiple events across units: often 20+ units with 50+ total recurrent events.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Treating recurrent events as independent",
       "ignoring within-unit correlation",
@@ -1048,7 +1048,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Rule of thumb: ≥10 events per covariate; often 50–100+ total with censoring.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Ignoring PH assumption",
       "including covariates with perfect separation",
@@ -1072,7 +1072,7 @@
     "used_for": "汇总两个或多个分类变量的频数与百分比，形成列联表，为卡方检验、帕累托筛选提供数据结构。",
     "not_for": "本身不做显著性检验；不能处理连续变量（需先分箱）；稀疏表解释需谨慎；不能替代抽样设计。",
     "typical_sample_size": "视单元格数而定；每格期望不宜过小；报告时同时给出边际合计。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "cat_shift_line",
     "common_mistakes": [
       "把描述性交叉表当成已检验显著",
       "百分比基数选错（行% vs 列%）",
@@ -1103,7 +1103,7 @@
     "used_for": "用于检测小幅单向或双向均值偏移，通过累积偏差和（CUSUM）对持续偏离目标/均值的点快速累加信号；应关注 CUSUM 单向爬升、超决策区间 h 及重置后再次累积等模式，用于比 3σ 限更早发现漂移，但不替代序贯概率比检验的正式推断框架。",
     "not_for": "不能用于大幅随机跳动过程（误报风险）、不能用于多变量相关特性（应选 MCUSUM/MEWMA）、不能回答偏移幅度是否超过规格要求。",
     "typical_sample_size": "个体或子组均值序列；设计需设定 k（参考值）与 h（决策限）",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "spc_small_drift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "目标值选错导致 CUSUM 系统性单向累积",
@@ -1151,13 +1151,14 @@
       }
     ],
     "manufacturing_scenario": "从 MES SQLite 导入上周 SPI 检测结果到新工作表。",
-    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。",
+    "dataset_hint": ""
   },
   "definitive_screening_design": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Minimum 2k+1 (even k) or 2k+3 (odd k); k≤4 uses 13 runs; +4 extra runs recommended.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using for confirmatory RSM alone",
       "skipping extra runs",
@@ -1181,7 +1182,7 @@
     "used_for": "平滑展示连续变量概率密度形状，比较分布轮廓（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 带宽选择影响形状。",
     "typical_sample_size": "n≥30；n≥100 密度估计更可靠。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_density_unimodal",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "带宽过小见假峰",
@@ -1206,7 +1207,7 @@
     "used_for": "概括数值列的位置、散布与形状（均值、标准差、四分位、偏度、峰度），可按班次、产线、模腔等分组对比数据概况。",
     "not_for": "不能替代假设检验、能力指数或规格判定；不能仅凭偏度/峰度下分布结论；不能判断过程是否受控。",
     "typical_sample_size": "探索阶段每组 n≥5 即有参考价值；报告中心趋势与散布时常用 n=20–100；分组对比时各组宜尽量均衡。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "desc_unimodal_stable",
     "common_mistakes": [
       "把描述统计当成合格判定",
       "忽略缺失值个数 N*",
@@ -1237,7 +1238,7 @@
     "used_for": "已知类别标签下，找线性组合区分类别并评估误分类率。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需多元正态与同协方差近似；不能用于发现新类。",
     "typical_sample_size": "每类 n≥20–30；总 n≥60。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "训练集上评估过乐观",
       "类不平衡忽略",
@@ -1262,7 +1263,7 @@
     "used_for": "查 PDF/CDF/分位数、概率换算，教学与规格限概率计算。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能代替数据拟合分布；参数需明确来源。",
     "typical_sample_size": "不适用（理论计算）。",
-    "dataset_hint": null,
+    "dataset_hint": "",
     "common_mistakes": [
       "分布族选错",
       "把理论分位当过程证据",
@@ -1287,7 +1288,7 @@
     "used_for": "拟合候选分布识别。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥50; 100+ preferred for distinguishing similar distributions.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "dist_id_candidates",
     "common_mistakes": [
       "Choosing by lowest AD/p-value alone",
       "ignoring physical plausibility",
@@ -1312,7 +1313,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "k=3: 15 runs; k=4: 27; k=5: 46; add center replicates.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using BBD outside design region",
       "insufficient center points",
@@ -1336,7 +1337,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "2^k + 2k + cp: e.g., k=3 → 8+6+5≈20 runs; rotatable or face-centered choice affects α.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "α too large causing run failures",
       "too few center points for pure error",
@@ -1360,7 +1361,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "At least number of model terms + 3–5 for lack-of-fit; often 1.5–2× parameter count.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Under-specified model",
       "too few runs for chosen order",
@@ -1385,7 +1386,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "2^k runs: 8 for k=3, 16 for k=4; add 3–5 center points; replicate for error estimate.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Confounding active interactions",
       "not randomizing",
@@ -1415,7 +1416,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Standard: 12-run PB for up to 11 factors; 20-run for up to 19; 8-run for up to 7.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Assuming interactions are negligible when they exist",
       "not folding over to de-alias",
@@ -1439,7 +1440,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Inherits from design: minimum 2^k; power analysis may require replication.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "doe_factorial_y",
     "common_mistakes": [
       "Declaring significance without checking residuals",
       "ignoring aliasing in fractional designs",
@@ -1463,7 +1464,7 @@
     "used_for": "小样本下一维分布点排列，看清每个测量值位置与重复（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。",
     "typical_sample_size": "n=5–50 最理想；大样本点过密需 jitter 或改直方图。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "大样本不 jitter 叠点误判",
@@ -1488,7 +1489,7 @@
     "used_for": "经验累积分布，比较样本 CDF 或分位数位置（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 阶梯线在小 n 下跳跃大。",
     "typical_sample_size": "n≥30；两组比较各≥30。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_ecdf_unimodal",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "小样本外推分位数",
@@ -1513,7 +1514,7 @@
     "used_for": "NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合模式筛查。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 四图是筛查包，不替代完整控制图或检验。",
     "typical_sample_size": "n≥25；lag-1 需有序列顺序。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_eda4_series",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "忽略运行序图上的漂移",
@@ -1538,7 +1539,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "Same as crossed Gage R&R: 10×3×3 = 90; unbalanced designs need more parts for stable variance components.",
-    "dataset_hint": "gage_rr_balance",
+    "dataset_hint": "msa_crossed_aiag",
     "common_mistakes": [
       "Ignoring significant interaction",
       "mis-specifying random vs fixed factors",
@@ -1562,7 +1563,7 @@
     "used_for": "用于需要比 Shewhart 图更早发现小幅、持续均值漂移的计量或子组均值数据，通过指数加权递推平滑对近期点赋更高权重；应关注 EWMA 曲线缓慢爬升/下降、越界及与 I/X̄ 图不一致等模式，用于早期预警，但不替代 CUSUM 的正式变点检验或功效已设计的假设检验。",
     "not_for": "不能用于大幅瞬时偏移的快速检测（Shewhart 更敏感）、不能用于属性计数（应选 p/c 等或专门方案）、参数 λ 选择不当会导致误报或迟钝。",
     "typical_sample_size": "个体序列或子组均值序列；λ 常取 0.2–0.4",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "spc_small_drift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "未与 Shewhart 图联用，单独解读 EWMA",
@@ -1591,7 +1592,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "10 parts × 3 operators × 3 trials minimum; more parts if estimating interaction.",
-    "dataset_hint": "gage_rr_balance",
+    "dataset_hint": "msa_expanded_crossed",
     "common_mistakes": [
       "Over-interpreting variance components with small df",
       "not documenting ANOVA assumptions",
@@ -1615,7 +1616,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "Strive for ≥10 parts per operator where possible; total measurements ≥60–90.",
-    "dataset_hint": "gage_rr_balance",
+    "dataset_hint": "",
     "common_mistakes": [
       "Extreme imbalance causing non-estimable components",
       "treating missing as zero",
@@ -1639,7 +1640,7 @@
     "used_for": "探索潜在因子结构、载荷与共同度（问卷/多传感器结构假设）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能证明潜变量存在；旋转解不唯一。",
     "typical_sample_size": "n≥100 或 n≥5×变量数；KMO 需检查。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "样本过小",
       "不做旋转与残差检查",
@@ -1664,7 +1665,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Adequate events per cause: often 30+ per primary cause of interest.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Confusing subdistribution with cause-specific hazard",
       "censoring competing events incorrectly."
@@ -1687,7 +1688,7 @@
     "used_for": "2×2 列联表小样本或期望频数不足时，精确检验两分类变量是否独立（或两比例差异）。",
     "not_for": "大样本时计算量大且与卡方结论相近；不能用于大于 2×2 表（用 Freeman-Halton 等）；不能证明因果。",
     "typical_sample_size": "总频数<40 或期望<5 时常用；单侧/双侧需事先指定。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "fisher_small_counts",
     "common_mistakes": [
       "大样本仍用精确检验浪费计算",
       "与卡方结论不一致时不检查期望频数",
@@ -1717,7 +1718,7 @@
     "used_for": "随机区组（重复测量）设计中，多个处理水平的非参数比较，每个区组接受全部处理。",
     "not_for": "不能用于完全独立样本；不能评估交互；区组效应需合理；不能替代双因素方差分析（有重复时）。",
     "typical_sample_size": "处理数 k≥3、区组数 b≥10 较常见；与重复测量 ANOVA 对应。",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "friedman_three_treat",
     "common_mistakes": [
       "把独立组数据当区组设计",
       "区组不可比",
@@ -1748,7 +1749,7 @@
     "used_for": "用于稀有事件监控，绘制两次事件之间的机会数或天数（几何分布），在样本量不足以支撑 p/u 图时仍能建立有意义控制限；应关注点低于 LCL（事件过于频繁/间隔缩短）或异常长间隔等模式，用于安全/质量稀有事件预警，但不替代生存分析或 Poisson 过程正式建模。",
     "not_for": "不能用于精确时间戳间隔（应选 T 图）、不能用于每日机会数剧烈变化（日机会数应相对稳定）、不能用于高频率缺陷常规监控。",
     "typical_sample_size": "每次事件一条记录；事件间隔机会数或天数",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "g_chart_gap_days",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "日产量/检验量波动大仍用“天数间隔”",
@@ -1777,7 +1778,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "AIAG standard: 10 parts × 3 operators × 3 trials = 90 measurements; minimum ~40 total for coarse estimate.",
-    "dataset_hint": "gage_rr_balance",
+    "dataset_hint": "msa_crossed_aiag",
     "common_mistakes": [
       "Parts not covering full tolerance range",
       "operators know part identity",
@@ -1808,7 +1809,7 @@
     "used_for": "多因子/协变量下多响应 Type III MANOVA。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 设计不平衡时解释复杂；不能自动选模型。",
     "typical_sample_size": "总 n≥60；每单元格足够。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "交互项乱加",
       "不平衡设计误读主效应",
@@ -1833,7 +1834,7 @@
     "used_for": "用于同时监控两个及以上相关计量变量过程变异（协方差结构）是否稳定，|S| 广义方差图是多元 R/S 图的对应物；应关注 |S| 突增、持续偏高及与 T² 图联动报警等模式，用于发现多变量离散度增大，但不替代 Bartlett 协方差齐性检验或 NIST 指出的“尚无简单稳健多元变异性图”之严格推断。",
     "not_for": "不能用于变量不相关（分别用 R/S 图）、NIST 警告现有广义方差法存在统计局限、不能定位具体哪一变量方差增大（需分解或单变量 S 图）。",
     "typical_sample_size": "子组 n>p+1；Phase I 需足够子组估计协方差",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "genvar_two_var",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "样本协方差矩阵奇异仍强行计算 |S|",
@@ -1862,7 +1863,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "2×2×2 minimum 8 cells; with replication n≥16–24+ for error estimation.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Interpreting 3-way interaction without plot",
       "too few replicates",
@@ -1886,7 +1887,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Balanced: ≥2 replicates per cell; unbalanced: enough per cell for stable MSE (often 3–5+).",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Pooling interactions without testing",
       "using GLM for split-plot",
@@ -1910,7 +1911,7 @@
     "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 不自动选最优图型。",
     "typical_sample_size": "依所选图型；一般 n≥20 起。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "只换图不查数据质量",
@@ -1935,7 +1936,7 @@
     "used_for": "矩阵或网格上色展示相关、频次或响应强度模式。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 颜色尺度选择影响解读。",
     "typical_sample_size": "相关阵：n≥30；格子频数表：每格足够计数。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_heatmap_matrix",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "未标数值只靠颜色",
@@ -1960,7 +1961,7 @@
     "used_for": "大样本二维关系密度热力分箱，看聚集区与稀疏区（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 丢失单点细节；不适合小样本。",
     "typical_sample_size": "n≥500 才有意义；上万点常见。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_hexbin_xy",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "小样本用 hexbin 过度平滑",
@@ -1985,7 +1986,7 @@
     "used_for": "探索性观察单变量分布形态、偏度、多峰与潜在离群；模式查看第一步。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 叠加正态曲线不是正态性检验。",
     "typical_sample_size": "n≥30 可看大致形状；n≥100 分箱更稳定；小样本仅作线索。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_hist_prob",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "分箱宽度随意改后过度解读峰形",
@@ -2010,7 +2011,7 @@
     "used_for": "用于同时监控两个及以上相关计量变量的均值向量是否偏离历史受控中心，T² 统计量综合均值偏移与协方差结构；应关注 T² 突增、持续偏高及需配合 T² 分解/单变量图定位变量等模式，用于多变量均值监控，但不能替代 Hotelling T² 假设检验的 p 值推断，且报警时不直接指明哪一变量失控。",
     "not_for": "不能用于变量独立且无相关时（分别做单变量图更简单）、不能监控协方差矩阵本身（应配合广义方差或 |S| 图）、样本量需 p<n-1。",
     "typical_sample_size": "子组 n>p+1（个体观测时 Phase I 样本量需充分估计 Σ）",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "t2_two_var_shift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "T² 报警后未做分解就随意调整所有参数",
@@ -2039,7 +2040,7 @@
     "used_for": "用于计量型、逐件采集且无法形成合理子组的场合，以单值图（I）监视过程位置、以移动极差图（MR）监视相邻两点间短期波动；应关注越界点、同侧连续运行、阶梯漂移及 MR 突增等模式，用于判断是否存在特殊原因，但不能替代假设检验来“证明”均值是否等于目标。",
     "not_for": "不能回答规格是否满足（控制限≠规格限）、不能在有合理子组时替代 X̄-R/S 以分离组内/组间变异、不能证明正态性，也不能单独判定长期过程能力或显著性差异。",
     "typical_sample_size": "n=1（每时间点一个测量值）；建立 Phase I 控制限通常建议至少 20–25 个连续点",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "imr_spi_shift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "将规格限当作控制限，或把“在规格内”误判为过程受控",
@@ -2068,7 +2069,7 @@
     "used_for": "用于同一设备/产线加工多种零件或批次、每个子组代表不同批次/零件的混合生产场景，同时用 I 图监视跨批次的过程位置、MR 图监视相邻个体短期波动、R/S 图监视批次内离散度；应关注三图联动报警（尤其 R/S 先失控），用于定位批次内与批次间变异来源，但不替代嵌套方差分析或混合模型检验。",
     "not_for": "不能用于单一稳定产品且子组可合理划分的常规 X̄-R/S 场景、不能回答不同零件间均值差异的显著性、不能替代量具重复性/再现性研究。",
     "typical_sample_size": "跨批次逐件 I 序列 + 每批次内 n=2–10 的子组测量",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "imr_rs_subgroup_shift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "未按“批次/零件”正确分层就把所有数据混在一个 I 图上",
@@ -2097,7 +2098,7 @@
     "used_for": "展示各组均值及置信区间，比较位置差异线索（可视化，非完整推断报告）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 区间重叠不等于无差异（需正式检验）。",
     "typical_sample_size": "每组 n≥10；n≥30 区间更窄更稳。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_interval_groups",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "CI 重叠就断言无差异",
@@ -2122,7 +2123,7 @@
     "used_for": "无监督多维异常检测，标记孤立点（探索性筛查）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能自动定根因；阈值需业务校准；与单变量 outlier 检验互补。",
     "typical_sample_size": "n≥100；异常比例不宜过高。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "把异常分数当删除指令",
       "未追查测量错误",
@@ -2147,7 +2148,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "≥20–30 with sufficient events; more for stable CI at high percentiles.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Ignoring censoring",
       "assuming independence",
@@ -2171,7 +2172,7 @@
     "used_for": "指定 k 的划分式聚类，快速分群（探索）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 对初值敏感；球形簇假设；不能给层次结构。",
     "typical_sample_size": "n≥30；k<√(n/2) 经验。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "k 拍脑袋",
       "不同 seed 结果不稳",
@@ -2196,7 +2197,7 @@
     "used_for": "三个及以上独立组的非参数位置比较，正态或等方差不满足时替代单因素 ANOVA。",
     "not_for": "不能定位具体组对差异（需事后非参数比较）；假定各组分布形状相似；不能处理因子交互；不等散布时解释受限。",
     "typical_sample_size": "每组 n≥5–8；总样本越大渐近越好；与 ANOVA 一样需事后比较。",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "kw_three_cavity",
     "common_mistakes": [
       "显著后不做事后比较",
       "组间方差/形状差异大仍解读为位置差",
@@ -2226,7 +2227,7 @@
     "used_for": "用于 p 图场景但数据存在过度离散或欠离散（大样本、缺陷率时变、子组间相关）时，通过 Sigma Z 调整控制限以更准确区分共同原因与特殊原因；应关注调整后仍出现的持续偏移或阶梯变化，用于避免传统 p 图限过窄导致的误报，但不替代 Laney 原始论文中的模型诊断或正式超/欠离散检验。",
     "not_for": "不能用于小样本常规二项过程（标准 p 图即可）、不能处理缺陷计数（应选 Laney U'）、不能证明改进措施显著有效。",
     "typical_sample_size": "大子组（数百至数千）或长期属性监控",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "laney_p_overdispersed",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "未做过度/欠离散诊断就直接用传统 p 图",
@@ -2255,7 +2256,7 @@
     "used_for": "用于 u 图场景但存在过度/欠离散时，以 Sigma Z 修正单位缺陷率控制限，减少大样本或时变缺陷率下的误报/漏报；应关注修正后仍持续的 u 偏移或周期性抬升，用于属性过程稳定性监控，但不替代 Poisson/负二项模型的正式拟合优度检验。",
     "not_for": "不能用于固定小单位常规泊松过程、不能用于二项不合格比例、不能单独量化各缺陷类型的贡献度。",
     "typical_sample_size": "检验单位数 n 大且可变；长期缺陷率监控",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "laney_u_overdispersed",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "标准 u 图大量误报后未检查 Sigma Z 就频繁停线",
@@ -2284,7 +2285,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "≥10 failures (NIST); 20–30+ for regression extensions.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using lognormal by default",
       "not checking log-scale normality",
@@ -2308,7 +2309,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "≥30–50 observations with adequate events across covariate levels.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Ignoring censoring",
       "assuming same shape across groups",
@@ -2332,7 +2333,7 @@
     "used_for": "二元合格/不合格、通过/失败与预测变量的 logit 关系建模与 odds 比。",
     "not_for": "不能用于连续响应；分离完全时估计不稳定；因果需实验设计支持。",
     "typical_sample_size": "每系数至少 10–15 个事件；总 n≥50。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "logit_pass_fail",
     "common_mistakes": [
       "稀有事件样本不足",
       "把概率当计数",
@@ -2356,7 +2357,7 @@
     "used_for": "两个独立组连续或有序数据的非参数位置比较（不要求正态），比较两分布是否位置不同。",
     "not_for": "不能检验方差差异；假定观测独立；对形状差异敏感时解释需谨慎；不能用于配对数据。",
     "typical_sample_size": "每组 n≥8–10 较常见；大样本时渐近正态；检验功效通常低于 t 检验（正态时）。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "infer_two_sample_location",
     "common_mistakes": [
       "配对数据误用",
       "默认检验的是中位数（实际检验分布位置）",
@@ -2387,7 +2388,7 @@
     "used_for": "单因子对多个连续响应同时检验组间差异（整体 Wilks 等）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需多元正态与同协方差；不能替代逐响应 ANOVA 的规划。",
     "typical_sample_size": "每组 n≥20；响应数 2–4 常见。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "不做多变量正态检查",
       "显著后不查 univariate",
@@ -2412,7 +2413,7 @@
     "used_for": "散点图边缘叠加边际直方/密度，同时看联合与边缘分布。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。",
     "typical_sample_size": "n≥50 边际密度较稳。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_marginal_xy",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "只读中心散点忽略边缘多峰",
@@ -2436,7 +2437,7 @@
     "used_for": "多变量散点矩阵，系统浏览两两关系与离群。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 变量过多图不可读。",
     "typical_sample_size": "n≥30；变量数≤8 为宜。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_matrix_three",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "不查对角线分布就回归",
@@ -2461,7 +2462,7 @@
     "used_for": "配对二元数据，比较同一批对象在两种条件下的不一致比例是否对称（如两种检测方法、改机前后合格状态）。",
     "not_for": "不能用于独立两比例比较；仅两个相关分类；期望不一致数过小时用精确检验；多于两水平需扩展方法。",
     "typical_sample_size": "不一致对数 b+c≥10 较稳；小样本用精确二项；配对对象需一一对应。",
-    "dataset_hint": "paired_rework",
+    "dataset_hint": "mcnemar_paired_binary",
     "common_mistakes": [
       "独立样本误用两比例检验",
       "忽略 discordant pairs 过少",
@@ -2491,7 +2492,7 @@
     "used_for": "用于多变量均值的小幅持续漂移检测，对均值向量做指数加权递推并以 T² 型统计量判异，比多元 Shewhart T² 对小偏移更敏感；应关注 MEWMA 统计量渐进爬升、越 UCL 及 λ 过小导致滞后等模式，用于化学/制药等多响应过程早期预警，但不替代多元 CUSUM 的正式比较或 MANOVA 显著性检验。",
     "not_for": "不能用于单变量（应选 EWMA）、不能监控协方差结构变化、高维共线数据需降维（PCA/PLS）后再监控。",
     "typical_sample_size": "多变量时间序列；λ 常取 0.1–0.3",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "mewma_two_var_drift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "λ 与 UCL 未按 ARL 设计导致误报过高",
@@ -2520,7 +2521,7 @@
     "used_for": "固定效应+随机效应（批次、操作员）方差分量与 BLUE 估计。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 随机水平需代表总体；小样本方差分量不稳。",
     "typical_sample_size": "随机水平≥5；总 n≥50。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "随机当固定",
       "嵌套/交叉搞错",
@@ -2545,7 +2546,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Per design points; need ≥ df in model + 3 for error estimation.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using standard polynomial without Scheffé form",
       "misinterpreting trace plots",
@@ -2569,7 +2570,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Simplex lattice degree m: C(q+m-1, m) points; q=3,m=2 → 6 vertices + center; add replicates.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Treating components as independent",
       "not re-scaling when totals differ",
@@ -2593,7 +2594,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Vertices + edge centroids + overall centroid; typically 10–30 runs for q=3–4 with constraints.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Missing feasible vertices",
       "not checking constraint consistency",
@@ -2617,7 +2618,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Mixture points × process levels: e.g., 7 mixture × 3 temp = 21+ runs.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Not separating mixture vs process effects",
       "insufficient replicates for combined model",
@@ -2641,7 +2642,7 @@
     "used_for": "比较三个及以上独立组的中位数是否全部相等，对异常值比均值检验更稳健。",
     "not_for": "功效常低于 Kruskal-Wallis；仍假定组间分布形状相似；不能用于配对数据；显著后需事后比较。",
     "typical_sample_size": "每组 n≥10 较常见；小样本渐近近似不稳。",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "mood_two_group",
     "common_mistakes": [
       "与「检验均值」混淆",
       "形状差异大时误判",
@@ -2672,7 +2673,7 @@
     "used_for": "两（多）分类变量列联表比例可视化，看关联模式。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 小期望频数格子不稳定；需卡方或 Fisher 确认。",
     "typical_sample_size": "总 n≥50；每格期望≥5 较稳。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_mosaic_two_cat",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "稀疏表过度解读格子比例",
@@ -2697,7 +2698,7 @@
     "used_for": "用于对最近 w 个观测做简单（等权）滑动平均以平滑噪声并检测小幅均值变化；应关注滑动均值缓慢偏离中心线、连续同侧及窗口边界效应等模式，用于过程趋势监视，但不替代 EWMA（Minitab 指出 EWMA 通常更优）或时间序列 ARIMA 检验。",
     "not_for": "不能用于大幅阶跃偏移的快速报警、不能用于属性数据、窗口宽度 w 选择无理论最优时易迟钝或误报。",
     "typical_sample_size": "个体或子组序列；窗口 w 常取 3–10",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "ma_small_drift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "窗口过大导致对小偏移不敏感",
@@ -2726,7 +2727,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "AIAG: 50 measurements of one part by one operator on one gage in short time window.",
-    "dataset_hint": "gage_rr_balance",
+    "dataset_hint": "msa_type1_ref",
     "common_mistakes": [
       "Using multiple parts",
       "long elapsed time introducing drift",
@@ -2751,7 +2752,7 @@
     "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
     "not_for": "不能替代 SPC 或 MSA 证据。",
     "typical_sample_size": "Structured grid: e.g., 5 parts × 4 positions × 3 operators = 60 measurements minimum.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "multi_vari_pos_time",
     "common_mistakes": [
       "Wrong nesting/crossing structure",
       "too few levels per factor",
@@ -2775,7 +2776,7 @@
     "used_for": "≥3 分类变量 MCA，探索多属性共现（问卷、检查项）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 缺失与稀有类别敏感；解释需谨慎。",
     "typical_sample_size": "n≥150；变量 3–6 常见。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "类别未合并导致稀疏",
       "与 PCA 混淆",
@@ -2800,7 +2801,7 @@
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
     "not_for": "不能证明量具通过或产品合格。",
     "typical_sample_size": "Minimum 10 parts per operator × 3 operators × 2–3 trials; often 30+ parts total per operator group.",
-    "dataset_hint": "gage_rr_balance",
+    "dataset_hint": "msa_nested_operator",
     "common_mistakes": [
       "Using crossed analysis on nested data",
       "parts not matched for difficulty across operators",
@@ -2824,7 +2825,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Multiple systems × event times: e.g., 10 machines tracked over 2 years with 50+ events total.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Treating repair times as failures",
       "ignoring system age",
@@ -2848,7 +2849,7 @@
     "used_for": "无序多类缺陷类型/故障模式与预测变量的广义 logit 建模。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 类别过多导致稀疏；不能自动选根因。",
     "typical_sample_size": "每类至少 20–30；总 n≥100。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "有序等级误用名义模型",
       "参照水平选择影响 OR 解释",
@@ -2873,7 +2874,7 @@
     "used_for": "机理已知但曲线非线性的单 Y–X 关系（如饱和、指数衰减）参数估计。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 初值敏感；外推危险；不能替代 DOE 找最优。",
     "typical_sample_size": "参数个数×5–10 点；全因子范围覆盖。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "模型结构错设",
       "初值不当不收敛",
@@ -2898,7 +2899,7 @@
     "used_for": "非正态数据能力（如 Johnson/百分位）。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥50 observations; often 100+ for reliable tail-probability and percentile estimates near specification limits.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "common_mistakes": [
       "Forcing a poor distribution fit",
       "using normal Cpk on skewed data",
@@ -2923,7 +2924,7 @@
     "used_for": "非参数百分位能力。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥100 for stable percentile estimates; more for extreme tails (e.g., 99.99%).",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using nonparametric methods with n<50",
       "misinterpreting empirical percentiles as long-term performance",
@@ -2947,7 +2948,7 @@
     "used_for": "评估连续测量数据与正态分布的偏离程度，为选择参数检验（t、ANOVA、能力分析）或考虑非参数/变换提供参考。",
     "not_for": "不能因 p>α 就认定数据服从正态；小样本检验功效低；不能替代残差图、概率图等图形检查；不能单独作为删点或停线依据。",
     "typical_sample_size": "Anderson-Darling 等检验在 n=20–50 较常见；n<10 时检验功效很低；大样本时轻微偏离也可能显著。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "norm_mild_skew",
     "common_mistakes": [
       "把不拒绝 H₀ 说成「已确认正态」",
       "只看 p 值不看直方图/正态概率图",
@@ -2979,7 +2980,7 @@
     "used_for": "用于二项型属性数据、每子组检验数量固定时，直接监视“不合格品个数 np”；应关注 np 突增、连续高于中心线及接近 UCL 的聚集模式，用于发现批量性失效，但不替代二项精确检验或 Fisher 精确检验。",
     "not_for": "不能用于子组样本量变化（应选 p 图）、不能用于同一单位多缺陷计数（应选 c/u 图）、不能估计过程能力指数。",
     "typical_sample_size": "固定 n（常见 50–200），每点为一个子组的不合格品计数",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "np_chart_const_n_step",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "订单量变化仍固定用 np 图",
@@ -3008,7 +3009,7 @@
     "used_for": "检验单位面积/时间/件数上的缺陷发生强度 λ 是否等于目标值（如每百件划痕数、每小时停机次数）。",
     "not_for": "不能用于「有/无」二元比例（那是二项）；过度离散数据可能不适合泊松；不能忽略观测窗口/面积差异而不标准化。",
     "typical_sample_size": "合计缺陷计数≥20–30 时渐近推断较稳；比较率时需统一「检验单位」如每千件。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "pois_one_count",
     "common_mistakes": [
       "未统一检验单位就比较",
       "零膨胀或聚集缺陷仍用泊松",
@@ -3039,7 +3040,7 @@
     "used_for": "检验单个总体的缺陷率/合格率是否等于指定值（如目标不良率、历史平均水平）。",
     "not_for": "不能用于连续测量；小样本或极端比例时正态近似不可靠；不能用于同一单元多次试验的二元相关数据。",
     "typical_sample_size": "np≥5 且 n(1−p)≥5 时正态近似较稳；计数型控制图常 n=50–200；精确二项检验可用于小 n。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "prop_one_lot",
     "common_mistakes": [
       "样本量过小仍用正态近似",
       "检验目标比例选错",
@@ -3070,7 +3071,7 @@
     "used_for": "单组比例落在目标比例 ±等价限内（如不良率接近目标）。",
     "not_for": "稀有事件 n 需足够；近似失效时用精确法。",
     "typical_sample_size": "取决于 p 与限宽；常 n≥100。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "equiv_prop_one",
     "common_mistakes": [
       "小 n 正态近似",
       "等价限无业务定义",
@@ -3094,7 +3095,7 @@
     "used_for": "证明单组均值落在目标值 ±等价限内（TOST 思路），而非仅「不等于」。",
     "not_for": "不能用于大差异筛查；等价限需监管/工程先验；非正态需稳健或变换。",
     "typical_sample_size": "常 n=20–40/组，取决于等价限与 σ 估计。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "equiv_one_near_target",
     "common_mistakes": [
       "等价限过宽",
       "用差异检验代替等价",
@@ -3118,7 +3119,7 @@
     "used_for": "检验单个连续总体的均值是否等于给定目标值（如名义尺寸、历史中心线、工艺设定值），总体方差未知时用 t 分布。",
     "not_for": "不能检验方差或比例；严重非正态且小样本时结论不可靠；不能替代规格符合性判定；不能用于未独立同分布的序列数据而不考虑自相关。",
     "typical_sample_size": "功效分析常用 n=10–30；AIAG 能力研究常取 n≥25–30；单侧检验需事先确定方向。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "infer_one_sample_mean",
     "common_mistakes": [
       "未检查正态性或样本量就使用",
       "把目标值与规格限混淆",
@@ -3149,7 +3150,7 @@
     "used_for": "当总体标准差 σ 已知（或样本量极大、用已知历史 σ）时，检验均值是否等于目标值；亦用于大样本近似。",
     "not_for": "σ 未知且样本不大时不应替代 t 检验；不能用于方差未知的小样本；不能假设 σ 长期稳定而不验证。",
     "typical_sample_size": "教科书示例常 n≥30 作 t 近似 Z；已知 σ 时 n 可较小但仍需考虑正态性。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "infer_one_sample_mean",
     "common_mistakes": [
       "在 σ 实际未知时仍用 Z 检验",
       "用过时的过程 σ 而未重新评估",
@@ -3179,7 +3180,7 @@
     "used_for": "检验三个及以上组的连续测量均值是否全部相等（如多模腔、多机台、多操作员、多材料水平）。",
     "not_for": "不能指出具体哪两组不同（需事后多重比较）；不能处理因子交互；严重违反正态/等方差假设时考虑 Kruskal-Wallis 或变换；不能替代随机化。",
     "typical_sample_size": "每组 n=5–15 常见；总样本 N≥30 较稳；平衡设计功效更高；事后比较需考虑多重性。",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "anova_one_cavity",
     "common_mistakes": [
       "ANOVA 显著后不做事后比较",
       "把「不显著」当成「各组相同」",
@@ -3210,7 +3211,7 @@
     "used_for": "有序等级响应（如外观 1–5 级）与预测变量的比例优势模型。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 比例优势假设违背时结论受限；不宜当名义分类。",
     "typical_sample_size": "每预测变量每等级至少 10 例；总 n≥100。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "有序当名义或连续乱用",
       "不检验比例优势",
@@ -3235,7 +3236,7 @@
     "used_for": "X、Y 均有测量误差时估计线性关系（Deming/正交回归）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需误差比 λ；X 可控无误差时用普通 OLS。",
     "typical_sample_size": "n≥30；λ 需方法学或重复性估计。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "X 无误差仍用正交回归",
       "λ 随意设为 1",
@@ -3260,7 +3261,7 @@
     "used_for": "在假定数据来自单峰、近似对称总体时，识别可能远离主体分布的极端观测（如录入错误、特殊原因事件）。",
     "not_for": "不能自动判定测量错误；不能替代控制图上的特殊原因分析；对多峰或严重偏态数据不适用；检出异常不等于必须删除。",
     "typical_sample_size": "Grubbs 等单峰检验通常 n≥7；AIAG SPC 建议子组 n=4–5 时配合控制图；大样本中统计检验过于敏感。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "outlier_one_spike",
     "common_mistakes": [
       "未调查原因就删点",
       "对非正态或混合总体滥用单峰异常值检验",
@@ -3291,7 +3292,7 @@
     "used_for": "用于二项型属性数据、按“不合格品/检验数”计算比例且子组样本量可变的场合，监视不合格率 p 是否稳定；应关注比例突增、同侧运行及限随 n 变化而变窄/变宽等模式，用于触发特殊原因调查，但不能替代比例 z 检验或卡方检验来正式比较两阶段不合格率。",
     "not_for": "不能用于计数“缺陷数”（应选 c/u 图）、不能用于固定小子组且需整数不合格数的场合（可考虑 np 图）、不能回答单个产品是否合格。",
     "typical_sample_size": "每子组检验数 n 可变（常见 50–500）；np̄ 应足够大以满足二项近似",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "p_chart_variable_n_step",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "把缺陷数当不合格品数，误用 p 图",
@@ -3320,7 +3321,7 @@
     "used_for": "配对差值在 ±δ 内等价（同一工件前后、左右对照）。",
     "not_for": "配对差非正态且 n 小需谨慎；不能忽略周期/学习效应。",
     "typical_sample_size": "配对 n≥16–30。",
-    "dataset_hint": "paired_rework",
+    "dataset_hint": "equiv_paired_near",
     "common_mistakes": [
       "独立样本方法误用",
       "配对顺序效应未随机",
@@ -3344,7 +3345,7 @@
     "used_for": "比较同一单元在两种处理下的均值差（如改机前后、返工前后、左右配对件、同一零件两次测量），分析差值是否为零。",
     "not_for": "不能用于独立两组；配对关系必须明确且一一对应；不能用于未配对的重复测量（需混合模型）；差值严重非正态时考虑符号秩检验。",
     "typical_sample_size": "配对数 n=10–30 常见；n<10 时检验功效低；需保证配对可比性。",
-    "dataset_hint": "paired_rework",
+    "dataset_hint": "infer_paired_shift",
     "common_mistakes": [
       "把独立样本当配对",
       "配对顺序搞错",
@@ -3375,7 +3376,7 @@
     "used_for": "高维数值多变量平行坐标，看模式与簇（探索性）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 轴顺序影响观感；不适合报告因果。",
     "typical_sample_size": "n=50–500；维数 4–12 常见。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_parallel_multi",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "维度过高线条糊成一团",
@@ -3400,7 +3401,7 @@
     "used_for": "按频次/成本排序不良或缺陷类型，识别少数关键项（80/20 模式观察）。",
     "not_for": "不证明因果；不替代统计检验判断组间差异；分类定义变更会改变排序。",
     "typical_sample_size": "累计至少 20–50 个事件；类别不宜过多（≤15）。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "pareto_defect_tail",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "类别划分不一致导致排名跳变",
@@ -3425,7 +3426,7 @@
     "used_for": "降维、去相关、找主变异方向（过程监控、探索性）。",
     "not_for": "主成分不一定有物理意义；不能替代原始规格判定；样本相关阵需足够 n。",
     "typical_sample_size": "n≥5×变量数；n≥100 更稳。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "pca_three_var",
     "common_mistakes": [
       "未标准化不同量纲",
       "成分数凭感觉",
@@ -3449,7 +3450,7 @@
     "used_for": "展示整体中各类占比（部分-整体，类别少时）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 类别>5 难读；不适合精确比较；时间趋势用折线更好。",
     "typical_sample_size": "各类有足够计数；总 n≥30。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_pie_category",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "切片过多",
@@ -3474,7 +3475,7 @@
     "used_for": "预测变量多、共线严重时的偏最小二乘降维回归（光谱、多传感器）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 解释性弱于 OLS；需交叉验证选成分数。",
     "typical_sample_size": "n≥50；高维时 n 相对 p 仍要足够。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "不 CV 选成分",
       "未标准化变量",
@@ -3499,7 +3500,7 @@
     "used_for": "Poisson 缺陷率能力。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "≥25–50 units; more when mean defects per unit is low (<1).",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "cap_poisson_counts",
     "common_mistakes": [
       "Varying inspection area without normalization",
       "overdispersion ignored",
@@ -3524,7 +3525,7 @@
     "used_for": "检验计数数据是否服从泊松分布（如单位面积缺陷数、单位时间事件数），为 u 图等属性控制图假设提供参考。",
     "not_for": "不能用于二元比例；过度离散/零膨胀数据不适合；不能单独作为控制图可用性最终判定；小计数需合并区间。",
     "typical_sample_size": "合计计数≥30–50；分组后各组期望不宜过小；需统一检验单位。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "",
     "common_mistakes": [
       "未统一暴露量",
       "缺陷聚集仍假设泊松",
@@ -3555,7 +3556,7 @@
     "used_for": "计数型缺陷数/事件数随协变量变化的 Poisson GLM（率建模）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 过度离散需负二项；零膨胀另建模。",
     "typical_sample_size": "总事件≥50；每系数有足够事件数。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "方差≈均值假设不成立",
       "暴露量不同未用 offset",
@@ -3580,7 +3581,7 @@
     "used_for": "正态（或其它分布）概率图，目视判断分布拟合与离群（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 Anderson-Darling 等检验更正式；概率图不是能力指数。",
     "typical_sample_size": "n≥20 可看；n≥50 尾部更可靠。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_hist_prob",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "点略弯就断言非正态",
@@ -3605,7 +3606,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Multiple stress levels with ≥20–50 units per level; need failures and survivals at each level.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Too few levels to fit line",
       "extrapolating beyond tested stress",
@@ -3629,7 +3630,7 @@
     "used_for": "集成多树提高预测与变量重要性，非线性关系探索。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 黑箱性较单树强；外推差；小样本优势不明显。",
     "typical_sample_size": "n≥200 更稳；类别平衡需注意。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "不调树数/深度",
       "泄漏未来信息",
@@ -3654,7 +3655,7 @@
     "used_for": "置换/随机化检验两样本均值差，弱分布假设下的 p 值。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关数据需块置换；不能补救糟糕抽样框。",
     "typical_sample_size": "总 n≥20；置换次数≥5000。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "配对当独立置换",
       "观测非交换仍置换",
@@ -3679,7 +3680,7 @@
     "used_for": "量化一个或多个预测变量对连续响应的线性关系，预测与筛选因子。",
     "not_for": "不能证明因果；外推超出数据域危险；残差非独立/异方差时 OLS 推断失真。",
     "typical_sample_size": "n≥10×预测变量数；预测 n≥30 更稳。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "regr_temp_strength",
     "common_mistakes": [
       "R² 高就当因果",
       "忽略共线性",
@@ -3704,7 +3705,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "NIST: ≥10 failures for reasonable Weibull/lognormal estimates; ≥5 marginal; plan with censoring.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Ignoring censoring",
       "wrong distribution",
@@ -3729,7 +3730,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Zero-failure plans: e.g., 22 units for 95%/90% with Weibull β assumption; depends on required MTBF.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Stopping at arbitrary time",
       "not pre-specifying β",
@@ -3754,7 +3755,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Combine field data (often 100s–1000s censored) with lab data; Bayesian updating helpful.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "rel_warranty_counts",
     "common_mistakes": [
       "Assuming all customers use product equally",
       "ignoring reporting delay",
@@ -3796,13 +3797,14 @@
         "accessed": "2026-09-03"
       }
     ],
-    "manufacturing_scenario": "能力分析完成后导出审计版 PDF 附 Cpk 表与图。"
+    "manufacturing_scenario": "能力分析完成后导出审计版 PDF 附 Cpk 表与图。",
+    "dataset_hint": ""
   },
   "response_optimization": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Based on underlying RSM design; confirm with 3–5 verification runs.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "doe_opt_two_resp",
     "common_mistakes": [
       "Optimizing on noisy model",
       "ignoring process constraints",
@@ -3826,7 +3828,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "CCD: ~2^k + 2k + cp (e.g., 20 for k=3); BBD: 15 for k=3; add replicates at center.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Extrapolating beyond design region",
       "ignoring lack-of-fit",
@@ -3850,7 +3852,7 @@
     "used_for": "按时间/序号看过程中心是否漂移、跳变或循环（模式观察，控制图前奏）。",
     "not_for": "无控制限，不能判特殊原因或稳态；不替代 I-MR/Xbar 控制图。",
     "typical_sample_size": "≥20 点可看趋势；50+ 更易见模式。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "run_chart_median_trend",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "无控制限却宣称过程失控",
@@ -3875,7 +3877,7 @@
     "used_for": "检验序列是否随机（游程过多或过少），用于评估时间顺序数据、抽检顺序或二元序列的随机性。",
     "not_for": "不能检测具体分布形态；对趋势/周期不敏感（需自相关/控制图）；不能用于无顺序的数据；样本量很小时功效低。",
     "typical_sample_size": "n≥20–25 较常见；二元序列以中位数或给定阈值二分；过长序列需考虑自相关。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "runs_clustered",
     "common_mistakes": [
       "无时间/顺序意义仍做游程检验",
       "用错误阈值二分",
@@ -3906,7 +3908,7 @@
     "used_for": "观察两连续变量线性/非线性关系、离群与杠杆点（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 相关≠因果；外推需谨慎。",
     "typical_sample_size": "n≥25 可见趋势；回归诊断建议 n≥30。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "graph_scatter_xy",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "把相关当因果",
@@ -3931,7 +3933,7 @@
     "used_for": "带季节性的 Holt-Winters 类预测。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 结构突变时预测失效；需足够季节历史。",
     "typical_sample_size": "≥2–3 完整季节周期；每季≥3 点。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "季节周期设错",
       "单季节数据硬套",
@@ -3956,7 +3958,7 @@
     "used_for": "配对数据最基础的非参数检验：差值正负是否平衡，适用于仅知方向不知大小的有序或连续配对。",
     "not_for": "功效低于符号秩检验；不能用于独立样本；对差值幅度不敏感；不能评估效应大小。",
     "typical_sample_size": "n≥10 较有意义；小样本可用精确二项分布；零差值需处理。",
-    "dataset_hint": "paired_rework",
+    "dataset_hint": "infer_paired_shift",
     "common_mistakes": [
       "有数值信息却只用符号检验浪费功效",
       "零差处理不一致",
@@ -3986,7 +3988,7 @@
     "used_for": "两分类变量对应分析，低维展示关联结构（行/列剖面）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能因果；稀疏表不稳定。",
     "typical_sample_size": "总 n≥100；行列类别各≥3。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "类别过多维数难解释",
       "与卡方结论不一致不追查",
@@ -4011,7 +4013,7 @@
     "used_for": "三元混料（如树脂/填料/助剂比例）在单纯形上的设计点与响应等高线（DOE 可视化）。",
     "not_for": "非混料问题勿用；不替代混料回归分析；约束外推无效。",
     "typical_sample_size": "混料设计 q 成分至少 q 个顶点+中心点；响应面需更多点。",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "mix_simplex_3",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "成分和不为 1 仍用三角图",
@@ -4036,7 +4038,7 @@
     "used_for": "用于在 Shewhart 控制图上系统应用 Western Electric（WE）/Nelson 等判异规则，识别越 3σ、同侧运行、Zone A/B 聚集、趋势、交替、分层/混合等非随机模式；应明确所选规则集与误报 ARL 权衡，用于触发调查而非直接判“不合格”，且不能替代正式假设检验来确认偏移显著性。",
     "not_for": "不能用于无控制限的 run chart 随意解读、不能把所有 8 条 Nelson 规则默认全开而不接受误报率从约 1/371 升至约 1/92（NIST）、不能证明根因或措施有效。",
     "typical_sample_size": "依附于底层控制图（I、X̄、属性图等）",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "chart_note": "规则提示特殊原因线索，不替代假设检验。",
     "common_mistakes": [
       "规则过多导致“狼来了”式误报，现场不再响应",
@@ -4065,7 +4067,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Inherits from design; need ≥2 whole plots per whole-plot factor level.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using sub-plot error for whole-plot effects",
       "ignoring restricted randomization",
@@ -4089,7 +4091,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Whole plots × sub-plots: e.g., 8 ovens × 4 positions = 32 runs minimum; more for power.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Analyzing as completely randomized",
       "too few whole plots",
@@ -4113,7 +4115,7 @@
     "used_for": "从多个候选预测变量中自动筛选进入线性模型的子集（探索性变量选择）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 数据驱动选择膨胀 I 类错误；不能替代先验假设；预测性能需验证集。",
     "typical_sample_size": "n≥10–15×候选变量数；n≥50 起较稳。",
-    "dataset_hint": "corr_temp_offset",
+    "dataset_hint": "",
     "common_mistakes": [
       "逐步法结果当确认性",
       "多重共线性下不稳定",
@@ -4138,7 +4140,7 @@
     "used_for": "用于稀有事件且间隔为连续时间（日期/时间戳或精确时长）的场合，经 Weibull 变换后类似 I 图监视事件间隔稳定性；应关注间隔异常缩短、变换后越界及零间隔（同时发生）等模式，用于比 G 图更精细的时间间隔监控，但不替代 Cox 比例风险或参数生存模型的正式检验。",
     "not_for": "不能用于仅整数机会计数（应选 G 图）、不能用于非独立间隔（如批量共因失效）、不能证明根因与事件因果关联。",
     "typical_sample_size": "每次事件一条时间戳或间隔记录",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "t_chart_time_interval",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "仅有日期无精确时间仍强行用 T 图",
@@ -4167,7 +4169,7 @@
     "used_for": "规划 t 检验样本量或评估功效（α、β、效应量）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 效应量需先验或试点；不能弥补错误设计。",
     "typical_sample_size": "功效计算本身；常目标功效 0.8–0.9。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "common_mistakes": [
       "效应量设过小样本过大浪费",
       "单侧双侧混淆",
@@ -4192,7 +4194,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Inherits from orthogonal array; replicate noise conditions in outer array.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Wrong S/N ratio type",
       "pooling interactions into error",
@@ -4216,7 +4218,7 @@
     "used_for": "结构化试验筛选/优化因子与响应关系。",
     "not_for": "不能替代量产 SPC；外推需谨慎。",
     "typical_sample_size": "Standard arrays: L8 (7 factors @2 levels), L9 (4@3), L18 (8@2 + 1@2), L27; depends on array.",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "",
     "common_mistakes": [
       "Ignoring interactions assigned to dummy columns",
       "not including outer array for noise factors",
@@ -4240,7 +4242,7 @@
     "used_for": "分解趋势、季节、残差成分，理解周期与异常（探索）。",
     "not_for": "不自动预测；分解假设可加性/乘性需判断；短序列季节不稳。",
     "typical_sample_size": "≥24（月）；≥2 季节周期长度×2。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "ts_decomp_seasonal",
     "common_mistakes": [
       "不足一季就分季节",
       "结构突变未分段",
@@ -4264,7 +4266,7 @@
     "used_for": "按时间顺序看水平、趋势、季节与异常点（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 不自动给出预测区间；非平稳序列直接回归有风险。",
     "typical_sample_size": "≥24 点见季节；≥50 点趋势更可靠。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "ts_weekly_yield_series",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "忽略抽样间隔不等",
@@ -4289,7 +4291,7 @@
     "used_for": "单序列平滑去噪，短期预测（简单指数平滑等）。",
     "not_for": "长期结构变化大时失效；不替代控制图判稳；需检查残差自相关。",
     "typical_sample_size": "≥20 点；季节模型需≥2 完整季节。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "ts_smooth_weekly",
     "common_mistakes": [
       "非平稳直接平滑",
       "α 不调",
@@ -4314,7 +4316,7 @@
     "used_for": "估计覆盖比例的总体区间。",
     "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
     "typical_sample_size": "Depends on coverage/confidence: 95%/95% often needs n≥30–90; 99%/99% needs n≥100–500+.",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "common_mistakes": [
       "Using normal tolerance factors on non-normal data",
       "wrong sided vs two-sided",
@@ -4338,7 +4340,7 @@
     "used_for": "检验/估计时间序列单调趋势（Mann-Kendall 类或线性趋势）。",
     "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关存在时 p 值失真；不能证明因果。",
     "typical_sample_size": "≥20；有自相关需调整方法。",
-    "dataset_hint": "ts_weekly_yield",
+    "dataset_hint": "",
     "common_mistakes": [
       "忽略自相关",
       "把趋势当永远持续",
@@ -4363,7 +4365,7 @@
     "used_for": "同时评估两个因子主效应及交互效应对连续响应的影响（如温度×压力、操作员×量具、材料×机台）。",
     "not_for": "不能用于未重复实验估计交互（无重复时需其他结构）；不能替代规范的析因设计；随机/固定效应混淆时结论受限；不能外推超出设计范围。",
     "typical_sample_size": "完全析因每单元至少 n=2–3 次重复；2^k 设计每组合至少 1–2 重复以估交互与误差；总运行数随水平数快速增长。",
-    "dataset_hint": "doe_factorial_demo",
+    "dataset_hint": "anova_two_factor",
     "common_mistakes": [
       "无重复却声称检验交互",
       "把观测研究当析因",
@@ -4394,7 +4396,7 @@
     "used_for": "比较两个独立泊松总体的发生率是否不同（如两产线单位时间缺陷数、两区域单位面积瑕疵数）。",
     "not_for": "不能用于二项「合格/不合格」比例；暴露量（时间、面积、件数）不等时必须纳入；过度离散需其他模型。",
     "typical_sample_size": "两组合计计数各≥10–20 较常见；检出小差异需更长观测窗口或更大面积。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "pois_two_count",
     "common_mistakes": [
       "未按暴露量标准化",
       "把独立区域数据当成一个泊松总体",
@@ -4425,7 +4427,7 @@
     "used_for": "两组比例差在 ±δ 内等价。",
     "not_for": "稀疏表需 Fisher/精确；不能证明优效。",
     "typical_sample_size": "每组事件≥10；总 n 常≥200。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "equiv_prop_two",
     "common_mistakes": [
       "δ 随意",
       "忽略聚类/批次",
@@ -4449,7 +4451,7 @@
     "used_for": "比较两个独立总体的比例是否不同（如两供应商、两班次、两种夹具的不良率差异）。",
     "not_for": "不能用于配对二元数据（用 McNemar）；小样本或期望频数过小需精确方法；不能替代规范的抽样方案设计。",
     "typical_sample_size": "每组 n≥30 且期望不良数不太小；比较 1% 级别不良率需更大样本；功效分析按可检出比例差设计。",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "prop_two_line",
     "common_mistakes": [
       "期望频数不足仍用卡方近似",
       "未区分独立与配对设计",
@@ -4480,7 +4482,7 @@
     "used_for": "两独立组均值差在 ±δ 内等价的 TOST 检验。",
     "not_for": "不能证明优于对照；方差不齐需方法调整；等价限需预先定义。",
     "typical_sample_size": "常每组 20–50；功效分析必备。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "equiv_two_near_equal",
     "common_mistakes": [
       "δ 事后挑选",
       "与 superiority 检验混淆",
@@ -4504,7 +4506,7 @@
     "used_for": "两独立组均值比在 [θL, θU] 内等价（生物等效/比例型规格）。",
     "not_for": "对数正态假设需检查；不能用于绝对差规格场景。",
     "typical_sample_size": "每组 24–36 常见（比例限紧时更大）。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "equiv_ratio_near_one",
     "common_mistakes": [
       "算术均值当比例",
       "比值限无监管依据",
@@ -4528,7 +4530,7 @@
     "used_for": "比较两个独立组的连续测量均值是否不同（如两条产线、两种材料、改机前后独立抽样）。",
     "not_for": "不能用于配对数据；假定两组独立且（合并或分别）方差结构需事先选定；不能替代随机化实验的因果推断；不能比较两个以上组。",
     "typical_sample_size": "每组 n=10–30 常见；功效分析按期望差值与 σ 确定；不等样本量可行但降低功效。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "infer_two_sample_location",
     "common_mistakes": [
       "配对数据误用独立双样本 t",
       "未做等方差检验或选对合并/非合并方差版本",
@@ -4559,7 +4561,7 @@
     "used_for": "用于泊松型缺陷计数、检验单位大小（面积、长度、件数）随子组变化时，监视单位缺陷率 u；应关注 u 突增、限随 n 变化及过度离散导致的频繁误报等模式，用于发现单位缺陷强度变化，但不替代 Poisson 回归或率比检验。",
     "not_for": "不能用于固定检验单位（应选 c 图）、不能用于二项不合格品比例（应选 p 图）、在严重过度离散时标准 u 图可能失效（考虑 Laney U'）。",
     "typical_sample_size": "每子组检验单位数 n 可变；ū 通常 ≥5",
-    "dataset_hint": "attribute_defect",
+    "dataset_hint": "u_chart_variable_unit_step",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "固定样本量仍用 u 图",
@@ -4588,7 +4590,7 @@
     "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
     "not_for": "不能替代 SPC 或 MSA 证据。",
     "typical_sample_size": "Same as multi-vari: enough points per factor level to see pattern (≥3–5 per cell).",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "",
     "common_mistakes": [
       "Over-interpreting noise as signal",
       "too few levels",
@@ -4612,7 +4614,7 @@
     "used_for": "比较两个独立正态总体的方差是否相等，为选择合并方差 t 检验、ANOVA 或能力比较提供依据。",
     "not_for": "对非正态数据结论不可靠；不能单独作为过程稳定性判定；不能比较两个以上方差（用 Bartlett/Levene）；对方差极其敏感。",
     "typical_sample_size": "每组 n≥10 较常见；方差检验功效通常低于均值检验；AIAG 建议先确认测量系统足够。",
-    "dataset_hint": "two_line_thickness",
+    "dataset_hint": "var_two_line_unequal",
     "common_mistakes": [
       "未检查正态性就做 F 检验",
       "显著不等方差仍用合并方差 t",
@@ -4643,7 +4645,7 @@
     "used_for": "同时看分布形状与四分位，比较多组密度（模式观察）。",
     "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 小样本密度尾部不可靠。",
     "typical_sample_size": "每组 n≥20 较稳；n<10 慎用。",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "graph_violin_groups",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
       "样本极小仍解读尾部形状",
@@ -4668,7 +4670,7 @@
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
     "not_for": "不能写成产品已达标；外推需工程论证。",
     "typical_sample_size": "Often 5–20 failures plus prior; combines with censored data.",
-    "dataset_hint": "reliability_cycles",
+    "dataset_hint": "",
     "common_mistakes": [
       "Prior dominates with little data",
       "wrong prior specification",
@@ -4692,7 +4694,7 @@
     "used_for": "配对连续数据的非参数检验，评估差值分布是否对称于零（比符号检验功效高，但仍不要求正态）。",
     "not_for": "不能用于独立两组；差值分布严重偏斜时需谨慎；不能检测特定方向的系统性偏差以外的效应；零差值需剔除。",
     "typical_sample_size": "配对 n≥10–15 较常见；n<6 时考虑精确符号检验。",
-    "dataset_hint": "paired_rework",
+    "dataset_hint": "infer_paired_shift",
     "common_mistakes": [
       "独立样本误用",
       "未剔除零差",
@@ -4723,7 +4725,7 @@
     "used_for": "用于计量型、可在同一条件下一次取多个测量值形成子组的场合，X̄ 图监视子组均值偏移，R 图监视组内离散度；应同时检查 X̄ 与 R 的越界、同侧运行及 R 图先报警等模式，用于识别特殊原因，但不替代 t 检验/F 检验来判定组间差异是否显著。",
     "not_for": "不能用于子组过大（通常 n>10 应改 X̄-S）、不能用于仅有个别测量值的慢速/破坏性检验、不能回答产品是否合格或 Cpk 是否达标。",
     "typical_sample_size": "子组 n=2–10（常见 n=4 或 5）；Phase I 常取 m≥25 个子组",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "xbar_r_n5_range_spike",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "子组划分不合理（混合不同批次/夹具/操作员），使组内方差被人为放大",
@@ -4752,7 +4754,7 @@
     "used_for": "用于计量型、子组较大（通常 n>10）的场合，X̄ 图监视均值，S 图监视子组标准差；应关注 S 图先失控、X̄ 同侧漂移及方差阶梯变化等模式，用于判断变异结构是否改变，但不能替代 Levene/Bartlett 检验来正式检验方差齐性。",
     "not_for": "不能用于小子组（n≤10 时 R 图更高效）、不能处理非独立批次数据、不能判定缺陷率或二项/泊松计数过程。",
     "typical_sample_size": "子组 n>10（常见 n=10–25）；Phase I 建议 m≥25 个子组",
-    "dataset_hint": "anova_cavity",
+    "dataset_hint": "xbar_s_n8_sd_shift",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "在 n=4–5 的小子组仍用 S 图，估计效率低于 R 图",
@@ -4781,7 +4783,7 @@
     "used_for": "用于短制程/多品种混线生产，将不同产品的测量值按各产品名义值与 Sigma(X)（基于移动极差，非全局标准差）标准化为 z 分数，再统一绘 z 图与 W（移动极差）图；应关注 z 越 ±3、W 越 3.686 及跨产品混排时的同侧运行，用于混流监控，但不替代各产品独立能力研究或 ANOVA 比较品种差异。",
     "not_for": "不能用于单一产品长期稳定过程（直接用 I-MR）、不能用全局标准差做 Wheeler 禁止的“传统 z 变换”、不能用于属性数据。",
     "typical_sample_size": "每产品仅少量点亦可；需为每个产品定义名义值与 Sigma(X)",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "z_mr_short_run",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "用产品总体标准差代替移动极差估计 Sigma(X)，掩盖信号",
@@ -4810,7 +4812,7 @@
     "used_for": "用于以 σ 分区（Zone 1–4）和累积得分替代多条 Western Electric 规则来检测非随机模式，适合需要统一自动化判异逻辑的子组或个体数据；应关注同侧累积得分≥8、越 Zone 4 及跨中心线重置等模式，用于结构化判异，但不替代假设检验或 Nelson 规则全集的灵敏度分析。",
     "not_for": "不能用于属性计数数据、不能检测 EWMA/CUSUM 类小漂移（除非配合时间加权图）、权重方案不当会降低特定模式检出率。",
     "typical_sample_size": "与子组 X̄ 或个体 I 图相同",
-    "dataset_hint": "smt_paste_height",
+    "dataset_hint": "zone_chart_runs",
     "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
     "common_mistakes": [
       "自定义权重后未验证 ARL/误报率",

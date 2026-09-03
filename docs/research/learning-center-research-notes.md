@@ -2,7 +2,8 @@
 
 > 生成日期：2026-09-03  
 > 覆盖 id 数量：**184**（`analysis_commands::all()` ∪ `algorithm_help.json` entries）  
-> 权威计划（只读）：`docs/research/goal-learning-center-black-belt-plan.md`
+> 权威计划（只读）：`docs/research/goal-learning-center-black-belt-plan.md`  
+> **2026-09-03 教学升级 / Wave-5**：旧 mapping **已作废**。权威：[`goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md`](goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md)；锁表：[`goal-learning-center-pedagogy-upgrade-wave-plan.md`](goal-learning-center-pedagogy-upgrade-wave-plan.md)；现行 mapping：[`learning-center-dataset-mapping.md`](learning-center-dataset-mapping.md)。下文 **用途 / 不能做什么 / 误用** 仍可抽查；**「建议 dataset_id」已对齐 v2 锁表**（空 = 本课无导入表）。
 
 ## 清单审计
 
@@ -11,20 +12,35 @@
 - command-only：`reliability_warranty`
 - 每条 ≥1 权威来源；控制图/图形类含模式识别与「不替代假设检验」说明
 
-## 共享数据集（Agent B 映射参考）
+## 共享数据集（**已淘汰** — 仅考古；勿再生成）
 
-| dataset_id | 场景 |
-|------------|------|
-| smt_paste_height | SMT 锡膏高度 |
-| two_line_thickness | 两产线膜厚 |
-| paired_rework | 返工前后 |
-| anova_cavity | 三模腔尺寸 |
-| corr_temp_offset | 温度 vs 偏移 |
-| attribute_defect | 班次不良 |
-| gage_rr_balance | 量具 R&R |
-| doe_factorial_demo | 析因/Taguchi/混料 |
-| reliability_cycles | 寿命循环 |
-| ts_weekly_yield | 周良率 |
+| dataset_id | 场景 | 本 Goal |
+|------------|------|---------|
+| smt_paste_height | SMT 锡膏高度 | 删除重建 |
+| two_line_thickness | 两产线膜厚 | 删除重建 |
+| paired_rework | 返工前后 | 删除重建 |
+| anova_cavity | 三模腔尺寸 | 删除重建 |
+| corr_temp_offset | 温度 vs 偏移 | 删除重建 |
+| attribute_defect | 班次不良 | 删除重建 |
+| gage_rr_balance | 量具 R&R | 删除重建 |
+| doe_factorial_demo | 析因/Taguchi/混料 | 删除重建 |
+| reliability_cycles | 寿命循环 | 删除重建 |
+| ts_weekly_yield | 周良率 | 删除重建 |
+
+## 专用数据设计模式（2026-09-03 增补）
+
+教学理由：共享宽表把无关列塞进工作记忆（CLT），且同一张失控表无法同时教 I-MR 与 Cpk。默认 `command_id` → 专用 `dataset_id`（**不要** `demo_` 前缀）。同构共享仅白名单。完整表见总册 §6。
+
+| 族 | 建议新 dataset_id（草稿） | 埋点 | 对话框不要填 |
+|----|---------------------------|------|----------------|
+| I-MR | `imr_spi_shift` | 行 41 阶跃；行 55 尖峰 | 阶段列、历史限、Nelson estimate=1 |
+| 双样本 t | `ttest_two_lines` | 两独立列均值差 | 不要用配对列 |
+| Gage 交叉 | `gage_balance_10x3x3` | 10×3×3；一操作员偏倚 | 嵌套布局 |
+| 正态能力 | `cap_stable_spec` | 近似稳定 + 对话框 USL/LSL | 不要用 imr 失控集 |
+| Pareto | `pareto_defect_codes` | 少数类别主导累计 | 不要当控制图 |
+| P 图 | `pchart_lot_defects` | 可变 n + 不合格率台阶 | 缺陷计数字段 |
+
+**权威源勘误（2026-09-03）**：NIST `pmc/section4/pmc4.htm` 现为时间序列，不是 Gage；Pareto `pri/section3/pareto.htm` 重定向失效；Minitab Gage 路径改为 `crossed-gage-r-r-study`；two-sample 应引 `prc/section3/prc31.htm` 而非 `prc22`（单样本）。
 
 ---
 
@@ -56,7 +72,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_area_time`
 
 **权威来源**
 - [NIST Run/Time Plot](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
@@ -88,7 +104,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_bar_category`
 
 **权威来源**
 - [NIST Bar Chart](https://www.itl.nist.gov/div898/handbook/eda/section3/barplot.htm) — accessed 2026-09-03
@@ -120,7 +136,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `graph_two_group_box`
 
 **权威来源**
 - [NIST Boxplot](https://www.itl.nist.gov/div898/handbook/eda/section3/boxplot.htm) — accessed 2026-09-03
@@ -152,7 +168,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_bubble_xyz`
 
 **权威来源**
 - [Minitab Bubble Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/bubble-plots/) — accessed 2026-09-03
@@ -184,7 +200,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Chi-Square](https://www.itl.nist.gov/div898/handbook/prc/section4/prc45.htm) — accessed 2026-09-03
@@ -216,7 +232,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: `graph_contour_xy`
 
 **权威来源**
 - [NIST Contour Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/contour.htm) — accessed 2026-09-03
@@ -248,7 +264,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_corr_matrix`
 
 **权威来源**
 - [NIST Correlation](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
@@ -281,7 +297,7 @@
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Correlation Matrix](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
@@ -313,7 +329,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_density_unimodal`
 
 **权威来源**
 - [NIST Density](https://www.itl.nist.gov/div898/handbook/eda/section3/density.htm) — accessed 2026-09-03
@@ -345,7 +361,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Dot Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/dotplot.htm) — accessed 2026-09-03
@@ -377,7 +393,7 @@
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_ecdf_unimodal`
 
 **权威来源**
 - [NIST EDA CDF](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
@@ -409,7 +425,7 @@ NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合�
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_eda4_series`
 
 **权威来源**
 - [NIST 4-Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
@@ -441,7 +457,7 @@ NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合�
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST EDA Graphical](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
@@ -473,7 +489,7 @@ NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合�
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_heatmap_matrix`
 
 **权威来源**
 - [NIST Heatmap/Contour](https://www.itl.nist.gov/div898/handbook/eda/section3/contour.htm) — accessed 2026-09-03
@@ -505,7 +521,7 @@ NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合�
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_hexbin_xy`
 
 **权威来源**
 - [Matplotlib Hexbin](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hexbin.html) — accessed 2026-09-03
@@ -537,7 +553,7 @@ SMT 锡膏印刷高度（μm）按班次直方图，初判是否右偏或双峰�
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_hist_prob`
 
 **权威来源**
 - [NIST EDA 直方图](https://www.itl.nist.gov/div898/handbook/eda/section3/histogm.htm) — accessed 2026-09-03
@@ -569,7 +585,7 @@ SMT 锡膏印刷高度（μm）按班次直方图，初判是否右偏或双峰�
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_interval_groups`
 
 **权威来源**
 - [Minitab Interval Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/interval-plots/) — accessed 2026-09-03
@@ -600,7 +616,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_marginal_xy`
 
 **权威来源**
 - [Minitab Marginal Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/marginal-plots/) — accessed 2026-09-03
@@ -632,7 +648,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_matrix_three`
 
 **权威来源**
 - [Minitab Matrix Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/matrix-plots/) — accessed 2026-09-03
@@ -664,7 +680,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_mosaic_two_cat`
 
 **权威来源**
 - [Minitab Mosaic](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/mosaic-plots/) — accessed 2026-09-03
@@ -696,7 +712,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_parallel_multi`
 
 **权威来源**
 - [NIST Parallel Coordinates](https://www.itl.nist.gov/div898/handbook/eda/section3/parallel.htm) — accessed 2026-09-03
@@ -728,7 +744,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_pie_category`
 
 **权威来源**
 - [NIST Pie Chart caution](https://www.itl.nist.gov/div898/handbook/eda/section3/piechart.htm) — accessed 2026-09-03
@@ -760,7 +776,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_hist_prob`
 
 **权威来源**
 - [NIST Normal Probability Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/normprpl.htm) — accessed 2026-09-03
@@ -792,7 +808,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `graph_scatter_xy`
 
 **权威来源**
 - [NIST Scatter](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
@@ -824,7 +840,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: `mix_simplex_3`
 
 **权威来源**
 - [NIST Mixture Designs](https://www.itl.nist.gov/div898/handbook/pri/section5/pri532.htm) — accessed 2026-09-03
@@ -856,7 +872,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: `ts_weekly_yield_series`
 
 **权威来源**
 - [NIST Time Series](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
@@ -888,7 +904,7 @@ X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `graph_violin_groups`
 
 **权威来源**
 - [Minitab Violin](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/violin-plots/) — accessed 2026-09-03
@@ -922,7 +938,7 @@ SMT 回流焊对“峰值温度_℃”I 图启用 Test 1+2+5，当“温区7设�
 
 **图形解读要点**: 规则提示特殊原因线索，不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook — WECO Rules on Variables Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc32.htm) — accessed 2026-09-03
@@ -956,7 +972,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `c_chart_defect_step`
 
 **权威来源**
 - [NIST e-Handbook — Counts Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc331.htm) — accessed 2026-09-03
@@ -988,7 +1004,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `spc_small_drift`
 
 **权威来源**
 - [Minitab — Overview for CUSUM Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/time-weighted-charts/cusum-chart/before-you-start/overview/) — accessed 2026-09-03
@@ -1020,7 +1036,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `spc_small_drift`
 
 **权威来源**
 - [Minitab — Overview for EWMA Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/time-weighted-charts/ewma-chart/before-you-start/overview/) — accessed 2026-09-03
@@ -1052,7 +1068,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `g_chart_gap_days`
 
 **权威来源**
 - [Minitab — Overview for G Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/rare-event-charts/g-chart/before-you-start/overview/) — accessed 2026-09-03
@@ -1084,7 +1100,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `genvar_two_var`
 
 **权威来源**
 - [Minitab — Overview for Generalized Variance Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/multivariate-charts/generalized-variance-chart/before-you-start/overview/) — accessed 2026-09-03
@@ -1116,7 +1132,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `t2_two_var_shift`
 
 **权威来源**
 - [NIST e-Handbook — Hotelling Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc341.htm) — accessed 2026-09-03
@@ -1148,11 +1164,17 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `imr_spi_shift`
+
+**建议埋点（教学升级）**
+- 60 行单值；片 1–40 基线；**片 41 起均值阶跃**；**片 55 尖峰**冲向/越过 I 图 UCL；尖峰处 MR 变大
+- 列只要：片号、锡膏高度_um、时段备注（备注不进对话框）
+- 阶段列/历史限留空；`use_nelson_estimate=0`；`tests` 留空走 `rule_policy`
 
 **权威来源**
 - [NIST e-Handbook — Individuals Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm) — accessed 2026-09-03
 - [Minitab — Overview for I-MR Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-individuals/i-mr-chart/before-you-start/overview/) — accessed 2026-09-03
+- [Minitab — Tests for special causes](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/supporting-topics/basics/using-tests-for-special-causes/) — accessed 2026-09-03
 - [Wheeler — Short Run SPC (SPC Press)](https://www.spcpress.com/pdf/DJW359.pdf) — accessed 2026-09-03
 
 ### imr_rs — I-MR-R/S 控制图
@@ -1180,7 +1202,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `imr_rs_subgroup_shift`
 
 **权威来源**
 - [Minitab Real-Time SPC — I-MR-R/S Chart](https://support.minitab.com/en-us/real-time-spc/quality-analyses/control-charts/control-chart-settings-for-each-measure/) — accessed 2026-09-03
@@ -1212,7 +1234,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `laney_p_overdispersed`
 
 **权威来源**
 - [Laney (2002) — Improved Control Charts for Attributes](https://doi.org/10.1081/qen-120003555) — accessed 2026-09-03
@@ -1244,7 +1266,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `laney_u_overdispersed`
 
 **权威来源**
 - [Laney (2002) — Improved Control Charts for Attributes](https://doi.org/10.1081/qen-120003555) — accessed 2026-09-03
@@ -1276,7 +1298,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `mewma_two_var_drift`
 
 **权威来源**
 - [NIST e-Handbook — Multivariate EWMA Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc333.htm) — accessed 2026-09-03
@@ -1308,7 +1330,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: `ma_small_drift`
 
 **权威来源**
 - [Minitab — Overview for Moving Average Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/time-weighted-charts/moving-average-chart/before-you-start/overview/) — accessed 2026-09-03
@@ -1340,7 +1362,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `np_chart_const_n_step`
 
 **权威来源**
 - [NIST e-Handbook — Proportions Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc332.htm) — accessed 2026-09-03
@@ -1372,7 +1394,11 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `p_chart_variable_n_step`
+
+**建议埋点（教学升级）**
+- 可变检验数 n；中段某批不合格率台阶；限随 n 变宽窄
+- 列：不合格品数 + 检验数；不要埋缺陷计数（那是 c/u）
 
 **权威来源**
 - [NIST e-Handbook — Proportions Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc332.htm) — accessed 2026-09-03
@@ -1404,7 +1430,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: `t_chart_time_interval`
 
 **权威来源**
 - [Minitab — Methods and Formulas for T Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/rare-event-charts/t-chart/methods-and-formulas/methods-and-formulas/) — accessed 2026-09-03
@@ -1436,7 +1462,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `u_chart_variable_unit_step`
 
 **权威来源**
 - [NIST e-Handbook — Counts Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc331.htm) — accessed 2026-09-03
@@ -1468,7 +1494,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `xbar_r_n5_range_spike`
 
 **权威来源**
 - [NIST e-Handbook — X-bar and R Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc321.htm) — accessed 2026-09-03
@@ -1500,7 +1526,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `xbar_s_n8_sd_shift`
 
 **权威来源**
 - [NIST e-Handbook — X-bar and S Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc321.htm) — accessed 2026-09-03
@@ -1532,7 +1558,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `z_mr_short_run`
 
 **权威来源**
 - [Wheeler — Short Run SPC Part 3 (SPC Press)](https://www.spcpress.com/pdf/DJW359.pdf) — accessed 2026-09-03
@@ -1564,7 +1590,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 
 **图形解读要点**: 看超出控制限、趋势、周期、游程；模式识别不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `zone_chart_runs`
 
 **权威来源**
 - [Minitab — Overview for Zone Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/control-charts/how-to/variables-charts-for-subgroups/zone-chart/before-you-start/overview/) — accessed 2026-09-03
@@ -1661,7 +1687,7 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 - zero failures at low stress
 - ignoring censoring.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Accelerated Life Testing](https://www.itl.nist.gov/div898/handbook/apr/section5/apr51.htm) — accessed 2026-09-03
@@ -1694,7 +1720,7 @@ ACF/PACF 判断日尺寸偏差的 MA/AR 阶。
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST ACF](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm) — accessed 2026-09-03
@@ -1725,7 +1751,7 @@ ADF 检验周良率是否需一阶差分再建模。
 - 结构突变未处理
 - 忽略季节单位根
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Dickey-Fuller](https://doi.org/10.2307/1912352) — accessed 2026-09-03
@@ -1756,7 +1782,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not using specialized analysis
 - ignoring heredity in model selection.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Jones & Nachtsheim: DSD Analysis Methods](https://www.jmp.com/en/statistics-knowledge-portal/design-of-experiments/screening-designs/definitive-screening-designs) — accessed 2026-09-03
@@ -1787,7 +1813,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - ignoring lognormal nature of SD
 - confounding mean and variance effects.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Analysis of Variance of Dispersion](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -1821,7 +1847,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Analysis of Means (ANOM)](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc32.htm) — accessed 2026-09-03
@@ -1854,7 +1880,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 与 p 图/u 图监控混淆
 - 未统一检验单位。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — ANOM for Attributes](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc33.htm) — accessed 2026-09-03
@@ -1886,7 +1912,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 过拟合高阶
 - 不验证残差白噪声
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST ARIMA](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm) — accessed 2026-09-03
@@ -1917,7 +1943,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 样本小仍多变量
 - 不做残差诊断
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Best Subsets](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/best-subsets-regression/) — accessed 2026-09-03
@@ -1948,7 +1974,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - extrapolating probit beyond data
 - ignoring overdispersion.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: Applied Statistics — Probit Analysis](https://www.wiley.com/en-us/Applied+Statistics+and+Probability+for+Engineers%2C+7th+Edition-p-9781119409530) — accessed 2026-09-03
@@ -1979,7 +2005,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - separation problems (all pass at a setting)
 - inadequate replicates per factor combo.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Factorial with Binary Response](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2010,7 +2036,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 时间序列独立 bootstrap 失真
 - B 太小区间不稳
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Bootstrap](https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc22.htm) — accessed 2026-09-03
@@ -2043,7 +2069,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Bootstrap Two Sample](https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc22.htm) — accessed 2026-09-03
@@ -2074,7 +2100,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 不做剪枝或 CV
 - 把训练精度当泛化
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Breiman CART](https://doi.org/10.1201/9781315139470) — accessed 2026-09-03
@@ -2105,7 +2131,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 不对齐时间戳
 - 多重滞后未校正
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Cross-Correlation](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
@@ -2136,7 +2162,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 未区分独立与配对
 - 合并类别不当。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `cat_shift_line`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Chi-Square Test for Independence](https://www.itl.nist.gov/div898/handbook/prc/section4/prc44.htm) — accessed 2026-09-03
@@ -2168,7 +2194,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 期望过小
 - 与独立性卡方混淆。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `gof_category_bias`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Chi-Square Goodness-of-Fit](https://www.itl.nist.gov/div898/handbook/prc/section4/prc43.htm) — accessed 2026-09-03
@@ -2200,7 +2226,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 未标准化
 - 把聚类当分类真值
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Cluster](https://www.itl.nist.gov/div898/handbook/eda/section3/hclus.htm) — accessed 2026-09-03
@@ -2231,7 +2257,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 混用 Pearson/Spearman
 - 代表变量选择无验证
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Cluster Variables](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-variables/) — accessed 2026-09-03
@@ -2262,7 +2288,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 区组数过少
 - 与卡方独立性检验混淆。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `cochran_three_repeat`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Cochran's Q Test](https://www.itl.nist.gov/div898/handbook/prc/section4/prc48.htm) — accessed 2026-09-03
@@ -2294,7 +2320,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 未检查线性假设
 - 把不同批次/工况混合后得出虚假相关。
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `corr_temp_offset_y`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Correlation](https://www.itl.nist.gov/div898/handbook/eda/section3/eda35c.htm) — accessed 2026-09-03
@@ -2326,7 +2352,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - ignoring within-unit correlation
 - wrong risk set.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Recurrent Events](https://www.itl.nist.gov/div898/handbook/apr/section5/apr57.htm) — accessed 2026-09-03
@@ -2357,7 +2383,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - including covariates with perfect separation
 - tied event handling.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Cox Proportional Hazards](https://www.itl.nist.gov/div898/handbook/apr/section5/apr56.htm) — accessed 2026-09-03
@@ -2388,7 +2414,7 @@ CCF 查环境温度领先于尺寸偏移多少小时。
 - 类别划分不一致
 - 忽略缺失类别。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `cat_shift_line`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Contingency Tables](https://www.itl.nist.gov/div898/handbook/prc/section4/prc44.htm) — accessed 2026-09-03
@@ -2420,7 +2446,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - skipping extra runs
 - too many active effects for run size.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Jones & Nachtsheim (2011): Definitive Screening Designs](https://www.jmp.com/en/statistics-knowledge-portal/design-of-experiments/screening-designs/definitive-screening-designs) — accessed 2026-09-03
@@ -2451,7 +2477,7 @@ SMT 锡膏印刷后测高：列「锡膏高度_um」「班次」「产线」「�
 - 在严重偏态数据上过度解读均值
 - 未分组就混合不同工况的数据。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `desc_unimodal_stable`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Exploratory Data Analysis](https://www.itl.nist.gov/div898/handbook/eda/section2/eda29.htm) — accessed 2026-09-03
@@ -2483,7 +2509,7 @@ SMT 锡膏印刷后测高：列「锡膏高度_um」「班次」「产线」「�
 - 类不平衡忽略
 - 高维小样本过拟合
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Discriminant](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/discriminant-analysis/) — accessed 2026-09-03
@@ -2543,7 +2569,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - insufficient center points
 - assuming rotatability.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Box-Behnken Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2574,7 +2600,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - too few center points for pure error
 - blocking ignored when needed.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Central Composite Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2606,7 +2632,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not verifying |X'X| condition
 - ignoring practical constraints in algorithm.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Optimal Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2638,7 +2664,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - changing factors between runs improperly
 - ignoring significant curvature.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: Design and Analysis of Experiments — Factorial Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2670,7 +2696,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not folding over to de-alias
 - too many factors for run size.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Fractional Factorial & Plackett-Burman](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2700,7 +2726,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - ignoring aliasing in fractional designs
 - not confirming with verification runs.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: `doe_factorial_y`
 
 **权威来源**
 - [Montgomery: DOE — Analysis of Factorial Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2731,7 +2757,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - treating missing as zero
 - not using REML/appropriate unbalanced ANOVA.
 
-**建议 dataset_id**: `gage_rr_balance`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [AIAG MSA Manual (4th ed.)](https://www.aiag.org/quality/msa) — accessed 2026-09-03
@@ -2762,7 +2788,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 不做旋转与残差检查
 - 与 PCA 混用目的
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Factor Analysis](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/factor-analysis/) — accessed 2026-09-03
@@ -2792,7 +2818,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - Confusing subdistribution with cause-specific hazard
 - censoring competing events incorrectly.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Competing Risks](https://www.itl.nist.gov/div898/handbook/apr/section5/apr58.htm) — accessed 2026-09-03
@@ -2822,7 +2848,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 与卡方结论不一致时不检查期望频数
 - 独立/配对设计混淆。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `fisher_small_counts`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Fisher's Exact Test](https://www.itl.nist.gov/div898/handbook/prc/section4/prc50.htm) — accessed 2026-09-03
@@ -2854,7 +2880,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略处理间事后比较
 - 与 Kruskal-Wallis 混淆。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `friedman_three_treat`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Friedman Test](https://www.itl.nist.gov/div898/handbook/prc/section3/prc38.htm) — accessed 2026-09-03
@@ -2886,7 +2912,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 不平衡设计误读主效应
 - 不做假设诊断
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab General MANOVA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/multivariate-analysis-of-variance/) — accessed 2026-09-03
@@ -2917,7 +2943,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - too few replicates
 - not simplifying model after insignificance.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Factorial Extensions](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2948,7 +2974,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - using GLM for split-plot
 - not checking normality/equal variance.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Two-Factor Factorial](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -2979,7 +3005,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 未追查测量错误
 - 高维诅咒未降维
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Liu Isolation Forest](https://doi.org/10.1109/ICDM.2008.17) — accessed 2026-09-03
@@ -3010,7 +3036,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - assuming independence
 - interpreting KM beyond last event time.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Kaplan-Meier](https://www.itl.nist.gov/div898/handbook/apr/section2/apr215.htm) — accessed 2026-09-03
@@ -3041,7 +3067,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - 不同 seed 结果不稳
 - 未标准化
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST k-means](https://www.itl.nist.gov/div898/handbook/eda/section3/kmeans.htm) — accessed 2026-09-03
@@ -3071,7 +3097,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - 组间方差/形状差异大仍解读为位置差
 - 与单因素 ANOVA 结论矛盾时不检查假设。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `kw_three_cavity`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Kruskal-Wallis Test](https://www.itl.nist.gov/div898/handbook/prc/section3/prc37.htm) — accessed 2026-09-03
@@ -3103,7 +3129,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - not checking log-scale normality
 - ignoring competing risks.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Lognormal Distribution](https://www.itl.nist.gov/div898/handbook/apr/section3/apr312.htm) — accessed 2026-09-03
@@ -3134,7 +3160,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - assuming same shape across groups
 - multicollinearity in covariates.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Regression with Life Data](https://www.itl.nist.gov/div898/handbook/apr/section5/apr55.htm) — accessed 2026-09-03
@@ -3164,7 +3190,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - 把概率当计数
 - 忽略类不平衡
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `logit_pass_fail`
 
 **权威来源**
 - [NIST Logistic](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm) — accessed 2026-09-03
@@ -3195,7 +3221,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - 忽略两组形状差异
 - 与双样本 t 结论矛盾时不调查原因。
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `infer_two_sample_location`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Mann-Whitney Test](https://www.itl.nist.gov/div898/handbook/prc/section3/prc35.htm) — accessed 2026-09-03
@@ -3227,7 +3253,7 @@ k=3 对焊接能量曲线聚类分正常/边缘/异常。
 - 显著后不查 univariate
 - 响应高度相关仍多检验
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST MANOVA](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
@@ -3257,7 +3283,7 @@ AOI 与人工复检：列「AOI判定」「人工判定」「板号」，评估�
 - 忽略 discordant pairs 过少
 - 把 McNemar 当成普通 2×2 卡方。
 
-**建议 dataset_id**: `paired_rework`
+**建议 dataset_id**: `mcnemar_paired_binary`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — McNemar Test](https://www.itl.nist.gov/div898/handbook/prc/section4/prc49.htm) — accessed 2026-09-03
@@ -3289,7 +3315,7 @@ AOI 与人工复检：列「AOI判定」「人工判定」「板号」，评估�
 - 嵌套/交叉搞错
 - REML 与 ML 混用比较
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Mixed Models](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/general-linear-model/) — accessed 2026-09-03
@@ -3320,7 +3346,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - misinterpreting trace plots
 - not validating on holdout blends.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Mixture Model Analysis](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -3351,7 +3377,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not re-scaling when totals differ
 - ignoring pseudo-components for narrow ranges.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Mixture Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -3382,7 +3408,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not checking constraint consistency
 - extrapolating outside polytope.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Constrained Mixture Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -3413,7 +3439,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - insufficient replicates for combined model
 - ignoring collinearity.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Mixtures with Process Variables](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -3444,7 +3470,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 不做事后两两比较
 - 样本量过小。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `mood_two_group`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Mood's Median Test](https://www.itl.nist.gov/div898/handbook/prc/section3/prc39.htm) — accessed 2026-09-03
@@ -3476,7 +3502,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 与 PCA 混淆
 - 不做惯性贡献解读
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab MCA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/multiple-correspondence-analysis/) — accessed 2026-09-03
@@ -3507,7 +3533,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - ignoring system age
 - assuming homogeneous Poisson when trend exists.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Repairable Systems](https://www.itl.nist.gov/div898/handbook/apr/section5/apr57.htm) — accessed 2026-09-03
@@ -3538,7 +3564,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 参照水平选择影响 OR 解释
 - 样本极不均衡
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Nominal Logistic](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/nominal-logistic-regression/) — accessed 2026-09-03
@@ -3569,7 +3595,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 初值不当不收敛
 - 局部最优当全局
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Nonlinear](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63n.htm) — accessed 2026-09-03
@@ -3602,7 +3628,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `norm_mild_skew`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Anderson-Darling Test](https://www.itl.nist.gov/div898/handbook/prc/section1/prc11.htm) — accessed 2026-09-03
@@ -3634,7 +3660,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 小计数用近似检验
 - 忽略暴露量不同。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `pois_one_count`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Poisson Process](https://www.itl.nist.gov/div898/handbook/prc/section4/prc47.htm) — accessed 2026-09-03
@@ -3666,7 +3692,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略抽样框与随机性
 - 把时间聚集的不良当成独立。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `prop_one_lot`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — One Proportion Test](https://www.itl.nist.gov/div898/handbook/prc/section4/prc45.htm) — accessed 2026-09-03
@@ -3697,7 +3723,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 等价限无业务定义
 - 与置信区间混淆
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `equiv_prop_one`
 
 **权威来源**
 - [Minitab 1 Proportion Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
@@ -3727,7 +3753,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 用差异检验代替等价
 - p>α 当「未证明不等」
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `equiv_one_near_target`
 
 **权威来源**
 - [Schuirmann TOST](https://doi.org/10.1080/03610918708829567) — accessed 2026-09-03
@@ -3758,7 +3784,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略数据非独立（时间序列）
 - 双侧/单侧假设与业务问题不一致。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `infer_one_sample_mean`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — One-Sample t-Test](https://www.itl.nist.gov/div898/handbook/prc/section2/prc31.htm) — accessed 2026-09-03
@@ -3789,7 +3815,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 用过时的过程 σ 而未重新评估
 - 忽略数据非正态。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `infer_one_sample_mean`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Tests for Location (Z-test)](https://www.itl.nist.gov/div898/handbook/prc/section2/prc12.htm) — accessed 2026-09-03
@@ -3821,7 +3847,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略残差诊断
 - 不等方差仍用标准 ANOVA。
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `anova_one_cavity`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — One-Way ANOVA](https://www.itl.nist.gov/div898/handbook/prc/section2/prc32.htm) — accessed 2026-09-03
@@ -3853,7 +3879,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 不检验比例优势
 - 等级间距不等仍当等距
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Ordinal Logistic](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/ordinal-logistic-regression/) — accessed 2026-09-03
@@ -3884,7 +3910,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - λ 随意设为 1
 - 与 Passing-Bablok 混淆场景
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Orthogonal/Deming](https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd14.htm) — accessed 2026-09-03
@@ -3915,7 +3941,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 重复检验同一数据集而不校正 α
 - 把规格超限点与统计异常值混为一谈。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `outlier_one_spike`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Grubbs' Test for Outliers](https://www.itl.nist.gov/div898/handbook/prc/section1/prc16.htm) — accessed 2026-09-03
@@ -3946,7 +3972,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 配对顺序效应未随机
 - δ 过宽
 
-**建议 dataset_id**: `paired_rework`
+**建议 dataset_id**: `equiv_paired_near`
 
 **权威来源**
 - [Schuirmann TOST paired](https://doi.org/10.1080/03610918708829567) — accessed 2026-09-03
@@ -3977,7 +4003,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 忽略差值的正态性检查
 - 未报告差值均值及置信区间。
 
-**建议 dataset_id**: `paired_rework`
+**建议 dataset_id**: `infer_paired_shift`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Paired t-Test](https://www.itl.nist.gov/div898/handbook/prc/section2/prc23.htm) — accessed 2026-09-03
@@ -4008,7 +4034,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 成分数凭感觉
 - 把 PC 当独立因子因果解释
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `pca_three_var`
 
 **权威来源**
 - [NIST PCA](https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc11.htm) — accessed 2026-09-03
@@ -4039,7 +4065,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 未标准化变量
 - 把载荷当因果权重
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab PLS](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/partial-least-squares-regression/) — accessed 2026-09-03
@@ -4071,7 +4097,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 与二项拟合优度混淆
 - 类别合并随意。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Poisson Distribution Tests](https://www.itl.nist.gov/div898/handbook/prc/section4/prc47.htm) — accessed 2026-09-03
@@ -4103,7 +4129,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - 暴露量不同未用 offset
 - 把比率当正态回归
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Poisson Regression](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm) — accessed 2026-09-03
@@ -4134,7 +4160,7 @@ X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 - extrapolating beyond tested stress
 - ignoring overdispersion.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Probit Analysis](https://www.itl.nist.gov/div898/handbook/pri/section7/pri7.htm) — accessed 2026-09-03
@@ -4165,7 +4191,7 @@ RF 预测良率并排序关键工艺参数。
 - 泄漏未来信息
 - 重要性偏类别变量
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Breiman Random Forests](https://doi.org/10.1023/A:1010933404324) — accessed 2026-09-03
@@ -4196,7 +4222,7 @@ A/B 夹具均值差随机化检验（小样本）。
 - 观测非交换仍置换
 - 只看 p 不看效应量
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Randomization Tests](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
@@ -4227,7 +4253,7 @@ A/B 夹具均值差随机化检验（小样本）。
 - 残差有模式仍用线性
 - 离群点未诊断
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: `regr_temp_strength`
 
 **权威来源**
 - [NIST Regression](https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd14.htm) — accessed 2026-09-03
@@ -4259,7 +4285,7 @@ A/B 夹具均值差随机化检验（小样本）。
 - mixing failure modes
 - insufficient follow-up time.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Reliability](https://www.itl.nist.gov/div898/handbook/apr/section1/apr1.htm) — accessed 2026-09-03
@@ -4291,7 +4317,7 @@ A/B 夹具均值差随机化检验（小样本）。
 - ignoring multiple failure modes
 - mixing redesigns.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Test Plans](https://www.itl.nist.gov/div898/handbook/apr/section3/apr31.htm) — accessed 2026-09-03
@@ -4319,7 +4345,7 @@ A/B 夹具均值差随机化检验（小样本）。
 - ignoring reporting delay
 - mixing redesign cohorts.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: `rel_warranty_counts`
 
 **权威来源**
 - [NIST e-Handbook: Reliability Case Studies](https://www.itl.nist.gov/div898/handbook/apr/section7/apr7.htm) — accessed 2026-09-03
@@ -4349,7 +4375,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - ignoring process constraints
 - not validating optimum on production equipment.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: `doe_opt_two_resp`
 
 **权威来源**
 - [Montgomery: DOE — Response Surface Optimization](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -4380,7 +4406,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - ignoring lack-of-fit
 - active axial points too extreme causing failure runs.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Response Surface Methods](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -4411,7 +4437,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略明显趋势
 - 把随机性当成独立性。
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: `runs_clustered`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Runs Test for Randomness](https://www.itl.nist.gov/div898/handbook/eda/section3/eda35d.htm) — accessed 2026-09-03
@@ -4443,7 +4469,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 单季节数据硬套
 - 不更新模型
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Winters](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
@@ -4473,7 +4499,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 零差处理不一致
 - 与配对设计搞混。
 
-**建议 dataset_id**: `paired_rework`
+**建议 dataset_id**: `infer_paired_shift`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Sign Test](https://www.itl.nist.gov/div898/handbook/prc/section3/prc34.htm) — accessed 2026-09-03
@@ -4505,7 +4531,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 与卡方结论不一致不追查
 - 过度解读距离
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Correspondence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/simple-correspondence-analysis/) — accessed 2026-09-03
@@ -4536,7 +4562,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - ignoring restricted randomization
 - mixed model mis-specification.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Split-Plot Analysis](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -4567,7 +4593,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - too few whole plots
 - confounding whole-plot effects with blocks improperly.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Split-Plot Designs](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -4598,7 +4624,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 多重共线性下不稳定
 - 不做交叉验证
 
-**建议 dataset_id**: `corr_temp_offset`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab Stepwise](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/stepwise-regression/) — accessed 2026-09-03
@@ -4629,7 +4655,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 单侧双侧混淆
 - 事后功效无意义
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Power](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
@@ -4660,7 +4686,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - pooling interactions into error
 - not confirming with confirmation runs.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Robust Design Analysis](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -4691,7 +4717,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not including outer array for noise factors
 - mis-assigning factors to columns.
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Montgomery: DOE — Robust Parameter Design](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119716837) — accessed 2026-09-03
@@ -4721,7 +4747,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 结构突变未分段
 - 残差不查自相关
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: `ts_decomp_seasonal`
 
 **权威来源**
 - [NIST Decomposition](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
@@ -4753,7 +4779,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: `ts_smooth_weekly`
 
 **权威来源**
 - [NIST Smoothing](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
@@ -4784,7 +4810,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 把趋势当永远持续
 - 混用不同时间粒度
 
-**建议 dataset_id**: `ts_weekly_yield`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST Trend](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
@@ -4815,7 +4841,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略交互显著仍只看主效应
 - 未做残差检查。
 
-**建议 dataset_id**: `doe_factorial_demo`
+**建议 dataset_id**: `anova_two_factor`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Two-Way ANOVA](https://www.itl.nist.gov/div898/handbook/prc/section2/prc33.htm) — accessed 2026-09-03
@@ -4847,7 +4873,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略缺陷聚集
 - 与小样本比例检验混淆。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `pois_two_count`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Poisson Rate Comparison](https://www.itl.nist.gov/div898/handbook/prc/section4/prc47.htm) — accessed 2026-09-03
@@ -4878,7 +4904,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略聚类/批次
 - 与 RR/OR 等价混淆
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `equiv_prop_two`
 
 **权威来源**
 - [Minitab 2 Proportion Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
@@ -4909,7 +4935,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略不同组抽检量差异的解读
 - 只比较比例不看置信区间。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `prop_two_line`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Two Proportions Test](https://www.itl.nist.gov/div898/handbook/prc/section4/prc46.htm) — accessed 2026-09-03
@@ -4940,7 +4966,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 与 superiority 检验混淆
 - 忽略多重比较
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `equiv_two_near_equal`
 
 **权威来源**
 - [FDA Statistical Guidance](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/statistical-guidance-reporting-results-studies-evaluating-diagnostic-tests) — accessed 2026-09-03
@@ -4970,7 +4996,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 比值限无监管依据
 - 离群未调查
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `equiv_ratio_near_one`
 
 **权威来源**
 - [ICH E9](https://www.ich.org/page/efficacy-guidelines) — accessed 2026-09-03
@@ -5001,12 +5027,16 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 忽略组间独立性与随机化
 - 只报告 p 值不报告差值置信区间。
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `infer_two_sample_location`
+
+**建议埋点（教学升级）**
+- 两列独立样本，均值差约 0.8–1.5σ；默认对话框 `variance=welch`
+- 不要埋配对结构（那是 `paired_t`）
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — Two-Sample t-Test](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
+- [NIST/SEMATECH e-Handbook — Two processes same mean](https://www.itl.nist.gov/div898/handbook/prc/section3/prc31.htm) — accessed 2026-09-03（**勘误**：`prc22.htm` 是单样本均值，不是双样本）
+- [NIST — One-sample mean (prc22)](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
 - [Montgomery — Design and Analysis of Experiments, Ch. 2](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714648) — accessed 2026-09-03
-- [ASQ — Two-Sample t-Test](https://asq.org/quality-resources/t-test) — accessed 2026-09-03
 
 ### variance_test — 等方差检验
 
@@ -5033,7 +5063,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 把标准差比当成能力比
 - 重复检验不校正。
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: `var_two_line_unequal`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — F-Test for Equality of Variances](https://www.itl.nist.gov/div898/handbook/prc/section2/prc21.htm) — accessed 2026-09-03
@@ -5065,7 +5095,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - wrong prior specification
 - not performing prior sensitivity.
 
-**建议 dataset_id**: `reliability_cycles`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Bayesian Reliability](https://www.itl.nist.gov/div898/handbook/apr/section7/apr73.htm) — accessed 2026-09-03
@@ -5096,7 +5126,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 与配对 t 混用条件
 - 忽略差值对称性假设。
 
-**建议 dataset_id**: `paired_rework`
+**建议 dataset_id**: `infer_paired_shift`
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook — Wilcoxon Signed Rank Test](https://www.itl.nist.gov/div898/handbook/prc/section3/prc36.htm) — accessed 2026-09-03
@@ -5131,7 +5161,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - applying wrong plan for lot size
 - confusing AQL with process capability.
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Acceptance Sampling](https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc26.htm) — accessed 2026-09-03
@@ -5163,7 +5193,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - too few borderline parts
 - ignoring low kappa despite high % agreement.
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [AIAG MSA Manual (4th ed.) — Attribute MSA](https://www.aiag.org/quality/msa) — accessed 2026-09-03
@@ -5195,7 +5225,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - not verifying batch stability
 - using normal capability on batch means only.
 
-**建议 dataset_id**: `two_line_thickness`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab: Between/Within Capability (batch context)](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-sixpack/between-within-capability-sixpack/) — accessed 2026-09-03
@@ -5226,7 +5256,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - interpreting high Cpk when Ppk is poor
 - insufficient subgroups across batches.
 
-**建议 dataset_id**: `anova_cavity`
+**建议 dataset_id**: `cap_between_within`
 
 **权威来源**
 - [Minitab: Between/Within Capability Analysis](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/between-within-capability-analysis/) — accessed 2026-09-03
@@ -5257,7 +5287,7 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - using normal approximation for rare events
 - not checking stability of defect rate over time.
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `cap_binomial_lots`
 
 **权威来源**
 - [NIST e-Handbook: Attribute Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc35.htm) — accessed 2026-09-03
@@ -5287,7 +5317,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - back-transforming capability incorrectly
 - ignoring that λ is estimated (extra uncertainty).
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `dist_skew_boxcox`
 
 **权威来源**
 - [NIST e-Handbook: Box-Cox Transformation](https://www.itl.nist.gov/div898/handbook/pmc/section6/pmc63.htm) — accessed 2026-09-03
@@ -5320,11 +5350,15 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - mixing batches/shifts
 - treating specification target as required for Cpk.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `cap_stable_spec`
+
+**建议埋点（教学升级）**
+- 近似受控、近正态；轻微偏心使 Cpk < Cp；USL/LSL 只在对话框，不进表
+- 不要埋片 41/55 类特殊原因
 
 **权威来源**
 - [NIST/SEMATECH e-Handbook: Process Capability](https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc16.htm) — accessed 2026-09-03
-- [Minitab: Normal Capability Analysis](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/normal-capability-analysis/) — accessed 2026-09-03
+- [Minitab: Normal Capability Analysis Overview](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/normal-capability-analysis/before-you-start/overview/) — accessed 2026-09-03
 - [AIAG PPAP Manual (4th ed.) — Process Capability Studies](https://www.aiag.org/quality/ppap) — accessed 2026-09-03
 
 ### capability_sixpack — 过程能力 Sixpack
@@ -5353,7 +5387,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 
 **图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `cap_stable_spec`
 
 **权威来源**
 - [Minitab: Capability Sixpack Overview](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-sixpack/) — accessed 2026-09-03
@@ -5385,7 +5419,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `fishbone_solder_causes`
 
 **权威来源**
 - [ASQ Fishbone](https://asq.org/quality-resources/fishbone) — accessed 2026-09-03
@@ -5416,7 +5450,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - not holding out validation data
 - mixing censored and uncensored incorrectly.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `dist_id_candidates`
 
 **权威来源**
 - [Minitab: Individual Distribution Identification](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/reliability-survival/how-to/distribution-id-right-censoring/) — accessed 2026-09-03
@@ -5446,7 +5480,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - mis-specifying random vs fixed factors
 - insufficient parts for interaction df.
 
-**建议 dataset_id**: `gage_rr_balance`
+**建议 dataset_id**: `msa_crossed_aiag`
 
 **权威来源**
 - [AIAG MSA Manual (4th ed.) — ANOVA Method](https://www.aiag.org/quality/msa) — accessed 2026-09-03
@@ -5476,7 +5510,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - not documenting ANOVA assumptions
 - mixing fixed and random effects incorrectly.
 
-**建议 dataset_id**: `gage_rr_balance`
+**建议 dataset_id**: `msa_expanded_crossed`
 
 **权威来源**
 - [AIAG MSA Manual (4th ed.)](https://www.aiag.org/quality/msa) — accessed 2026-09-03
@@ -5508,12 +5542,16 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - accepting %GRR<30% without checking NDC≥5
 - using wrong method for nested layouts.
 
-**建议 dataset_id**: `gage_rr_balance`
+**建议 dataset_id**: `msa_crossed_aiag`
+
+**建议埋点（教学升级）**
+- 10 parts × 3 operators × 3 trials；零件覆盖过程范围；一名操作员系统偏倚
+- 不写「量具通过」；NDC / %GR&R 只作统计描述
 
 **权威来源**
-- [AIAG MSA Manual (4th ed.)](https://www.aiag.org/quality/msa) — accessed 2026-09-03
-- [Minitab: Gage R&R Study (Crossed)](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/measurement-system-analysis/how-to/gage-study/gage-r-r-study-crossed/) — accessed 2026-09-03
-- [NIST e-Handbook: Gage R&R](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc4.htm) — accessed 2026-09-03
+- [Minitab: Crossed Gage R&R Overview](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/measurement-system-analysis/how-to/gage-study/crossed-gage-r-r-study/before-you-start/overview/) — accessed 2026-09-03（旧 `gage-r-r-study-crossed` 路径 404）
+- [NIST e-Handbook: Gauge R&R variability](https://www.itl.nist.gov/div898/handbook/mpc/section4/mpc44.htm) — accessed 2026-09-03（**勘误**：`pmc/section4/pmc4.htm` 现为时间序列，不是 Gage）
+- [Minitab: Is my measurement system acceptable?](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/measurement-system-analysis/supporting-topics/gage-r-r-and-wheeler-s-emp-studies/is-my-measurement-system-acceptable/) — accessed 2026-09-03
 
 ### msa_type1 — MSA Type 1 / Bias / Stability
 
@@ -5540,7 +5578,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - not comparing bias to tolerance
 - ignoring gage resolution.
 
-**建议 dataset_id**: `gage_rr_balance`
+**建议 dataset_id**: `msa_type1_ref`
 
 **权威来源**
 - [AIAG MSA Manual (4th ed.) — Type 1 Study](https://www.aiag.org/quality/msa) — accessed 2026-09-03
@@ -5570,7 +5608,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - too few levels per factor
 - stopping at chart without confirmation experiment.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `multi_vari_pos_time`
 
 **权威来源**
 - [NIST e-Handbook: Multi-Vari Studies](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm) — accessed 2026-09-03
@@ -5600,7 +5638,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - parts not matched for difficulty across operators
 - too few parts per operator.
 
-**建议 dataset_id**: `gage_rr_balance`
+**建议 dataset_id**: `msa_nested_operator`
 
 **权威来源**
 - [AIAG MSA Manual (4th ed.) — Nested Designs](https://www.aiag.org/quality/msa) — accessed 2026-09-03
@@ -5632,7 +5670,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - selecting distribution by best p-value alone without engineering rationale
 - mixing special causes.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [Minitab: Nonnormal Capability Analysis](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/capability-analysis/how-to/capability-analysis/nonnormal-capability-analysis/) — accessed 2026-09-03
@@ -5663,7 +5701,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - misinterpreting empirical percentiles as long-term performance
 - ignoring time/order structure.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Nonparametric Methods](https://www.itl.nist.gov/div898/handbook/pmc/section6/pmc62.htm) — accessed 2026-09-03
@@ -5695,11 +5733,15 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `pareto_defect_tail`
+
+**建议埋点（教学升级）**
+- 少数缺陷代码占累计大部分 + 长尾；可选计数列
+- 不证明因果；不与控制图共用失控时间序
 
 **权威来源**
-- [AIAG 质量工具](https://www.aiag.org/quality/) — accessed 2026-09-03
-- [NIST Pareto](https://www.itl.nist.gov/div898/handbook/pri/section3/pareto.htm) — accessed 2026-09-03
+- [Minitab: Pareto Chart Overview](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/quality-tools/how-to/pareto-chart/before-you-start/overview/) — accessed 2026-09-03
+- [NIST Pareto `pri/section3/pareto.htm`](https://www.itl.nist.gov/div898/handbook/pri/section3/pareto.htm) — accessed 2026-09-03 **失效**（重定向 ITL 首页）
 
 ### poisson_capability — 泊松过程能力
 
@@ -5726,7 +5768,7 @@ Poisson 缺陷率能力。
 - using Poisson when defects cluster
 - unstable inspection standards.
 
-**建议 dataset_id**: `attribute_defect`
+**建议 dataset_id**: `cap_poisson_counts`
 
 **权威来源**
 - [NIST e-Handbook: Poisson Control Charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc36.htm) — accessed 2026-09-03
@@ -5758,7 +5800,7 @@ Poisson 缺陷率能力。
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: `run_chart_median_trend`
 
 **权威来源**
 - [NIST Run Chart](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc32.htm) — accessed 2026-09-03
@@ -5789,7 +5831,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - wrong sided vs two-sided
 - interpreting as spec compliance without stability.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Tolerance Intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc25.htm) — accessed 2026-09-03
@@ -5820,7 +5862,7 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - too few levels
 - not labeling hierarchy correctly.
 
-**建议 dataset_id**: `smt_paste_height`
+**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）
 
 **权威来源**
 - [NIST e-Handbook: Multi-Vari Chart](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm) — accessed 2026-09-03

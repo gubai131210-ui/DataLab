@@ -1,11 +1,29 @@
 #!/usr/bin/env python3
 """Verify learning-center-research-notes.md covers all required IDs."""
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+BANNED_OLD_DATASET_IDS = {
+    "smt_paste_height",
+    "two_line_thickness",
+    "paired_rework",
+    "anova_cavity",
+    "corr_temp_offset",
+    "attribute_defect",
+    "gage_rr_balance",
+    "doe_factorial_demo",
+    "reliability_cycles",
+    "ts_weekly_yield",
+}
+
+
+def token_pattern(old_id: str) -> re.Pattern[str]:
+    return re.compile(rf"(?<![A-Za-z0-9_]){re.escape(old_id)}(?![A-Za-z0-9_])")
 
 
 def main() -> int:
@@ -19,7 +37,6 @@ def main() -> int:
         print("MISSING:", sorted(missing))
     if extra:
         print("EXTRA:", sorted(extra))
-    # chart/control chart must have 图形解读要点
     sections = re.split(r"^### ", md, flags=re.MULTILINE)[1:]
     no_chart_note = []
     for sec in sections:
@@ -36,7 +53,26 @@ def main() -> int:
     no_source = [s.split(" —", 1)[0] for s in sections if "accessed 2026-09-03" not in s]
     if no_source:
         print("SOURCE DATE MISSING:", no_source[:5], "...")
-    ok = not missing and not extra and not no_chart_note
+
+    banned_suggest = []
+    wave_raw = os.environ.get("LEARNING_CENTER_WAVE", "0").strip().lower()
+    if wave_raw in {"all", "final", "done"}:
+        wave = 5
+    elif wave_raw.isdigit():
+        wave = int(wave_raw)
+    else:
+        wave = 0
+    if wave >= 5:
+        for lineno, line in enumerate(md.splitlines(), 1):
+            if "建议 dataset_id" not in line:
+                continue
+            for old in BANNED_OLD_DATASET_IDS:
+                if token_pattern(old).search(line):
+                    banned_suggest.append(f"L{lineno}:{old}")
+        if banned_suggest:
+            print("BANNED SUGGESTED DATASET:", banned_suggest[:20], "...")
+
+    ok = not missing and not extra and not no_chart_note and not banned_suggest
     print(f"VERIFY: {'PASS' if ok else 'FAIL'} — {len(found)}/{len(required)} ids")
     return 0 if ok else 1
 

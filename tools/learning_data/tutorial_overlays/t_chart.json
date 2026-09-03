@@ -1,0 +1,135 @@
+{
+  "title": "T 图",
+  "used_for": "稀有事件连续时间间隔（小时等）。",
+  "not_for": "不要与计量 I-MR 混用场景。",
+  "scenario": "设备宕机间隔小时。事件25起变短。",
+  "related_ids": [
+    "g_chart"
+  ],
+  "dialog_fill": {
+    "variables": "间隔小时"
+  },
+  "click_steps": [
+    "导入 `demo_t_chart_time_interval`。",
+    "菜单：控制图 → T 图。",
+    "间隔列=`间隔小时`；规则默认；tests 留空。",
+    "对照事件25；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "间隔列 (`variables`)",
+      "put": "间隔小时",
+      "meaning": "连续时间间隔。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈t）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "T 图",
+      "plain": "稀有事件时间间隔控制图。",
+      "remember": "与 G 图同类，尺度常为连续时间。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 25,
+      "what": "事件25起间隔缩短",
+      "expect": "T 图后段下移。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "T 图",
+      "meaning": "事件25后间隔变短。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。"
+  ],
+  "skill_mission": "用 T 图识别宕机间隔在事件25后变短。",
+  "prereq_quiz": [
+    {
+      "q": "T 图监视什么？",
+      "good": "事件间隔时间",
+      "bad": "子组均值"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "必须区分",
+      "bad": "相同"
+    },
+    {
+      "q": "本课埋点行？",
+      "good": "25",
+      "bad": "41"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "为何不用 I-MR 画间隔？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_t_chart_time_interval`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_t_chart_time_interval`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行25期望",
+    "与 G 图关系",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "必须停线因为一点越界",
+      "right": "越界是调查线索，教程禁止「必须停线」。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+{
+  "title": "Expanded Gage R&R",
+  "used_for": "三因子平衡交叉量具：零件×操作员×附加因子。",
+  "not_for": "不平衡设计见公式参考课；两因子交叉用 gage_rr。禁止量具通过。",
+  "scenario": "工装作为附加因子。工装 F2 噪声更大。",
+  "related_ids": [
+    "gage_rr",
+    "expanded_gage_unbalanced"
+  ],
+  "dialog_fill": {
+    "measurement": "测量值_um",
+    "part": "零件号",
+    "operator": "操作员",
+    "additional": "工装"
+  },
+  "click_steps": [
+    "导入 `demo_msa_expanded_crossed`。",
+    "菜单：质量工具 → Expanded Gage R&R。",
+    "测量/零件/操作员/附加因子=工装；公差可选 15。",
+    "对照工装 F2 噪声放大；禁止量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`measurement`)",
+      "put": "测量值_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "零件 (`part`)",
+      "put": "零件号",
+      "meaning": "零件因子。"
+    },
+    {
+      "field": "操作员 (`operator`)",
+      "put": "操作员",
+      "meaning": "操作员因子。"
+    },
+    {
+      "field": "附加因子 (`additional`)",
+      "put": "工装",
+      "meaning": "第三交叉因子。"
+    },
+    {
+      "field": "公差（可选） (`tolerance`)",
+      "put": "15（可选）",
+      "meaning": "公差宽度；不是 UCL。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "附加因子",
+      "plain": "零件/操作员之外的第三交叉因子（如工装）。",
+      "remember": "本课工装 F2 抬高噪声。"
+    },
+    {
+      "term": "平衡设计",
+      "plain": "各水平组合重复次数齐。",
+      "remember": "不平衡另课。"
+    },
+    {
+      "term": "公差宽度",
+      "plain": "规格上下限之差一类尺度。",
+      "remember": "不是控制限。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 25,
+      "what": "约行25起进入工装F2 区块，测量噪声放大",
+      "expect": "附加因子方差抬高；勿写量具通过。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "三因子方差",
+      "meaning": "F2 噪声应可见。禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "漏选附加因子",
+    "与两因子表混用"
+  ],
+  "skill_mission": "完成三因子 Expanded Gage R&R，指出工装 F2 噪声。",
+  "prereq_quiz": [
+    {
+      "q": "附加因子列？",
+      "good": "工装",
+      "bad": "备注"
+    },
+    {
+      "q": "F2 埋点？",
+      "good": "噪声放大",
+      "bad": "均值合格"
+    },
+    {
+      "q": "能量具通过？",
+      "good": "不能写",
+      "bad": "能"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选四列",
+      "prompt": "少选附加因子会怎样？"
+    },
+    {
+      "after": "读输出",
+      "prompt": "公差输入是控制限吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_msa_expanded_crossed`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_msa_expanded_crossed`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "F2？",
+    "与 gage_rr 区别",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "三因子=%GR&R 自动更准",
+      "right": "设计匹配才有意义；禁止量具通过。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

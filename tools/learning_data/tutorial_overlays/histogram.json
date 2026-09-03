@@ -1,0 +1,132 @@
+{
+  "title": "直方图",
+  "used_for": "看单变量形状/峰度/偏态线索。与概率图同构共享 graph_hist_prob。",
+  "not_for": "替代控制图；规格符合性。禁止已证明正态。禁止扩共享到 density/ecdf。",
+  "scenario": "近正态厚度；行48–50 轻微右尾。导入 demo_graph_hist_prob。",
+  "related_ids": [
+    "probability_plot",
+    "density_plot",
+    "capability"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_graph_hist_prob`。",
+    "菜单：图形 → 直方图。",
+    "变量=`厚度_um`；分组可留空；组数可留空自动。",
+    "对照行48–50 右尾肩部；禁止已证明正态；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量（可多选） (`variables`)",
+      "put": "厚度_um",
+      "meaning": "连续 Y。"
+    },
+    {
+      "field": "分组变量 (`by`)",
+      "put": "留空",
+      "meaning": "可选；本课不分面。"
+    },
+    {
+      "field": "组数（可选） (`bins`)",
+      "put": "留空",
+      "meaning": "自动分箱。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "直方图",
+      "plain": "频数按区间堆积。",
+      "remember": "形状线索，不是控制限。"
+    },
+    {
+      "term": "右尾",
+      "plain": "高值侧拉长。",
+      "remember": "本课行48–50。"
+    },
+    {
+      "term": "已证明正态",
+      "plain": "禁止句。",
+      "remember": "图贴线≠证明。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 48,
+      "what": "行48–50 轻微右尾偏高",
+      "expect": "直方图右侧肩部；勿写已证明正态/过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "直方图",
+      "meaning": "指着右尾肩部。禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能导入同构表画直方图并拒绝正态证明话术。",
+  "prereq_quiz": [
+    {
+      "q": "与概率图共享表？",
+      "good": "graph_hist_prob",
+      "bad": "各一张宽表"
+    },
+    {
+      "q": "可写已证明正态？",
+      "good": "禁止",
+      "bad": "可以"
+    },
+    {
+      "q": "UCL=柱高？",
+      "good": "否",
+      "bad": "是"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "画图",
+      "prompt": "为何不把 density 挂到同表？"
+    },
+    {
+      "after": "读右尾",
+      "prompt": "右尾=必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_graph_hist_prob`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_graph_hist_prob`，自己改一个可选字段，不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "共享族？",
+    "行48？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "直方图贴正态曲线=已证明正态",
+      "right": "禁止已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

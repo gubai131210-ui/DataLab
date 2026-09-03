@@ -1,0 +1,159 @@
+{
+  "title": "I-MR-R/S 控制图",
+  "used_for": "同时看个体/移动极差与子组 R 或 S 的组合诊断。",
+  "not_for": "不要当成单纯 I-MR 金标课；需要子组结构。",
+  "scenario": "每批5件。子组16起批均值上移。",
+  "related_ids": [
+    "imr",
+    "xbar_r"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um",
+    "subgroup": "子组"
+  },
+  "click_steps": [
+    "导入 `demo_imr_rs_subgroup_shift`。",
+    "菜单：控制图 → I-MR-R/S 控制图。",
+    "变量=`厚度_um`；子组列=`子组`；子组大小=5；阶段列留空；规则默认；tests 留空。",
+    "对照子组16；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "测量 Y。"
+    },
+    {
+      "field": "子组列 (`subgroup`)",
+      "put": "子组",
+      "meaning": "合理子组编号。"
+    },
+    {
+      "field": "阶段列 (`stage`)",
+      "put": "留空",
+      "meaning": "本课同一阶段看均值台阶。"
+    },
+    {
+      "field": "子组大小 (`subgroup_size`)",
+      "put": "5",
+      "meaning": "与数据每组5行一致。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈individuals）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "合理子组",
+      "plain": "组内尽量只含普通原因波动。",
+      "remember": "子组乱则限无意义。"
+    },
+    {
+      "term": "I-MR-R/S",
+      "plain": "个体图与子组离散图组合。",
+      "remember": "先看离散侧是否乱。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 76,
+      "what": "子组16起（约行76）均值台阶",
+      "expect": "位置侧后段上移；R/S 侧相对稳定。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "组合图",
+      "meaning": "子组16后位置上移。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "不选子组列",
+    "与金标 imr_spi_shift 混用"
+  ],
+  "skill_mission": "用 I-MR-R/S 在子组结构下检出子组16均值台阶。",
+  "prereq_quiz": [
+    {
+      "q": "子组列本课填？",
+      "good": "子组",
+      "bad": "留空也可随便"
+    },
+    {
+      "q": "能否用 imr_spi_shift？",
+      "good": "不能",
+      "bad": "能"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选子组列",
+      "prompt": "若不选子组列会损失什么信息？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_imr_rs_subgroup_shift`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_imr_rs_subgroup_shift`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "子组16期望",
+    "与纯 I-MR 差别",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "R 图安静就可以宣称合格",
+      "right": "离散稳定≠符合规格。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

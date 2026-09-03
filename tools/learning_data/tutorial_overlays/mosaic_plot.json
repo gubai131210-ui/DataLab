@@ -1,0 +1,122 @@
+{
+  "title": "马赛克图",
+  "used_for": "用专用集 `graph_mosaic_two_cat` 练习「马赛克图」。",
+  "not_for": "替代推断/放行结论；禁止过程合格 / 已证明正态 / 必须停线。",
+  "scenario": "导入 `demo_graph_mosaic_two_cat`。分类列多选 `班次` 与 `缺陷类别`。",
+  "related_ids": [
+    "histogram",
+    "scatter_plot",
+    "graph_gallery"
+  ],
+  "dialog_fill": {
+    "categories": "班次,缺陷类别"
+  },
+  "click_steps": [
+    "导入 `demo_graph_mosaic_two_cat`。",
+    "菜单：图形 → 马赛克图。",
+    "按角色映射：分类列多选 `班次` 与 `缺陷类别`。",
+    "对照埋点读图；禁止过程合格 / 已证明正态 / 必须停线。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "分类列（2～3） (`categories`)",
+      "put": "班次,缺陷类别",
+      "meaning": "多选两列。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "马赛克图",
+      "plain": "列联面积。",
+      "remember": "看关联。"
+    },
+    {
+      "term": "晚班虚焊",
+      "plain": "格更大。",
+      "remember": "埋点。"
+    },
+    {
+      "term": "≠卡方证明",
+      "plain": "图是探索。",
+      "remember": "推断另课。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "晚班×虚焊占比抬高",
+      "expect": "对应格面积大；勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "马赛克图",
+      "meaning": "对照埋点；禁止过程合格；禁止已证明正态；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能独立导入 `demo_graph_mosaic_two_cat` 完成「马赛克图」并拒绝禁止句。",
+  "prereq_quiz": [
+    {
+      "q": "dataset？",
+      "good": "graph_mosaic_two_cat",
+      "bad": "旧10表"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    },
+    {
+      "q": "菜单？",
+      "good": "图形",
+      "bad": "随便猜"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "本课为何专用表？"
+    },
+    {
+      "after": "读图",
+      "prompt": "埋点对应哪一行？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_graph_mosaic_two_cat`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_graph_mosaic_two_cat`，自己改一个可选字段，不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "dataset_id？",
+    "埋点行？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "图画完=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

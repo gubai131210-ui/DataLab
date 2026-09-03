@@ -1,0 +1,141 @@
+{
+  "title": "Wilcoxon 符号秩检验",
+  "used_for": "配对（或单样本相对η0）的符号秩。本课用两列配对。",
+  "not_for": "独立两样本用 Mann-Whitney。",
+  "scenario": "同 infer_paired_shift。",
+  "related_ids": [
+    "paired_t",
+    "sign_test"
+  ],
+  "dialog_fill": {
+    "variables": "返工前_um,返工后_um"
+  },
+  "click_steps": [
+    "导入 `demo_infer_paired_shift`。",
+    "菜单：统计 → Wilcoxon 符号秩检验。",
+    "变量多选两列配对；假设中位数η0 对配对可忽略；置信=95%。",
+    "对照正差埋点。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "一列或两列配对 (`variables`)",
+      "put": "返工前_um,返工后_um",
+      "meaning": "本课两列。"
+    },
+    {
+      "field": "假设中位数 η0 (`hypothesized_median`)",
+      "put": "0（配对忽略）",
+      "meaning": "单样本才关键。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "Walsh CI。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "符号秩",
+      "plain": "基于秩的配对位置。",
+      "remember": "少依赖正态。"
+    },
+    {
+      "term": "配对两列",
+      "plain": "本课模式。",
+      "remember": "也可单列对η0。"
+    },
+    {
+      "term": "同构",
+      "plain": "infer_paired_shift。",
+      "remember": "白名单。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "正差主导",
+      "expect": "符号秩拒绝无差线索"
+    },
+    {
+      "row": 40,
+      "what": "末对正差",
+      "expect": "与配对t对照"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Wilcoxon 统计量/p",
+      "meaning": "对照埋点；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能用两列配对完成 Wilcoxon 并对照埋点。",
+  "prereq_quiz": [
+    {
+      "q": "本课列？",
+      "good": "两列",
+      "bad": "必须一列"
+    },
+    {
+      "q": "dataset？",
+      "good": "infer_paired_shift",
+      "bad": "独享"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "跑完",
+      "prompt": "与配对t何时一起看？"
+    },
+    {
+      "after": "读η0",
+      "prompt": "配对为何可忽略η0？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_infer_paired_shift`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_infer_paired_shift`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "符号秩？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "非参数=已证明正态不需要",
+      "right": "仍勿写已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

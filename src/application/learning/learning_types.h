@@ -14,6 +14,46 @@ struct LearningOutputGuideItem {
     QString meaning;
 };
 
+struct LearningGlossaryItem {
+    QString term;
+    QString plain;
+    QString remember;
+};
+
+struct LearningDialogFillDetail {
+    QString field;
+    QString put;
+    QString meaning;
+};
+
+struct LearningBuriedSignal {
+    int row = 0;
+    QString what;
+    QString expect;
+};
+
+struct LearningPrereqItem {
+    QString q;
+    QString good;
+    QString bad;
+};
+
+struct LearningSelfExplain {
+    QString after;
+    QString prompt;
+};
+
+struct LearningFadeLevel {
+    int level = 0;
+    QString student;
+    QString scaffold;
+};
+
+struct LearningMisconception {
+    QString wrong;
+    QString right;
+};
+
 struct LearningTutorialEntry {
     QString command_id;
     QString title;
@@ -29,6 +69,15 @@ struct LearningTutorialEntry {
     QVector<LearningOutputGuideItem> output_guide;
     QStringList common_mistakes;
     QStringList related_ids;
+    QVector<LearningGlossaryItem> glossary;
+    QVector<LearningDialogFillDetail> dialog_fill_detail;
+    QVector<LearningBuriedSignal> buried_signals;
+    QVector<LearningPrereqItem> prereq_quiz;
+    QVector<LearningSelfExplain> self_explain;
+    QVector<LearningFadeLevel> fade_levels;
+    QStringList retrieval_quiz;
+    QVector<LearningMisconception> misconceptions;
+    QString skill_mission;
 };
 
 struct LearningDatasetSummary {
@@ -37,6 +86,7 @@ struct LearningDatasetSummary {
     QString industry;
     QString story;
     int row_count = 0;
+    QString notes;
 };
 
 }  // namespace datalab::application::learning

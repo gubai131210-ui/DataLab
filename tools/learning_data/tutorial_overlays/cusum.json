@@ -1,0 +1,167 @@
+{
+  "title": "CUSUM 控制图",
+  "used_for": "累积偏差以更快检出小幅持续偏移。与 EWMA 同构共享 `spc_small_drift`。",
+  "not_for": "不能当假设检验 p 值；大尖峰仍看 Shewhart。禁止挂 imr_spi_shift。",
+  "scenario": "同一厚度小漂移集。用 CUSUM（目标≈100，σ≈0.4）看累积和是否在片31后偏离。",
+  "related_ids": [
+    "ewma",
+    "imr"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_spc_small_drift`。",
+    "菜单：控制图 → CUSUM 控制图。",
+    "测量值=`厚度_um`；目标值=100；过程 Sigma=0.4；k=0.5；h=4；规则默认；tests 留空。",
+    "对照片31：CUSUM 应累积偏离；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "单值 Y。"
+    },
+    {
+      "field": "目标值 (`target`)",
+      "put": "100",
+      "meaning": "CUSUM 相对目标累积；对本集基线均值。"
+    },
+    {
+      "field": "过程 Sigma (`sigma`)",
+      "put": "0.4",
+      "meaning": "标准化尺度；勿填成规格公差。"
+    },
+    {
+      "field": "参考值 k (`k`)",
+      "put": "0.5",
+      "meaning": "允许松弛（以 σ 计）。"
+    },
+    {
+      "field": "决策间隔 h (`h`)",
+      "put": "4",
+      "meaning": "越界阈值。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈cusum）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "CUSUM",
+      "plain": "累积和：把相对目标的偏差累加起来。",
+      "remember": "小偏移会慢慢堆高。"
+    },
+    {
+      "term": "k / h",
+      "plain": "参考值与决策间隔，决定灵敏度。",
+      "remember": "本课用默认 0.5 / 4 作教学起点。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 31,
+      "what": "片31起小台阶",
+      "expect": "CUSUM 统计量后段偏离决策间隔；勿写必须停线。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "CUSUM 图",
+      "meaning": "片31后累积偏离。UCL/决策限 ≠ USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "把 sigma 填成规格半宽",
+    "把 CUSUM 当 p 值检验"
+  ],
+  "skill_mission": "用 CUSUM 在同构小漂移集上检出片31偏移，并区分决策限与规格限。",
+  "prereq_quiz": [
+    {
+      "q": "CUSUM 与 EWMA 本课能否共享表？",
+      "good": "可以，白名单 spc_small_drift",
+      "bad": "必须各一张宽表"
+    },
+    {
+      "q": "目标值应填？",
+      "good": "过程目标/基线均值约100",
+      "bad": "客户 USL"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是，必须区分",
+      "bad": "控制限就是规格"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "填 sigma=0.4",
+      "prompt": "若误填成规格公差会发生什么？"
+    },
+    {
+      "after": "读图",
+      "prompt": "累积偏离等于必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_spc_small_drift`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_spc_small_drift`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "本族服务哪些命令？",
+    "片31期望？",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "CUSUM 越界=已证明均值差显著",
+      "right": "是监视线索，不替代设计好的假设检验。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

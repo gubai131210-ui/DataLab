@@ -1,0 +1,163 @@
+{
+  "title": "双样本泊松率",
+  "used_for": "两率比较。",
+  "not_for": "单率用 one_poisson_rate。",
+  "scenario": "导入 demo_pois_two_count。",
+  "related_ids": [
+    "one_poisson_rate"
+  ],
+  "dialog_fill": {
+    "first_events": "A缺陷数",
+    "first_trials": "A观测长度",
+    "second_events": "B缺陷数",
+    "second_trials": "B观测长度"
+  },
+  "click_steps": [
+    "导入 `demo_pois_two_count`。",
+    "菜单：统计 → 双样本泊松率。",
+    "填A/B缺陷与长度四列；置信95%；比较量目录默认。",
+    "对照B率高。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "第一组缺陷数 (`first_events`)",
+      "put": "A缺陷数",
+      "meaning": "A事件。"
+    },
+    {
+      "field": "第一组观测长度 (`first_trials`)",
+      "put": "A观测长度",
+      "meaning": "A长度。"
+    },
+    {
+      "field": "第二组缺陷数 (`second_events`)",
+      "put": "B缺陷数",
+      "meaning": "B事件。"
+    },
+    {
+      "field": "第二组观测长度 (`second_trials`)",
+      "put": "B观测长度",
+      "meaning": "B长度。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "。"
+    },
+    {
+      "field": "方法 (`method`)",
+      "put": "目录默认",
+      "meaning": "。"
+    },
+    {
+      "field": "比较量 (`comparison`)",
+      "put": "目录默认",
+      "meaning": "two_poisson_comparison。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "双泊松率",
+      "plain": "两暴露率比较。",
+      "remember": "四列。"
+    },
+    {
+      "term": "B率高",
+      "plain": "本课埋点。",
+      "remember": "。"
+    },
+    {
+      "term": "≠合格",
+      "plain": "。",
+      "remember": "禁止。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "B率高于A",
+      "expect": "拒绝相等"
+    },
+    {
+      "row": 24,
+      "what": "末批仍B高",
+      "expect": "对照两率"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "率差/比/p",
+      "meaning": "对照B高；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能填四列完成双泊松率。",
+  "prereq_quiz": [
+    {
+      "q": "列数角色？",
+      "good": "4",
+      "bad": "1"
+    },
+    {
+      "q": "dataset？",
+      "good": "pois_two_count",
+      "bad": "one"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看B",
+      "prompt": "比较量选差还是比？"
+    },
+    {
+      "after": "对照单率",
+      "prompt": "何时用单率？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_pois_two_count`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_pois_two_count`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "四列？",
+    "B高",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "率相等=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

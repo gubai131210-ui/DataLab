@@ -1,0 +1,144 @@
+{
+  "title": "过程能力 Sixpack",
+  "used_for": "能力+诊断包装图。与 capability 同构共享 `cap_stable_spec`。",
+  "not_for": "替代专项控制图深挖；失控集禁用。禁止过程合格。",
+  "scenario": "同一稳定略偏心集。Sixpack 一眼对照稳定性与能力。",
+  "related_ids": [
+    "capability",
+    "imr",
+    "xbar_r"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_cap_stable_spec`。",
+    "菜单：质量工具 → 过程能力 Sixpack。",
+    "变量=`厚度_um`；子组大小=1；LSL=95；USL=105；Target=100。",
+    "对照：诊断侧应相对稳，能力侧 Cpk<Cp。禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "子组大小 (`subgroup_size`)",
+      "put": "1",
+      "meaning": "单值。"
+    },
+    {
+      "field": "LSL (`lsl`)",
+      "put": "95",
+      "meaning": "规格下限。"
+    },
+    {
+      "field": "USL (`usl`)",
+      "put": "105",
+      "meaning": "规格上限。"
+    },
+    {
+      "field": "Target (`target`)",
+      "put": "100",
+      "meaning": "目标。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Sixpack",
+      "plain": "能力与若干诊断图的组合页。",
+      "remember": "包装不是新公式。"
+    },
+    {
+      "term": "同构共享",
+      "plain": "与正态能力共享稳定略偏心集。",
+      "remember": "白名单 cap_stable_spec。"
+    },
+    {
+      "term": "Cpk",
+      "plain": "含居中惩罚的能力。",
+      "remember": "本课期望 Cpk<Cp。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "稳定略偏心（同 capability）",
+      "expect": "Sixpack 能力侧 Cpk<Cp；诊断侧无金标尖峰。禁止过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Sixpack 页",
+      "meaning": "对照稳与偏心；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把 Sixpack 当放行章",
+    "与 Box-Cox 偏态集共享"
+  ],
+  "skill_mission": "用同构稳定集跑 Sixpack，说明与 capability 共享理由。",
+  "prereq_quiz": [
+    {
+      "q": "共享 dataset？",
+      "good": "cap_stable_spec",
+      "bad": "imr_spi_shift"
+    },
+    {
+      "q": "期望？",
+      "good": "Cpk<Cp",
+      "bad": "过程合格"
+    },
+    {
+      "q": "有尖峰吗？",
+      "good": "无",
+      "bad": "有片55"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "为何禁止与 I-MR 金标共享？"
+    },
+    {
+      "after": "读 Sixpack",
+      "prompt": "诊断稳能否写成必须停线？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cap_stable_spec`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cap_stable_spec`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "同构族？",
+    "Cpk vs Cp",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "Sixpack 绿=已证明正态",
+      "right": "禁止已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

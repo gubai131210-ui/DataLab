@@ -13,7 +13,7 @@ namespace datalab::application::learning {
 class LearningDatasetStore {
 public:
     static constexpr const char* kResourcePath = ":/help/learning_center.sqlite";
-    static constexpr const char* kExpectedCatalogVersion = "learning-center-v1";
+    static constexpr const char* kExpectedCatalogVersion = "learning-center-v2";
 
     static QString catalog_version(QString* error_message = nullptr);
     static std::vector<LearningDatasetSummary> list_datasets(QString* error_message = nullptr);

@@ -1,0 +1,140 @@
+{
+  "title": "Nested Gage R&R",
+  "used_for": "操作员嵌套于零件批时的量具分量。",
+  "not_for": "交叉数据应选 Crossed。禁止量具通过。",
+  "scenario": "每批零件只由一名操作员测。操作员C 重复性更差。",
+  "related_ids": [
+    "gage_rr",
+    "emp_crossed"
+  ],
+  "dialog_fill": {
+    "measurement": "测量值_um",
+    "part": "零件号",
+    "operator": "操作员"
+  },
+  "click_steps": [
+    "导入 `demo_msa_nested_operator`。",
+    "菜单：质量工具 → Nested Gage R&R。",
+    "测量/部件/操作者三列；公差可选。",
+    "对照操作员C 区块重复性变差；禁止与交叉表共享。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`measurement`)",
+      "put": "测量值_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "部件 (`part`)",
+      "put": "零件号",
+      "meaning": "嵌套结构中的零件。"
+    },
+    {
+      "field": "操作者 (`operator`)",
+      "put": "操作员",
+      "meaning": "嵌套于零件批，非完全交叉。"
+    },
+    {
+      "field": "公差 (`tolerance`)",
+      "put": "留空或 15",
+      "meaning": "可选公差宽度。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "嵌套",
+      "plain": "某因子水平只出现在另一因子的部分水平内。",
+      "remember": "不能当成交叉。"
+    },
+    {
+      "term": "重复性",
+      "plain": "同一条件下再测波动。",
+      "remember": "本课 C 区块 σ 更大。"
+    },
+    {
+      "term": "专用集",
+      "plain": "本课独立 `msa_nested_operator`。",
+      "remember": "禁止挂 msa_crossed_aiag。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 41,
+      "what": "约行41起操作员C 零件批，组内重复 σ 放大",
+      "expect": "嵌套模型下重复性/操作员相关分量抬高；勿写量具通过。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "嵌套方差",
+      "meaning": "C 区块更散。禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "用交叉表跑 nested",
+    "写成量具通过"
+  ],
+  "skill_mission": "用嵌套专用集完成 Nested Gage R&R，说明为何不能共享交叉表。",
+  "prereq_quiz": [
+    {
+      "q": "能否共享 msa_crossed_aiag？",
+      "good": "不能",
+      "bad": "能，反正都是 MSA"
+    },
+    {
+      "q": "C 埋点？",
+      "good": "重复性变差",
+      "bad": "过程合格"
+    },
+    {
+      "q": "嵌套含义？",
+      "good": "操作员绑在零件批内",
+      "bad": "全交叉"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "如何从列结构看出嵌套？"
+    },
+    {
+      "after": "读输出",
+      "prompt": "为何禁止量具通过？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_msa_nested_operator`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_msa_nested_operator`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "与交叉区别",
+    "行41？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "嵌套=交叉少选一列",
+      "right": "数据结构不同，模型不同。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

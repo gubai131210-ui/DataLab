@@ -1,0 +1,137 @@
+{
+  "title": "区域图",
+  "used_for": "用专用集 `graph_area_time` 练习「区域图」。",
+  "not_for": "替代推断/放行结论；禁止过程合格 / 已证明正态 / 必须停线。",
+  "scenario": "导入 `demo_graph_area_time`。时间=`周次`；数值=`产量`。",
+  "related_ids": [
+    "histogram",
+    "scatter_plot",
+    "graph_gallery"
+  ],
+  "dialog_fill": {
+    "time": "周次"
+  },
+  "click_steps": [
+    "导入 `demo_graph_area_time`。",
+    "菜单：图形 → 区域图。",
+    "按角色映射：时间=`周次`；数值=`产量`。",
+    "对照埋点读图；禁止过程合格 / 已证明正态 / 必须停线。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "顺序/时间 (`time`)",
+      "put": "周次",
+      "meaning": "横轴。"
+    },
+    {
+      "field": "数值 (`value`)",
+      "put": "产量",
+      "meaning": "面积高度。"
+    },
+    {
+      "field": "分面 (`facet`)",
+      "put": "留空",
+      "meaning": "可选。"
+    },
+    {
+      "field": "分面最大面板数 (`facet_max_panels`)",
+      "put": "6",
+      "meaning": "面板上限。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "区域图",
+      "plain": "时间-数值填色。",
+      "remember": "看台阶。"
+    },
+    {
+      "term": "后段台阶",
+      "plain": "周≥25。",
+      "remember": "行25起。"
+    },
+    {
+      "term": "禁止句",
+      "plain": "勿过程合格。",
+      "remember": "趋势探索。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 25,
+      "what": "产量台阶抬高",
+      "expect": "面积后段抬升；禁止过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "区域图",
+      "meaning": "对照埋点；禁止过程合格；禁止已证明正态；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能独立导入 `demo_graph_area_time` 完成「区域图」并拒绝禁止句。",
+  "prereq_quiz": [
+    {
+      "q": "dataset？",
+      "good": "graph_area_time",
+      "bad": "旧10表"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    },
+    {
+      "q": "菜单？",
+      "good": "图形",
+      "bad": "随便猜"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "本课为何专用表？"
+    },
+    {
+      "after": "读图",
+      "prompt": "埋点对应哪一行？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_graph_area_time`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_graph_area_time`，自己改一个可选字段，不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "dataset_id？",
+    "埋点行？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "图画完=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

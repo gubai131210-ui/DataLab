@@ -1,0 +1,134 @@
+{
+  "title": "批次过程能力",
+  "used_for": "按批次汇总的能力分析（公式参考）。",
+  "not_for": "无批次列的普通能力。dataset 空。",
+  "scenario": "需要测量值+批次列；本波不灌演示表。",
+  "related_ids": [
+    "capability",
+    "between_within_capability"
+  ],
+  "dialog_fill": {},
+  "click_steps": [
+    "打开「帮助」→「学习中心」，选择本教程「批次过程能力」。",
+    "注意：当前版本可能无此菜单项或仅为公式参考；公式见「算法、公式与参考资料」。",
+    "若菜单可用：质量工具 → 批次过程能力。本课不提供专用演示表（dataset 空），步骤保持诚实。",
+    "对照下方 dialog_fill_detail 核对该命令真实 roles/inputs；勿虚构字段。",
+    "输出解读禁止：过程合格 / 必须停线 / 已证明正态 / 量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`measurement`)",
+      "put": "（无表）测量列",
+      "meaning": "Y。"
+    },
+    {
+      "field": "批次 (`batch`)",
+      "put": "批次列",
+      "meaning": "必选。"
+    },
+    {
+      "field": "LSL (`lsl`)",
+      "put": "规格下限",
+      "meaning": "规格。"
+    },
+    {
+      "field": "USL (`usl`)",
+      "put": "规格上限",
+      "meaning": "规格。"
+    },
+    {
+      "field": "最小批次 N (`min_batch_size`)",
+      "put": "2",
+      "meaning": "过滤过小批。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "批次能力",
+      "plain": "按 batch 分层的能力。",
+      "remember": "要有批次列。"
+    },
+    {
+      "term": "最小批次 N",
+      "plain": "过小批次可剔除。",
+      "remember": "默认≥2。"
+    },
+    {
+      "term": "公式参考",
+      "plain": "菜单可能不可用。",
+      "remember": "对照帮助。"
+    }
+  ],
+  "buried_signals": [],
+  "output_guide": [
+    {
+      "name": "帮助/公式页",
+      "meaning": "只陈述定义与边界；禁止过程合格；禁止必须停线；禁止已证明正态；禁止量具通过。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能默写批次能力对话框字段，并拒绝过程合格话术。",
+  "prereq_quiz": [
+    {
+      "q": "需要批次列？",
+      "good": "是",
+      "bad": "否"
+    },
+    {
+      "q": "本波 dataset？",
+      "good": "空",
+      "bad": "cap_stable_spec"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读字段",
+      "prompt": "与 between_within 的子组有何不同？"
+    },
+    {
+      "after": "对照帮助",
+      "prompt": "为何本波不硬塞表？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "本课无演示表：对照 §4 字段清单与公式帮助，写清菜单可能不可用。",
+      "scaffold": "dialog_fill_detail + 公式帮助路径。"
+    },
+    {
+      "level": 1,
+      "student": "不看 detail，默写本命令真实 roles/inputs 名称（对照 analysis_commands）。",
+      "scaffold": "只给 menu_path。"
+    },
+    {
+      "level": 2,
+      "student": "写一段：本课为何空 dataset，以及误用一句禁止句。",
+      "scaffold": "仅 skill_mission。"
+    }
+  ],
+  "retrieval_quiz": [
+    "roles？",
+    "min_batch_size？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "批次能力=过程合格章",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

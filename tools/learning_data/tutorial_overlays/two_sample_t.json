@@ -1,0 +1,150 @@
+{
+  "title": "双样本 t 检验",
+  "used_for": "两独立列位置差（本软件两列）。",
+  "not_for": "方差专项用 variance_test；等价用 two_sample_equivalence。",
+  "scenario": "A/B 线厚度。导入 demo_infer_two_sample_location。",
+  "related_ids": [
+    "mann_whitney",
+    "variance_test"
+  ],
+  "dialog_fill": {
+    "variables": "A线厚度_um,B线厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_infer_two_sample_location`。",
+    "菜单：统计 → 双样本 t 检验。",
+    "两列独立样本多选 A线厚度_um,B线厚度_um；方差方法默认；置信=95%。",
+    "对照 B 线偏高；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "两列独立样本 (`variables`)",
+      "put": "A线厚度_um,B线厚度_um",
+      "meaning": "恰好两列。"
+    },
+    {
+      "field": "方差方法 (`variance`)",
+      "put": "目录默认（如 Welch）",
+      "meaning": "two_sample_t_method。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "差的区间。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "H0 / H1（原假设 / 备择）",
+      "plain": "H0 通常写「两总体均值相等」；H1 写「不相等」或单侧方向。检验回答的是「数据与 H0 有多不符」，不是「过程合格」。",
+      "remember": "先钉死 H0，再谈 p 值。"
+    },
+    {
+      "term": "p 值",
+      "plain": "在 H0 为真的前提下，看到当前这么大（或更大）差异的概率尺度。p 小 → 与「均值相等」更不符。",
+      "remember": "p 小≠必须停线；p 大≠已证明两线相同。"
+    },
+    {
+      "term": "置信区间（均值差）",
+      "plain": "对「B−A」差值的区间估计。若区间几乎全在 0 一侧，与显著差方向一致。",
+      "remember": "区间谈差值，不谈规格合格。"
+    },
+    {
+      "term": "双样本 t / Welch",
+      "plain": "两独立样本比均值；Welch 不强制等方差，合并方差则假设更紧。",
+      "remember": "本集两列独立，不是配对。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "B线相对A线位置偏高开始",
+      "expect": "拒绝均值相等线索"
+    },
+    {
+      "row": 30,
+      "what": "末行仍呈 B>A",
+      "expect": "对照全样本差约1σ"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "t / p 值",
+      "meaning": "对照 B 线整体偏高埋点：期望与「均值相等」H0 更不符（p 偏小）。禁止写成必须停线或过程合格。"
+    },
+    {
+      "name": "均值差置信区间",
+      "meaning": "看 B−A 区间是否偏向正侧；与位置差故事一致。区间不是规格限。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能多选两列完成双样本 t 并对照位置差埋点。",
+  "prereq_quiz": [
+    {
+      "q": "列数？",
+      "good": "2",
+      "bad": "1"
+    },
+    {
+      "q": "共享？",
+      "good": "infer_two_sample_location",
+      "bad": "var_two"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看差",
+      "prompt": "位置差课为何不共享方差表？"
+    },
+    {
+      "after": "选方差法",
+      "prompt": "Welch 何时更稳妥？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_infer_two_sample_location`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_infer_two_sample_location`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "两列？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "均值差显著=方差也显著",
+      "right": "方差另用 variance_test。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

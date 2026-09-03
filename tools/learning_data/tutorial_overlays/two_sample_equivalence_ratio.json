@@ -1,0 +1,150 @@
+{
+  "title": "双样本比值等价性",
+  "used_for": "比值近1的等价。",
+  "not_for": "差等价用 two_sample_equivalence。",
+  "scenario": "导入 demo_equiv_ratio_near_one。",
+  "related_ids": [
+    "two_sample_equivalence"
+  ],
+  "dialog_fill": {
+    "variables": "试验厚度_um,参考厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_equiv_ratio_near_one`。",
+    "菜单：统计 → 双样本比值等价性检验。",
+    "试验+参考两列；等价界按帮助（近1）；变换目录默认；置信95%。",
+    "对照比近1。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "试验列 + 参考列 (`variables`)",
+      "put": "试验厚度_um,参考厚度_um",
+      "meaning": "恰好两列。"
+    },
+    {
+      "field": "等价下限 (`lower`)",
+      "put": "按帮助近1窗（如0.9）",
+      "meaning": "比值下界。"
+    },
+    {
+      "field": "等价上限 (`upper`)",
+      "put": "按帮助近1窗（如1.1）",
+      "meaning": "比值上界。"
+    },
+    {
+      "field": "方差方法 (`variance`)",
+      "put": "目录默认",
+      "meaning": "。"
+    },
+    {
+      "field": "变换 (`equivalence_transform`)",
+      "put": "目录默认",
+      "meaning": "equivalence_transform。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "比值等价",
+      "plain": "比近1。",
+      "remember": "变换选项见目录。"
+    },
+    {
+      "term": "试验/参考",
+      "plain": "两列顺序。",
+      "remember": "。"
+    },
+    {
+      "term": "禁止句",
+      "plain": "勿写过程合格。",
+      "remember": "。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "比值近1",
+      "expect": "等价线索"
+    },
+    {
+      "row": 20,
+      "what": "末行仍近1",
+      "expect": "对照窗"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "等价结论",
+      "meaning": "对照比近1；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成比值等价并理解试验/参考列。",
+  "prereq_quiz": [
+    {
+      "q": "差等价同表？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "dataset？",
+      "good": "equiv_ratio_near_one",
+      "bad": "equiv_two"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看比",
+      "prompt": "与差等价何时选用？"
+    },
+    {
+      "after": "变换",
+      "prompt": "变换选项作用？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_equiv_ratio_near_one`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_equiv_ratio_near_one`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "比值等价？",
+    "近1",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "比=1即过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

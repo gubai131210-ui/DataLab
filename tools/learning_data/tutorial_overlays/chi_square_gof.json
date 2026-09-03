@@ -1,0 +1,130 @@
+{
+  "title": "卡方拟合优度",
+  "used_for": "检验分类比例是否符合期望（本课偏离均匀）。",
+  "not_for": "关联卡方用 chi_square。",
+  "scenario": "四类缺陷偏离均匀。导入 demo_gof_category_bias。",
+  "related_ids": [
+    "chi_square"
+  ],
+  "dialog_fill": {
+    "category": "缺陷类别"
+  },
+  "click_steps": [
+    "导入 `demo_gof_category_bias`。",
+    "菜单：统计 → 卡方拟合优度。",
+    "分类列=`缺陷类别`；期望比例可留空（均匀）或填0.25,0.25,0.25,0.25。",
+    "对照虚焊过多；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "分类列 (`category`)",
+      "put": "缺陷类别",
+      "meaning": "单列分类。"
+    },
+    {
+      "field": "期望比例（逗号，可选）(`expected_proportions`)",
+      "put": "留空=均匀；或 0.25,0.25,0.25,0.25",
+      "meaning": "可选。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "拟合优度",
+      "plain": "相对期望比例。",
+      "remember": "不是列联关联。"
+    },
+    {
+      "term": "期望比例",
+      "plain": "可均匀。",
+      "remember": "本课虚焊偏多。"
+    },
+    {
+      "term": "p值",
+      "plain": "拒绝均匀线索。",
+      "remember": "≠合格。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "虚焊类别过多（全表约45%）",
+      "expect": "GOF 拒绝均匀"
+    },
+    {
+      "row": 100,
+      "what": "末行属同一偏置配方",
+      "expect": "对照类别频数"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "GOF 卡方/p",
+      "meaning": "对照虚焊偏多；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成分类GOF并对照类别偏置。",
+  "prereq_quiz": [
+    {
+      "q": "关联卡方？",
+      "good": "否（GOF）",
+      "bad": "是"
+    },
+    {
+      "q": "dataset？",
+      "good": "gof_category_bias",
+      "bad": "cat_shift"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看频数",
+      "prompt": "哪一类驱动拒绝？"
+    },
+    {
+      "after": "填期望",
+      "prompt": "留空均匀意味着什么？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_gof_category_bias`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_gof_category_bias`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "GOF？",
+    "虚焊？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "不拒绝=已证明分布",
+      "right": "禁止已证明正态同类话术。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

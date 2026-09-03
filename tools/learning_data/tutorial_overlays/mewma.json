@@ -1,0 +1,137 @@
+{
+  "title": "MEWMA",
+  "used_for": "多变量小漂移的指数加权监视。",
+  "not_for": "不要与一元 ewma 表混用；至少两列。",
+  "scenario": "长度+宽度同时小漂移，片28起。",
+  "related_ids": [
+    "ewma",
+    "hotelling_t2"
+  ],
+  "dialog_fill": {
+    "variables": "长度_mm,宽度_mm"
+  },
+  "click_steps": [
+    "导入 `demo_mewma_two_var_drift`。",
+    "菜单：控制图 → MEWMA。",
+    "两列变量；Lambda=0.1；UCL 可选留空。",
+    "对照片28；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量（多列）(`variables`)",
+      "put": "长度_mm,宽度_mm",
+      "meaning": "至少两列。"
+    },
+    {
+      "field": "Lambda (`lambda`)",
+      "put": "0.1",
+      "meaning": "多元平滑系数，默认更小。"
+    },
+    {
+      "field": "UCL（可选）(`ucl`)",
+      "put": "留空",
+      "meaning": "本课用软件默认计算限。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "MEWMA",
+      "plain": "多元 EWMA。",
+      "remember": "抓多变量同时小漂移。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 28,
+      "what": "片28起双变量小漂移",
+      "expect": "MEWMA 后段爬升。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "MEWMA",
+      "meaning": "片28后抬高。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "与一元 ewma 共用错误表"
+  ],
+  "skill_mission": "用 MEWMA 检出片28双变量小漂移。",
+  "prereq_quiz": [
+    {
+      "q": "MEWMA 至少几列？",
+      "good": "2",
+      "bad": "1"
+    },
+    {
+      "q": "与 ewma 共享表？",
+      "good": "不，本课专用 mewma_two_var_drift",
+      "bad": "共享 spc_small_drift"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "设 λ=0.1",
+      "prompt": "为何多元默认 λ 比一元更小？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_mewma_two_var_drift`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_mewma_two_var_drift`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行28",
+    "为何不进 spc_small_drift 族",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "MEWMA 已证明正态",
+      "right": "禁止「已证明正态」。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

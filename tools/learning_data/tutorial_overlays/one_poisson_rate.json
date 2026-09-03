@@ -1,0 +1,156 @@
+{
+  "title": "单样本泊松率",
+  "used_for": "缺陷率相对假设发生率。",
+  "not_for": "两样本用 two_poisson_rate。",
+  "scenario": "导入 demo_pois_one_count。",
+  "related_ids": [
+    "two_poisson_rate"
+  ],
+  "dialog_fill": {
+    "defects": "缺陷数",
+    "length": "观测长度"
+  },
+  "click_steps": [
+    "导入 `demo_pois_one_count`。",
+    "菜单：统计 → 单样本泊松率。",
+    "缺陷数=缺陷数；观测长度列=观测长度；假设发生率=0.05；置信95%。",
+    "对照率偏高。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "缺陷数 (`defects`)",
+      "put": "缺陷数",
+      "meaning": "事件计数。"
+    },
+    {
+      "field": "观测长度（列）(`length`)",
+      "put": "观测长度",
+      "meaning": "本课用列；常数可留空。"
+    },
+    {
+      "field": "观测长度（常数）(`inspected_constant`)",
+      "put": "（省略）",
+      "meaning": "有列则可不填。"
+    },
+    {
+      "field": "假设发生率 (`hypothesis_mean`)",
+      "put": "0.05",
+      "meaning": "H0率。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "区间。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    },
+    {
+      "field": "方法 (`method`)",
+      "put": "目录默认",
+      "meaning": "poisson_rate_method。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "泊松率",
+      "plain": "单位暴露下的事件率。",
+      "remember": "假设发生率本课0.05。"
+    },
+    {
+      "term": "观测长度",
+      "plain": "列或常数。",
+      "remember": "本课用列。"
+    },
+    {
+      "term": "≠合格",
+      "plain": "率检验不是放行。",
+      "remember": "禁止。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "率相对0.05偏高开始",
+      "expect": "拒绝H0线索"
+    },
+    {
+      "row": 30,
+      "what": "末批仍偏高",
+      "expect": "对照全样本率"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "率/p/区间",
+      "meaning": "对照偏高；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成单泊松率：假设=0.05。",
+  "prereq_quiz": [
+    {
+      "q": "假设率？",
+      "good": "0.05",
+      "bad": "1"
+    },
+    {
+      "q": "dataset？",
+      "good": "pois_one_count",
+      "bad": "空"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看率",
+      "prompt": "长度列作用？"
+    },
+    {
+      "after": "对照两样本",
+      "prompt": "何时换两样本？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_pois_one_count`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_pois_one_count`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "泊松率？",
+    "0.05",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "率在目标内=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

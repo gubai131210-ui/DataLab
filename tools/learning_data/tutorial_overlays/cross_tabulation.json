@@ -1,0 +1,131 @@
+{
+  "title": "交叉表",
+  "used_for": "展示两分类交叉计数/比例。",
+  "not_for": "推断主课用卡方；本课重展示。",
+  "scenario": "同 cat_shift_line。",
+  "related_ids": [
+    "chi_square"
+  ],
+  "dialog_fill": {
+    "row_category": "班次",
+    "column_category": "缺陷类型"
+  },
+  "click_steps": [
+    "导入 `demo_cat_shift_line`。",
+    "菜单：统计 → 交叉表。",
+    "行=`班次`；列=`缺陷类型`。",
+    "先读表再决定是否跑卡方。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "行分类列 (`row_category`)",
+      "put": "班次",
+      "meaning": "行。"
+    },
+    {
+      "field": "列分类列 (`column_category`)",
+      "put": "缺陷类型",
+      "meaning": "列。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "交叉表",
+      "plain": "计数与边际。",
+      "remember": "展示优先。"
+    },
+    {
+      "term": "同构",
+      "plain": "cat_shift_line。",
+      "remember": "与卡方共享。"
+    },
+    {
+      "term": "比例",
+      "plain": "行/列百分比。",
+      "remember": "勿直接写成合格。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "晚班虚焊偏多的结构",
+      "expect": "交叉表单元格可见"
+    },
+    {
+      "row": 120,
+      "what": "全表同一配方",
+      "expect": "边际差可读"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "交叉计数表",
+      "meaning": "对照关联结构；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能生成交叉表并指出关联单元格。",
+  "prereq_quiz": [
+    {
+      "q": "dataset？",
+      "good": "cat_shift_line",
+      "bad": "独享"
+    },
+    {
+      "q": "等于卡方？",
+      "good": "否（展示）",
+      "bad": "完全一样"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读表",
+      "prompt": "哪一格最异常？"
+    },
+    {
+      "after": "对照卡方",
+      "prompt": "何时需要推断？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cat_shift_line`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cat_shift_line`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "交叉表？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "表好看=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

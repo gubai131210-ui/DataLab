@@ -1,0 +1,123 @@
+{
+  "title": "运行图",
+  "used_for": "按时间顺序看中位数、簇与趋势线索。",
+  "not_for": "替代控制图控制限；规格符合性。禁止过程合格。",
+  "scenario": "片28–40 相对中位数同侧偏高。",
+  "related_ids": [
+    "imr",
+    "zone_chart"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_run_chart_median_trend`。",
+    "菜单：质量工具 → 运行图。",
+    "数值观测=`厚度_um`。",
+    "对照片28–40 同侧游程；中位数≠UCL。禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "数值观测（一列） (`variables`)",
+      "put": "厚度_um",
+      "meaning": "单列时间序 Y。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "运行图",
+      "plain": "按序描点并对照中位数等。",
+      "remember": "无 Shewhart 控制限。"
+    },
+    {
+      "term": "中位数",
+      "plain": "样本中位水平。",
+      "remember": "中位数 ≠ UCL/USL。"
+    },
+    {
+      "term": "同侧游程",
+      "plain": "连续落在中位数同侧。",
+      "remember": "本课片28–40。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 28,
+      "what": "片28–40 连续在中位数上方",
+      "expect": "运行图标记簇/趋势线索；勿把中位数当 UCL，勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "运行图",
+      "meaning": "指着片28–40。中位数≠UCL。禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把中位数当 UCL",
+    "当成规格合格图"
+  ],
+  "skill_mission": "完成运行图课，区分中位数与控制限。",
+  "prereq_quiz": [
+    {
+      "q": "中位数=UCL？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "片28–40？",
+      "good": "同侧游程",
+      "bad": "废品"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止写",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "画图",
+      "prompt": "运行为何不是控制图？"
+    },
+    {
+      "after": "读游程",
+      "prompt": "同侧=必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_run_chart_median_trend`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_run_chart_median_trend`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "中位数≠UCL",
+    "片28",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "点出中位数=超规格",
+      "right": "中位数不是 USL/UCL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

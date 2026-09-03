@@ -1,0 +1,167 @@
+{
+  "title": "保修摘要",
+  "used_for": "用专用集 `rel_warranty_counts` 练习「保修摘要」。",
+  "not_for": "替代推断/放行结论；禁止过程合格 / 已证明正态 / 必须停线。",
+  "scenario": "导入 `demo_rel_warranty_counts`。暴露列=`暴露量`；填 T_w / R / model。",
+  "related_ids": [
+    "histogram",
+    "scatter_plot",
+    "graph_gallery"
+  ],
+  "dialog_fill": {
+    "exposure_col": "暴露量"
+  },
+  "click_steps": [
+    "导入 `demo_rel_warranty_counts`。",
+    "菜单：统计 → 保修摘要。",
+    "按角色映射：暴露列=`暴露量`；填 T_w / R / model。",
+    "对照埋点读图；禁止过程合格 / 已证明正态 / 必须停线。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "暴露量列 (`exposure_col`)",
+      "put": "暴露量",
+      "meaning": "列求和优先标量。"
+    },
+    {
+      "field": "保修窗口 T_w (`warranty_time`)",
+      "put": "1000",
+      "meaning": "窗口。"
+    },
+    {
+      "field": "时间单位 (`time_unit`)",
+      "put": "hours",
+      "meaning": "单位标签。"
+    },
+    {
+      "field": "暴露量标量 (`exposure`)",
+      "put": "有列时可次要",
+      "meaning": "无列时用。"
+    },
+    {
+      "field": "R(T_w) (`reliability`)",
+      "put": "0.98",
+      "meaning": "可靠度输入。"
+    },
+    {
+      "field": "模型标签 (`model`)",
+      "put": "weibull",
+      "meaning": "必填标签。"
+    },
+    {
+      "field": "观察失效数 (`observed_failures`)",
+      "put": "例如 2",
+      "meaning": "计数。"
+    },
+    {
+      "field": "删失数 (`censored`)",
+      "put": "0",
+      "meaning": "计数。"
+    },
+    {
+      "field": "有效观测数 (`valid`)",
+      "put": "可对照行数",
+      "meaning": "计数。"
+    },
+    {
+      "field": "是否预测口径 (`prediction`)",
+      "put": "false",
+      "meaning": "true_false_flag。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "保修摘要",
+      "plain": "窗口内风险摘要。",
+      "remember": "输入驱动。"
+    },
+    {
+      "term": "暴露列",
+      "plain": "优先于标量。",
+      "remember": "本课。"
+    },
+    {
+      "term": "禁止句",
+      "plain": "勿过程合格。",
+      "remember": "摘要≠放行。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "暴露量列可求和",
+      "expect": "用列暴露而非只靠标量；禁止过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "保修摘要",
+      "meaning": "对照埋点；禁止过程合格；禁止已证明正态；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能独立导入 `demo_rel_warranty_counts` 完成「保修摘要」并拒绝禁止句。",
+  "prereq_quiz": [
+    {
+      "q": "dataset？",
+      "good": "rel_warranty_counts",
+      "bad": "旧10表"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    },
+    {
+      "q": "菜单？",
+      "good": "统计",
+      "bad": "随便猜"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "本课为何专用表？"
+    },
+    {
+      "after": "读图",
+      "prompt": "埋点对应哪一行？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_rel_warranty_counts`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_rel_warranty_counts`，自己改一个可选字段，不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "dataset_id？",
+    "埋点行？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "图画完=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

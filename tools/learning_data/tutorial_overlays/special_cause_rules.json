@@ -1,0 +1,139 @@
+{
+  "title": "特殊原因判异规则（术语课）",
+  "used_for": "理解 Nelson/Western Electric 等判异规则：灵敏度与误报权衡。公式/帮助参考。",
+  "not_for": "不是独立菜单分析；不要为术语新增假 command。菜单可能仅作帮助条目。",
+  "scenario": "学员在 I-MR / Xbar 课已见规则策略。本课只澄清规则含义与 UCL≠USL，不导入数据。",
+  "related_ids": [
+    "imr",
+    "xbar_r",
+    "zone_chart"
+  ],
+  "dialog_fill": {},
+  "click_steps": [
+    "打开「帮助」→「算法、公式与参考资料」，查找特殊原因 / 控制图规则说明（本条目可能无独立菜单）。",
+    "回到学习中心 I-MR 金标课，对照 rule_policy 与 tests 字段。",
+    "口头复述：规则越多越灵敏也越易误报；UCL ≠ USL；禁止「过程合格/必须停线」。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "（在具体控制图对话框中设置）",
+      "meaning": "all_applicable=全部适用规则；minitab_like≈仅3σ。本术语课无独立对话框。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空或显式列表（在具体图中）",
+      "meaning": "空=走策略；非空=explicit。"
+    },
+    {
+      "field": "本课数据",
+      "put": "不导入",
+      "meaning": "formula_reference / 帮助条目；关联 imr 金标练习。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "Nelson / WE 规则",
+      "plain": "除单点越3σ外，还有连续同侧、趋势等模式测试。",
+      "remember": "规则↑灵敏度↑误报↑。"
+    },
+    {
+      "term": "术语见关联课",
+      "plain": "基础控制限术语以 I-MR 金标课 glossary 为准。",
+      "remember": "related_ids → imr；本课不新增第185个假 id。"
+    }
+  ],
+  "buried_signals": [],
+  "output_guide": [
+    {
+      "name": "帮助/公式页",
+      "meaning": "只陈述规则定义与误报权衡；禁止过程合格；禁止必须停线；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "为本术语课伪造菜单命令",
+    "把规则触发写成法律结论"
+  ],
+  "skill_mission": "能解释判异规则灵敏度/误报权衡，并指向 I-MR 金标课区分 UCL 与 USL。",
+  "prereq_quiz": [
+    {
+      "q": "规则开得越多？",
+      "good": "更灵敏也更易误报",
+      "bad": "一定更正确"
+    },
+    {
+      "q": "本课是否新建假 command？",
+      "good": "否，用 related_ids",
+      "bad": "是，再加一个 id"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读规则列表",
+      "prompt": "为何金标课要写清 rule_policy？"
+    },
+    {
+      "after": "对照 imr",
+      "prompt": "tests 留空时发生了什么？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "对照帮助页规则定义 + 金标 I-MR 课的 rule_policy/tests 字段说明；回答自解释题。",
+      "scaffold": "本课不导入表；参数含义表 + related_ids→imr 全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "合上本页，默写 rule_policy 与 tests 各一句（空 tests 时走策略；非空=explicit）。",
+      "scaffold": "只给字段名清单，不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "写三段：①规则↑如何影响灵敏度；②误报如何上升；③为何不能写成「必须停线」。不导入演示表。",
+      "scaffold": "仅术语表 + 误用禁止句；需要动手画图时另开 I-MR 金标课。"
+    }
+  ],
+  "retrieval_quiz": [
+    "规则与误报",
+    "related_ids 指向谁",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "触发任一规则=已证明失控必须停线",
+      "right": "规则是统计线索；禁止「必须停线/已证明」。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "为本术语课再加一个假 command_id 最干净",
+      "right": "用 related_ids 指向已有控制图课；禁止撑到第 185 个假 id。"
+    }
+  ]
+}

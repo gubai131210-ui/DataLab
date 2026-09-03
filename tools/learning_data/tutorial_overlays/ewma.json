@@ -1,0 +1,172 @@
+{
+  "title": "EWMA 控制图",
+  "used_for": "对小幅、持续均值漂移比 Shewhart 更敏感。本课埋微小台阶，不埋尖峰。",
+  "not_for": "大幅瞬时偏移优先 Shewhart；属性计数不用 EWMA。禁止复用 imr_spi_shift。",
+  "scenario": "贴片厚度投诉「慢慢偏厚」。片31起约 +0.8μm 小台阶。用 EWMA 看是否比 I 图更早爬升。",
+  "related_ids": [
+    "cusum",
+    "imr",
+    "moving_average"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "学习中心导入 `demo_spc_small_drift`。",
+    "菜单：控制图 → EWMA 控制图。",
+    "测量值=`厚度_um`；Lambda=0.2；控制限倍数=3；历史均值/Sigma 留空；规则默认；tests 留空。",
+    "对照片31起：EWMA 曲线应缓慢爬升；口头 UCL ≠ USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "单值 Y。"
+    },
+    {
+      "field": "Lambda (`lambda`)",
+      "put": "0.2",
+      "meaning": "近期权重；过大则接近普通均值图。"
+    },
+    {
+      "field": "控制限倍数 (`limit`)",
+      "put": "3",
+      "meaning": "EWMA 限宽度倍数。"
+    },
+    {
+      "field": "历史均值 (`historical_mean`)",
+      "put": "留空",
+      "meaning": "用本集估中心，避免盖住小漂移。"
+    },
+    {
+      "field": "历史 Sigma (`historical_sigma`)",
+      "put": "留空",
+      "meaning": "用本集估 σ。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈ewma）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "EWMA",
+      "plain": "指数加权移动平均：越近的点权重越大。",
+      "remember": "擅长小而持续的漂移。"
+    },
+    {
+      "term": "Lambda (λ)",
+      "plain": "平滑系数，常用 0.2–0.4。",
+      "remember": "λ 大→更像 Shewhart；λ 小→更平滑更慢。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 31,
+      "what": "片31起均值约 +0.8μm 小台阶",
+      "expect": "EWMA 后段爬升并可能越 UCL；不要写成过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "EWMA 图",
+      "meaning": "片31后曲线上移。UCL ≠ USL。"
+    },
+    {
+      "name": "参数表",
+      "meaning": "核对 λ 与限倍数是否为教学默认。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "λ 过大失去小偏移灵敏度",
+    "单独解读不与 Shewhart 对照"
+  ],
+  "skill_mission": "用 EWMA 检出片31小漂移，并说明为何不用 I-MR 金标失控表。",
+  "prereq_quiz": [
+    {
+      "q": "EWMA 相对 I 图更擅长？",
+      "good": "小幅持续漂移",
+      "bad": "单点大尖峰"
+    },
+    {
+      "q": "本课能否复用 imr_spi_shift？",
+      "good": "不能，那是阶跃+尖峰课",
+      "bad": "可以，反正都是单值"
+    },
+    {
+      "q": "UCL=USL吗？",
+      "good": "否",
+      "bad": "是"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选 λ=0.2",
+      "prompt": "若 λ=1，图会更像什么？"
+    },
+    {
+      "after": "读片31",
+      "prompt": "为什么历史均值要留空？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_spc_small_drift`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_spc_small_drift`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "片31埋了什么？",
+    "UCL≠USL 一句",
+    "为何不与 moving_average 共享本表？"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "EWMA 可证明过程正态",
+      "right": "控制图不证明分布；禁止「已证明正态」。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

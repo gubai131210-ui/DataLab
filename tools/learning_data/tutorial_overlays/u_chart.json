@@ -1,0 +1,149 @@
+{
+  "title": "U 图",
+  "used_for": "可变单位数下的单位缺陷率。",
+  "not_for": "固定单位可用 c；不合格品用 p/np。禁止与 laney_u 共享。",
+  "scenario": "单位数变化。批20起缺陷率台阶。",
+  "related_ids": [
+    "c_chart",
+    "laney_u_chart"
+  ],
+  "dialog_fill": {
+    "defects": "缺陷数",
+    "units": "单位数"
+  },
+  "click_steps": [
+    "导入 `demo_u_chart_variable_unit_step`。",
+    "菜单：控制图 → U 图。",
+    "缺陷数=`缺陷数`；单位数列=`单位数`；阶段留空；规则默认；tests 留空。",
+    "对照批20；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "缺陷数 (`defects`)",
+      "put": "缺陷数",
+      "meaning": "缺陷计数。"
+    },
+    {
+      "field": "单位数列 (`units`)",
+      "put": "单位数",
+      "meaning": "可变单位；本课必选。"
+    },
+    {
+      "field": "阶段列 (`stage`)",
+      "put": "留空",
+      "meaning": "同一阶段看率台阶。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈attribute）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "u（单位缺陷率）",
+      "plain": "缺陷数/单位数。",
+      "remember": "单位变→限宽变。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 20,
+      "what": "批20起缺陷率台阶",
+      "expect": "u 后段上移；限随单位数变化。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "U 图",
+      "meaning": "批20后上移。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "与 laney_u 共享",
+    "漏选单位列"
+  ],
+  "skill_mission": "用 U 图在可变单位下检出批20率台阶。",
+  "prereq_quiz": [
+    {
+      "q": "单位列能否省略？",
+      "good": "不能，本软件必选",
+      "bad": "能"
+    },
+    {
+      "q": "与 c 图差别？",
+      "good": "单位可变用 u",
+      "bad": "完全一样"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选单位列",
+      "prompt": "若单位全相同，为何仍可能选 u？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_u_chart_variable_unit_step`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_u_chart_variable_unit_step`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行20",
+    "为何不与 laney_u 共享",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "u 越界=客户规格超限",
+      "right": "UCL≠USL。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

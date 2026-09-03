@@ -1,0 +1,125 @@
+{
+  "title": "Fisher 精确检验",
+  "used_for": "小样本 2×2 精确检验。",
+  "not_for": "大样本列联优先卡方。",
+  "scenario": "两线×良/不良小计数。导入 demo_fisher_small_counts。",
+  "related_ids": [
+    "chi_square"
+  ],
+  "dialog_fill": {
+    "variables": "产线,结果"
+  },
+  "click_steps": [
+    "导入 `demo_fisher_small_counts`。",
+    "菜单：统计 → Fisher 精确检验。",
+    "多选产线,结果 两列分类。",
+    "对照B线不良偏高。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "两列分类（2×2）(`variables`)",
+      "put": "产线,结果",
+      "meaning": "恰好两列。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Fisher",
+      "plain": "小计数精确。",
+      "remember": "不必χ²近似。"
+    },
+    {
+      "term": "2×2",
+      "plain": "两分类×两分类。",
+      "remember": "本课产线×结果。"
+    },
+    {
+      "term": "p值",
+      "plain": "关联线索。",
+      "remember": "≠停线。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "B线不良偏高的小计数结构",
+      "expect": "Fisher 提示关联"
+    },
+    {
+      "row": 28,
+      "what": "末行属同一2×2配方",
+      "expect": "对照表计数"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "精确p",
+      "meaning": "对照B不良；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能用两列完成 Fisher 并理解小计数场景。",
+  "prereq_quiz": [
+    {
+      "q": "大样本首选？",
+      "good": "卡方也可",
+      "bad": "只能Fisher"
+    },
+    {
+      "q": "dataset？",
+      "good": "fisher_small_counts",
+      "bad": "cat_shift"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看表",
+      "prompt": "为何小计数慎用χ²话术？"
+    },
+    {
+      "after": "对照卡方",
+      "prompt": "大表何时换卡方？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_fisher_small_counts`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_fisher_small_counts`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "Fisher？",
+    "2×2",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "精确显著=必须停线",
+      "right": "禁止必须停线。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

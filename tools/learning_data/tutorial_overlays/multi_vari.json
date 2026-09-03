@@ -1,0 +1,128 @@
+{
+  "title": "Multi-Vari 图",
+  "used_for": "用 2–4 个因子分层看测量值模式。",
+  "not_for": "正式 ANOVA 推断；1 个因子不够。禁止过程合格。",
+  "scenario": "腔位×时段。晚班均值抬高。",
+  "related_ids": [
+    "variability_chart",
+    "two_factor_anova"
+  ],
+  "dialog_fill": {
+    "measurement": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_multi_vari_pos_time`。",
+    "菜单：质量工具 → Multi-Vari 图。",
+    "测量值=`厚度_um`；因子选 `腔位` 与 `时段`（共2列，满足2–4）。",
+    "对照晚班抬高；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`measurement`)",
+      "put": "厚度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "因子（2～4 列） (`factors`)",
+      "put": "腔位,时段",
+      "meaning": "多选角色；必须 2–4 列。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Multi-Vari",
+      "plain": "分层多变异可视化。",
+      "remember": "探索主效应线索。"
+    },
+    {
+      "term": "因子角色",
+      "plain": "允许多列。",
+      "remember": "本软件要求 2–4 个。"
+    },
+    {
+      "term": "时段效应",
+      "plain": "本课晚班抬高。",
+      "remember": "不是停线指令。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 25,
+      "what": "约行25起进入晚班区块，均值上移",
+      "expect": "Multi-Vari 显示时段差异大于腔位；勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Multi-Vari 图",
+      "meaning": "指着晚班。禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "只选1个因子",
+    "把图当 ANOVA p 值"
+  ],
+  "skill_mission": "完成 Multi-Vari，指出晚班主效应线索。",
+  "prereq_quiz": [
+    {
+      "q": "因子个数？",
+      "good": "2–4",
+      "bad": "1"
+    },
+    {
+      "q": "晚班？",
+      "good": "均值抬高",
+      "bad": "过程合格"
+    },
+    {
+      "q": "可当 ANOVA？",
+      "good": "否，探索图",
+      "bad": "是正式检验"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选因子",
+      "prompt": "为何至少两个因子？"
+    },
+    {
+      "after": "读图",
+      "prompt": "时段差=必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_multi_vari_pos_time`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_multi_vari_pos_time`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行25？",
+    "因子角色",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "Multi-Vari 证明交互显著",
+      "right": "探索图，不替代设计好的推断。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "title": "单比例检验",
+  "used_for": "不合格比例相对假设。",
+  "not_for": "等价用 one_proportion_equivalence。",
+  "scenario": "导入 demo_prop_one_lot。",
+  "related_ids": [
+    "one_proportion_equivalence",
+    "two_proportions"
+  ],
+  "dialog_fill": {
+    "events": "不合格品数",
+    "trials": "检验数"
+  },
+  "click_steps": [
+    "导入 `demo_prop_one_lot`。",
+    "菜单：统计 → 单比例检验。",
+    "事件=不合格品数；试验=检验数；假设比例=0.02；置信95%。",
+    "对照比例偏高。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "事件数 (`events`)",
+      "put": "不合格品数",
+      "meaning": "不良件数。"
+    },
+    {
+      "field": "试验数 (`trials`)",
+      "put": "检验数",
+      "meaning": "n。"
+    },
+    {
+      "field": "假设比例 (`hypothesis_mean`)",
+      "put": "0.02",
+      "meaning": "H0。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "区间。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    },
+    {
+      "field": "方法 (`method`)",
+      "put": "目录默认",
+      "meaning": "proportion_ci_method。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "单比例",
+      "plain": "相对p0。",
+      "remember": "本课p0=0.02。"
+    },
+    {
+      "term": "事件/试验",
+      "plain": "两列计数。",
+      "remember": "不是测量列。"
+    },
+    {
+      "term": "≠等价",
+      "plain": "显著差≠等价窗。",
+      "remember": "另课。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "比例相对0.02偏高",
+      "expect": "拒绝H0"
+    },
+    {
+      "row": 30,
+      "what": "末批仍偏高",
+      "expect": "对照全样本"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "比例/p/区间",
+      "meaning": "对照偏高；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成单比例：p0=0.02。",
+  "prereq_quiz": [
+    {
+      "q": "p0？",
+      "good": "0.02",
+      "bad": "0.5"
+    },
+    {
+      "q": "dataset？",
+      "good": "prop_one_lot",
+      "bad": "equiv_prop"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看p",
+      "prompt": "与等价课问题差在哪？"
+    },
+    {
+      "after": "填列",
+      "prompt": "事件与试验能否反？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_prop_one_lot`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_prop_one_lot`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "单比例？",
+    "0.02",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "不显著=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

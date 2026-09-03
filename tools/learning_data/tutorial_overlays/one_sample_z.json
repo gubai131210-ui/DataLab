@@ -1,0 +1,145 @@
+{
+  "title": "单样本 Z 检验",
+  "used_for": "已知 σ 时单样本均值检验。与 t 同构表。",
+  "not_for": "σ 未知用 t。禁止过程合格。",
+  "scenario": "同 infer_one_sample_mean；对话框填已知 σ≈2。",
+  "related_ids": [
+    "one_sample_t"
+  ],
+  "dialog_fill": {
+    "variables": "锡膏高度_um"
+  },
+  "click_steps": [
+    "导入 `demo_infer_one_sample_mean`。",
+    "菜单：统计 → 单样本 Z 检验。",
+    "测量值=`锡膏高度_um`；假设均值=120；已知σ=2；置信=95%。",
+    "对照偏移埋点；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "锡膏高度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "假设均值 (`hypothesis_mean`)",
+      "put": "120",
+      "meaning": "μ0。"
+    },
+    {
+      "field": "已知标准差 σ (`known_sigma`)",
+      "put": "2",
+      "meaning": "本课教学用已知σ。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "区间。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "单样本 Z",
+      "plain": "σ 已知。",
+      "remember": "本课σ=2。"
+    },
+    {
+      "term": "与 t 同构",
+      "plain": "共享 infer_one_sample_mean。",
+      "remember": "白名单族。"
+    },
+    {
+      "term": "已知σ",
+      "plain": "只在 Z 对话框。",
+      "remember": "t 不用此字段。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "全列相对120上偏",
+      "expect": "Z 拒绝线索"
+    },
+    {
+      "row": 50,
+      "what": "末行属同一偏移总体",
+      "expect": "对照全样本"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Z / p / 区间",
+      "meaning": "对照埋点；禁止过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能在同构表上完成 Z：填 μ0 与 known_sigma。",
+  "prereq_quiz": [
+    {
+      "q": "known_sigma？",
+      "good": "要填",
+      "bad": "可省略"
+    },
+    {
+      "q": "共享表？",
+      "good": "infer_one_sample_mean",
+      "bad": "独享"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "填σ",
+      "prompt": "为何 t 课不填 known_sigma？"
+    },
+    {
+      "after": "看输出",
+      "prompt": "与 t 结论如何对照？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_infer_one_sample_mean`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_infer_one_sample_mean`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "σ？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "Z通过=已证明正态",
+      "right": "禁止已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

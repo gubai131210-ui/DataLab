@@ -1,0 +1,245 @@
+{
+  "title": "I-MR 控制图",
+  "used_for": "单条 SMT 线上，按生产顺序记录每一片的锡膏高度（单值流）。用 I 图看位置有没有漂移，用 MR 图看相邻两点波动。本课只练「对着埋点读特殊原因线索」，不替代假设检验，也不回答规格是否满足。",
+  "not_for": "不能把 UCL/LCL 当成 USL/LSL；不能在固定子组 n=5 时拿 I-MR 代替 Xbar-R；不能用本「失控教学集」去算 Cpk；不能写成过程合格、必须停线或已证明正态。",
+  "scenario": "单条 SMT 线印刷后 SPI 高度投诉增多。更换钢网后，技术员感觉高度整体偏高。本课只用 I-MR 查：时间序列上有没有特殊原因（片 41 阶跃、片 55 尖峰）。不做能力、不做两线比较。",
+  "related_ids": ["xbar_r", "capability"],
+  "dialog_fill": {
+    "variables": "锡膏高度_um"
+  },
+  "click_steps": [
+    "在主窗口打开「帮助」→「学习中心」，选择本教程「I-MR 控制图」。",
+    "点击「导入测试数据到工作区」，得到工作表 `demo_imr_spi_shift`（不要导入成 demo_demo_…）。",
+    "菜单路径：控制图 → I-MR 控制图。",
+    "变量选 `锡膏高度_um`；阶段列留空（不要把「时段备注」或「钢网更换」做成阶段列，否则会吃掉片 41 阶跃）。",
+    "移动极差长度=2；σ 方法=平均移动极差；Nelson estimate=否；规则默认策略=全部适用规则；特殊原因测试留空；历史均值与历史 Sigma 留空。",
+    "运行后对照 §5：I 图后段上移（片 41 起）；片 55 相对近期波动不寻常或越 UCL。口头点出 CL / UCL / LCL，并区分 UCL ≠ USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variables`)",
+      "put": "锡膏高度_um",
+      "meaning": "画进 I 图的 Y；本集只有这一列测量值。"
+    },
+    {
+      "field": "阶段列 (`stage`)",
+      "put": "留空",
+      "meaning": "本课要在同一阶段里看见片 41 阶跃。若按「钢网更换前后」拆阶段，阶跃会被阶段均值吃掉。"
+    },
+    {
+      "field": "移动极差长度 (`mr_length`)",
+      "put": "2",
+      "meaning": "MR = |当前点 − 前 1 点|；用来对照尖峰如何拉高相邻波动。"
+    },
+    {
+      "field": "σ 方法 (`sigma_method`)",
+      "put": "平均移动极差",
+      "meaning": "用平均 MR 估计短期 σ，从而定 UCL/LCL。不要写成不存在的菜单名。"
+    },
+    {
+      "field": "Nelson estimate (`use_nelson_estimate`)",
+      "put": "0（否）",
+      "meaning": "本课关闭：不剔除过大 MR。打开会改写教学用控制限，片 55 的尖峰课就糊了。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时启用个体图规则 1–8。比「仅单点超 3σ」更灵敏，误报也更高；教程必须写清，不要假装没有该字段。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空则走 rule_policy。非空会变成 explicit 列表。尖峰课的主信号仍是规则 1；阶跃可能触发规则 2。"
+    },
+    {
+      "field": "历史均值 (`historical_center`)",
+      "put": "留空",
+      "meaning": "用本集数据估 CL。填历史均值会盖住片 41 阶跃的教学信号。"
+    },
+    {
+      "field": "历史 Sigma (`historical_sigma`)",
+      "put": "留空",
+      "meaning": "用本集估控制限。填历史 Sigma 同样会改写 UCL/LCL，不利于对着埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Y（响应 / 关键质量特性）",
+      "plain": "你最关心的那个结果数字，本例是锡膏高度。",
+      "remember": "改进项目总要先钉死「Y 是什么」。"
+    },
+    {
+      "term": "单值 / 个体（Individual）",
+      "plain": "每次只测一个数、不好固定凑成「一组 5 个」时的数据形态。",
+      "remember": "一片板一个高度 → 单值 → 常用 I-MR。"
+    },
+    {
+      "term": "I 图（Individuals chart）",
+      "plain": "把每个单值按时间点画出来，看水平有没有漂移、有没有飞点。",
+      "remember": "I = Individual，看「点本身」。"
+    },
+    {
+      "term": "MR（Moving Range，移动极差）",
+      "plain": "相邻两点之差的绝对值，用来反映「刚才波动有多大」。",
+      "remember": "MR 大 = 相邻两次差很多；尖峰常把旁边的 MR 顶高。"
+    },
+    {
+      "term": "中心线（CL, Center Line）",
+      "plain": "图上的中间参考线，通常是样本均值（或规定的历史均值）。",
+      "remember": "点围绕谁在晃，就是 CL。"
+    },
+    {
+      "term": "UCL（Upper Control Limit，上控制限）",
+      "plain": "统计意义上的上警戒线。按过程自身的波动算出来，不是客户规格。",
+      "remember": "U = Upper。点越过 UCL → 先当特殊原因线索去查，不是自动判废。UCL ≠ USL。"
+    },
+    {
+      "term": "LCL（Lower Control Limit，下控制限）",
+      "plain": "统计意义上的下警戒线，与 UCL 成对。",
+      "remember": "L = Lower。UCL/LCL 描述的是过程平时会晃到哪，不是规格上下限。"
+    },
+    {
+      "term": "规格限 USL / LSL",
+      "plain": "客户或图纸规定的合格范围（Upper/Lower Spec Limit）。",
+      "remember": "控制限 ≠ 规格限。稳定只说明可预测，不说明符合规格。UCL ≠ USL。"
+    },
+    {
+      "term": "σ（Sigma，标准差的尺度）",
+      "plain": "波动大小的度量。I-MR 里常用移动极差去估计短期 σ，再算控制限。",
+      "remember": "σ 大 → UCL 与 LCL 分得更开。"
+    },
+    {
+      "term": "普通原因 vs 特殊原因",
+      "plain": "普通原因=过程固有的日常抖动；特殊原因=可指认的异常（换钢网、撞针、测错）。",
+      "remember": "控制图的任务是揪特殊原因，不是证明产品合格。"
+    },
+    {
+      "term": "判异规则（Nelson / Western Electric 测试）",
+      "plain": "除了「一点越界」，还有连续同侧、趋势等模式。Nelson estimate 是 σ 估计开关，不是另一套菜单。",
+      "remember": "规则开得越多越灵敏，也越容易误报。本课关闭 Nelson estimate，以免改写教学限。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 41,
+      "what": "钢网更换后均值阶跃：片 41 起锡膏高度由基线约 120μm 抬到约 124μm",
+      "expect": "I 图后段整体上移（相对前 40 片的 CL）。不要把阶跃读成「过程合格」或「必须停线」。"
+    },
+    {
+      "row": 55,
+      "what": "单点尖峰：片 55 锡膏高度约 132μm",
+      "expect": "I 图上片 55 相对近期波动不寻常，或冲向/越过 UCL（规则 1 线索）。MR 图在尖峰处应变大。UCL ≠ USL，不能写成废品。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "I 图",
+      "meaning": "看 CL、UCL、LCL：前 40 点应在两限之间；片 41 起后段整体靠近或越过中心偏上；片 55 应明显冲向或越过 UCL。指着图说：这是 UCL（上控制限），不是 USL（规格上限）。"
+    },
+    {
+      "name": "MR 图",
+      "meaning": "尖峰前后 MR 应变大；用来区分整段抬高（阶跃）和单点冲击。MR 图也有自己的 UCL；MR 越界不等于产品超规格。"
+    },
+    {
+      "name": "点/诊断表",
+      "meaning": "记下触发行号，回「时段备注」核对。特殊原因=值得调查的统计警报，不是法律结论，也不等于超规格。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "用本失控教学集去算 Cpk / 过程能力。",
+    "把「时段备注」或钢网更换做成阶段列，把片 41 阶跃吃掉。",
+    "填写历史均值/Sigma，盖住教学用的阶跃。",
+    "打开 Nelson estimate，剔除过大 MR 后改写 UCL。",
+    "写成必须停线、过程合格或已证明正态。"
+  ],
+  "skill_mission": "用 I-MR 在单值时间序上找出片 41 阶跃与片 55 尖峰，并口头区分 UCL 与 USL。",
+  "prereq_quiz": [
+    {
+      "q": "控制图上的 UCL 是什么？",
+      "good": "过程波动算出的上警戒线",
+      "bad": "客户图纸的规格上限"
+    },
+    {
+      "q": "画 I-MR 前数据要怎样？",
+      "good": "按时间/生产顺序排列的单值流",
+      "bad": "随意打乱顺序也没关系"
+    },
+    {
+      "q": "何时用 I-MR 而不是 Xbar-R？",
+      "good": "每次一个测量值、难固定子组",
+      "bad": "每批固定抽 5 件时仍优先 I-MR"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入专用表",
+      "prompt": "为什么不用「啥算法都能跑」的大宽表？"
+    },
+    {
+      "after": "选菜单 I-MR",
+      "prompt": "若每批固定抽 5 件，菜单应改成什么？"
+    },
+    {
+      "after": "阶段列留空",
+      "prompt": "若把「钢网更换前后」做成阶段列，阶跃还会明显吗？"
+    },
+    {
+      "after": "历史限留空",
+      "prompt": "历史 UCL/LCL 什么时候才该填？"
+    },
+    {
+      "after": "Nelson estimate 关闭",
+      "prompt": "为什么本课关闭 Nelson estimate？"
+    },
+    {
+      "after": "读片 55",
+      "prompt": "点越过 UCL，能写成「超规格废品」吗？为什么？"
+    },
+    {
+      "after": "对照 MR 图",
+      "prompt": "只有 I 图上移、MR 不大，更像什么故事？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 读图；同时回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_imr_spi_shift` 并按提示操作；最后一步「片 55 是否越 UCL / MR 是否变大」自己判断并写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "导入练习表 `demo_imr_spi_spike_b`（尖峰行号与金标不同）。自己选变量列、阶段列留空，写三句结论（阶跃、尖峰、UCL≠USL）。",
+      "scaffold": "仅术语表 + 误用禁止句；不给尖峰片号剧透。"
+    }
+  ],
+  "retrieval_quiz": [
+    "用一句话区分 UCL 与 USL。",
+    "本集尖峰在第几片？你期望 I 图 / MR 图各出现什么？",
+    "阶段列为什么本课留空？",
+    "为什么本课把 Nelson estimate 关掉？"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "点在 UCL 外 = 产品超规格",
+      "right": "UCL 是过程警戒线；超规格要看 USL/LSL 或能力分析（另一课）。UCL ≠ USL。"
+    },
+    {
+      "wrong": "一张共享表跑完所有算法最好学",
+      "right": "教学应一算法一专用集，只埋本课信号，否则注意力被无关列分裂。"
+    },
+    {
+      "wrong": "看完例题不做题也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测，才有长期记忆。"
+    },
+    {
+      "wrong": "打开 Nelson estimate 总能让控制限更准",
+      "right": "Nelson estimate 会剔除过大 MR 再估 σ。本课尖峰是教学信号，打开会改写 UCL，把课上要看的越界线索抹掉。"
+    }
+  ]
+}

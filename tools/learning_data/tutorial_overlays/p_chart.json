@@ -1,0 +1,159 @@
+{
+  "title": "P 图",
+  "used_for": "可变检验数下的不合格品率。限宽随 n 变化。",
+  "not_for": "恒定 n 可考虑 np；缺陷计数用 c/u。禁止与 np 共享表。",
+  "scenario": "检验数50–180变化。批22起不合格率台阶。",
+  "related_ids": [
+    "np_chart",
+    "laney_p_chart"
+  ],
+  "dialog_fill": {
+    "defectives": "不合格品数",
+    "inspected": "检验数"
+  },
+  "click_steps": [
+    "导入 `demo_p_chart_variable_n_step`。",
+    "菜单：控制图 → P 图。",
+    "不合格品数=`不合格品数`；检验数（列）=`检验数`；检验数常数留空；阶段列留空；规则默认；tests 留空。",
+    "对照批22与限宽随 n 变化；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "不合格品数 (`defectives`)",
+      "put": "不合格品数",
+      "meaning": "不良件数。"
+    },
+    {
+      "field": "检验数（列）(`inspected`)",
+      "put": "检验数",
+      "meaning": "可变 n；本课必选列。"
+    },
+    {
+      "field": "阶段列 (`stage`)",
+      "put": "留空",
+      "meaning": "同一阶段看比例台阶。"
+    },
+    {
+      "field": "检验数（常数）(`inspected_constant`)",
+      "put": "留空",
+      "meaning": "已有检验数列就不要填常数。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈attribute）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "p（不合格品率）",
+      "plain": "不良件数/检验数。",
+      "remember": "n 小则限更宽。"
+    },
+    {
+      "term": "可变 n",
+      "plain": "各批检验数不同。",
+      "remember": "P 图限会一窄一宽。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 22,
+      "what": "批22起不合格率台阶",
+      "expect": "p 后段上移；限宽随检验数变化。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "P 图",
+      "meaning": "批22后比例上移。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "与 np 共用一张表",
+    "把缺陷计数当不合格品"
+  ],
+  "skill_mission": "用 P 图在可变 n 下检出批22比例台阶。",
+  "prereq_quiz": [
+    {
+      "q": "为何不与 np 共享？",
+      "good": "np 要近似恒定 n",
+      "bad": "完全一样"
+    },
+    {
+      "q": "检验数列本课？",
+      "good": "必选检验数",
+      "bad": "只填常数"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读限宽",
+      "prompt": "n 变大时期望限怎样变？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_p_chart_variable_n_step`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_p_chart_variable_n_step`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行22",
+    "可变 n 教学点",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "p 越界=批次必须报废",
+      "right": "是特殊原因线索，禁止「必须停线/报废」话术。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

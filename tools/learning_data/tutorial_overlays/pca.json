@@ -1,0 +1,132 @@
+{
+  "title": "主成分分析",
+  "used_for": "用专用集 `pca_three_var` 练习「主成分分析」。",
+  "not_for": "替代推断/放行结论；禁止过程合格 / 已证明正态 / 必须停线。",
+  "scenario": "导入 `demo_pca_three_var`。多选三指标；mode 用目录默认。",
+  "related_ids": [
+    "histogram",
+    "scatter_plot",
+    "graph_gallery"
+  ],
+  "dialog_fill": {
+    "variables": "指标X,指标Y,指标Z"
+  },
+  "click_steps": [
+    "导入 `demo_pca_three_var`。",
+    "菜单：统计 → 主成分分析。",
+    "按角色映射：多选三指标；mode 用目录默认。",
+    "对照埋点读图；禁止过程合格 / 已证明正态 / 必须停线。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "数值变量 (`variables`)",
+      "put": "指标X,指标Y,指标Z",
+      "meaning": "多选。"
+    },
+    {
+      "field": "矩阵模式 (`mode`)",
+      "put": "目录默认",
+      "meaning": "pca_mode。"
+    },
+    {
+      "field": "保留主成分数 (`components`)",
+      "put": "0",
+      "meaning": "0=全部。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "PCA",
+      "plain": "降维正交分量。",
+      "remember": "PC1 主变异。"
+    },
+    {
+      "term": "共线",
+      "plain": "三列同向。",
+      "remember": "埋点。"
+    },
+    {
+      "term": "离群",
+      "plain": "行35–40。",
+      "remember": "得分图线索。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 35,
+      "what": "第三方向离群",
+      "expect": "得分/载荷异常线索；禁止过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "主成分分析",
+      "meaning": "对照埋点；禁止过程合格；禁止已证明正态；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能独立导入 `demo_pca_three_var` 完成「主成分分析」并拒绝禁止句。",
+  "prereq_quiz": [
+    {
+      "q": "dataset？",
+      "good": "pca_three_var",
+      "bad": "旧10表"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    },
+    {
+      "q": "菜单？",
+      "good": "统计",
+      "bad": "随便猜"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "本课为何专用表？"
+    },
+    {
+      "after": "读图",
+      "prompt": "埋点对应哪一行？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_pca_three_var`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_pca_three_var`，自己改一个可选字段，不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "dataset_id？",
+    "埋点行？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "图画完=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

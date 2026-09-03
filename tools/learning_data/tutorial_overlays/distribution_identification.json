@@ -1,0 +1,124 @@
+{
+  "title": "个体分布识别",
+  "used_for": "比较候选分布拟合，为后续非正态能力等选分布。",
+  "not_for": "证明唯一真分布；小样本过度自信。禁止已证明正态。",
+  "scenario": "近似对数正态正值样本。",
+  "related_ids": [
+    "box_cox",
+    "nonnormal_capability",
+    "normality_test"
+  ],
+  "dialog_fill": {
+    "variables": "测量值"
+  },
+  "click_steps": [
+    "导入 `demo_dist_id_candidates`。",
+    "菜单：质量工具 → 个体分布识别。",
+    "测量值=`测量值`。",
+    "对照：对数正态/Weibull 等应优于正态；禁止已证明正态。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "测量值",
+      "meaning": "单列正值/连续 Y。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "候选分布",
+      "plain": "正态/对数正态/Weibull 等比较集。",
+      "remember": "选相对更好，非唯一真理。"
+    },
+    {
+      "term": "拟合优度线索",
+      "plain": "图与统计量辅助比较。",
+      "remember": "禁止已证明正态。"
+    },
+    {
+      "term": "后续用途",
+      "plain": "常为非正态能力选分布。",
+      "remember": "本课 dataset 空挂非正态课。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "全列近似对数正态生成",
+      "expect": "识别结果中对数正态类优于正态；勿写已证明正态。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "分布比较表/图",
+      "meaning": "相对排序；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把第一名写成唯一真分布",
+    "小 n 过度解读"
+  ],
+  "skill_mission": "完成分布识别，说明相对拟合而非证明正态。",
+  "prereq_quiz": [
+    {
+      "q": "本集形状？",
+      "good": "近对数正态",
+      "bad": "标准正态尖峰"
+    },
+    {
+      "q": "已证明正态？",
+      "good": "禁止",
+      "bad": "可以"
+    },
+    {
+      "q": "角色？",
+      "good": "variables=测量值",
+      "bad": "随便"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "跑识别",
+      "prompt": "第一名能否当唯一真理？"
+    },
+    {
+      "after": "对照正态",
+      "prompt": "为何禁止已证明正态？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_dist_id_candidates`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_dist_id_candidates`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "形状？",
+    "与 Box-Cox",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "p 大=已证明正态",
+      "right": "禁止已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

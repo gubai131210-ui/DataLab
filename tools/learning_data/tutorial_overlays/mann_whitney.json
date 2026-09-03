@@ -1,0 +1,130 @@
+{
+  "title": "Mann-Whitney 检验",
+  "used_for": "两独立样本位置（秩）。与双样本 t 同构表。",
+  "not_for": "配对用 Wilcoxon。",
+  "scenario": "同 infer_two_sample_location。",
+  "related_ids": [
+    "two_sample_t"
+  ],
+  "dialog_fill": {
+    "variables": "A线厚度_um,B线厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_infer_two_sample_location`。",
+    "菜单：统计 → Mann-Whitney 检验。",
+    "多选两列；备择双侧。",
+    "对照 B 线位置偏高。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "两列独立样本 (`variables`)",
+      "put": "A线厚度_um,B线厚度_um",
+      "meaning": "恰好两列。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧",
+      "meaning": "目录。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Mann-Whitney",
+      "plain": "两独立样本秩和。",
+      "remember": "少依赖正态。"
+    },
+    {
+      "term": "同构",
+      "plain": "infer_two_sample_location。",
+      "remember": "白名单。"
+    },
+    {
+      "term": "独立",
+      "plain": "不是配对。",
+      "remember": "配对走符号秩。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "B线位置偏高",
+      "expect": "MW 拒绝线索"
+    },
+    {
+      "row": 30,
+      "what": "末行仍B偏高",
+      "expect": "与双样本t对照"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "U/p",
+      "meaning": "对照埋点；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成 Mann-Whitney 并与双样本 t 对照。",
+  "prereq_quiz": [
+    {
+      "q": "配对？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "dataset？",
+      "good": "infer_two_sample_location",
+      "bad": "独享"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "跑完",
+      "prompt": "与 t 何时一起报告？"
+    },
+    {
+      "after": "对照",
+      "prompt": "为何不挂方差表？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_infer_two_sample_location`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_infer_two_sample_location`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "MW？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "非参数=可写已证明正态",
+      "right": "禁止已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "title": "Z-MR 控制图",
+  "used_for": "短跑多产品：按组标准化后再画 I/MR。",
+  "not_for": "单一稳定长跑优先普通 I-MR。",
+  "scenario": "型号 A/B/C 短跑。型号B后段相对目标上移。",
+  "related_ids": [
+    "imr"
+  ],
+  "dialog_fill": {
+    "variables": "尺寸_mm",
+    "group": "产品型号"
+  },
+  "click_steps": [
+    "导入 `demo_z_mr_short_run`。",
+    "菜单：控制图 → Z-MR 控制图。",
+    "测量值=`尺寸_mm`；分组列=`产品型号`；MR长度=2；规则默认；tests 留空。",
+    "对照行33–40 型号B；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "尺寸_mm",
+      "meaning": "Y。"
+    },
+    {
+      "field": "分组列（可选）(`group`)",
+      "put": "产品型号",
+      "meaning": "短跑产品；本课应选。"
+    },
+    {
+      "field": "移动极差长度 (`mr_length`)",
+      "put": "2",
+      "meaning": "估短期波动。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈z_mr）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "Z 标准化",
+      "plain": "按组均值/σ 把不同产品拉到同一尺度。",
+      "remember": "短跑混线常用。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 33,
+      "what": "行33起型号B相对其上移",
+      "expect": "Z 图对应点抬高。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Z-MR",
+      "meaning": "型号B后段抬高。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "不选分组列",
+    "与金标 imr 表混用"
+  ],
+  "skill_mission": "用 Z-MR 在短跑混线中检出型号B偏移。",
+  "prereq_quiz": [
+    {
+      "q": "分组列本课？",
+      "good": "产品型号",
+      "bad": "必须留空"
+    },
+    {
+      "q": "为何标准化？",
+      "good": "不同产品目标不同",
+      "bad": "为了证明正态"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选分组",
+      "prompt": "若不分组直接画 I 图会怎样？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_z_mr_short_run`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_z_mr_short_run`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行33",
+    "短跑含义",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "Z=0 就是规格中心",
+      "right": "Z 相对组内统计中心，不是 USL/LSL。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

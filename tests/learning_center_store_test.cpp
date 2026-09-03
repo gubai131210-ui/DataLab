@@ -18,8 +18,9 @@ class LearningCenterStoreTest final : public QObject {
 
 private slots:
     void catalogVersionMatches();
-    void listsTenDatasets();
-    void loadsSmtDatasetRowsAndColumns();
+    void listsPlannedDatasets();
+    void loadsImrSpiShiftRowsAndColumns();
+    void loadsImrGoldTutorialFields();
     void loadsAllTutorials();
     void noConnectionLeakAfterOperations();
     void tutorialIdsMatchCommandAndHelpUnion();
@@ -33,24 +34,89 @@ void LearningCenterStoreTest::catalogVersionMatches()
     const QString version = LearningDatasetStore::catalog_version(&error);
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QCOMPARE(version, QString::fromLatin1(LearningDatasetStore::kExpectedCatalogVersion));
+    QCOMPARE(version, QStringLiteral("learning-center-v2"));
 }
 
-void LearningCenterStoreTest::listsTenDatasets()
+void LearningCenterStoreTest::listsPlannedDatasets()
 {
     QString error;
     const auto datasets = LearningDatasetStore::list_datasets(&error);
     QVERIFY2(error.isEmpty(), qPrintable(error));
-    QCOMPARE(static_cast<int>(datasets.size()), 10);
+    QVERIFY(datasets.size() >= 2);
+
+    QSet<QString> ids;
+    for (const auto& dataset : datasets) {
+        ids.insert(dataset.dataset_id);
+        QVERIFY2(!dataset.dataset_id.startsWith(QStringLiteral("demo_")),
+                 qPrintable(dataset.dataset_id));
+    }
+    QVERIFY(ids.contains(QStringLiteral("imr_spi_shift")));
+    QVERIFY(ids.contains(QStringLiteral("imr_spi_spike_b")));
+
+    const QStringList banned = {
+        QStringLiteral("smt_paste_height"), QStringLiteral("two_line_thickness"),
+        QStringLiteral("paired_rework"), QStringLiteral("anova_cavity"),
+        QStringLiteral("corr_temp_offset"), QStringLiteral("attribute_defect"),
+        QStringLiteral("gage_rr_balance"), QStringLiteral("doe_factorial_demo"),
+        QStringLiteral("reliability_cycles"), QStringLiteral("ts_weekly_yield"),
+    };
+    for (const QString& banned_id : banned) {
+        QVERIFY2(!ids.contains(banned_id), qPrintable(banned_id));
+    }
 }
 
-void LearningCenterStoreTest::loadsSmtDatasetRowsAndColumns()
+void LearningCenterStoreTest::loadsImrSpiShiftRowsAndColumns()
 {
     QString error;
-    const auto table = LearningDatasetStore::load_dataset(QStringLiteral("smt_paste_height"), &error);
+    const auto table = LearningDatasetStore::load_dataset(QStringLiteral("imr_spi_shift"), &error);
     QVERIFY2(table.has_value(), qPrintable(error));
-    QCOMPARE(static_cast<int>(table->columns.size()), 5);
-    QCOMPARE(static_cast<int>(table->rows.size()), 80);
-    QCOMPARE(table->columns.front(), "锡膏高度_um");
+    QCOMPARE(static_cast<int>(table->columns.size()), 3);
+    QVERIFY(static_cast<int>(table->rows.size()) >= 30);
+    QVERIFY(static_cast<int>(table->rows.size()) <= 200);
+    bool has_height = false;
+    for (const auto& column : table->columns) {
+        if (column == "锡膏高度_um") {
+            has_height = true;
+        }
+    }
+    QVERIFY(has_height);
+    QCOMPARE(table->name, std::string("demo_imr_spi_shift"));
+}
+
+void LearningCenterStoreTest::loadsImrGoldTutorialFields()
+{
+    QString error;
+    const auto tutorial = LearningTutorialCatalog::find_by_id(QStringLiteral("imr"), &error);
+    QVERIFY2(tutorial.has_value(), qPrintable(error));
+    QCOMPARE(tutorial->dataset_id.value_or(QString()), QStringLiteral("imr_spi_shift"));
+    QCOMPARE(tutorial->dialog_fill.value(QStringLiteral("variables")),
+             QStringLiteral("锡膏高度_um"));
+    QVERIFY(!tutorial->dialog_fill.contains(QStringLiteral("stage")));
+    QVERIFY(tutorial->glossary.size() >= 3);
+    QVERIFY(tutorial->dialog_fill_detail.size() >= 9);
+    QVERIFY(tutorial->buried_signals.size() >= 2);
+    QVERIFY(!tutorial->skill_mission.isEmpty());
+    QVERIFY(!tutorial->prereq_quiz.isEmpty());
+    QVERIFY(!tutorial->self_explain.isEmpty());
+    QVERIFY(!tutorial->fade_levels.isEmpty());
+    QVERIFY(!tutorial->retrieval_quiz.isEmpty());
+    QVERIFY(!tutorial->misconceptions.isEmpty());
+
+    bool has_ucl = false;
+    bool has_usl = false;
+    for (const auto& item : tutorial->glossary) {
+        has_ucl = has_ucl || item.term.contains(QStringLiteral("UCL"));
+        has_usl = has_usl || item.term.contains(QStringLiteral("USL"));
+    }
+    QVERIFY(has_ucl);
+    QVERIFY(has_usl);
+
+    QSet<int> buried_rows;
+    for (const auto& signal : tutorial->buried_signals) {
+        buried_rows.insert(signal.row);
+    }
+    QVERIFY(buried_rows.contains(41));
+    QVERIFY(buried_rows.contains(55));
 }
 
 void LearningCenterStoreTest::loadsAllTutorials()
@@ -59,6 +125,16 @@ void LearningCenterStoreTest::loadsAllTutorials()
     const auto tutorials = LearningTutorialCatalog::load_all(&error);
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QCOMPARE(static_cast<int>(tutorials.size()), 184);
+
+    int with_dataset = 0;
+    for (const auto& tutorial : tutorials) {
+        if (tutorial.dataset_id.has_value()) {
+            ++with_dataset;
+            QCOMPARE(tutorial.dataset_id.value(), QStringLiteral("imr_spi_shift"));
+            QCOMPARE(tutorial.command_id, QStringLiteral("imr"));
+        }
+    }
+    QCOMPARE(with_dataset, 1);
 }
 
 void LearningCenterStoreTest::noConnectionLeakAfterOperations()
@@ -66,7 +142,7 @@ void LearningCenterStoreTest::noConnectionLeakAfterOperations()
     const int before = QSqlDatabase::connectionNames().size();
     QString error;
     (void)LearningDatasetStore::list_datasets(&error);
-    (void)LearningDatasetStore::load_dataset(QStringLiteral("paired_rework"), &error);
+    (void)LearningDatasetStore::load_dataset(QStringLiteral("imr_spi_shift"), &error);
     (void)LearningTutorialCatalog::load_all(&error);
     const int after = QSqlDatabase::connectionNames().size();
     QCOMPARE(after, before);
@@ -129,16 +205,16 @@ void LearningCenterStoreTest::importPreservesExistingWorksheet()
 
     QString error;
     const auto imported = LearningDatasetStore::load_dataset(
-        QStringLiteral("paired_rework"), &error);
+        QStringLiteral("imr_spi_shift"), &error);
     QVERIFY2(imported.has_value(), qPrintable(error));
-    registry.import_new("demo_paired_rework", *imported);
+    registry.import_new("demo_imr_spi_shift", *imported);
 
     QCOMPARE(registry.worksheets().size(), 2U);
     QVERIFY(registry.worksheets().find("user_data.csv") != registry.worksheets().end());
-    QVERIFY(registry.worksheets().find("demo_paired_rework") != registry.worksheets().end());
-    QCOMPARE(registry.active_name(), std::string("demo_paired_rework"));
+    QVERIFY(registry.worksheets().find("demo_imr_spi_shift") != registry.worksheets().end());
+    QCOMPARE(registry.active_name(), std::string("demo_imr_spi_shift"));
 
-    const auto restored = registry.activate("user_data.csv", registry.worksheets().at("demo_paired_rework"));
+    const auto restored = registry.activate("user_data.csv", registry.worksheets().at("demo_imr_spi_shift"));
     QVERIFY(restored.has_value());
     QCOMPARE(restored->name, "user_data.csv");
     QCOMPARE(restored->rows.size(), 2U);

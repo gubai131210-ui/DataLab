@@ -1,0 +1,143 @@
+{
+  "title": "Hotelling T²",
+  "used_for": "多变量联合均值偏移监视。",
+  "not_for": "不能替代各变量单图诊断根因；本课至少两列。",
+  "scenario": "长度+宽度。片36起长度均值台阶。",
+  "related_ids": [
+    "mewma",
+    "generalized_variance"
+  ],
+  "dialog_fill": {
+    "variables": "长度_mm,宽度_mm"
+  },
+  "click_steps": [
+    "导入 `demo_t2_two_var_shift`。",
+    "菜单：控制图 → Hotelling T²。",
+    "变量多选两列；控制阶段=Phase I；α=0.05。",
+    "对照片36；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量（多列）(`variables`)",
+      "put": "长度_mm,宽度_mm",
+      "meaning": "至少两列。"
+    },
+    {
+      "field": "控制阶段 (`phase`)",
+      "put": "Phase I",
+      "meaning": "目录值 phase1；本课用 Phase I 估限。"
+    },
+    {
+      "field": "α (`alpha`)",
+      "put": "0.05",
+      "meaning": "显著性/限对应水平。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "Hotelling T²",
+      "plain": "多变量到中心的马氏距离型统计量。",
+      "remember": "联合偏移可能单图不明显。"
+    },
+    {
+      "term": "Phase I / II",
+      "plain": "I=用当前数据建限；II=用历史限监视。",
+      "remember": "本课 Phase I。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 36,
+      "what": "片36起长度均值上移",
+      "expect": "T² 后段抬高。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "T² 图",
+      "meaning": "片36后上移。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "只选一列",
+    "把 T² 当因果证明"
+  ],
+  "skill_mission": "用 T² 检出片36联合均值偏移。",
+  "prereq_quiz": [
+    {
+      "q": "至少几列？",
+      "good": "2",
+      "bad": "1"
+    },
+    {
+      "q": "Phase I 做什么？",
+      "good": "用当前数据估限",
+      "bad": "只用历史限"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读片36",
+      "prompt": "为何宽度几乎无台阶仍可能 T² 报警？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_t2_two_var_shift`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_t2_two_var_shift`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行36",
+    "Phase I 含义",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "T² 越界必须停线",
+      "right": "禁止「必须停线」；应调查贡献变量。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

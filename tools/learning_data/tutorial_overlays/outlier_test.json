@@ -1,0 +1,140 @@
+{
+  "title": "异常值检验",
+  "used_for": "标记可疑异常点。",
+  "not_for": "不是自动删点放行。",
+  "scenario": "片28尖峰。导入 demo_outlier_one_spike。",
+  "related_ids": [
+    "descriptive"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_outlier_one_spike`。",
+    "菜单：统计 → 异常值检验。",
+    "变量=厚度_um；方法目录默认；置信95%。",
+    "对照片28；禁止已证明正态。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "方法 (`method`)",
+      "put": "目录默认",
+      "meaning": "outlier_method。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "目录默认",
+      "meaning": "。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "异常值检验",
+      "plain": "相对模型的极端点。",
+      "remember": "先调查原因。"
+    },
+    {
+      "term": "片28",
+      "plain": "本课尖峰。",
+      "remember": "埋点。"
+    },
+    {
+      "term": "禁止删点洗白",
+      "plain": "教学不是删点合格。",
+      "remember": "纪律。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 28,
+      "what": "尖峰约112",
+      "expect": "标记异常线索"
+    },
+    {
+      "row": 1,
+      "what": "基线起点",
+      "expect": "对照尖峰相对基线"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "异常标记",
+      "meaning": "对照片28；禁止过程合格；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能定位片28尖峰并拒绝删点洗白。",
+  "prereq_quiz": [
+    {
+      "q": "尖峰行？",
+      "good": "28",
+      "bad": "1"
+    },
+    {
+      "q": "自动删？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看28",
+      "prompt": "下一步调查什么？"
+    },
+    {
+      "after": "对照",
+      "prompt": "为何不能写成过程合格？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_outlier_one_spike`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_outlier_one_spike`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "片28？",
+    "异常",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "删掉异常后=过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

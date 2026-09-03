@@ -1,0 +1,135 @@
+{
+  "title": "EMP Crossed",
+  "used_for": "Wheeler EMP 观点下的交叉量具评估。与 gage_rr 同构共享 `msa_crossed_aiag`。",
+  "not_for": "不替代 AIAG %GR&R 客户表格；无规格输入时勿硬扯公差比。禁止量具通过。",
+  "scenario": "同一交叉表。用 EMP Crossed 看分类/偏倚线索，对照操作员B。",
+  "related_ids": [
+    "gage_rr",
+    "msa_type1"
+  ],
+  "dialog_fill": {
+    "measurement": "测量值_um",
+    "part": "零件号",
+    "operator": "操作员"
+  },
+  "click_steps": [
+    "导入 `demo_msa_crossed_aiag`（与 Crossed Gage R&R 同构白名单）。",
+    "菜单：质量工具 → EMP Crossed。",
+    "测量值/零件/操作员三列同上；本命令无 LSL/USL 输入。",
+    "对照操作员B 偏倚；禁止量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`measurement`)",
+      "put": "测量值_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "零件 (`part`)",
+      "put": "零件号",
+      "meaning": "交叉零件因子。"
+    },
+    {
+      "field": "操作员 (`operator`)",
+      "put": "操作员",
+      "meaning": "交叉操作员因子；本课无规格 inputs。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "EMP",
+      "plain": "Evaluating the Measurement Process（Wheeler）。",
+      "remember": "与 AIAG %GR&R 报告口径不同。"
+    },
+    {
+      "term": "交叉同构共享",
+      "plain": "本课与 gage_rr 共享 `msa_crossed_aiag`。",
+      "remember": "白名单极小族；禁止再挂 nested。"
+    },
+    {
+      "term": "偏倚线索",
+      "plain": "某操作员系统偏离。",
+      "remember": "是研究信号，不是停线指令。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 4,
+      "what": "操作员B 偏倚（同 gage_rr）",
+      "expect": "EMP 分类/图形中操作员差异可见；勿写必须停线。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "EMP 输出",
+      "meaning": "对照操作员B；禁止量具通过/过程合格。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把 EMP 与 AIAG 阈值混谈",
+    "给本命令虚构 LSL 字段"
+  ],
+  "skill_mission": "用同构交叉表跑 EMP Crossed，说明与 gage_rr 同构共享理由。",
+  "prereq_quiz": [
+    {
+      "q": "本课 dataset？",
+      "good": "msa_crossed_aiag",
+      "bad": "各自一张宽表"
+    },
+    {
+      "q": "有无 LSL 输入？",
+      "good": "无",
+      "bad": "有，必须填"
+    },
+    {
+      "q": "能量具通过吗？",
+      "good": "不能写",
+      "bad": "能"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "为何可以与 gage_rr 共享表？"
+    },
+    {
+      "after": "读图",
+      "prompt": "EMP 结论能否写成停线？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_msa_crossed_aiag`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_msa_crossed_aiag`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "白名单族成员？",
+    "操作员B？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "EMP 证明量具合格",
+      "right": "禁止量具通过；只给研究线索。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

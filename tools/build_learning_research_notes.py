@@ -103,7 +103,7 @@ CURATED: dict[str, dict] = {
         ],
         "manufacturing_scenario": "SMT 线体导入 `锡膏高度_um`，按 `产线` 分组看均值与标准差是否一致。",
         "sources": ["nist_eda", "montgomery_spc"],
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "normality_test": {
         "used_for": "检查测量数据与正态假设的偏离程度，为后续参数/非参数方法选型提供证据。",
@@ -115,7 +115,7 @@ CURATED: dict[str, dict] = {
         ],
         "manufacturing_scenario": "注塑件 `模腔尺寸_mm` 在换模后先做正态性，再决定是否用 Cp/Cpk。",
         "sources": ["nist_eda", "montgomery_spc"],
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "imr": {
         "used_for": "监控单件/慢节拍过程的个体值与移动极差，识别特殊原因引起的突变、漂移或周期。",
@@ -128,7 +128,7 @@ CURATED: dict[str, dict] = {
         "manufacturing_scenario": "光测站逐件记录 `焊点偏移_um` 与 `检测时间`，用 I-MR 看是否出现漂移。",
         "sources": ["nist_spc", "aiag_spc", "wheeler", "minitab_imr"],
         "chart_note": "看点是否随机分布在中心线附近、是否超出控制限、是否存在趋势/周期；不替代假设检验。",
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "xbar_r": {
         "used_for": "子组大小 2–10 时监控过程均值与组内变异，判断均值或波动是否受特殊原因影响。",
@@ -141,7 +141,7 @@ CURATED: dict[str, dict] = {
         "manufacturing_scenario": "注塑 `模腔` 每模 4 穴取 `尺寸_mm`，按模次为子组画 Xbar-R。",
         "sources": ["nist_spc", "aiag_spc", "montgomery_spc"],
         "chart_note": "Xbar 看均值偏移，R 看组内散布突变；模式识别不替代显著性检验。",
-        "dataset_hint": "anova_cavity",
+        "dataset_hint": None,
     },
     "capability": {
         "used_for": "在过程受控且规格明确时，估计变异相对规格宽度的能力指数（Cp/Cpk 等）。",
@@ -153,7 +153,7 @@ CURATED: dict[str, dict] = {
         ],
         "manufacturing_scenario": "稳定后评估 `锡膏高度_um` 相对 USL/LSL 的 Cpk。",
         "sources": ["minitab_cap", "aiag_spc", "montgomery_spc"],
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "gage_rr": {
         "used_for": "量化测量系统重复性与再现性占比，判断测量噪声是否掩盖过程/产品差异。",
@@ -165,7 +165,7 @@ CURATED: dict[str, dict] = {
         ],
         "manufacturing_scenario": "三座标测 `外壳厚度_mm`：零件×操作员×重复，评估 %GRR。",
         "sources": ["aiag_msa", "minitab_gage"],
-        "dataset_hint": "gage_rr_balance",
+        "dataset_hint": None,
     },
     "doe_factorial": {
         "used_for": "筛选多个因子对响应的主效应与交互，用结构化试验代替盲目调参。",
@@ -177,7 +177,7 @@ CURATED: dict[str, dict] = {
         ],
         "manufacturing_scenario": "回流焊 `温度_℃`、`链速_mm_min`、`氮气流量` 对 `虚焊率` 的 2^3 设计。",
         "sources": ["montgomery_doe", "minitab_doe"],
-        "dataset_hint": "doe_factorial_demo",
+        "dataset_hint": None,
     },
     "histogram": {
         "used_for": "直观看测量值的分布形状、多峰与离群，辅助理解过程变异结构。",
@@ -190,7 +190,7 @@ CURATED: dict[str, dict] = {
         "manufacturing_scenario": "对比两产线 `膜厚_um` 的分布是否重叠。",
         "sources": ["nist_eda", "montgomery_spc"],
         "chart_note": "看对称性、拖尾、多峰与离群；图形探索不替代假设检验。",
-        "dataset_hint": "two_line_thickness",
+        "dataset_hint": None,
     },
     "special_cause_rules": {
         "used_for": "理解 Western Electric / Nelson 等规则如何标记控制图上的可疑模式，辅助识别特殊原因。",
@@ -203,7 +203,7 @@ CURATED: dict[str, dict] = {
         "manufacturing_scenario": "I-MR 监控 `锡膏高度_um` 时勾选适用规则，记录哪条规则触发。",
         "sources": ["nist_spc", "aiag_spc", "wheeler"],
         "chart_note": "规则用于模式提示；最终判断需结合工艺知识，不替代假设检验。",
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "database_import": {
         "used_for": "（编排参考）从外部数据库导入数据到工作区的概念说明，便于与 MES/ERP 数据衔接。",
@@ -230,7 +230,7 @@ CURATED: dict[str, dict] = {
         "common_mistakes": ["忽略右删失把未失效当成失效。", "混合不同失效模式。"],
         "manufacturing_scenario": "电源模块 `循环次数` 与 `是否失效` 预测保修期失效率。",
         "sources": ["nist_reliability", "montgomery_spc"],
-        "dataset_hint": "reliability_cycles",
+        "dataset_hint": None,
         "implemented_note": "命令表有、help 暂无独立条目；教程对齐 menu_path。",
     },
 }
@@ -257,7 +257,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "每水平 n≥5，总体≥30 更稳。",
         "common_mistakes": ["不做事后比较就断定哪组最好。", "忽略交互作用。"],
         "sources": ["nist_anova", "montgomery_doe"],
-        "dataset_hint": "anova_cavity",
+        "dataset_hint": None,
     },
     "回归": {
         "used_for": "量化预测因子与响应的关系，用于解释或预测。",
@@ -265,7 +265,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "n ≥ 10×参数个数；残差诊断必备。",
         "common_mistakes": ["忽略多重共线性。", "把 R² 当成因果强度。"],
         "sources": ["nist_eda", "montgomery_doe"],
-        "dataset_hint": "corr_temp_offset",
+        "dataset_hint": None,
     },
     "控制图": {
         "used_for": "按时间顺序监控过程，区分常见原因与特殊原因变异。",
@@ -274,7 +274,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "common_mistakes": ["未按时间排序。", "控制限内就当合格。"],
         "sources": ["nist_spc", "aiag_spc", "asq_spc"],
         "chart_note": "识别趋势、周期、突变与超出控制限；模式识别不替代假设检验。",
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "能力": {
         "used_for": "评估过程变异相对规格的位置与宽度。",
@@ -282,7 +282,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "≥30 独立观测。",
         "common_mistakes": ["未验证受控。", "规格限错误。"],
         "sources": ["minitab_cap", "aiag_spc"],
-        "dataset_hint": "smt_paste_height",
+        "dataset_hint": None,
     },
     "MSA": {
         "used_for": "评估测量系统变异是否可接受，避免误判产品/过程。",
@@ -290,7 +290,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "AIAG 交叉法 10×3×2/3。",
         "common_mistakes": ["零件范围不足。", "操作员培训不一致。"],
         "sources": ["aiag_msa", "minitab_gage"],
-        "dataset_hint": "gage_rr_balance",
+        "dataset_hint": None,
     },
     "DOE": {
         "used_for": "系统筛选/优化因子，估计主效应与交互。",
@@ -298,7 +298,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "2^k 或响应曲面 3–5 水平。",
         "common_mistakes": ["不随机化。", "因子水平不现实。"],
         "sources": ["montgomery_doe", "minitab_doe"],
-        "dataset_hint": "doe_factorial_demo",
+        "dataset_hint": None,
     },
     "图形": {
         "used_for": "可视化分布、关系与结构，辅助 EDA 与沟通。",
@@ -314,7 +314,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "≥50 点识别季节；ARIMA 需足够历史。",
         "common_mistakes": ["非平稳序列直接回归。", "忽略异常点影响。"],
         "sources": ["nist_eda", "montgomery_spc"],
-        "dataset_hint": "ts_weekly_yield",
+        "dataset_hint": None,
     },
     "可靠性": {
         "used_for": "基于失效/删失数据分析寿命分布与加速应力效应。",
@@ -322,7 +322,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "失效事件≥10；加速试验需应力模型假设。",
         "common_mistakes": ["混用失效模式。", "忽略删失。"],
         "sources": ["nist_reliability"],
-        "dataset_hint": "reliability_cycles",
+        "dataset_hint": None,
     },
     "质量工具": {
         "used_for": "质量改进常用工具（帕累托、抽样、多变异等）支持问题定义与验证。",
@@ -330,7 +330,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
         "typical_sample_size": "视工具而定；帕累托需完整缺陷分类。",
         "common_mistakes": ["类别划分不一致导致帕累托失真。"],
         "sources": ["aiag_spc", "montgomery_spc"],
-        "dataset_hint": "attribute_defect",
+        "dataset_hint": None,
     },
     "机器学习": {
         "used_for": "探索性分类/聚类/异常检测，辅助发现复杂模式。",
@@ -342,7 +342,7 @@ CATEGORY_TEMPLATES: dict[str, dict] = {
 }
 
 MENU_PATH_DATASET = {
-    "控制图": "smt_paste_height",
+    "控制图": None,
     "图形": None,
     "统计": None,
 }
@@ -354,6 +354,16 @@ def load_research_by_id() -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     return {}
 
+
+def load_mapping_hints() -> dict[str, str]:
+    mapping_path = ROOT / "tools/learning_data/dataset_mapping.json"
+    if not mapping_path.exists():
+        return {}
+    mapping = json.loads(mapping_path.read_text(encoding="utf-8"))
+    return {
+        m["command_id"]: (m.get("dataset_id") or "")
+        for m in mapping.get("mappings") or []
+    }
 
 def pick_template(entry: dict, research_map: dict) -> dict:
     cid = entry["id"]
@@ -390,7 +400,6 @@ def pick_template(entry: dict, research_map: dict) -> dict:
         base["chart_note"] = "看模式、离群与趋势；图形/控制图不替代假设检验。"
     return base
 
-
 def format_roles(entry: dict) -> str:
     cmd = entry.get("command")
     if not cmd:
@@ -400,7 +409,6 @@ def format_roles(entry: dict) -> str:
         return "_无需列角色（计算器/设计生成类）_"
     parts = [f"`{r['id']}`（{r['label']}）" for r in roles]
     return "、".join(parts)
-
 
 def format_menu(entry: dict) -> str:
     cmd = entry.get("command")
@@ -412,7 +420,6 @@ def format_menu(entry: dict) -> str:
         label = cmd["menu_label"]
         return f"**{mp}** → {label}"
     return help_info.get("menu_path", "—")
-
 
 def render_entry(entry: dict, research_map: dict) -> str:
     cid = entry["id"]
@@ -455,9 +462,18 @@ def render_entry(entry: dict, research_map: dict) -> str:
     if tpl.get("chart_note"):
         lines.append("")
         lines.append(f"**图形解读要点**: {tpl['chart_note']}")
-    ds = tpl.get("dataset_hint") or MENU_PATH_DATASET.get((entry.get("command") or {}).get("menu_path", ""))
+    # Wave-5: prefer v2 lock-table mapping; never recommend retired shared tables.
+    hints = getattr(render_entry, "_mapping_hints", None)
+    if isinstance(hints, dict) and entry["id"] in hints:
+        ds = hints[entry["id"]]
+    else:
+        ds = tpl.get("dataset_hint") or MENU_PATH_DATASET.get(
+            (entry.get("command") or {}).get("menu_path", "")
+        )
     if ds:
         lines += ["", f"**建议 dataset_id**: `{ds}`"]
+    else:
+        lines += ["", "**建议 dataset_id**: （空 — 本课无专用导入表；旧共享表建议作废）"]
     lines += ["", "**权威来源**"]
     src_keys = tpl.get("sources", ["nist_eda"])
     for key in src_keys:
@@ -471,18 +487,20 @@ def render_entry(entry: dict, research_map: dict) -> str:
     lines.append("")
     return "\n".join(lines)
 
-
 def main() -> None:
     meta_path = ROOT / "tools/learning_data/id_metadata.json"
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
     research_map = load_research_by_id()
+    render_entry._mapping_hints = load_mapping_hints()  # type: ignore[attr-defined]
     entries = meta["entries"]
     out_lines = [
         "# DataLab 学习中心 — Agent A 调研笔记",
         "",
         f"> 生成日期：{date.today().isoformat()}  ",
         f"> 覆盖 id 数量：**{len(entries)}**（`analysis_commands::all()` ∪ `algorithm_help.json` entries）  ",
-        "> 权威计划（只读）：`docs/research/goal-learning-center-black-belt-plan.md`",
+        "> 权威：[`goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md`]"
+        "(goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md)；"
+        "锁表 mapping：[`learning-center-dataset-mapping.md`](learning-center-dataset-mapping.md)。",
         "",
         "## 清单审计",
         "",
@@ -491,20 +509,12 @@ def main() -> None:
         "- command-only：`reliability_warranty`",
         "- 每条 ≥1 权威来源；控制图/图形类含模式识别与「不替代假设检验」说明",
         "",
-        "## 共享数据集（Agent B 映射参考）",
+        "## 数据集策略（Wave-5）",
         "",
-        "| dataset_id | 场景 |",
-        "|------------|------|",
-        "| smt_paste_height | SMT 锡膏高度 |",
-        "| two_line_thickness | 两产线膜厚 |",
-        "| paired_rework | 返工前后 |",
-        "| anova_cavity | 三模腔尺寸 |",
-        "| corr_temp_offset | 温度 vs 偏移 |",
-        "| attribute_defect | 班次不良 |",
-        "| gage_rr_balance | 量具 R&R |",
-        "| doe_factorial_demo | 析因/Taguchi/混料 |",
-        "| reliability_cycles | 寿命循环 |",
-        "| ts_weekly_yield | 周良率 |",
+        "- 旧 10 张共享宽表 **已作废**，禁止再当「建议 dataset_id」。",
+        "- 现行专用主集 + §3 同构白名单见 [`learning-center-dataset-mapping.md`]"
+        "(learning-center-dataset-mapping.md)。",
+        "- 下文「建议 dataset_id」对齐 `tools/learning_data/dataset_mapping.json`。",
         "",
         "---",
         "",
@@ -525,7 +535,6 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(out_lines), encoding="utf-8")
     print(f"Wrote {out_path} ({len(entries)} entries)")
-
 
 if __name__ == "__main__":
     main()

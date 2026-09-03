@@ -7,8 +7,9 @@
 
 class QLineEdit;
 class QPushButton;
-class QTextBrowser;
+class QScrollArea;
 class QTreeWidget;
+class QWidget;
 
 class LearningCenterPage final : public QDialog {
     Q_OBJECT
@@ -32,14 +33,18 @@ private slots:
 private:
     void rebuild_tree(const QString& filter);
     void show_entry(const datalab::application::learning::LearningTutorialEntry& entry);
-    QString build_entry_html(const datalab::application::learning::LearningTutorialEntry& entry) const;
+    void rebuild_detail(const datalab::application::learning::LearningTutorialEntry& entry);
+    void show_load_error();
     QString status_label(const QString& status) const;
+    const datalab::application::learning::LearningDatasetSummary* find_dataset_summary(
+        const QString& dataset_id) const;
 
     QVector<datalab::application::learning::LearningTutorialEntry> entries_;
+    QVector<datalab::application::learning::LearningDatasetSummary> dataset_summaries_;
     QString load_error_;
     QLineEdit* search_edit_ = nullptr;
     QTreeWidget* tree_ = nullptr;
-    QTextBrowser* detail_browser_ = nullptr;
+    QScrollArea* detail_scroll_ = nullptr;
     QPushButton* import_button_ = nullptr;
     QPushButton* formula_button_ = nullptr;
     QString current_command_id_;

@@ -1,0 +1,125 @@
+{
+  "title": "McNemar 检验",
+  "used_for": "配对二元边际变化。",
+  "not_for": "多列用 Cochran Q。",
+  "scenario": "培训前后。导入 demo_mcnemar_paired_binary。",
+  "related_ids": [
+    "cochran_q"
+  ],
+  "dialog_fill": {
+    "variables": "培训前,培训后"
+  },
+  "click_steps": [
+    "导入 `demo_mcnemar_paired_binary`。",
+    "菜单：统计 → McNemar 检验。",
+    "多选培训前,培训后。",
+    "对照后检出↑。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "两列配对二元结果 (`variables`)",
+      "put": "培训前,培训后",
+      "meaning": "恰好两列。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "McNemar",
+      "plain": "配对二元不一致。",
+      "remember": "看b vs c。"
+    },
+    {
+      "term": "边际变化",
+      "plain": "培训后检出↑。",
+      "remember": "埋点。"
+    },
+    {
+      "term": "两列",
+      "plain": "更多列走Q。",
+      "remember": "对照。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "后检出↑的不一致对结构",
+      "expect": "McNemar 拒绝无变化"
+    },
+    {
+      "row": 40,
+      "what": "末对仍属同一结构",
+      "expect": "对照2×2配对表"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "McNemar/p",
+      "meaning": "对照后检出↑；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成 McNemar 并读配对不一致。",
+  "prereq_quiz": [
+    {
+      "q": "独立两样本？",
+      "good": "否（配对）",
+      "bad": "是"
+    },
+    {
+      "q": "dataset？",
+      "good": "mcnemar_paired_binary",
+      "bad": "cochran"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看b/c",
+      "prompt": "哪一类不一致更多？"
+    },
+    {
+      "after": "对照Q",
+      "prompt": "三方法何时换Q？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_mcnemar_paired_binary`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_mcnemar_paired_binary`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "McNemar？",
+    "配对",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "显著=必须停线",
+      "right": "禁止必须停线。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

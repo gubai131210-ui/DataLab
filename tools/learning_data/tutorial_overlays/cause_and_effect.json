@@ -1,0 +1,134 @@
+{
+  "title": "因果图（鱼骨）",
+  "used_for": "整理头脑风暴的类别-原因结构。",
+  "not_for": "统计显著性检验；自动证明根因。禁止过程合格。",
+  "scenario": "焊点不良 5M1E 清单，含「钢网张力未校准」。",
+  "related_ids": [
+    "pareto",
+    "multi_vari"
+  ],
+  "dialog_fill": {
+    "category": "类别",
+    "cause": "原因"
+  },
+  "click_steps": [
+    "导入 `demo_fishbone_solder_causes`。",
+    "菜单：质量工具 → 因果图。",
+    "类别列=`类别`；原因列=`原因`；效应标题=`焊点不良`。",
+    "对照「方法/钢网张力未校准」等分枝；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "类别列 (`category`)",
+      "put": "类别",
+      "meaning": "鱼骨大枝。"
+    },
+    {
+      "field": "原因列 (`cause`)",
+      "put": "原因",
+      "meaning": "具体原因短句。"
+    },
+    {
+      "field": "效应标题 (`effect_title`)",
+      "put": "焊点不良",
+      "meaning": "鱼头效应名。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "鱼骨图",
+      "plain": "按类别展开可能原因。",
+      "remember": "结构化讨论，不是检验。"
+    },
+    {
+      "term": "5M1E",
+      "plain": "人机料法环测等常用分类。",
+      "remember": "分类可自定义。"
+    },
+    {
+      "term": "效应",
+      "plain": "要解释的问题结果。",
+      "remember": "本课效应=焊点不良。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 8,
+      "what": "行含「方法 / 钢网张力未校准」（约行8）",
+      "expect": "方法枝可见该原因；勿写已证明根因或过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "因果图",
+      "meaning": "按类别分枝。禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把鱼骨当统计证明",
+    "效应标题留空却抱怨无标题"
+  ],
+  "skill_mission": "完成鱼骨图，指出方法枝关键原因条目。",
+  "prereq_quiz": [
+    {
+      "q": "两列？",
+      "good": "类别+原因",
+      "bad": "只要测量值"
+    },
+    {
+      "q": "鱼骨证明根因？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "效应标题？",
+      "good": "焊点不良",
+      "bad": "可随便空且抱怨"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "填效应",
+      "prompt": "效应标题作用？"
+    },
+    {
+      "after": "读图",
+      "prompt": "列出原因=已证明吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_fishbone_solder_causes`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_fishbone_solder_causes`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "钢网张力？",
+    "5M1E",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "鱼骨=根因已判决",
+      "right": "只是结构化假设列表。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

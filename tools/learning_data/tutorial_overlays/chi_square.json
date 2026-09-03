@@ -1,0 +1,132 @@
+{
+  "title": "列联表卡方",
+  "used_for": "两分类列关联。班次×缺陷类型。",
+  "not_for": "控制图；拟合优度用 chi_square_gof。",
+  "scenario": "导入 demo_cat_shift_line。",
+  "related_ids": [
+    "cross_tabulation",
+    "fisher_exact"
+  ],
+  "dialog_fill": {
+    "row_category": "班次",
+    "column_category": "缺陷类型"
+  },
+  "click_steps": [
+    "导入 `demo_cat_shift_line`。",
+    "菜单：统计 → 列联表卡方。",
+    "行分类=`班次`；列分类=`缺陷类型`。",
+    "对照晚班虚焊偏多；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "行分类列 (`row_category`)",
+      "put": "班次",
+      "meaning": "行因子。"
+    },
+    {
+      "field": "列分类列 (`column_category`)",
+      "put": "缺陷类型",
+      "meaning": "列因子。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "列联卡方",
+      "plain": "检验关联/齐性。",
+      "remember": "不是控制图。"
+    },
+    {
+      "term": "期望频数",
+      "plain": "过小考虑 Fisher。",
+      "remember": "本课大表。"
+    },
+    {
+      "term": "同构",
+      "plain": "与交叉表共享 cat_shift_line。",
+      "remember": "白名单。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "关联结构（晚班虚焊偏多）体现在全表频数",
+      "expect": "卡方关联显著线索"
+    },
+    {
+      "row": 120,
+      "what": "末行仍属同一关联配方",
+      "expect": "对照交叉表边际"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "卡方/p/残差",
+      "meaning": "对照班次×缺陷关联；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能填行列分类完成卡方并对照关联埋点。",
+  "prereq_quiz": [
+    {
+      "q": "控制图？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "共享？",
+      "good": "cat_shift_line",
+      "bad": "独享"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看残差",
+      "prompt": "哪一格驱动关联？"
+    },
+    {
+      "after": "对照交叉表",
+      "prompt": "两课同表的教学差？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cat_shift_line`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cat_shift_line`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行列？",
+    "同构？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "卡方显著=必须停线",
+      "right": "禁止必须停线。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

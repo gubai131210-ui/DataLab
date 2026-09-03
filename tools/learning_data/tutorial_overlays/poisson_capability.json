@@ -1,0 +1,139 @@
+{
+  "title": "泊松过程能力",
+  "used_for": "缺陷计数/DPU 的泊松能力摘要。",
+  "not_for": "不合格品件数用二项；计量型用正态能力。禁止过程合格。",
+  "scenario": "批16起单位缺陷率抬高。",
+  "related_ids": [
+    "binomial_capability",
+    "u_chart"
+  ],
+  "dialog_fill": {
+    "defects": "缺陷数",
+    "units": "单位数"
+  },
+  "click_steps": [
+    "导入 `demo_cap_poisson_counts`。",
+    "菜单：质量工具 → 泊松过程能力。",
+    "缺陷数=`缺陷数`；单位数（列）=`单位数`；单位数常数留空；目标 DPU 可选。",
+    "对照批16起抬高；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "缺陷数 (`defects`)",
+      "put": "缺陷数",
+      "meaning": "缺陷计数 Y。"
+    },
+    {
+      "field": "单位数（列） (`units`)",
+      "put": "单位数",
+      "meaning": "可变单位；与常数二选一。"
+    },
+    {
+      "field": "单位数（常数） (`inspected_constant`)",
+      "put": "留空",
+      "meaning": "已用列则留空。"
+    },
+    {
+      "field": "目标 DPU (`target`)",
+      "put": "留空或 0.03",
+      "meaning": "可选目标。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "DPU",
+      "plain": "单位缺陷数。",
+      "remember": "泊松能力关注缺陷率。"
+    },
+    {
+      "term": "缺陷 vs 不合格品",
+      "plain": "一件可有多缺陷。",
+      "remember": "选错命令会错读。"
+    },
+    {
+      "term": "单位数",
+      "plain": "面积/件数等暴露量。",
+      "remember": "可变时用列。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 16,
+      "what": "批16起缺陷率抬高",
+      "expect": "泊松能力/DPU 线索变差；勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "泊松能力输出",
+      "meaning": "对照批16。禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "与二项命令互换",
+    "漏单位数"
+  ],
+  "skill_mission": "完成泊松能力课，对照批16 DPU 台阶。",
+  "prereq_quiz": [
+    {
+      "q": "Y？",
+      "good": "缺陷数",
+      "bad": "不合格品数"
+    },
+    {
+      "q": "批16？",
+      "good": "DPU 抬高",
+      "bad": "量具通过"
+    },
+    {
+      "q": "单位数？",
+      "good": "用列",
+      "bad": "可忽略"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选列",
+      "prompt": "为何不用二项命令？"
+    },
+    {
+      "after": "读输出",
+      "prompt": "DPU 高能否写过程合格？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cap_poisson_counts`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cap_poisson_counts`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "批16？",
+    "缺陷vs不合格品",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "泊松能力证明过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

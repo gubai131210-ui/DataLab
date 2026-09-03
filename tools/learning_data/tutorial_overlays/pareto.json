@@ -1,0 +1,133 @@
+{
+  "title": "柏拉图",
+  "used_for": "按缺陷类别频数抓主要问题。",
+  "not_for": "计量控制图；因果机制证明。禁止过程合格。",
+  "scenario": "虚焊/偏移占绝大多数。",
+  "related_ids": [
+    "cause_and_effect",
+    "c_chart"
+  ],
+  "dialog_fill": {
+    "category": "缺陷类别"
+  },
+  "click_steps": [
+    "导入 `demo_pareto_defect_tail`。",
+    "菜单：质量工具 → 柏拉图。",
+    "缺陷类别=`缺陷类别`；计数列留空（按行计频数）；Other 合并阈值可试 95。",
+    "对照前两类累计约80%；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "缺陷类别 (`category`)",
+      "put": "缺陷类别",
+      "meaning": "分类标签。"
+    },
+    {
+      "field": "计数列 (`counts`)",
+      "put": "留空",
+      "meaning": "留空则按行计数。"
+    },
+    {
+      "field": "Other 合并阈值（可选 %） (`other_threshold`)",
+      "put": "95（可选）",
+      "meaning": "累计到阈值后合并尾部。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "柏拉图",
+      "plain": "按频数降序+累计百分比。",
+      "remember": "抓少数主要类别。"
+    },
+    {
+      "term": "80/20 线索",
+      "plain": "少数类别占多数缺陷。",
+      "remember": "是优先序，不是合格判决。"
+    },
+    {
+      "term": "Other",
+      "plain": "尾部合并。",
+      "remember": "阈值可调。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "配方保证虚焊+偏移约占前80%计数",
+      "expect": "柏拉图左侧两根最高；勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "柏拉图",
+      "meaning": "指着前两类。禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把累计80%写成法律阈值",
+    "用计量列当类别"
+  ],
+  "skill_mission": "用长尾缺陷集完成柏拉图，指出主要类别。",
+  "prereq_quiz": [
+    {
+      "q": "主类别？",
+      "good": "虚焊/偏移",
+      "bad": "其他"
+    },
+    {
+      "q": "计数列？",
+      "good": "可留空",
+      "bad": "必须虚构"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止写",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "画图",
+      "prompt": "为何先看累计百分比？"
+    },
+    {
+      "after": "调 Other",
+      "prompt": "阈值改变故事吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_pareto_defect_tail`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_pareto_defect_tail`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "前两类？",
+    "Other？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "柏拉图证明根因",
+      "right": "只排序频数；根因要另做。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

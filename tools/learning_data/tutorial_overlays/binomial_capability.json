@@ -1,0 +1,139 @@
+{
+  "title": "二项过程能力",
+  "used_for": "不合格品计数/比率的能力与 PPM 类摘要。",
+  "not_for": "缺陷数（多缺陷/件）应泊松；计量型用正态能力。禁止过程合格。",
+  "scenario": "批18起不合格率抬高。",
+  "related_ids": [
+    "poisson_capability",
+    "p_chart"
+  ],
+  "dialog_fill": {
+    "defectives": "不合格品数",
+    "inspected": "检验数"
+  },
+  "click_steps": [
+    "导入 `demo_cap_binomial_lots`。",
+    "菜单：质量工具 → 二项过程能力。",
+    "不合格品数=`不合格品数`；检验数（列）=`检验数`；检验数常数留空；目标不合格品率可选 0.02。",
+    "对照批18起抬高；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "不合格品数 (`defectives`)",
+      "put": "不合格品数",
+      "meaning": "不良件数。"
+    },
+    {
+      "field": "检验数（列） (`inspected`)",
+      "put": "检验数",
+      "meaning": "可变 n；与常数二选一。"
+    },
+    {
+      "field": "检验数（常数） (`inspected_constant`)",
+      "put": "留空",
+      "meaning": "已用列则留空。"
+    },
+    {
+      "field": "目标不合格品率 (`target`)",
+      "put": "0.02（可选）",
+      "meaning": "目标比率。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "不合格品",
+      "plain": "整件判不良的计数。",
+      "remember": "一件一票，不是缺陷数。"
+    },
+    {
+      "term": "二项能力",
+      "plain": "基于不合格品率的能力摘要。",
+      "remember": "禁止写成过程合格。"
+    },
+    {
+      "term": "检验数",
+      "plain": "每批抽检件数。",
+      "remember": "可变 n 用列。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 18,
+      "what": "批18起不合格率由约2%抬到约7%",
+      "expect": "二项能力/PPM 线索变差；勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "二项能力输出",
+      "meaning": "对照批18后段。禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "把缺陷数当不合格品数",
+    "漏检验数"
+  ],
+  "skill_mission": "完成二项能力课，对照批18不合格率台阶。",
+  "prereq_quiz": [
+    {
+      "q": "Y 是？",
+      "good": "不合格品数",
+      "bad": "缺陷数"
+    },
+    {
+      "q": "批18？",
+      "good": "比率抬高",
+      "bad": "过程合格"
+    },
+    {
+      "q": "检验数？",
+      "good": "用列",
+      "bad": "可忽略"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选列",
+      "prompt": "为何常数检验数要留空？"
+    },
+    {
+      "after": "读输出",
+      "prompt": "PPM 高=必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cap_binomial_lots`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cap_binomial_lots`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "批18？",
+    "二项vs泊松",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "二项能力=已证明过程合格",
+      "right": "禁止过程合格。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "title": "组间/组内过程能力",
+  "used_for": "分子组估计组间与组内变差的能力。",
+  "not_for": "无子组标识的单值乱套；失控尖峰课。禁止过程合格。",
+  "scenario": "子组 n=5。子组12起批均值上移。",
+  "related_ids": [
+    "capability",
+    "xbar_r"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um",
+    "subgroup": "子组"
+  },
+  "click_steps": [
+    "导入 `demo_cap_between_within`。",
+    "菜单：质量工具 → 组间/组内过程能力。",
+    "测量值=`厚度_um`；子组=`子组`；LSL=95；USL=105；Target=100。",
+    "对照子组12起组间台阶；禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "Y。"
+    },
+    {
+      "field": "子组 (`subgroup`)",
+      "put": "子组",
+      "meaning": "组间/组内分解必需。"
+    },
+    {
+      "field": "LSL (`lsl`)",
+      "put": "95",
+      "meaning": "规格下限。"
+    },
+    {
+      "field": "USL (`usl`)",
+      "put": "105",
+      "meaning": "规格上限。"
+    },
+    {
+      "field": "Target (`target`)",
+      "put": "100",
+      "meaning": "可选目标。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "组内变差",
+      "plain": "同一子组内的波动。",
+      "remember": "本课组内相对稳。"
+    },
+    {
+      "term": "组间变差",
+      "plain": "子组均值之间的波动。",
+      "remember": "子组12起抬高。"
+    },
+    {
+      "term": "子组列",
+      "plain": "标识每个子组的分类/编号列。",
+      "remember": "本命令必选。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 56,
+      "what": "子组12起（约行56）批均值上移",
+      "expect": "组间分量抬高；勿写过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "组间/组内能力表",
+      "meaning": "对照子组12台阶。禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "漏选子组列",
+    "用单值稳定集冒充组间结构"
+  ],
+  "skill_mission": "用带组间台阶的子组集完成组间/组内能力。",
+  "prereq_quiz": [
+    {
+      "q": "子组列？",
+      "good": "必选",
+      "bad": "可省"
+    },
+    {
+      "q": "子组12？",
+      "good": "均值台阶",
+      "bad": "尖峰废品"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止写",
+      "bad": "可以写"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "选子组",
+      "prompt": "没有子组列会发生什么？"
+    },
+    {
+      "after": "读输出",
+      "prompt": "组间抬高=必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cap_between_within`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cap_between_within`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行56？",
+    "组内vs组间",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "组间大=过程合格失败已判决",
+      "right": "是变差结构线索，禁止过程合格话术。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

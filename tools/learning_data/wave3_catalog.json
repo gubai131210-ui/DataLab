@@ -1,0 +1,1169 @@
+{
+  "datasets": {
+    "infer_one_sample_mean": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单样本均值偏移（t/z 同构）",
+      "industry": "electronics",
+      "story": "SPI 高度相对目标 120μm 有可检出均值偏移。服务 one_sample_t+one_sample_z。已知 σ 只在 z 对话框。",
+      "row_count": 50,
+      "notes": "埋点：全列相对目标120μm 均值约123.0（约+3μm≈+1.5σ，σ≈2）；行1–50均可对照假设均值120。期望单样本t/z 拒绝H0。禁止与等价性近目标表共享。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "片号",
+          "role_hint": "order",
+          "description": "1–50"
+        },
+        {
+          "index": 1,
+          "name": "锡膏高度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "相对目标偏移"
+        }
+      ]
+    },
+    "infer_paired_shift": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "返工前后配对位置差",
+      "industry": "electronics",
+      "story": "同一焊点返工前后高度。返工后系统性抬高。服务 paired_t+wilcoxon+sign_test。",
+      "row_count": 40,
+      "notes": "埋点：返工后列相对返工前约+2.5μm（行1–40 差值为正主导）；期望配对t/符号秩/符号检验检出位置差。禁止挂配对等价性表。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "焊点号",
+          "role_hint": "order",
+          "description": "1–40"
+        },
+        {
+          "index": 1,
+          "name": "返工前_um",
+          "role_hint": "before",
+          "unit": "μm",
+          "description": "配对前"
+        },
+        {
+          "index": 2,
+          "name": "返工后_um",
+          "role_hint": "after",
+          "unit": "μm",
+          "description": "配对后"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "返工抬高"
+        }
+      ]
+    },
+    "infer_two_sample_location": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "两线独立样本位置差",
+      "industry": "electronics",
+      "story": "A线与B线厚度。B线均值高约1σ、方差接近。服务 two_sample_t+mann_whitney。",
+      "row_count": 30,
+      "notes": "埋点：A线列均值约100、B线列约101.2（差约1.0–1.2σ，σ≈1.0）；每行两列并存共30行。期望双样本t/Mann-Whitney 检出位置差。禁止挂方差检验/等价性。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "次序",
+          "role_hint": "order",
+          "description": "1–30"
+        },
+        {
+          "index": 1,
+          "name": "A线厚度_um",
+          "role_hint": "sample1",
+          "unit": "μm",
+          "description": "独立样本1"
+        },
+        {
+          "index": 2,
+          "name": "B线厚度_um",
+          "role_hint": "sample2",
+          "unit": "μm",
+          "description": "独立样本2"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "B线偏高"
+        }
+      ]
+    },
+    "cat_shift_line": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "班次×缺陷类型列联（卡方/交叉表同构）",
+      "industry": "electronics",
+      "story": "班次与缺陷类型有关联结构。服务 chi_square+cross_tabulation。",
+      "row_count": 120,
+      "notes": "埋点：晚班行中「虚焊」比例显著高于早班（频数配方固定）；期望卡方关联显著、交叉表边际差可见。禁止当控制图用。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "班次",
+          "role_hint": "row_category",
+          "description": "早班/晚班"
+        },
+        {
+          "index": 1,
+          "name": "缺陷类型",
+          "role_hint": "column_category",
+          "description": "虚焊/偏移/桥连/其他"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "关联结构"
+        }
+      ]
+    },
+    "gof_category_bias": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "类别比例偏离均匀（拟合优度）",
+      "industry": "electronics",
+      "story": "四类缺陷名义应近似均匀，实际「虚焊」过多。",
+      "row_count": 100,
+      "notes": "埋点：类别「虚焊」约占45%（远高于均匀25%）；期望卡方GOF 拒绝均匀。行1–100为分类标签。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "缺陷类别",
+          "role_hint": "category",
+          "description": "四类之一"
+        },
+        {
+          "index": 1,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "偏离均匀"
+        }
+      ]
+    },
+    "cochran_three_repeat": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "三方法配对二元（Cochran Q）",
+      "industry": "electronics",
+      "story": "同一批板用三种目检方法判合格(1)/不合格(0)。方法C 更严。",
+      "row_count": 36,
+      "notes": "埋点：方法C 列不合格(0) 比例高于A/B（全表行1–36）；期望 Cochran Q 拒绝三方法一致。需≥3列配对二元。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "板号",
+          "role_hint": "order",
+          "description": "1–36"
+        },
+        {
+          "index": 1,
+          "name": "方法A",
+          "role_hint": "binary",
+          "description": "0/1"
+        },
+        {
+          "index": 2,
+          "name": "方法B",
+          "role_hint": "binary",
+          "description": "0/1"
+        },
+        {
+          "index": 3,
+          "name": "方法C",
+          "role_hint": "binary",
+          "description": "0/1 更严"
+        }
+      ]
+    },
+    "corr_temp_offset_y": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "炉温与偏移量相关",
+      "industry": "electronics",
+      "story": "回流峰值温度与贴片偏移正相关。",
+      "row_count": 45,
+      "notes": "埋点：炉温与偏移量近似线性正相关（ρ≈0.7）；约行40–42 有轻微离群但不毁相关。期望 Pearson/Spearman 正相关显著。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "序号",
+          "role_hint": "order",
+          "description": "1–45"
+        },
+        {
+          "index": 1,
+          "name": "炉温_C",
+          "role_hint": "x",
+          "unit": "°C",
+          "description": "相关X"
+        },
+        {
+          "index": 2,
+          "name": "偏移_um",
+          "role_hint": "y",
+          "unit": "μm",
+          "description": "相关Y"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "正相关"
+        }
+      ]
+    },
+    "desc_unimodal_stable": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单峰稳定描述统计",
+      "industry": "electronics",
+      "story": "近正态单峰厚度，供描述统计课读均值/散度。",
+      "row_count": 60,
+      "notes": "埋点：全列近正态单峰、无尖峰剧情；均值约100μm。期望描述统计均值/标准差可读，勿写成过程合格。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "片号",
+          "role_hint": "order",
+          "description": "1–60"
+        },
+        {
+          "index": 1,
+          "name": "厚度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "单峰稳定"
+        }
+      ]
+    },
+    "fisher_small_counts": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "小样本 2×2（Fisher）",
+      "industry": "electronics",
+      "story": "两线×良/不良，单元格计数小，适合 Fisher 精确。",
+      "row_count": 28,
+      "notes": "埋点：行1–12 为A线（其中不良约行11–12）；行13–28 为B线且不良更多（约行21–28）。期望 Fisher 精确检验提示关联。小计数勿硬套大样本卡方结论话术。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "产线",
+          "role_hint": "factor",
+          "description": "A/B"
+        },
+        {
+          "index": 1,
+          "name": "结果",
+          "role_hint": "outcome",
+          "description": "良/不良"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "小计数2×2"
+        }
+      ]
+    },
+    "friedman_three_treat": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "三处理×区组（Friedman）",
+      "industry": "electronics",
+      "story": "每块板（区组）接受三种助焊剂处理，测润湿评分。",
+      "row_count": 36,
+      "notes": "埋点：处理=C 的响应系统性偏低（全部C行）；期望 Friedman 拒绝处理无差。区组=板号。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "润湿分",
+          "role_hint": "response",
+          "description": "Y"
+        },
+        {
+          "index": 1,
+          "name": "处理",
+          "role_hint": "treatment",
+          "description": "A/B/C"
+        },
+        {
+          "index": 2,
+          "name": "板号",
+          "role_hint": "block",
+          "description": "区组1–12"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "C偏低"
+        }
+      ]
+    },
+    "kw_three_cavity": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "三腔位非参数位置（KW）",
+      "industry": "electronics",
+      "story": "三腔位厚度，腔位3 位置偏低（可能非正态）。",
+      "row_count": 45,
+      "notes": "埋点：腔位=3 的行（约行31–45）均值偏低；期望 Kruskal-Wallis 检出组间位置差。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "厚度_um",
+          "role_hint": "response",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 1,
+          "name": "腔位",
+          "role_hint": "factor",
+          "description": "1/2/3"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "腔3偏低"
+        }
+      ]
+    },
+    "logit_pass_fail": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "二元通过/失败 Logistic",
+      "industry": "electronics",
+      "story": "偏移量越大越易失败(1=失败)。",
+      "row_count": 50,
+      "notes": "埋点：偏移_um 升高时失败概率抬高（约偏移>8 的行失败居多）；期望 Logistic 系数为正、事件水平=1。逐步默认关。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "序号",
+          "role_hint": "order",
+          "description": "1–50"
+        },
+        {
+          "index": 1,
+          "name": "失败",
+          "role_hint": "response",
+          "description": "0通过/1失败"
+        },
+        {
+          "index": 2,
+          "name": "偏移_um",
+          "role_hint": "predictor",
+          "unit": "μm",
+          "description": "预测变量"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "偏移↑失败↑"
+        }
+      ]
+    },
+    "mcnemar_paired_binary": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "配对前后二元（McNemar）",
+      "industry": "electronics",
+      "story": "培训前后目检判定（1=检出缺陷）。培训后检出率上升。",
+      "row_count": 40,
+      "notes": "埋点：培训后=1 且培训前=0 的不一致对多于反向；期望 McNemar 检出边际变化。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "检验员",
+          "role_hint": "order",
+          "description": "1–40"
+        },
+        {
+          "index": 1,
+          "name": "培训前",
+          "role_hint": "before",
+          "description": "0/1"
+        },
+        {
+          "index": 2,
+          "name": "培训后",
+          "role_hint": "after",
+          "description": "0/1"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "后检出↑"
+        }
+      ]
+    },
+    "mood_two_group": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "两组中位数（Mood）",
+      "industry": "electronics",
+      "story": "两供应商厚度中位数不同。",
+      "row_count": 40,
+      "notes": "埋点：供应商=B 的行（约行21–40）中位数更高；期望 Mood 中位数检验检出组差。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "厚度_um",
+          "role_hint": "response",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 1,
+          "name": "供应商",
+          "role_hint": "factor",
+          "description": "A/B"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "B中位高"
+        }
+      ]
+    },
+    "norm_mild_skew": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "轻度右偏（正态性）",
+      "industry": "electronics",
+      "story": "轻度右偏正值，正态性检验多拒绝严格正态。",
+      "row_count": 50,
+      "notes": "埋点：全列轻度右偏；约行48–50 有较大值拉尾。期望正态性检验 p 偏低——禁止写成「已证明正态」。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "片号",
+          "role_hint": "order",
+          "description": "1–50"
+        },
+        {
+          "index": 1,
+          "name": "厚度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "轻度右偏"
+        }
+      ]
+    },
+    "pois_one_count": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单样本泊松缺陷率",
+      "industry": "electronics",
+      "story": "各批缺陷数相对假设发生率偏高。",
+      "row_count": 30,
+      "notes": "埋点：缺陷率相对假设0.05 偏高（约0.10）；观测长度列可变。期望单泊松率拒绝H0。行1–30。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "批号",
+          "role_hint": "order",
+          "description": "1–30"
+        },
+        {
+          "index": 1,
+          "name": "缺陷数",
+          "role_hint": "defects",
+          "description": "计数"
+        },
+        {
+          "index": 2,
+          "name": "观测长度",
+          "role_hint": "length",
+          "description": "单位数"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "率偏高"
+        }
+      ]
+    },
+    "prop_one_lot": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单比例不合格品",
+      "industry": "electronics",
+      "story": "各批不合格比例相对假设0.02 偏高。",
+      "row_count": 30,
+      "notes": "埋点：不合格率约0.06相对假设0.02偏高；行1–30。期望单比例检验拒绝。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "批号",
+          "role_hint": "order",
+          "description": "1–30"
+        },
+        {
+          "index": 1,
+          "name": "不合格品数",
+          "role_hint": "events",
+          "description": "事件"
+        },
+        {
+          "index": 2,
+          "name": "检验数",
+          "role_hint": "trials",
+          "description": "试验"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "比例偏高"
+        }
+      ]
+    },
+    "equiv_prop_one": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单比例近目标等价",
+      "industry": "electronics",
+      "story": "不合格比例贴近目标0.05，落在等价窗内。",
+      "row_count": 28,
+      "notes": "埋点：比例约0.05附近（行1–28）；等价界±0.03时期望支持等价线索。勿写成过程合格。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "批号",
+          "role_hint": "order",
+          "description": "1–28"
+        },
+        {
+          "index": 1,
+          "name": "不合格品数",
+          "role_hint": "events",
+          "description": "事件"
+        },
+        {
+          "index": 2,
+          "name": "检验数",
+          "role_hint": "trials",
+          "description": "试验"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "近目标"
+        }
+      ]
+    },
+    "equiv_one_near_target": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单样本近目标等价（TOST）",
+      "industry": "electronics",
+      "story": "厚度贴近目标100，落在等价窗，不是显著偏移课。",
+      "row_count": 40,
+      "notes": "埋点：均值约100.1（近目标）；等价界±1.0时期望等价通过线索。禁止与 infer_one_sample_mean 共享。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "片号",
+          "role_hint": "order",
+          "description": "1–40"
+        },
+        {
+          "index": 1,
+          "name": "厚度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "近目标"
+        }
+      ]
+    },
+    "anova_one_cavity": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单因素三腔位 ANOVA",
+      "industry": "electronics",
+      "story": "三腔位厚度，腔位3 均值偏低。",
+      "row_count": 45,
+      "notes": "埋点：腔位=3（约行31–45）均值约低2μm；期望单因素ANOVA F显著。勿写成过程合格。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "厚度_um",
+          "role_hint": "response",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 1,
+          "name": "腔位",
+          "role_hint": "factor",
+          "description": "1/2/3"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "腔3偏低"
+        }
+      ]
+    },
+    "outlier_one_spike": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "单尖峰异常值",
+      "industry": "electronics",
+      "story": "近正态序列中一片尖峰。",
+      "row_count": 40,
+      "notes": "埋点：片28（行28）尖峰约112相对基线100；期望异常值检验标记该点。禁止「已证明正态」。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "片号",
+          "role_hint": "order",
+          "description": "1–40"
+        },
+        {
+          "index": 1,
+          "name": "厚度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "基线/尖峰"
+        }
+      ]
+    },
+    "equiv_paired_near": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "配对近零差等价",
+      "industry": "electronics",
+      "story": "校准前后差值接近0，落在等价窗。",
+      "row_count": 35,
+      "notes": "埋点：校准后−校准前差值约0附近（|差|<0.4主导）；等价界±1.0期望等价线索。禁止与 infer_paired_shift 共享。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "件号",
+          "role_hint": "order",
+          "description": "1–35"
+        },
+        {
+          "index": 1,
+          "name": "校准前_um",
+          "role_hint": "before",
+          "unit": "μm",
+          "description": "配对前"
+        },
+        {
+          "index": 2,
+          "name": "校准后_um",
+          "role_hint": "after",
+          "unit": "μm",
+          "description": "配对后"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "近零差"
+        }
+      ]
+    },
+    "regr_temp_strength": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "温度→强度线性回归",
+      "industry": "electronics",
+      "story": "固化温度升高，剪切强度上升。",
+      "row_count": 40,
+      "notes": "埋点：强度对温度正斜率；约行38–40 残差稍大但不毁斜率。期望回归斜率>0、R²中等。第一列响应=强度，其余预测=温度。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "序号",
+          "role_hint": "order",
+          "description": "1–40"
+        },
+        {
+          "index": 1,
+          "name": "剪切强度_N",
+          "role_hint": "response",
+          "unit": "N",
+          "description": "响应Y（对话框第一列）"
+        },
+        {
+          "index": 2,
+          "name": "固化温度_C",
+          "role_hint": "predictor",
+          "unit": "°C",
+          "description": "预测X"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "正斜率"
+        }
+      ]
+    },
+    "runs_clustered": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "游程簇集（非随机）",
+      "industry": "electronics",
+      "story": "相对中位数出现同侧长游程。",
+      "row_count": 50,
+      "notes": "埋点：片20–35（行20–35）连续高于中位数一侧；期望游程检验提示非随机/簇集。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "片号",
+          "role_hint": "order",
+          "description": "1–50"
+        },
+        {
+          "index": 1,
+          "name": "厚度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 2,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "基线/同侧游程"
+        }
+      ]
+    },
+    "anova_two_factor": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "双因素腔位×班次 ANOVA",
+      "industry": "electronics",
+      "story": "腔位与班次两因子；晚班主效应。",
+      "row_count": 48,
+      "notes": "埋点：班次=晚班 的行均值上移；腔位效应较小。期望双因素ANOVA 班次主效应显著线索。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "厚度_um",
+          "role_hint": "response",
+          "unit": "μm",
+          "description": "Y"
+        },
+        {
+          "index": 1,
+          "name": "腔位",
+          "role_hint": "factor_a",
+          "description": "左/中/右"
+        },
+        {
+          "index": 2,
+          "name": "班次",
+          "role_hint": "factor_b",
+          "description": "早班/晚班"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "晚班抬高"
+        }
+      ]
+    },
+    "pois_two_count": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "双样本泊松率",
+      "industry": "electronics",
+      "story": "两线缺陷率，B线更高。",
+      "row_count": 24,
+      "notes": "埋点：B线缺陷率高于A线（行1–24两侧列）；期望双泊松率比较显著。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "批号",
+          "role_hint": "order",
+          "description": "1–24"
+        },
+        {
+          "index": 1,
+          "name": "A缺陷数",
+          "role_hint": "first_events",
+          "description": "A事件"
+        },
+        {
+          "index": 2,
+          "name": "A观测长度",
+          "role_hint": "first_trials",
+          "description": "A长度"
+        },
+        {
+          "index": 3,
+          "name": "B缺陷数",
+          "role_hint": "second_events",
+          "description": "B事件"
+        },
+        {
+          "index": 4,
+          "name": "B观测长度",
+          "role_hint": "second_trials",
+          "description": "B长度"
+        },
+        {
+          "index": 5,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "B率高"
+        }
+      ]
+    },
+    "equiv_prop_two": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "两比例近相等价",
+      "industry": "electronics",
+      "story": "两线不合格比例接近，差落在等价窗。",
+      "row_count": 24,
+      "notes": "埋点：两线比例差约0（行1–24）；等价界±0.04期望等价线索。勿写成过程合格。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "批号",
+          "role_hint": "order",
+          "description": "1–24"
+        },
+        {
+          "index": 1,
+          "name": "A不合格数",
+          "role_hint": "first_events",
+          "description": "A事件"
+        },
+        {
+          "index": 2,
+          "name": "A检验数",
+          "role_hint": "first_trials",
+          "description": "A试验"
+        },
+        {
+          "index": 3,
+          "name": "B不合格数",
+          "role_hint": "second_events",
+          "description": "B事件"
+        },
+        {
+          "index": 4,
+          "name": "B检验数",
+          "role_hint": "second_trials",
+          "description": "B试验"
+        },
+        {
+          "index": 5,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "近相等"
+        }
+      ]
+    },
+    "prop_two_line": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "两比例产线差",
+      "industry": "electronics",
+      "story": "B线不合格比例明显高于A线。",
+      "row_count": 24,
+      "notes": "埋点：B线不合格率约高4–6个百分点（行1–24）；期望两比例检验拒绝相等。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "批号",
+          "role_hint": "order",
+          "description": "1–24"
+        },
+        {
+          "index": 1,
+          "name": "A不合格数",
+          "role_hint": "first_events",
+          "description": "A事件"
+        },
+        {
+          "index": 2,
+          "name": "A检验数",
+          "role_hint": "first_trials",
+          "description": "A试验"
+        },
+        {
+          "index": 3,
+          "name": "B不合格数",
+          "role_hint": "second_events",
+          "description": "B事件"
+        },
+        {
+          "index": 4,
+          "name": "B检验数",
+          "role_hint": "second_trials",
+          "description": "B试验"
+        },
+        {
+          "index": 5,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "B比例高"
+        }
+      ]
+    },
+    "equiv_two_near_equal": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "双样本均值近相等价",
+      "industry": "electronics",
+      "story": "两线均值接近，差落在等价窗。",
+      "row_count": 25,
+      "notes": "埋点：A/B两列均值差约0.1（近相等）；等价界±1.0期望等价。禁止与 infer_two_sample_location 共享。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "次序",
+          "role_hint": "order",
+          "description": "1–25"
+        },
+        {
+          "index": 1,
+          "name": "A线厚度_um",
+          "role_hint": "sample1",
+          "unit": "μm",
+          "description": "样本1"
+        },
+        {
+          "index": 2,
+          "name": "B线厚度_um",
+          "role_hint": "sample2",
+          "unit": "μm",
+          "description": "样本2"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "近相等"
+        }
+      ]
+    },
+    "equiv_ratio_near_one": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "双样本比值近1等价",
+      "industry": "electronics",
+      "story": "试验列相对参考列比值近1。",
+      "row_count": 20,
+      "notes": "埋点：试验/参考比值约1.0附近（行1–20对齐）；等价界对数比窗时期望等价线索。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "次序",
+          "role_hint": "order",
+          "description": "1–20"
+        },
+        {
+          "index": 1,
+          "name": "试验厚度_um",
+          "role_hint": "sample1",
+          "unit": "μm",
+          "description": "试验"
+        },
+        {
+          "index": 2,
+          "name": "参考厚度_um",
+          "role_hint": "sample2",
+          "unit": "μm",
+          "description": "参考"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "比近1"
+        }
+      ]
+    },
+    "var_two_line_unequal": {
+      "wave": 3,
+      "practice_only": false,
+      "title": "两线方差不等",
+      "industry": "electronics",
+      "story": "B线波动明显大于A线，均值接近。",
+      "row_count": 25,
+      "notes": "埋点：B线列σ约A线的2倍（行1–25对齐）；均值接近。期望方差检验拒绝等方差。禁止当位置差课。",
+      "columns": [
+        {
+          "index": 0,
+          "name": "次序",
+          "role_hint": "order",
+          "description": "1–25"
+        },
+        {
+          "index": 1,
+          "name": "A线厚度_um",
+          "role_hint": "first",
+          "unit": "μm",
+          "description": "样本1"
+        },
+        {
+          "index": 2,
+          "name": "B线厚度_um",
+          "role_hint": "second",
+          "unit": "μm",
+          "description": "样本2 方差大"
+        },
+        {
+          "index": 3,
+          "name": "备注",
+          "role_hint": "note",
+          "description": "B方差大"
+        }
+      ]
+    }
+  },
+  "role_maps": {
+    "infer_one_sample_mean": {
+      "variables": "锡膏高度_um"
+    },
+    "infer_paired_shift": {
+      "variables": "返工前_um,返工后_um"
+    },
+    "infer_two_sample_location": {
+      "variables": "A线厚度_um,B线厚度_um"
+    },
+    "cat_shift_line": {
+      "row_category": "班次"
+    },
+    "gof_category_bias": {
+      "category": "缺陷类别"
+    },
+    "cochran_three_repeat": {
+      "variables": "方法A,方法B,方法C"
+    },
+    "corr_temp_offset_y": {
+      "variables": "炉温_C,偏移_um"
+    },
+    "desc_unimodal_stable": {
+      "variables": "厚度_um"
+    },
+    "fisher_small_counts": {
+      "variables": "产线,结果"
+    },
+    "friedman_three_treat": {
+      "response": "润湿分"
+    },
+    "kw_three_cavity": {
+      "response": "厚度_um"
+    },
+    "logit_pass_fail": {
+      "response": "失败"
+    },
+    "mcnemar_paired_binary": {
+      "variables": "培训前,培训后"
+    },
+    "mood_two_group": {
+      "response": "厚度_um"
+    },
+    "norm_mild_skew": {
+      "variables": "厚度_um"
+    },
+    "pois_one_count": {
+      "defects": "缺陷数"
+    },
+    "prop_one_lot": {
+      "events": "不合格品数"
+    },
+    "equiv_prop_one": {
+      "events": "不合格品数"
+    },
+    "equiv_one_near_target": {
+      "variables": "厚度_um"
+    },
+    "anova_one_cavity": {
+      "response": "厚度_um"
+    },
+    "outlier_one_spike": {
+      "variables": "厚度_um"
+    },
+    "equiv_paired_near": {
+      "variables": "校准前_um,校准后_um"
+    },
+    "regr_temp_strength": {
+      "variables": "剪切强度_N,固化温度_C"
+    },
+    "runs_clustered": {
+      "variables": "厚度_um"
+    },
+    "anova_two_factor": {
+      "response": "厚度_um"
+    },
+    "pois_two_count": {
+      "first_events": "A缺陷数"
+    },
+    "equiv_prop_two": {
+      "first_events": "A不合格数"
+    },
+    "prop_two_line": {
+      "first_events": "A不合格数"
+    },
+    "equiv_two_near_equal": {
+      "variables": "A线厚度_um,B线厚度_um"
+    },
+    "equiv_ratio_near_one": {
+      "variables": "试验厚度_um,参考厚度_um"
+    },
+    "var_two_line_unequal": {
+      "first": "A线厚度_um"
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "title": "混合效应 REML",
+  "used_for": "含随机效应的混合模型（公式参考）。",
+  "not_for": "不要当固定效应 ANOVA 替代课；空表。",
+  "scenario": "响应+固定/随机因子；本波空表。",
+  "related_ids": [
+    "one_way_anova",
+    "gage_rr"
+  ],
+  "dialog_fill": {},
+  "click_steps": [
+    "打开「帮助」→「学习中心」，选择本教程「混合效应 REML」。",
+    "注意：当前版本可能无此菜单项或仅为公式参考；公式见「算法、公式与参考资料」。",
+    "若菜单可用：统计 → 混合效应（REML）。本课不提供专用演示表（dataset 空），步骤保持诚实。",
+    "对照下方 dialog_fill_detail 核对该命令真实 roles/inputs；勿虚构字段。",
+    "输出解读禁止：过程合格 / 必须停线 / 已证明正态 / 量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "响应 (`response`)",
+      "put": "（无表）",
+      "meaning": "role。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "REML",
+      "plain": "限制极大似然估计方差分量。",
+      "remember": "公式参考。"
+    },
+    {
+      "term": "随机效应",
+      "plain": "水平来自总体抽样。",
+      "remember": "≠固定因子。"
+    },
+    {
+      "term": "空表",
+      "plain": "本波无演示。",
+      "remember": "诚实。"
+    }
+  ],
+  "buried_signals": [],
+  "output_guide": [
+    {
+      "name": "帮助/公式页",
+      "meaning": "只陈述定义与边界；禁止过程合格；禁止必须停线；禁止已证明正态；禁止量具通过。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能说明 REML 混合模型与固定 ANOVA 的差异。",
+  "prereq_quiz": [
+    {
+      "q": "本波表？",
+      "good": "空",
+      "bad": "有"
+    },
+    {
+      "q": "随机=固定？",
+      "good": "否",
+      "bad": "是"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "读帮助",
+      "prompt": "随机效应何时需要？"
+    },
+    {
+      "after": "对照",
+      "prompt": "与 gage_rr 方差分量关系？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "本课无演示表：对照 §4 字段清单与公式帮助，写清菜单可能不可用。",
+      "scaffold": "dialog_fill_detail + 公式帮助路径。"
+    },
+    {
+      "level": 1,
+      "student": "不看 detail，默写本命令真实 roles/inputs 名称（对照 analysis_commands）。",
+      "scaffold": "只给 menu_path。"
+    },
+    {
+      "level": 2,
+      "student": "写一段：本课为何空 dataset，以及误用一句禁止句。",
+      "scaffold": "仅 skill_mission。"
+    }
+  ],
+  "retrieval_quiz": [
+    "REML？",
+    "空表",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "REML=量具通过",
+      "right": "禁止量具通过。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

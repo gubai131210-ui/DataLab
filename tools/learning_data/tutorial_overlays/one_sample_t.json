@@ -1,0 +1,141 @@
+{
+  "title": "单样本 t 检验",
+  "used_for": "单列均值相对假设均值的 t 检验。本课练可检出偏移。",
+  "not_for": "已知 σ 用 Z；近目标等价用 one_sample_equivalence。禁止过程合格。",
+  "scenario": "SPI 高度相对目标120μm 偏移。导入 demo_infer_one_sample_mean。",
+  "related_ids": [
+    "one_sample_z",
+    "one_sample_equivalence"
+  ],
+  "dialog_fill": {
+    "variables": "锡膏高度_um"
+  },
+  "click_steps": [
+    "学习中心导入 `demo_infer_one_sample_mean`。",
+    "菜单：统计 → 单样本 t 检验。",
+    "测量值=`锡膏高度_um`；假设均值=120；置信水平=95%；备择=双侧。",
+    "对照全列相对120的偏移；禁止过程合格/必须停线。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "锡膏高度_um",
+      "meaning": "单列 Y。"
+    },
+    {
+      "field": "假设均值 (`hypothesis_mean`)",
+      "put": "120",
+      "meaning": "H0 均值。"
+    },
+    {
+      "field": "置信水平 (%) (`confidence`)",
+      "put": "95",
+      "meaning": "区间水平。"
+    },
+    {
+      "field": "备择假设 (`alternative`)",
+      "put": "双侧（默认目录）",
+      "meaning": "对照 hypothesis_alternative。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "单样本 t",
+      "plain": "σ 未知时用样本 s。",
+      "remember": "已知σ走 Z。"
+    },
+    {
+      "term": "假设均值",
+      "plain": "H0 的 μ0。",
+      "remember": "本课120。"
+    },
+    {
+      "term": "p 值",
+      "plain": "在H0下极端程度。",
+      "remember": "≠过程合格。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "相对目标120的系统性上偏开始（全列均值约123）",
+      "expect": "t 拒绝 H0:μ=120 的线索"
+    },
+    {
+      "row": 50,
+      "what": "末行仍属偏移总体",
+      "expect": "结论对照全样本，勿只看单点"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "t / p / 置信区间",
+      "meaning": "对照埋点偏移；禁止过程合格；禁止必须停线。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能完成单样本 t：填 μ0=120 并对照偏移埋点读 p/区间。",
+  "prereq_quiz": [
+    {
+      "q": "已知σ用？",
+      "good": "Z",
+      "bad": "只能t"
+    },
+    {
+      "q": "dataset？",
+      "good": "infer_one_sample_mean",
+      "bad": "equiv_one"
+    },
+    {
+      "q": "过程合格？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "看p",
+      "prompt": "p小说明什么、不说明什么？"
+    },
+    {
+      "after": "对照等价课",
+      "prompt": "为何不共享等价表？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_infer_one_sample_mean`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_infer_one_sample_mean`，自己改一个输入（如假设值/等价界），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "μ0？",
+    "同构族？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "拒绝H0=必须停线",
+      "right": "禁止必须停线。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "title": "正态概率图",
+  "used_for": "用概率图看点是否大致贴参考线。与直方图同构共享 graph_hist_prob。",
+  "not_for": "替代正式正态性检验结论；禁止已证明正态。",
+  "scenario": "同一张近正态表；角色 id 是 variable（不是 variables）。",
+  "related_ids": [
+    "histogram",
+    "normality_test"
+  ],
+  "dialog_fill": {
+    "variable": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_graph_hist_prob`（与直方图同构白名单）。",
+    "菜单：图形 → 概率图。",
+    "变量=`厚度_um`；分面留空。",
+    "对照行48–50 右尾偏离；禁止已证明正态。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variable`)",
+      "put": "厚度_um",
+      "meaning": "单列 Y；注意 role id 与直方图不同。"
+    },
+    {
+      "field": "分面变量 (`facet`)",
+      "put": "留空",
+      "meaning": "可选。"
+    },
+    {
+      "field": "分面最大面板数 (`facet_max_panels`)",
+      "put": "6",
+      "meaning": "有分面时限制面板。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "概率图",
+      "plain": "分位对照参考线。",
+      "remember": "贴线≠证明正态。"
+    },
+    {
+      "term": "variable 角色",
+      "plain": "本命令用 variable。",
+      "remember": "直方图用 variables。"
+    },
+    {
+      "term": "同构共享",
+      "plain": "白名单 graph_hist_prob。",
+      "remember": "禁止扩到 density。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 48,
+      "what": "右尾三点",
+      "expect": "概率图高端偏离参考线；禁止已证明正态。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "概率图",
+      "meaning": "指着高端偏离。禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。"
+  ],
+  "skill_mission": "能区分 variable vs variables，并拒绝正态证明话术。",
+  "prereq_quiz": [
+    {
+      "q": "角色 id？",
+      "good": "variable",
+      "bad": "variables"
+    },
+    {
+      "q": "共享表？",
+      "good": "graph_hist_prob",
+      "bad": "imr_spi_shift"
+    },
+    {
+      "q": "已证明正态？",
+      "good": "禁止",
+      "bad": "可以"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "填角色",
+      "prompt": "为何不能抄直方图的 variables 键？"
+    },
+    {
+      "after": "读图",
+      "prompt": "贴线能否写已证明正态？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_graph_hist_prob`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_graph_hist_prob`，自己改一个可选字段，不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "role id？",
+    "行48？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "概率图通过=已证明正态",
+      "right": "禁止已证明正态。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

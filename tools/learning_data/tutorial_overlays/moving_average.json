@@ -1,0 +1,162 @@
+{
+  "title": "移动平均控制图",
+  "used_for": "固定窗宽平滑后监视小漂移。独立表 `ma_small_drift`。",
+  "not_for": "禁止挂入 spc_small_drift 族；尖峰课用 Shewhart。",
+  "scenario": "厚度片30起小台阶。窗宽 w=3。",
+  "related_ids": [
+    "ewma",
+    "imr"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_ma_small_drift`。",
+    "菜单：控制图 → 移动平均控制图。",
+    "测量值=`厚度_um`；窗宽=3；MR长度=2；限倍数=3；历史限留空；规则默认；tests 留空。",
+    "对照片30；UCL≠USL。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "单值 Y。"
+    },
+    {
+      "field": "窗宽 w (`ma_window`)",
+      "put": "3",
+      "meaning": "移动平均长度。"
+    },
+    {
+      "field": "移动极差长度 (`mr_length`)",
+      "put": "2",
+      "meaning": "估短期 σ。"
+    },
+    {
+      "field": "控制限倍数 (`limit`)",
+      "put": "3",
+      "meaning": "限宽。"
+    },
+    {
+      "field": "历史均值 (`historical_center`)",
+      "put": "留空",
+      "meaning": "避免盖住漂移。"
+    },
+    {
+      "field": "历史 Sigma (`historical_sigma`)",
+      "put": "留空",
+      "meaning": "用本集估。"
+    },
+    {
+      "field": "规则默认策略 (`rule_policy`)",
+      "put": "全部适用规则",
+      "meaning": "空 tests 时按策略启用适用规则（kind≈moving_average）。规则越多越灵敏也越易误报。"
+    },
+    {
+      "field": "特殊原因测试 (`tests`)",
+      "put": "留空（用策略）",
+      "meaning": "留空走 rule_policy；非空变成 explicit 列表。本课主信号仍对照埋点读图。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "UCL（上控制限）",
+      "plain": "按过程自身波动算出的上警戒线，不是客户规格。",
+      "remember": "UCL ≠ USL。点越 UCL = 特殊原因线索，不是自动判废。"
+    },
+    {
+      "term": "USL（规格上限）",
+      "plain": "客户或图纸规定的合格上限。",
+      "remember": "控制限与规格限是两套尺子；本课不回答是否符合规格。"
+    },
+    {
+      "term": "特殊原因",
+      "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
+      "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。"
+    },
+    {
+      "term": "移动平均窗宽",
+      "plain": "最近 w 点的平均。",
+      "remember": "w 大更平滑更迟钝。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 30,
+      "what": "片30起小台阶",
+      "expect": "MA 曲线后段上移。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "MA 图",
+      "meaning": "片30后上移。UCL≠USL。"
+    }
+  ],
+  "common_mistakes": [
+    "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
+    "写成过程合格、必须停线或已证明正态。",
+    "用本教学失控/漂移集去算 Cpk 当合格证据。",
+    "把本表并进 spc_small_drift"
+  ],
+  "skill_mission": "用移动平均检出片30小漂移，并说明为何不进 ewma/cusum 同构族。",
+  "prereq_quiz": [
+    {
+      "q": "本课 dataset？",
+      "good": "ma_small_drift",
+      "bad": "spc_small_drift"
+    },
+    {
+      "q": "窗宽默认？",
+      "good": "3",
+      "bad": "30"
+    },
+    {
+      "q": "UCL≠USL？",
+      "good": "是",
+      "bad": "否"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "导入",
+      "prompt": "计划为何禁止 MA 进 spc_small_drift？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+      "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_ma_small_drift`；最后一步「埋点是否出现、UCL≠USL」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给读图标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_ma_small_drift`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "行30",
+    "与 EWMA 差别一句",
+    "UCL≠USL"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "平滑后就能证明正态",
+      "right": "禁止「已证明正态」。"
+    },
+    {
+      "wrong": "点出 UCL = 产品超规格废品",
+      "right": "UCL 是过程警戒线；超规格看 USL/LSL 或能力课。UCL ≠ USL。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

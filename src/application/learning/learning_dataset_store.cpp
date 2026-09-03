@@ -131,7 +131,8 @@ std::vector<LearningDatasetSummary> LearningDatasetStore::list_datasets(QString*
     }
     QSqlQuery query(connection.database());
     if (!query.exec(QStringLiteral(
-            "SELECT dataset_id, title, industry, story, row_count FROM datasets ORDER BY dataset_id"))) {
+            "SELECT dataset_id, title, industry, story, row_count, notes "
+            "FROM datasets ORDER BY dataset_id"))) {
         if (error_message != nullptr) {
             *error_message = query.lastError().text();
         }
@@ -144,6 +145,7 @@ std::vector<LearningDatasetSummary> LearningDatasetStore::list_datasets(QString*
         summary.industry = query.value(2).toString();
         summary.story = query.value(3).toString();
         summary.row_count = query.value(4).toInt();
+        summary.notes = query.value(5).toString();
         summaries.push_back(std::move(summary));
     }
     return summaries;

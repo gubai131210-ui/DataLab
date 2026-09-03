@@ -1,0 +1,153 @@
+{
+  "title": "正态过程能力",
+  "used_for": "稳定近正态数据上估算 Cp/Cpk 等。本课强调偏心使 Cpk<Cp。",
+  "not_for": "失控数据（禁止用 imr_spi_shift）；强偏态先变换/非正态课。禁止过程合格。",
+  "scenario": "稳定厚度略偏高。LSL=95 USL=105 目标100。",
+  "related_ids": [
+    "capability_sixpack",
+    "imr",
+    "box_cox"
+  ],
+  "dialog_fill": {
+    "variables": "厚度_um"
+  },
+  "click_steps": [
+    "导入 `demo_cap_stable_spec`。",
+    "菜单：质量工具 → 正态过程能力。",
+    "变量=`厚度_um`；子组大小=1；LSL=95；USL=105；Target=100；变换=无。",
+    "对照：Cpk 应低于 Cp（偏心）；确认无片41/55 失控尖峰。禁止过程合格。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "变量 (`variables`)",
+      "put": "厚度_um",
+      "meaning": "单值 Y。"
+    },
+    {
+      "field": "子组大小 (`subgroup_size`)",
+      "put": "1",
+      "meaning": "本集按单值。"
+    },
+    {
+      "field": "LSL (`lsl`)",
+      "put": "95",
+      "meaning": "规格下限。"
+    },
+    {
+      "field": "USL (`usl`)",
+      "put": "105",
+      "meaning": "规格上限；不是 UCL。"
+    },
+    {
+      "field": "Target (`target`)",
+      "put": "100",
+      "meaning": "目标；偏心对照。"
+    },
+    {
+      "field": "变换 (`transform`)",
+      "put": "无",
+      "meaning": "capability_transform 目录；本课不变换。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Cp",
+      "plain": "规格宽度相对过程散度（不考虑居中）。",
+      "remember": "只看散度潜力。"
+    },
+    {
+      "term": "Cpk",
+      "plain": "考虑均值相对最近规格的能力。",
+      "remember": "偏心时 Cpk<Cp。"
+    },
+    {
+      "term": "稳定前提",
+      "plain": "能力指数默认过程统计受控。",
+      "remember": "失控教学集不算 Cpk 当合格证据。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "全列稳定略偏心（均值约101.2），无特殊原因尖峰",
+      "expect": "Cpk<Cp；勿写过程合格或已证明正态。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Cp/Cpk 表",
+      "meaning": "指着 Cpk<Cp。禁止过程合格。"
+    },
+    {
+      "name": "直方图/正态叠加",
+      "meaning": "只作形状线索；禁止已证明正态。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "用 I-MR 失控金标算 Cpk",
+    "把 Cpk>1.33 写成过程合格"
+  ],
+  "skill_mission": "在稳定略偏心集上读出 Cpk<Cp，并拒绝失控集滥算能力。",
+  "prereq_quiz": [
+    {
+      "q": "本课能否用 imr_spi_shift？",
+      "good": "不能",
+      "bad": "能"
+    },
+    {
+      "q": "偏心时？",
+      "good": "Cpk<Cp",
+      "bad": "Cpk>Cp"
+    },
+    {
+      "q": "USL=UCL？",
+      "good": "否",
+      "bad": "是"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "填规格",
+      "prompt": "为何 Target=100 而均值约101.2？"
+    },
+    {
+      "after": "读 Cpk",
+      "prompt": "能否写成过程合格？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_cap_stable_spec`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_cap_stable_spec`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "为何 Cpk<Cp？",
+    "与 Sixpack 共享？",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "能力高=必须放行",
+      "right": "指数是摘要；禁止过程合格话术。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}

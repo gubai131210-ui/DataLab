@@ -1,0 +1,158 @@
+{
+  "title": "MSA Type 1 / Bias / Stability",
+  "used_for": "参考件重复测量评估偏倚/Type1 指标。",
+  "not_for": "多零件交叉 GR&R；稳定性长期监控需时间设计。禁止量具通过。",
+  "scenario": "参考真值 100μm；重复测量均值约 101.5μm。",
+  "related_ids": [
+    "gage_rr",
+    "emp_crossed"
+  ],
+  "dialog_fill": {
+    "measurement": "测量值_um"
+  },
+  "click_steps": [
+    "导入 `demo_msa_type1_ref`。",
+    "菜单：质量工具 → MSA Type 1 / Bias / Stability。",
+    "测量值=`测量值_um`；模式选 Type 1；参考值=100；公差宽度可选 10；LSL/USL 可选；参考值列留空；过程变差留空。",
+    "对照全列相对 100 的正偏倚；禁止量具通过。"
+  ],
+  "dialog_fill_detail": [
+    {
+      "field": "测量值 (`measurement`)",
+      "put": "测量值_um",
+      "meaning": "重复测量 Y。"
+    },
+    {
+      "field": "参考值列（Linearity） (`reference`)",
+      "put": "留空",
+      "meaning": "Type1 本课用常数参考值，不用列。"
+    },
+    {
+      "field": "模式 (`mode`)",
+      "put": "Type 1",
+      "meaning": "catalog：msa_type1_mode。"
+    },
+    {
+      "field": "参考值（Type 1） (`reference_value`)",
+      "put": "100",
+      "meaning": "参考件真值。"
+    },
+    {
+      "field": "公差宽度（可选） (`tolerance`)",
+      "put": "10（可选）",
+      "meaning": "Cg 等尺度。"
+    },
+    {
+      "field": "LSL（可选） (`lsl`)",
+      "put": "留空或 95",
+      "meaning": "规格下限可选。"
+    },
+    {
+      "field": "USL（可选） (`usl`)",
+      "put": "留空或 105",
+      "meaning": "规格上限可选。"
+    },
+    {
+      "field": "过程变差 6σ（Linearity 可选） (`process_variation`)",
+      "put": "留空",
+      "meaning": "Linearity 模式才常用。"
+    }
+  ],
+  "glossary": [
+    {
+      "term": "Bias（偏倚）",
+      "plain": "测量均值相对参考真值的系统差。",
+      "remember": "本课约 +1.5μm。"
+    },
+    {
+      "term": "Type 1",
+      "plain": "单件参考重复研究。",
+      "remember": "不是交叉 GR&R。"
+    },
+    {
+      "term": "Cg/Cgk",
+      "plain": "量具能力类指标（视输出）。",
+      "remember": "仍禁止写量具通过。"
+    }
+  ],
+  "buried_signals": [
+    {
+      "row": 1,
+      "what": "行1–50 相对参考100 系统性正偏倚约 +1.5μm",
+      "expect": "Bias 表显示正偏倚；勿写量具通过或过程合格。"
+    }
+  ],
+  "output_guide": [
+    {
+      "name": "Bias / Type1 表",
+      "meaning": "指着偏倚方向；禁止量具通过。"
+    }
+  ],
+  "common_mistakes": [
+    "写成过程合格、必须停线、已证明正态或量具通过。",
+    "把教学演示集直接当成客户放行证据。",
+    "虚构菜单字段或不对照 analysis_commands 的 roles/inputs。",
+    "参考值填成规格中心却当控制限",
+    "写成已证明正态"
+  ],
+  "skill_mission": "完成 Type1 偏倚课，对照参考值 100 读正偏倚。",
+  "prereq_quiz": [
+    {
+      "q": "参考值填？",
+      "good": "100",
+      "bad": "USL"
+    },
+    {
+      "q": "本课模式？",
+      "good": "Type 1",
+      "bad": "随便"
+    },
+    {
+      "q": "能量具通过？",
+      "good": "不能写",
+      "bad": "能"
+    }
+  ],
+  "self_explain": [
+    {
+      "after": "填参考值",
+      "prompt": "为何参考值列要留空？"
+    },
+    {
+      "after": "读 Bias",
+      "prompt": "偏倚等于必须停线吗？"
+    }
+  ],
+  "fade_levels": [
+    {
+      "level": 0,
+      "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+      "scaffold": "参数表 + 读图/读表话术 + 埋点全部给出。"
+    },
+    {
+      "level": 1,
+      "student": "仍导入 `demo_msa_type1_ref`；最后「埋点是否出现、禁止句」自己写三句。",
+      "scaffold": "对话框字段仍给出；不给标准答案。"
+    },
+    {
+      "level": 2,
+      "student": "再导入 `demo_msa_type1_ref`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
+      "scaffold": "仅术语表 + 误用禁止句。"
+    }
+  ],
+  "retrieval_quiz": [
+    "偏倚多少？",
+    "与 GR&R 区别",
+    "禁止句"
+  ],
+  "misconceptions": [
+    {
+      "wrong": "Cg 高=量具通过可放行",
+      "right": "禁止量具通过；需结合程序与风险。"
+    },
+    {
+      "wrong": "看完例题不做练习也会了",
+      "right": "必须有自解释 + 褪脚手架 + 检索小测。"
+    }
+  ]
+}
