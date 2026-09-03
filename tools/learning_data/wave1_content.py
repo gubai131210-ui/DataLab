@@ -66,7 +66,7 @@ WAVE1_DATASETS: dict[str, dict] = {
         "practice_only": False,
         "title": "焊盘高宽联合波动（广义方差）",
         "industry": "electronics",
-        "story": "每子组 n=5 测高度与宽度。子组18起联合协方差膨胀。",
+        "story": "每个子组抽 5 件，同时测高度与宽度。大约子组 18 起，两列一起抖得更开，联合波动像胀了一圈。",
         "row_count": 125,
         "notes": "埋点：子组18起（约行86–90 起）高度与宽度联合方差放大；期望 |S| 图后段抬高。子组大小 n=5 > p=2。行按子组连续堆叠。",
         "columns": [
@@ -94,7 +94,7 @@ WAVE1_DATASETS: dict[str, dict] = {
         "practice_only": False,
         "title": "子组均值台阶（I-MR-R/S）",
         "industry": "electronics",
-        "story": "每批抽5件测厚度。子组16起批均值上移，组内极差仍稳。",
+        "story": "每批抽 5 件测厚度。大约子组 16 起批均值往上抬，组内极差仍相对老实。",
         "row_count": 125,
         "notes": "埋点：子组16（约行76起）批均值由约100抬到约102；期望 Xbar/I 侧后段上移，R/S 侧不明显乱。子组列必选。",
         "columns": [
@@ -220,7 +220,7 @@ WAVE1_DATASETS: dict[str, dict] = {
         "practice_only": False,
         "title": "子组 n=5 极差尖峰（Xbar-R）",
         "industry": "electronics",
-        "story": "每批抽5件。子组12组内极差尖峰；子组20起均值台阶。",
+        "story": "每批抽 5 件测厚度。子组 12 那一组里极差突然拉大；走到子组 20，批均值又像抬了一级台阶。",
         "row_count": 125,
         "notes": "埋点：子组12（约行56–60）组内极差尖峰，期望 R 图报警、先勿读该段 Xbar 限；子组20（约行96起）均值台阶，期望 Xbar 后段上移。禁止与 xbar_s 共享。",
         "columns": [
@@ -234,7 +234,7 @@ WAVE1_DATASETS: dict[str, dict] = {
         "practice_only": False,
         "title": "子组 n=8 标准差台阶（Xbar-S）",
         "industry": "electronics",
-        "story": "每批抽8件。子组14起组内标准差放大。",
+        "story": "每批抽 8 件。大约子组 14 起，组内标准差整体抬高，波动主要落在批内散度这一侧。",
         "row_count": 160,
         "notes": "埋点：子组14（约行105起）组内σ放大；期望 S 图后段上移。子组大小=8。禁止与 xbar_r（n=5/R）共享。",
         "columns": [
@@ -597,7 +597,7 @@ UCL_USL_GLOSSARY = [
     {
         "term": "特殊原因",
         "plain": "可指认的异常扰动（换料、参数漂移、测错），相对普通原因日常抖动。",
-        "remember": "控制图任务是揪特殊原因线索，不是证明过程合格或必须停线。",
+        "remember": "控制图是把特殊原因线索摊开给你看，不等于已经盖了合格章，也不等于必须立刻停线。",
     },
 ]
 
@@ -636,7 +636,7 @@ def _seven_plus(mission: str, prereq: list, self_explain: list, fade_ds: str, re
             {
                 "level": 2,
                 "student": f"再导入 `demo_{fade_ds}`，自己改一个输入（如规则策略或历史限留空与否），不看埋点剧透写结论。",
-                "scaffold": "仅术语表 + 误用禁止句。",
+                "scaffold": "仅术语表 + 误用红线习惯。",
             },
         ],
         "retrieval_quiz": retrieval,
@@ -657,8 +657,8 @@ def _seven_plus(mission: str, prereq: list, self_explain: list, fade_ds: str, re
 def _base_mistakes(extra: list[str] | None = None) -> list[str]:
     base = [
         "把 UCL/LCL 当成 USL/LSL，或把点出 UCL 写成超规格废品。",
-        "写成过程合格、必须停线或已证明正态。",
-        "用本教学失控/漂移集去算 Cpk 当合格证据。",
+        "写成已经放行、必须立刻停线或已经证明正态。",
+        "用本教学失控/漂移集去算 Cpk 当客户放行证据。",
     ]
     return base + (extra or [])
 
@@ -670,7 +670,7 @@ def build_overlays() -> dict[str, dict]:
     # ---- c_chart ----
     out["c_chart"] = {
         "title": "C 图",
-        "used_for": "固定检验单位下监视缺陷计数 c。本课只练「固定单位 + 缺陷台阶」读特殊原因线索。",
+        "used_for": "检验单位大小差不多时，不妨用 C 图盯每一炉（或每一托盘）里的缺陷个数。它更像在问「缺陷计数有没有台阶式抬高」，而不是直接回答能不能放行。",
         "not_for": "单位大小变化应选 u 图；合格/不合格件数应选 p/np。不能把 UCL 当 USL。",
         "scenario": "回流焊每炉固定检 1 托盘。批26起焊点缺陷数抬高。只用 C 图看是否出现特殊原因线索。",
         "related_ids": ["u_chart", "np_chart", "imr"],
@@ -696,7 +696,7 @@ def build_overlays() -> dict[str, dict]:
             {
                 "row": 26,
                 "what": "批26起缺陷数由基线约3抬到约8",
-                "expect": "C 图后段上移或越 UCL。不要写成过程合格或必须停线。",
+                "expect": "C 图后段上移或越 UCL。不要写成已经放行或必须停线。",
             }
         ],
         "output_guide": [
@@ -725,7 +725,7 @@ def build_overlays() -> dict[str, dict]:
     out["ewma"] = {
         "title": "EWMA 控制图",
         "used_for": "对小幅、持续均值漂移比 Shewhart 更敏感。本课埋微小台阶，不埋尖峰。",
-        "not_for": "大幅瞬时偏移优先 Shewhart；属性计数不用 EWMA。禁止复用 imr_spi_shift。",
+        "not_for": "大幅瞬时偏移优先 Shewhart；属性计数不用 EWMA。不要拿 I-MR 尖峰课的表硬套过来。",
         "scenario": "贴片厚度投诉「慢慢偏厚」。片31起约 +0.8μm 小台阶。用 EWMA 看是否比 I 图更早爬升。",
         "related_ids": ["cusum", "imr", "moving_average"],
         "dialog_fill": {"variables": "厚度_um"},
@@ -752,7 +752,7 @@ def build_overlays() -> dict[str, dict]:
             {
                 "row": 31,
                 "what": "片31起均值约 +0.8μm 小台阶",
-                "expect": "EWMA 后段爬升并可能越 UCL；不要写成过程合格。",
+                "expect": "EWMA 后段爬升并可能越 UCL；不要写成已经放行。",
             }
         ],
         "output_guide": [
@@ -779,7 +779,7 @@ def build_overlays() -> dict[str, dict]:
 
     out["cusum"] = {
         "title": "CUSUM 控制图",
-        "used_for": "累积偏差以更快检出小幅持续偏移。与 EWMA 同构共享 `spc_small_drift`。",
+        "used_for": "累积偏差以更快检出小幅持续偏移。可以和 EWMA 对照同一张小漂移练习表。",
         "not_for": "不能当假设检验 p 值；大尖峰仍看 Shewhart。禁止挂 imr_spi_shift。",
         "scenario": "同一厚度小漂移集。用 CUSUM（目标≈100，σ≈0.4）看累积和是否在片31后偏离。",
         "related_ids": ["ewma", "imr"],
@@ -859,7 +859,7 @@ def _build_overlays_part2() -> dict[str, dict]:
         "glossary": UCL_USL_GLOSSARY
         + [{"term": "G 图", "plain": "基于几何分布的间隔图。", "remember": "点低=间隔短=事件更密。"}],
         "buried_signals": [
-            {"row": 28, "what": "事件28起间隔缩短", "expect": "G 图后段下移；勿写过程合格。"}
+            {"row": 28, "what": "事件28起间隔缩短", "expect": "G 图后段下移；不等于放行样板。"}
         ],
         "output_guide": [{"name": "G 图", "meaning": "事件28后点更低。UCL≠USL。"}],
         "common_mistakes": _base_mistakes(["把间隔当缺陷计数画 c 图"]),
@@ -1305,7 +1305,7 @@ def _build_overlays_part3() -> dict[str, dict]:
             "用 Laney P' 理解过离散与加宽限。",
             [
                 {"q": "为何不用普通 p 表？", "good": "Laney 要过离散信号", "bad": "随便共用"},
-                {"q": "Sigma Z>1 意味？", "good": "过离散，限应更宽", "bad": "过程合格"},
+                {"q": "Sigma Z>1 意味？", "good": "过离散，限应更宽", "bad": "已经可以放行"},
                 {"q": "UCL≠USL？", "good": "是", "bad": "否"},
             ],
             [{"after": "看 Sigma Z", "prompt": "若强行用普通 P 限会怎样？"}],
@@ -1362,8 +1362,8 @@ def _build_overlays_part3() -> dict[str, dict]:
 
     out["xbar_r"] = {
         "title": "Xbar-R 控制图",
-        "used_for": "固定子组 n=5：Xbar 看位置，R 看组内极差。",
-        "not_for": "单值流用 I-MR；n 较大看 S。禁止与 xbar_s 共享。",
+        "used_for": "每批固定抽几件时，不妨用 Xbar-R：Xbar 看批均值有没有走动，R 看同一批里几件之间散不散。它回答的是过程有没有特殊原因线索，不等于放行样板。",
+        "not_for": "单值流用 I-MR；n 较大看 S。不要和 Xbar-S 课硬共用同一张表。",
         "scenario": "子组12极差尖峰；子组20均值台阶。",
         "related_ids": ["xbar_s", "imr"],
         "dialog_fill": {"variables": "厚度_um", "subgroup": "子组"},
@@ -1404,7 +1404,7 @@ def _build_overlays_part3() -> dict[str, dict]:
             [{"after": "看子组12", "prompt": "为何教程强调先读 R？"}],
             "xbar_r_n5_range_spike",
             ["子组12与20", "n=5 为何", "UCL≠USL"],
-            [{"wrong": "Xbar 在限内=过程合格", "right": "稳定≠符合规格；UCL≠USL。"}],
+            [{"wrong": "Xbar 在限内就等于已经放行", "right": "稳定≠符合规格；UCL≠USL。"}],
         ),
     }
 
@@ -1546,7 +1546,7 @@ def _build_overlays_part3() -> dict[str, dict]:
         "click_steps": [
             "打开「帮助」→「算法、公式与参考资料」，查找特殊原因 / 控制图规则说明（本条目可能无独立菜单）。",
             "回到学习中心 I-MR 金标课，对照 rule_policy 与 tests 字段。",
-            "口头复述：规则越多越灵敏也越易误报；UCL ≠ USL；禁止「过程合格/必须停线」。",
+            "口头复述：规则越多越灵敏也越易误报；UCL ≠ USL；不等于放行样板，停线通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {
@@ -1582,7 +1582,7 @@ def _build_overlays_part3() -> dict[str, dict]:
         "output_guide": [
             {
                 "name": "帮助/公式页",
-                "meaning": "只陈述规则定义与误报权衡；禁止过程合格；禁止必须停线；禁止已证明正态。",
+                "meaning": "只陈述规则定义与误报权衡；不等于放行样板，也不等于已经证明正态；停线通常还要对照规程。",
             }
         ],
         "common_mistakes": _base_mistakes(
@@ -1613,7 +1613,7 @@ def _build_overlays_part3() -> dict[str, dict]:
             {
                 "level": 2,
                 "student": "写三段：①规则↑如何影响灵敏度；②误报如何上升；③为何不能写成「必须停线」。不导入演示表。",
-                "scaffold": "仅术语表 + 误用禁止句；需要动手画图时另开 I-MR 金标课。",
+                "scaffold": "仅术语表 + 误用红线习惯；需要动手画图时另开 I-MR 金标课。",
             },
         ],
         "retrieval_quiz": ["规则与误报", "related_ids 指向谁", "UCL≠USL"],
@@ -1638,11 +1638,14 @@ def _build_overlays_part3() -> dict[str, dict]:
 
 def write_overlays() -> None:
     from copy_depth import polish_overlay
+    from warmth_wave1_overlays import apply_pack, WAVE1_IDS
 
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
     overlays = build_overlays()
     for cid, payload in overlays.items():
         payload = polish_overlay(cid, payload)
+        if cid in WAVE1_IDS:
+            payload = apply_pack(cid, payload)
         path = OVERLAY_DIR / f"{cid}.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(overlays)} Wave-1 overlays to {OVERLAY_DIR}")

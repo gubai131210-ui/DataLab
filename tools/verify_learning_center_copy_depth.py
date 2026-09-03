@@ -106,8 +106,134 @@ FILL_REQUIRED = {
 }
 
 
+# Voice-warmth blacklist (student-visible). Must not remain as raw strings.
+VOICE_BLACKLIST = (
+    "你的任务是",
+    "这一课只练",
+    "本课只练",
+    "禁止过程合格",
+    "抖主要",
+    "本课要练的那一类信号",
+    "这一课要对着看的那类信号",
+    "软件才知道图上或表上评价的是这一列",
+    "车间现场要看「",
+    "配套练习表",
+    "禁止扩共享",
+    "软件才知道图上或表上",
+    "常见读法是先说出看见了什么；放行或停线通常还要对照规程",
+    "现场练习对着这条线看",
+    "这样软件才知道要盯的是哪一列",
+    "练习表 练习表",
+    "对话框：variables",
+    "把这一类现场问题摊开看一眼",
+)
+SHELL_MEANING = "这一项决定图上或表上对应哪一列"
+SHELL_MEANING_NEAR = (
+    "对一下就行：这一项对应本课现场里",
+    "软件才知道图上或表上评价的是这一列",
+)
+STUDENT_VISIBLE_KEYS = (
+    "used_for",
+    "not_for",
+    "scenario",
+    "output_guide",
+    "common_mistakes",
+    "click_steps",
+)
+
+
 def hanzi_n(text: str) -> int:
     return len(HANZI.findall(text or ""))
+
+
+def student_visible_blob(ov: dict) -> str:
+    parts: list[str] = []
+    for key in STUDENT_VISIBLE_KEYS:
+        val = ov.get(key)
+        if isinstance(val, list):
+            parts.append(json.dumps(val, ensure_ascii=False))
+        elif val:
+            parts.append(str(val))
+    for key in (
+        "glossary",
+        "dialog_fill_detail",
+        "buried_signals",
+        "prereq_quiz",
+        "fade_levels",
+        "retrieval_quiz",
+        "misconceptions",
+        "self_explain",
+    ):
+        if ov.get(key):
+            parts.append(json.dumps(ov.get(key), ensure_ascii=False))
+    return "\n".join(parts)
+
+
+def check_voice_warmth(cid: str, ov: dict, errors: list[str]) -> None:
+    """V1–V4 / V6 voice-warmth gates from copy-voice-warmth wave plan."""
+    used = str(ov.get("used_for") or "")
+    scenario = str(ov.get("scenario") or "")
+    not_for = str(ov.get("not_for") or "")
+    min_used = 80 if cid == "imr" else 40
+    min_scen = 80 if cid == "imr" else 40
+    if hanzi_n(used) < min_used:
+        errors.append(f"{cid}: used_for too short ({hanzi_n(used)} < {min_used})")
+    if hanzi_n(scenario) < min_scen:
+        errors.append(f"{cid}: scenario too short ({hanzi_n(scenario)} < {min_scen})")
+    if hanzi_n(not_for) < 30:
+        errors.append(f"{cid}: not_for too short ({hanzi_n(not_for)} < 30)")
+
+    visible = student_visible_blob(ov)
+    for needle in VOICE_BLACKLIST:
+        if needle in visible:
+            errors.append(f"{cid}: voice blacklist {needle!r}")
+
+    meanings = [
+        str(item.get("meaning") or "")
+        for item in (ov.get("dialog_fill_detail") or [])
+        if isinstance(item, dict)
+    ]
+    for meaning in meanings:
+        if SHELL_MEANING in meaning:
+            errors.append(f"{cid}: dialog_fill_detail still has shell meaning")
+            break
+        if any(s in meaning for s in SHELL_MEANING_NEAR):
+            errors.append(f"{cid}: dialog_fill_detail near-shell meaning")
+            break
+    nonempty = [m for m in meanings if m.strip()]
+    if len(nonempty) >= 2 and len(set(nonempty)) == 1:
+        errors.append(f"{cid}: dialog_fill_detail meanings all identical shell")
+
+    # Developer jargon already checked on full blob below; also catch WAVE/同构 here early.
+    if "同构" in visible or "WAVE" in visible or "禁止扩共享" in visible:
+        errors.append(f"{cid}: developer jargon in student-visible core fields")
+
+    og = ov.get("output_guide")
+    if not isinstance(og, list) or not og:
+        errors.append(f"{cid}: output_guide must be non-empty list")
+    elif not all(isinstance(x, dict) and (x.get("name") or x.get("meaning")) for x in og):
+        errors.append(f"{cid}: output_guide items must be name/meaning objects")
+    else:
+        if len(og) > 8:
+            errors.append(f"{cid}: output_guide too long ({len(og)} > 8)")
+        uniq = {
+            json.dumps({"name": x.get("name"), "meaning": x.get("meaning")}, ensure_ascii=False)
+            for x in og
+        }
+        if len(og) > 1 and len(uniq) == 1:
+            errors.append(f"{cid}: output_guide cloned identical items")
+        if len(uniq) != len(og):
+            errors.append(f"{cid}: output_guide has duplicate items")
+
+    if cid == "imr":
+        gloss = json.dumps(ov.get("glossary") or [], ensure_ascii=False)
+        if "UCL" not in gloss or "USL" not in gloss:
+            errors.append("imr glossary missing UCL/USL")
+        rows = {b.get("row") for b in ov.get("buried_signals") or []}
+        if 41 not in rows or 55 not in rows:
+            errors.append("imr buried 41/55 missing")
+        if len(ov.get("dialog_fill_detail") or []) < 9:
+            errors.append("imr dialog_fill_detail < 9")
 
 
 def main() -> int:
@@ -171,15 +297,7 @@ def main() -> int:
             rq = json.dumps(retrieval, ensure_ascii=False)
             if "UCL" in pq or "UCL" in rq:
                 errors.append(f"{cid}: non-SPC quiz mentions UCL")
-        if cid == "imr":
-            gloss = json.dumps(ov.get("glossary") or [], ensure_ascii=False)
-            if "UCL" not in gloss or "USL" not in gloss:
-                errors.append("imr glossary missing UCL/USL")
-            rows = {b.get("row") for b in ov.get("buried_signals") or []}
-            if 41 not in rows or 55 not in rows:
-                errors.append("imr buried 41/55 missing")
-            if len(ov.get("dialog_fill_detail") or []) < 9:
-                errors.append("imr dialog_fill_detail < 9")
+        check_voice_warmth(cid, ov, errors)
         if cid == "bar_chart" and ov.get("title") != "条形图":
             errors.append(f"bar_chart title {ov.get('title')!r} != 条形图")
         menu = GRAPH_MENU.get(cid)
@@ -243,7 +361,7 @@ def main() -> int:
             print(f" ... {len(errors) - 80} more")
         print(f"total {len(errors)}")
         return 1
-    print("PASS: 184 overlays meet copy-depth readability")
+    print("PASS: 184 overlays meet copy-depth readability + voice warmth")
     return 0
 
 

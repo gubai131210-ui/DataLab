@@ -96,7 +96,7 @@ WAVE2_DATASETS: dict[str, dict] = {
         "practice_only": False,
         "title": "组间/组内能力（子组均值台阶）",
         "industry": "electronics",
-        "story": "每子组 n=5。子组12起批均值上移，组内散度仍稳。",
+        "story": "还是子组采集：每个子组 5 片。前半段批均值挺老实；大约子组 12 起，整批均值像抬了一级台阶，组内散度仍相对稳。",
         "row_count": 100,
         "notes": "埋点：子组12起（约行56）批均值由约100抬到约102；期望组间方差抬高、组内相对稳。子组列必选。",
         "columns": [
@@ -479,13 +479,13 @@ def _seven_plus(
             },
             {
                 "level": 1,
-                "student": f"仍导入 `demo_{fade_ds}`；最后「埋点是否出现、禁止句」自己写三句。",
+                "student": f"仍导入 `demo_{fade_ds}`；最后「埋点是否出现、红线习惯」自己写三句。",
                 "scaffold": "对话框字段仍给出；不给标准答案。",
             },
             {
                 "level": 2,
                 "student": f"再导入 `demo_{fade_ds}`，自己改一个输入（如规格/公差留空与否），不看埋点剧透写结论。",
-                "scaffold": "仅术语表 + 误用禁止句。",
+                "scaffold": "仅术语表 + 误用红线习惯。",
             },
         ]
     else:
@@ -502,7 +502,7 @@ def _seven_plus(
             },
             {
                 "level": 2,
-                "student": "写一段：本课为何空 dataset，以及误用一句禁止句。",
+                "student": "写一段：本课为何空 dataset，以及误用一句红线习惯。",
                 "scaffold": "仅 skill_mission。",
             },
         ]
@@ -569,7 +569,7 @@ def _formula_skeleton(
         "output_guide": [
             {
                 "name": "帮助/公式页",
-                "meaning": "只陈述定义与边界；禁止过程合格；禁止必须停线；禁止已证明正态；禁止量具通过。",
+                "meaning": "只陈述定义与边界；不等于放行样板，也不等于已经证明正态或量具通过；停线通常还要对照规程。",
             }
         ],
         "common_mistakes": _base_mistakes(extra_mistakes),
@@ -634,8 +634,8 @@ def build_overlays() -> dict[str, dict]:
                 {"after": "读 %GR&R", "prompt": "为何不能写成量具通过？"},
             ],
             "msa_crossed_aiag",
-            ["操作员B埋了什么？", "交叉 vs 嵌套一句", "禁止句有哪些？"],
-            [{"wrong": "%GR&R 低=过程合格", "right": "量具研究≠过程能力结论；禁止过程合格。"}],
+            ["操作员B埋了什么？", "交叉 vs 嵌套一句", "红线习惯有哪些？"],
+            [{"wrong": "%GR&R 低=过程合格", "right": "量具研究≠过程能力结论；不等于放行样板；通常还要对照规程。"}],
         ),
     }
 
@@ -689,7 +689,7 @@ def build_overlays() -> dict[str, dict]:
                 {"after": "读图", "prompt": "EMP 结论能否写成停线？"},
             ],
             "msa_crossed_aiag",
-            ["白名单族成员？", "操作员B？", "禁止句"],
+            ["白名单族成员？", "操作员B？", "红线习惯"],
             [{"wrong": "EMP 证明量具合格", "right": "禁止量具通过；只给研究线索。"}],
         ),
     }
@@ -741,7 +741,7 @@ def _build_msa_rest() -> dict[str, dict]:
             }
         ],
         "output_guide": [
-            {"name": "三因子方差", "meaning": "F2 噪声应可见。禁止过程合格。"},
+            {"name": "三因子方差", "meaning": "F2 噪声应可见。不等于放行样板；通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["漏选附加因子", "与两因子表混用"]),
         **_seven_plus(
@@ -756,7 +756,7 @@ def _build_msa_rest() -> dict[str, dict]:
                 {"after": "读输出", "prompt": "公差输入是控制限吗？"},
             ],
             "msa_expanded_crossed",
-            ["F2？", "与 gage_rr 区别", "禁止句"],
+            ["F2？", "与 gage_rr 区别", "红线习惯"],
             [{"wrong": "三因子=%GR&R 自动更准", "right": "设计匹配才有意义；禁止量具通过。"}],
         ),
     }
@@ -797,7 +797,7 @@ def _build_msa_rest() -> dict[str, dict]:
             }
         ],
         "output_guide": [
-            {"name": "嵌套方差", "meaning": "C 区块更散。禁止过程合格。"},
+            {"name": "嵌套方差", "meaning": "C 区块更散。不等于放行样板；通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["用交叉表跑 nested", "写成量具通过"]),
         **_seven_plus(
@@ -812,7 +812,7 @@ def _build_msa_rest() -> dict[str, dict]:
                 {"after": "读输出", "prompt": "为何禁止量具通过？"},
             ],
             "msa_nested_operator",
-            ["与交叉区别", "行41？", "禁止句"],
+            ["与交叉区别", "行41？", "红线习惯"],
             [{"wrong": "嵌套=交叉少选一列", "right": "数据结构不同，模型不同。"}],
         ),
     }
@@ -868,7 +868,7 @@ def _build_msa_rest() -> dict[str, dict]:
                 {"after": "读 Bias", "prompt": "偏倚等于必须停线吗？"},
             ],
             "msa_type1_ref",
-            ["偏倚多少？", "与 GR&R 区别", "禁止句"],
+            ["偏倚多少？", "与 GR&R 区别", "红线习惯"],
             [{"wrong": "Cg 高=量具通过可放行", "right": "禁止量具通过；需结合程序与风险。"}],
         ),
     }
@@ -880,7 +880,7 @@ def _build_capability() -> dict[str, dict]:
     out["capability"] = {
         "title": "正态过程能力",
         "used_for": "稳定近正态数据上估算 Cp/Cpk 等。本课强调偏心使 Cpk<Cp。",
-        "not_for": "失控数据（禁止用 imr_spi_shift）；强偏态先变换/非正态课。禁止过程合格。",
+        "not_for": "失控数据（禁止用 imr_spi_shift）；强偏态先变换/非正态课。不等于放行样板；通常还要对照规程。",
         "scenario": "稳定厚度略偏高。LSL=95 USL=105 目标100。",
         "related_ids": ["capability_sixpack", "imr", "box_cox"],
         "dialog_fill": {"variables": "厚度_um"},
@@ -888,7 +888,7 @@ def _build_capability() -> dict[str, dict]:
             "导入 `demo_cap_stable_spec`。",
             "菜单：质量工具 → 正态过程能力。",
             "变量=`厚度_um`；子组大小=1；LSL=95；USL=105；Target=100；变换=无。",
-            "对照：Cpk 应低于 Cp（偏心）；确认无片41/55 失控尖峰。禁止过程合格。",
+            "对照：Cpk 应低于 Cp（偏心）；确认无片41/55 失控尖峰。不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "变量 (`variables`)", "put": "厚度_um", "meaning": "单值 Y。"},
@@ -907,12 +907,12 @@ def _build_capability() -> dict[str, dict]:
             {
                 "row": 1,
                 "what": "全列稳定略偏心（均值约101.2），无特殊原因尖峰",
-                "expect": "Cpk<Cp；勿写过程合格或已证明正态。",
+                "expect": "Cpk<Cp；不等于放行样板或已证明正态。",
             }
         ],
         "output_guide": [
-            {"name": "Cp/Cpk 表", "meaning": "指着 Cpk<Cp。禁止过程合格。"},
-            {"name": "直方图/正态叠加", "meaning": "只作形状线索；禁止已证明正态。"},
+            {"name": "Cp/Cpk 表", "meaning": "指着 Cpk<Cp。不等于放行样板；通常还要对照规程。"},
+            {"name": "直方图/正态叠加", "meaning": "只作形状线索；不等于已经证明正态。"},
         ],
         "common_mistakes": _base_mistakes(["用 I-MR 失控金标算 Cpk", "把 Cpk>1.33 写成过程合格"]),
         **_seven_plus(
@@ -927,15 +927,15 @@ def _build_capability() -> dict[str, dict]:
                 {"after": "读 Cpk", "prompt": "能否写成过程合格？"},
             ],
             "cap_stable_spec",
-            ["为何 Cpk<Cp？", "与 Sixpack 共享？", "禁止句"],
-            [{"wrong": "能力高=必须放行", "right": "指数是摘要；禁止过程合格话术。"}],
+            ["为何 Cpk<Cp？", "与 Sixpack 共享？", "红线习惯"],
+            [{"wrong": "能力高=必须放行", "right": "指数是摘要；不等于放行样板话术。"}],
         ),
     }
 
     out["capability_sixpack"] = {
         "title": "过程能力 Sixpack",
         "used_for": "能力+诊断包装图。与 capability 同构共享 `cap_stable_spec`。",
-        "not_for": "替代专项控制图深挖；失控集禁用。禁止过程合格。",
+        "not_for": "替代专项控制图深挖；失控集禁用。不等于放行样板；通常还要对照规程。",
         "scenario": "同一稳定略偏心集。Sixpack 一眼对照稳定性与能力。",
         "related_ids": ["capability", "imr", "xbar_r"],
         "dialog_fill": {"variables": "厚度_um"},
@@ -943,7 +943,7 @@ def _build_capability() -> dict[str, dict]:
             "导入 `demo_cap_stable_spec`。",
             "菜单：质量工具 → 过程能力 Sixpack。",
             "变量=`厚度_um`；子组大小=1；LSL=95；USL=105；Target=100。",
-            "对照：诊断侧应相对稳，能力侧 Cpk<Cp。禁止过程合格。",
+            "对照：诊断侧应相对稳，能力侧 Cpk<Cp。不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "变量 (`variables`)", "put": "厚度_um", "meaning": "Y。"},
@@ -961,11 +961,11 @@ def _build_capability() -> dict[str, dict]:
             {
                 "row": 1,
                 "what": "稳定略偏心（同 capability）",
-                "expect": "Sixpack 能力侧 Cpk<Cp；诊断侧无金标尖峰。禁止过程合格。",
+                "expect": "Sixpack 能力侧 Cpk<Cp；诊断侧无金标尖峰。不等于放行样板；通常还要对照规程。",
             }
         ],
         "output_guide": [
-            {"name": "Sixpack 页", "meaning": "对照稳与偏心；禁止已证明正态。"},
+            {"name": "Sixpack 页", "meaning": "对照稳与偏心；不等于已经证明正态。"},
         ],
         "common_mistakes": _base_mistakes(["把 Sixpack 当放行章", "与 Box-Cox 偏态集共享"]),
         **_seven_plus(
@@ -980,23 +980,23 @@ def _build_capability() -> dict[str, dict]:
                 {"after": "读 Sixpack", "prompt": "诊断稳能否写成必须停线？"},
             ],
             "cap_stable_spec",
-            ["同构族？", "Cpk vs Cp", "禁止句"],
-            [{"wrong": "Sixpack 绿=已证明正态", "right": "禁止已证明正态。"}],
+            ["同构族？", "Cpk vs Cp", "红线习惯"],
+            [{"wrong": "Sixpack 绿=已证明正态", "right": "不等于已经证明正态。"}],
         ),
     }
 
     out["between_within_capability"] = {
         "title": "组间/组内过程能力",
-        "used_for": "分子组估计组间与组内变差的能力。",
-        "not_for": "无子组标识的单值乱套；失控尖峰课。禁止过程合格。",
-        "scenario": "子组 n=5。子组12起批均值上移。",
+        "used_for": "很多现场数据是「一批好几片」：同一批里几片之间会有一点波动，批与批之间均值也会走动。组间/组内能力就是把这两层拆开看一眼，再和规格放在一起聊——它更像在问「波动主要落在批内，还是批间」，而不是直接回答「这批货能不能放行」。",
+        "not_for": "无子组标识的单值乱套；失控尖峰课。不等于放行样板；通常还要对照规程。",
+        "scenario": "厚度按子组采，每个子组 5 片。走到大约子组 12，整批均值像抬了一级台阶。",
         "related_ids": ["capability", "xbar_r"],
         "dialog_fill": {"variables": "厚度_um", "subgroup": "子组"},
         "click_steps": [
             "导入 `demo_cap_between_within`。",
             "菜单：质量工具 → 组间/组内过程能力。",
             "测量值=`厚度_um`；子组=`子组`；LSL=95；USL=105；Target=100。",
-            "对照子组12起组间台阶；禁止过程合格。",
+            "对照子组12起组间台阶；现场口语可以停在「批均值抬高了」；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "测量值 (`variables`)", "put": "厚度_um", "meaning": "Y。"},
@@ -1014,11 +1014,11 @@ def _build_capability() -> dict[str, dict]:
             {
                 "row": 56,
                 "what": "子组12起（约行56）批均值上移",
-                "expect": "组间分量抬高；勿写过程合格。",
+                "expect": "组间分量抬高；不等于放行样板。",
             }
         ],
         "output_guide": [
-            {"name": "组间/组内能力表", "meaning": "对照子组12台阶。禁止必须停线。"},
+            {"name": "组间/组内能力表", "meaning": "对照子组12台阶。停线通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["漏选子组列", "用单值稳定集冒充组间结构"]),
         **_seven_plus(
@@ -1033,15 +1033,15 @@ def _build_capability() -> dict[str, dict]:
                 {"after": "读输出", "prompt": "组间抬高=必须停线吗？"},
             ],
             "cap_between_within",
-            ["行56？", "组内vs组间", "禁止句"],
-            [{"wrong": "组间大=过程合格失败已判决", "right": "是变差结构线索，禁止过程合格话术。"}],
+            ["行56？", "组内vs组间", "红线习惯"],
+            [{"wrong": "组间大=过程合格失败已判决", "right": "是变差结构线索，不等于放行样板话术。"}],
         ),
     }
 
     out["binomial_capability"] = {
         "title": "二项过程能力",
         "used_for": "不合格品计数/比率的能力与 PPM 类摘要。",
-        "not_for": "缺陷数（多缺陷/件）应泊松；计量型用正态能力。禁止过程合格。",
+        "not_for": "缺陷数（多缺陷/件）应泊松；计量型用正态能力。不等于放行样板；通常还要对照规程。",
         "scenario": "批18起不合格率抬高。",
         "related_ids": ["poisson_capability", "p_chart"],
         "dialog_fill": {"defectives": "不合格品数", "inspected": "检验数"},
@@ -1049,7 +1049,7 @@ def _build_capability() -> dict[str, dict]:
             "导入 `demo_cap_binomial_lots`。",
             "菜单：质量工具 → 二项过程能力。",
             "不合格品数=`不合格品数`；检验数（列）=`检验数`；检验数常数留空；目标不合格品率可选 0.02。",
-            "对照批18起抬高；禁止过程合格。",
+            "对照批18起抬高；不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "不合格品数 (`defectives`)", "put": "不合格品数", "meaning": "不良件数。"},
@@ -1066,11 +1066,11 @@ def _build_capability() -> dict[str, dict]:
             {
                 "row": 18,
                 "what": "批18起不合格率由约2%抬到约7%",
-                "expect": "二项能力/PPM 线索变差；勿写过程合格。",
+                "expect": "二项能力/PPM 线索变差；不等于放行样板。",
             }
         ],
         "output_guide": [
-            {"name": "二项能力输出", "meaning": "对照批18后段。禁止必须停线。"},
+            {"name": "二项能力输出", "meaning": "对照批18后段。停线通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["把缺陷数当不合格品数", "漏检验数"]),
         **_seven_plus(
@@ -1085,15 +1085,15 @@ def _build_capability() -> dict[str, dict]:
                 {"after": "读输出", "prompt": "PPM 高=必须停线吗？"},
             ],
             "cap_binomial_lots",
-            ["批18？", "二项vs泊松", "禁止句"],
-            [{"wrong": "二项能力=已证明过程合格", "right": "禁止过程合格。"}],
+            ["批18？", "二项vs泊松", "红线习惯"],
+            [{"wrong": "二项能力=已证明过程合格", "right": "不等于放行样板；通常还要对照规程。"}],
         ),
     }
 
     out["poisson_capability"] = {
         "title": "泊松过程能力",
         "used_for": "缺陷计数/DPU 的泊松能力摘要。",
-        "not_for": "不合格品件数用二项；计量型用正态能力。禁止过程合格。",
+        "not_for": "不合格品件数用二项；计量型用正态能力。不等于放行样板；通常还要对照规程。",
         "scenario": "批16起单位缺陷率抬高。",
         "related_ids": ["binomial_capability", "u_chart"],
         "dialog_fill": {"defects": "缺陷数", "units": "单位数"},
@@ -1101,7 +1101,7 @@ def _build_capability() -> dict[str, dict]:
             "导入 `demo_cap_poisson_counts`。",
             "菜单：质量工具 → 泊松过程能力。",
             "缺陷数=`缺陷数`；单位数（列）=`单位数`；单位数常数留空；目标 DPU 可选。",
-            "对照批16起抬高；禁止过程合格。",
+            "对照批16起抬高；不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "缺陷数 (`defects`)", "put": "缺陷数", "meaning": "缺陷计数 Y。"},
@@ -1118,11 +1118,11 @@ def _build_capability() -> dict[str, dict]:
             {
                 "row": 16,
                 "what": "批16起缺陷率抬高",
-                "expect": "泊松能力/DPU 线索变差；勿写过程合格。",
+                "expect": "泊松能力/DPU 线索变差；不等于放行样板。",
             }
         ],
         "output_guide": [
-            {"name": "泊松能力输出", "meaning": "对照批16。禁止已证明正态。"},
+            {"name": "泊松能力输出", "meaning": "对照批16。不等于已经证明正态。"},
         ],
         "common_mistakes": _base_mistakes(["与二项命令互换", "漏单位数"]),
         **_seven_plus(
@@ -1137,15 +1137,15 @@ def _build_capability() -> dict[str, dict]:
                 {"after": "读输出", "prompt": "DPU 高能否写过程合格？"},
             ],
             "cap_poisson_counts",
-            ["批16？", "缺陷vs不合格品", "禁止句"],
-            [{"wrong": "泊松能力证明过程合格", "right": "禁止过程合格。"}],
+            ["批16？", "缺陷vs不合格品", "红线习惯"],
+            [{"wrong": "泊松能力证明过程合格", "right": "不等于放行样板；通常还要对照规程。"}],
         ),
     }
 
     out["box_cox"] = {
         "title": "Box-Cox 变换",
         "used_for": "为正值偏态数据寻找 λ 变换改善对称性。",
-        "not_for": "已稳定正态能力课；含非正值。禁止已证明正态。",
+        "not_for": "已稳定正态能力课；含非正值。不等于已经证明正态。",
         "scenario": "右偏厚度。约行45–48 右尾极大。",
         "related_ids": ["distribution_identification", "capability"],
         "dialog_fill": {"variables": "厚度_um"},
@@ -1153,7 +1153,7 @@ def _build_capability() -> dict[str, dict]:
             "导入 `demo_dist_skew_boxcox`。",
             "菜单：质量工具 → Box-Cox 变换。",
             "正值变量=`厚度_um`；Lambda 留空自动搜索；LSL/USL 留空。",
-            "对照右偏与右尾；看推荐 λ。禁止已证明正态。",
+            "对照右偏与右尾；看推荐 λ。不等于已经证明正态。",
         ],
         "dialog_fill_detail": [
             {"field": "正值变量 (`variables`)", "put": "厚度_um", "meaning": "必须为正。"},
@@ -1174,7 +1174,7 @@ def _build_capability() -> dict[str, dict]:
             }
         ],
         "output_guide": [
-            {"name": "λ 搜索/对比", "meaning": "指着推荐 λ。禁止已证明正态。"},
+            {"name": "λ 搜索/对比", "meaning": "指着推荐 λ。不等于已经证明正态。"},
         ],
         "common_mistakes": _base_mistakes(["与 cap_stable_spec 共享", "变换后宣称已证明正态"]),
         **_seven_plus(
@@ -1189,15 +1189,15 @@ def _build_capability() -> dict[str, dict]:
                 {"after": "读 λ", "prompt": "λ 接近1意味着什么？"},
             ],
             "dist_skew_boxcox",
-            ["右偏？", "与能力集", "禁止句"],
-            [{"wrong": "变换后=已证明正态", "right": "禁止已证明正态。"}],
+            ["右偏？", "与能力集", "红线习惯"],
+            [{"wrong": "变换后=已证明正态", "right": "不等于已经证明正态。"}],
         ),
     }
 
     out["distribution_identification"] = {
         "title": "个体分布识别",
         "used_for": "比较候选分布拟合，为后续非正态能力等选分布。",
-        "not_for": "证明唯一真分布；小样本过度自信。禁止已证明正态。",
+        "not_for": "证明唯一真分布；小样本过度自信。不等于已经证明正态。",
         "scenario": "近似对数正态正值样本。",
         "related_ids": ["box_cox", "nonnormal_capability", "normality_test"],
         "dialog_fill": {"variables": "测量值"},
@@ -1205,14 +1205,14 @@ def _build_capability() -> dict[str, dict]:
             "导入 `demo_dist_id_candidates`。",
             "菜单：质量工具 → 个体分布识别。",
             "测量值=`测量值`。",
-            "对照：对数正态/Weibull 等应优于正态；禁止已证明正态。",
+            "对照：对数正态/Weibull 等应优于正态；不等于已经证明正态。",
         ],
         "dialog_fill_detail": [
             {"field": "测量值 (`variables`)", "put": "测量值", "meaning": "单列正值/连续 Y。"},
         ],
         "glossary": [
             {"term": "候选分布", "plain": "正态/对数正态/Weibull 等比较集。", "remember": "选相对更好，非唯一真理。"},
-            {"term": "拟合优度线索", "plain": "图与统计量辅助比较。", "remember": "禁止已证明正态。"},
+            {"term": "拟合优度线索", "plain": "图与统计量辅助比较。", "remember": "不等于已经证明正态。"},
             {"term": "后续用途", "plain": "常为非正态能力选分布。", "remember": "本课 dataset 空挂非正态课。"},
         ],
         "buried_signals": [
@@ -1223,7 +1223,7 @@ def _build_capability() -> dict[str, dict]:
             }
         ],
         "output_guide": [
-            {"name": "分布比较表/图", "meaning": "相对排序；禁止已证明正态。"},
+            {"name": "分布比较表/图", "meaning": "相对排序；不等于已经证明正态。"},
         ],
         "common_mistakes": _base_mistakes(["把第一名写成唯一真分布", "小 n 过度解读"]),
         **_seven_plus(
@@ -1235,11 +1235,11 @@ def _build_capability() -> dict[str, dict]:
             ],
             [
                 {"after": "跑识别", "prompt": "第一名能否当唯一真理？"},
-                {"after": "对照正态", "prompt": "为何禁止已证明正态？"},
+                {"after": "对照正态", "prompt": "为何不等于已经证明正态？"},
             ],
             "dist_id_candidates",
-            ["形状？", "与 Box-Cox", "禁止句"],
-            [{"wrong": "p 大=已证明正态", "right": "禁止已证明正态。"}],
+            ["形状？", "与 Box-Cox", "红线习惯"],
+            [{"wrong": "p 大=已证明正态", "right": "不等于已经证明正态。"}],
         ),
     }
     return out
@@ -1250,7 +1250,7 @@ def _build_quality_graphs() -> dict[str, dict]:
     out["pareto"] = {
         "title": "柏拉图",
         "used_for": "按缺陷类别频数抓主要问题。",
-        "not_for": "计量控制图；因果机制证明。禁止过程合格。",
+        "not_for": "计量控制图；因果机制证明。不等于放行样板；通常还要对照规程。",
         "scenario": "虚焊/偏移占绝大多数。",
         "related_ids": ["cause_and_effect", "c_chart"],
         "dialog_fill": {"category": "缺陷类别"},
@@ -1258,7 +1258,7 @@ def _build_quality_graphs() -> dict[str, dict]:
             "导入 `demo_pareto_defect_tail`。",
             "菜单：质量工具 → 柏拉图。",
             "缺陷类别=`缺陷类别`；计数列留空（按行计频数）；Other 合并阈值可试 95。",
-            "对照前两类累计约80%；禁止过程合格。",
+            "对照前两类累计约80%；不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "缺陷类别 (`category`)", "put": "缺陷类别", "meaning": "分类标签。"},
@@ -1274,11 +1274,11 @@ def _build_quality_graphs() -> dict[str, dict]:
             {
                 "row": 1,
                 "what": "配方保证虚焊+偏移约占前80%计数",
-                "expect": "柏拉图左侧两根最高；勿写过程合格。",
+                "expect": "柏拉图左侧两根最高；不等于放行样板。",
             }
         ],
         "output_guide": [
-            {"name": "柏拉图", "meaning": "指着前两类。禁止必须停线。"},
+            {"name": "柏拉图", "meaning": "指着前两类。停线通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["把累计80%写成法律阈值", "用计量列当类别"]),
         **_seven_plus(
@@ -1293,7 +1293,7 @@ def _build_quality_graphs() -> dict[str, dict]:
                 {"after": "调 Other", "prompt": "阈值改变故事吗？"},
             ],
             "pareto_defect_tail",
-            ["前两类？", "Other？", "禁止句"],
+            ["前两类？", "Other？", "红线习惯"],
             [{"wrong": "柏拉图证明根因", "right": "只排序频数；根因要另做。"}],
         ),
     }
@@ -1301,7 +1301,7 @@ def _build_quality_graphs() -> dict[str, dict]:
     out["cause_and_effect"] = {
         "title": "因果图（鱼骨）",
         "used_for": "整理头脑风暴的类别-原因结构。",
-        "not_for": "统计显著性检验；自动证明根因。禁止过程合格。",
+        "not_for": "统计显著性检验；自动证明根因。不等于放行样板；通常还要对照规程。",
         "scenario": "焊点不良 5M1E 清单，含「钢网张力未校准」。",
         "related_ids": ["pareto", "multi_vari"],
         "dialog_fill": {"category": "类别", "cause": "原因"},
@@ -1309,7 +1309,7 @@ def _build_quality_graphs() -> dict[str, dict]:
             "导入 `demo_fishbone_solder_causes`。",
             "菜单：质量工具 → 因果图。",
             "类别列=`类别`；原因列=`原因`；效应标题=`焊点不良`。",
-            "对照「方法/钢网张力未校准」等分枝；禁止过程合格。",
+            "对照「方法/钢网张力未校准」等分枝；不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "类别列 (`category`)", "put": "类别", "meaning": "鱼骨大枝。"},
@@ -1329,7 +1329,7 @@ def _build_quality_graphs() -> dict[str, dict]:
             }
         ],
         "output_guide": [
-            {"name": "因果图", "meaning": "按类别分枝。禁止必须停线。"},
+            {"name": "因果图", "meaning": "按类别分枝。停线通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["把鱼骨当统计证明", "效应标题留空却抱怨无标题"]),
         **_seven_plus(
@@ -1344,7 +1344,7 @@ def _build_quality_graphs() -> dict[str, dict]:
                 {"after": "读图", "prompt": "列出原因=已证明吗？"},
             ],
             "fishbone_solder_causes",
-            ["钢网张力？", "5M1E", "禁止句"],
+            ["钢网张力？", "5M1E", "红线习惯"],
             [{"wrong": "鱼骨=根因已判决", "right": "只是结构化假设列表。"}],
         ),
     }
@@ -1352,7 +1352,7 @@ def _build_quality_graphs() -> dict[str, dict]:
     out["multi_vari"] = {
         "title": "Multi-Vari 图",
         "used_for": "用 2–4 个因子分层看测量值模式。",
-        "not_for": "正式 ANOVA 推断；1 个因子不够。禁止过程合格。",
+        "not_for": "正式 ANOVA 推断；1 个因子不够。不等于放行样板；通常还要对照规程。",
         "scenario": "腔位×时段。晚班均值抬高。",
         "related_ids": ["variability_chart", "two_factor_anova"],
         "dialog_fill": {"measurement": "厚度_um"},
@@ -1360,7 +1360,7 @@ def _build_quality_graphs() -> dict[str, dict]:
             "导入 `demo_multi_vari_pos_time`。",
             "菜单：质量工具 → Multi-Vari 图。",
             "测量值=`厚度_um`；因子选 `腔位` 与 `时段`（共2列，满足2–4）。",
-            "对照晚班抬高；禁止过程合格。",
+            "对照晚班抬高；不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "测量值 (`measurement`)", "put": "厚度_um", "meaning": "Y。"},
@@ -1375,11 +1375,11 @@ def _build_quality_graphs() -> dict[str, dict]:
             {
                 "row": 25,
                 "what": "约行25起进入晚班区块，均值上移",
-                "expect": "Multi-Vari 显示时段差异大于腔位；勿写过程合格。",
+                "expect": "Multi-Vari 显示时段差异大于腔位；不等于放行样板。",
             }
         ],
         "output_guide": [
-            {"name": "Multi-Vari 图", "meaning": "指着晚班。禁止必须停线。"},
+            {"name": "Multi-Vari 图", "meaning": "指着晚班。停线通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["只选1个因子", "把图当 ANOVA p 值"]),
         **_seven_plus(
@@ -1394,7 +1394,7 @@ def _build_quality_graphs() -> dict[str, dict]:
                 {"after": "读图", "prompt": "时段差=必须停线吗？"},
             ],
             "multi_vari_pos_time",
-            ["行25？", "因子角色", "禁止句"],
+            ["行25？", "因子角色", "红线习惯"],
             [{"wrong": "Multi-Vari 证明交互显著", "right": "探索图，不替代设计好的推断。"}],
         ),
     }
@@ -1402,7 +1402,7 @@ def _build_quality_graphs() -> dict[str, dict]:
     out["run_chart"] = {
         "title": "运行图",
         "used_for": "按时间顺序看中位数、簇与趋势线索。",
-        "not_for": "替代控制图控制限；规格符合性。禁止过程合格。",
+        "not_for": "替代控制图控制限；规格符合性。不等于放行样板；通常还要对照规程。",
         "scenario": "片28–40 相对中位数同侧偏高。",
         "related_ids": ["imr", "zone_chart"],
         "dialog_fill": {"variables": "厚度_um"},
@@ -1410,7 +1410,7 @@ def _build_quality_graphs() -> dict[str, dict]:
             "导入 `demo_run_chart_median_trend`。",
             "菜单：质量工具 → 运行图。",
             "数值观测=`厚度_um`。",
-            "对照片28–40 同侧游程；中位数≠UCL。禁止过程合格。",
+            "对照片28–40 同侧游程；中位数≠UCL。不等于放行样板；通常还要对照规程。",
         ],
         "dialog_fill_detail": [
             {"field": "数值观测（一列） (`variables`)", "put": "厚度_um", "meaning": "单列时间序 Y。"},
@@ -1424,11 +1424,11 @@ def _build_quality_graphs() -> dict[str, dict]:
             {
                 "row": 28,
                 "what": "片28–40 连续在中位数上方",
-                "expect": "运行图标记簇/趋势线索；勿把中位数当 UCL，勿写过程合格。",
+                "expect": "运行图标记簇/趋势线索；勿把中位数当 UCL，不等于放行样板。",
             }
         ],
         "output_guide": [
-            {"name": "运行图", "meaning": "指着片28–40。中位数≠UCL。禁止必须停线。"},
+            {"name": "运行图", "meaning": "指着片28–40。中位数≠UCL。停线通常还要对照规程。"},
         ],
         "common_mistakes": _base_mistakes(["把中位数当 UCL", "当成规格合格图"]),
         **_seven_plus(
@@ -1443,7 +1443,7 @@ def _build_quality_graphs() -> dict[str, dict]:
                 {"after": "读游程", "prompt": "同侧=必须停线吗？"},
             ],
             "run_chart_median_trend",
-            ["中位数≠UCL", "片28", "禁止句"],
+            ["中位数≠UCL", "片28", "红线习惯"],
             [{"wrong": "点出中位数=超规格", "right": "中位数不是 USL/UCL。"}],
         ),
     }
@@ -1483,7 +1483,7 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "读字段", "prompt": "为何 AQL 是可选输入？"},
             {"after": "对照帮助", "prompt": "抽样方案≠能力指数，差在哪？"},
         ],
-        retrieval=["n/c 是什么？", "本课 dataset？", "禁止句"],
+        retrieval=["n/c 是什么？", "本课 dataset？", "红线习惯"],
         misc=[{"wrong": "抽样接收=过程合格", "right": "方案接收决策≠过程能力结论。"}],
     )
 
@@ -1518,7 +1518,7 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "读 roles", "prompt": "为何有 appraiser 而不是 operator？"},
             {"after": "对照帮助", "prompt": "菜单不可用时学什么？"},
         ],
-        retrieval=["四角色？", "ordinal？", "禁止句"],
+        retrieval=["四角色？", "ordinal？", "红线习惯"],
         misc=[{"wrong": "κ 高=量具通过", "right": "禁止量具通过。"}],
         extra_mistakes=["为本课伪造演示宽表冒充已实现"],
     )
@@ -1553,8 +1553,8 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "读字段", "prompt": "与 between_within 的子组有何不同？"},
             {"after": "对照帮助", "prompt": "为何本波不硬塞表？"},
         ],
-        retrieval=["roles？", "min_batch_size？", "禁止句"],
-        misc=[{"wrong": "批次能力=过程合格章", "right": "禁止过程合格。"}],
+        retrieval=["roles？", "min_batch_size？", "红线习惯"],
+        misc=[{"wrong": "批次能力=过程合格章", "right": "不等于放行样板；通常还要对照规程。"}],
     )
 
     out["expanded_gage_unbalanced"] = _formula_skeleton(
@@ -1586,7 +1586,7 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "看 menu_path", "prompt": "为何不进质量工具波的共享表？"},
             {"after": "读 additional", "prompt": "它是角色还是 input？"},
         ],
-        retrieval=["菜单？", "additional？", "禁止句"],
+        retrieval=["菜单？", "additional？", "红线习惯"],
         misc=[{"wrong": "可与平衡表共享", "right": "锁表空 dataset；结构不同。"}],
         extra_mistakes=["偷偷挂 msa_expanded_crossed"],
     )
@@ -1621,8 +1621,8 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "读分布输入", "prompt": "为何要目录枚举？"},
             {"after": "对照识别课", "prompt": "为何不共享偏态表到本课？"},
         ],
-        retrieval=["字段？", "related_ids？", "禁止句"],
-        misc=[{"wrong": "选了 Weibull=已证明", "right": "禁止已证明正态/合格。"}],
+        retrieval=["字段？", "related_ids？", "红线习惯"],
+        misc=[{"wrong": "选了 Weibull=已证明", "right": "不等于已经证明正态/合格。"}],
     )
 
     out["nonparametric_capability"] = _formula_skeleton(
@@ -1654,7 +1654,7 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "读报错条件", "prompt": "为何规格必填？"},
             {"after": "对照正态课", "prompt": "何时才考虑非参数？"},
         ],
-        retrieval=["tolerance_k？", "必填？", "禁止句"],
+        retrieval=["tolerance_k？", "必填？", "红线习惯"],
         misc=[{"wrong": "非参数=无需规格", "right": "本实现仍要 LSL/USL。"}],
     )
 
@@ -1688,8 +1688,8 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "读覆盖率", "prompt": "覆盖率与置信水平差在哪？"},
             {"after": "对照规格", "prompt": "为何不能写成过程合格？"},
         ],
-        retrieval=["覆盖率？", "≠规格", "禁止句"],
-        misc=[{"wrong": "容差区间内=过程合格", "right": "禁止过程合格。"}],
+        retrieval=["覆盖率？", "≠规格", "红线习惯"],
+        misc=[{"wrong": "容差区间内=过程合格", "right": "不等于放行样板；通常还要对照规程。"}],
     )
 
     out["variability_chart"] = _formula_skeleton(
@@ -1719,7 +1719,7 @@ def _build_formula_refs() -> dict[str, dict]:
             {"after": "对照 multi_vari", "prompt": "因子个数要求差在哪？"},
             {"after": "读帮助", "prompt": "为何本波不共享 multi_vari 表？"},
         ],
-        retrieval=["因子数？", "related？", "禁止句"],
+        retrieval=["因子数？", "related？", "红线习惯"],
         misc=[{"wrong": "变异性图=ANOVA 显著", "right": "探索图，不替代推断。"}],
         extra_mistakes=["偷挂 multi_vari_pos_time"],
     )
@@ -1729,12 +1729,14 @@ def _build_formula_refs() -> dict[str, dict]:
 
 def write_overlays() -> None:
     from copy_depth import polish_overlay
+    from warmth_wave234_overlays import apply_warmth
 
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
     overlays = build_overlays()
     assert len(overlays) == 24, sorted(overlays)
     for cid, payload in overlays.items():
         payload = polish_overlay(cid, payload)
+        payload = apply_warmth(cid, payload)
         path = OVERLAY_DIR / f"{cid}.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(overlays)} Wave-2 overlays to {OVERLAY_DIR}")
