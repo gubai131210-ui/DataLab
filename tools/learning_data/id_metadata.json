@@ -1,0 +1,4496 @@
+{
+  "union_count": 184,
+  "entries": [
+    {
+      "id": "accelerated_life",
+      "command": {
+        "id": "accelerated_life",
+        "menu_label": "加速寿命分析",
+        "dialog_title": "Accelerated Life Testing",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "寿命"
+          }
+        ]
+      },
+      "help": {
+        "title": "加速寿命分析",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "用 Weibull+Arrhenius 拟合应力加速下的寿命数据。",
+        "output_description": "Regression Table 与 Shape。",
+        "interpretation_limits": "禁止写成产品寿命已达标。"
+      }
+    },
+    {
+      "id": "acceptance_sampling",
+      "command": {
+        "id": "acceptance_sampling",
+        "menu_label": "属性一次抽样",
+        "dialog_title": "属性一次抽样",
+        "menu_path": "质量工具",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "属性一次抽样",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 容差 / 抽样",
+        "implemented_status": "formula_reference",
+        "purpose": "按样本量 n 与接收数 c 给出二项 OC 曲线与可选 AQL/RQL 风险点。",
+        "output_description": "抽样计划表、OC 曲线表、OC 曲线图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "acf_pacf",
+      "command": {
+        "id": "acf_pacf",
+        "menu_label": "ACF/PACF",
+        "dialog_title": "自相关与偏自相关",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "序列"
+          }
+        ]
+      },
+      "help": {
+        "title": "ACF/PACF",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "formula_reference",
+        "purpose": "计算单列序列的自相关与偏自相关，并画带置信限的 ACF/PACF 图。",
+        "output_description": "ACF/PACF 表、Ljung–Box、ACF 图、PACF 图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "adf_test",
+      "command": {
+        "id": "adf_test",
+        "menu_label": "ADF 单位根检验",
+        "dialog_title": "Augmented Dickey-Fuller",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "序列"
+          }
+        ]
+      },
+      "help": {
+        "title": "ADF 单位根检验",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "formula_reference",
+        "purpose": "对单列序列做 Augmented Dickey–Fuller 检验，报告 τ 与临界值。",
+        "output_description": "检验表、系数表、序列图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "analyze_definitive_screening",
+      "command": {
+        "id": "analyze_definitive_screening",
+        "menu_label": "分析确定性筛选设计",
+        "dialog_title": "Analyze Definitive Screening",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "分析确定性筛选设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "YME/Y2nd + AICc stepwise 分析 DSD。",
+        "output_description": "输出表或 PlotSpec。",
+        "interpretation_limits": "解释层只陈述统计证据。"
+      }
+    },
+    {
+      "id": "analyze_variability",
+      "command": {
+        "id": "analyze_variability",
+        "menu_label": "Analyze Variability",
+        "dialog_title": "Analyze Variability",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "factors",
+            "label": "因子列"
+          }
+        ]
+      },
+      "help": {
+        "title": "Analyze Variability",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "2 水平 DOE：由重复列计算每运行标准差，拟合 ln(s) 分散模型并输出效应表。",
+        "output_description": "Std Dev by Run、Dispersion Effects、ANOVA、Diagnostics。",
+        "interpretation_limits": "禁止与 Taguchi 分析混读。"
+      }
+    },
+    {
+      "id": "anom",
+      "command": {
+        "id": "anom",
+        "menu_label": "均值分析 (ANOM)",
+        "dialog_title": "均值分析 (ANOM)",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "均值分析 (ANOM)",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "在正态均值假定下，比较各组均值是否偏离总体均值（Analysis of Means）。",
+        "output_description": "决策限表、组均值表、带中心线与 UDL/LDL 的 ANOM 图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "anom_attribute",
+      "command": {
+        "id": "anom_attribute",
+        "menu_label": "属性 ANOM（二项/泊松）",
+        "dialog_title": "Attribute ANOM (Binomial/Poisson)",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应列"
+          }
+        ]
+      },
+      "help": {
+        "title": "属性 ANOM（二项/泊松）",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "在二项或泊松假定下，比较各组比例/计数是否偏离总体中心（Minitab 属性 ANOM）。",
+        "output_description": "决策限表、组比例/计数表、带中心线与 UDL/LDL 的 ANOM 图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "area_plot",
+      "command": {
+        "id": "area_plot",
+        "menu_label": "区域图",
+        "dialog_title": "区域图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "顺序/时间变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "面积图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "折线下方填色，强调累积或堆叠。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "arima",
+      "command": {
+        "id": "arima",
+        "menu_label": "ARIMA 基础预测",
+        "dialog_title": "ARIMA 基础预测",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间列（可选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "ARIMA / Best ARIMA",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "formula_reference",
+        "purpose": "对单列时间顺序数据做ARIMA / Best ARIMA。",
+        "output_description": "拟合与预测明细（含原始行）、准确度、季节指数（若有）、预测区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "attribute_agreement",
+      "command": {
+        "id": "attribute_agreement",
+        "menu_label": "属性一致性分析",
+        "dialog_title": "属性一致性分析",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "rating",
+            "label": "评级"
+          }
+        ]
+      },
+      "help": {
+        "title": "属性一致性分析",
+        "category": "MSA",
+        "menu_path": "质量工具 > MSA",
+        "implemented_status": "formula_reference",
+        "purpose": "评估多个评价人对属性等级的一致性。",
+        "output_description": "一致率表、Cohen/Fleiss、可选加权 κ、可选 Kendall。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "bar_chart",
+      "command": {
+        "id": "bar_chart",
+        "menu_label": "条形图",
+        "dialog_title": "条形图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "category",
+            "label": "类别"
+          }
+        ]
+      },
+      "help": {
+        "title": "条形图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "分类计数条形；保持出现顺序。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "batch_capability",
+      "command": {
+        "id": "batch_capability",
+        "menu_label": "批次过程能力",
+        "dialog_title": "Batch Capability Analysis",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "批次过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "formula_reference",
+        "purpose": "按批次列分组，逐批计算正态过程能力指标。",
+        "output_description": "批次能力摘要表。",
+        "interpretation_limits": "禁止批次合格/过程已稳定等结论性措辞。"
+      }
+    },
+    {
+      "id": "best_subsets_regression",
+      "command": {
+        "id": "best_subsets_regression",
+        "menu_label": "Best Subsets 回归",
+        "dialog_title": "Best Subsets Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "Best Subsets 回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "比较不同预测变量子集的线性回归拟合，按规模展示最佳模型摘要。",
+        "output_description": "模型摘要表（Vars + X 标记 + R²/Cp/S）。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。"
+      }
+    },
+    {
+      "id": "between_within_capability",
+      "command": {
+        "id": "between_within_capability",
+        "menu_label": "组间/组内过程能力",
+        "dialog_title": "组间/组内过程能力分析",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "组间/组内过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "implemented",
+        "purpose": "同时估计组内与组间变异，并用 σ_BW 计算 Cp/Cpk。",
+        "output_description": "Process Data（Within/Between/BW/Overall σ）、能力表、直方图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "binary_doe_probit",
+      "command": {
+        "id": "binary_doe_probit",
+        "menu_label": "二值 DOE Probit",
+        "dialog_title": "Binary DOE Probit",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "factors",
+            "label": "因子"
+          }
+        ]
+      },
+      "help": {
+        "title": "二值 DOE Probit/Gompit",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "析因二值 DOE；Probit 或 Gompit link；IRWLS；Events/Trials 或 0/1。",
+        "output_description": "Coefficients、Deviance、AIC。",
+        "interpretation_limits": "禁止过程已合格。"
+      }
+    },
+    {
+      "id": "binary_response_doe",
+      "command": {
+        "id": "binary_response_doe",
+        "menu_label": "二值响应 DOE",
+        "dialog_title": "Binary Response DOE",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "factors",
+            "label": "因子列"
+          }
+        ]
+      },
+      "help": {
+        "title": "二值响应 DOE",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "析因设计二值响应：Logit IRWLS；events/trials 或 0/1；输出系数、Odds Ratio 与拟合诊断。",
+        "output_description": "Coefficients、Odds Ratios、Goodness-of-Fit。",
+        "interpretation_limits": "禁止过程已合格 / 已优化。"
+      }
+    },
+    {
+      "id": "binomial_capability",
+      "command": {
+        "id": "binomial_capability",
+        "menu_label": "二项过程能力",
+        "dialog_title": "二项过程能力分析",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defectives",
+            "label": "不合格品数"
+          }
+        ]
+      },
+      "help": {
+        "title": "二项过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "implemented",
+        "purpose": "用不合格品率和检验数评估属性过程（二项）。",
+        "output_description": "过程数据、%Defective/PPM/Z+CI、累计图、P 图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "bootstrap_mean",
+      "command": {
+        "id": "bootstrap_mean",
+        "menu_label": "Bootstrap 均值 CI",
+        "dialog_title": "Bootstrap Mean CI",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "Bootstrap 均值 CI",
+        "category": "推断 / 仿真",
+        "menu_path": "统计 > 推断 / 仿真",
+        "implemented_status": "formula_reference",
+        "purpose": "对单列样本均值做百分位或 BCa bootstrap 置信区间。",
+        "output_description": "摘要表与 bootstrap 均值直方图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "bootstrap_two_sample",
+      "command": {
+        "id": "bootstrap_two_sample",
+        "menu_label": "Bootstrap 双样本均值差 CI",
+        "dialog_title": "Bootstrap Two-Sample Mean Difference CI",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "first",
+            "label": "样本 1"
+          }
+        ]
+      },
+      "help": {
+        "title": "Bootstrap 双样本均值差 CI",
+        "category": "推断 / 仿真",
+        "menu_path": "统计 > 推断 / 仿真",
+        "implemented_status": "formula_reference",
+        "purpose": "对两独立样本均值差做百分位或 BCa bootstrap 置信区间。",
+        "output_description": "摘要表与 bootstrap 均值差直方图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "box_cox",
+      "command": {
+        "id": "box_cox",
+        "menu_label": "Box-Cox 变换",
+        "dialog_title": "Box-Cox 变换",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "正值变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "Box-Cox 变换",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 变换 / 分布",
+        "implemented_status": "implemented",
+        "purpose": "寻找使正值数据更接近常数方差/近似正态的幂变换。",
+        "output_description": "λ 搜索、λ–SD 图、变换前后概率图、可选变换后能力。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "boxplot",
+      "command": {
+        "id": "boxplot",
+        "menu_label": "箱线图",
+        "dialog_title": "箱线图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "箱线图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "用五数概括展示位置与散布：Q1、中位数、Q3，须线到最后未超出围栏的点，围栏外画为离群点。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "bubble_plot",
+      "command": {
+        "id": "bubble_plot",
+        "menu_label": "气泡图",
+        "dialog_title": "气泡图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x_variable",
+            "label": "X 变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "气泡图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "(x,y) 位置，气泡面积映射第三列。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "c_chart",
+      "command": {
+        "id": "c_chart",
+        "menu_label": "C 图",
+        "dialog_title": "C 图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defects",
+            "label": "缺陷数"
+          }
+        ]
+      },
+      "help": {
+        "title": "C 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计数图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：C 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "capability",
+      "command": {
+        "id": "capability",
+        "menu_label": "正态过程能力",
+        "dialog_title": "正态过程能力分析",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "正态过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "implemented",
+        "purpose": "在正态与稳定假设未验证的前提下，用规格限计算 Cp/Cpk（组内 σ）和 Pp/Ppk（总体 s）。",
+        "output_description": "Process Data、能力表（估计/下限/上限）、Performance PPM、直方图（LSL/USL/Target）、可选 Johnson 表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "capability_sixpack",
+      "command": {
+        "id": "capability_sixpack",
+        "menu_label": "过程能力 Sixpack",
+        "dialog_title": "过程能力 Sixpack",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "过程能力 Sixpack",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "implemented",
+        "purpose": "在一页里同时看稳定性、正态性和能力。",
+        "output_description": "六图 + 能力表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "cart_tree",
+      "command": {
+        "id": "cart_tree",
+        "menu_label": "CART 单树",
+        "dialog_title": "CART Tree",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "CART 单树",
+        "category": "预测 / 经典 ML",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "用自研二叉递归划分做分类或回归单树，输出结点表与变量重要性。",
+        "output_description": "树结点、变量重要性、混淆矩阵（分类）或观测-拟合图（回归）。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "cause_and_effect",
+      "command": {
+        "id": "cause_and_effect",
+        "menu_label": "因果图",
+        "dialog_title": "因果图（鱼骨）",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "category",
+            "label": "类别列"
+          }
+        ]
+      },
+      "help": {
+        "title": "因果图",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 质量图 / 规划",
+        "implemented_status": "implemented",
+        "purpose": "按类别汇总原因条目，输出结构摘要与类别计数图（鱼骨/因果头脑风暴）。",
+        "output_description": "结构摘要表、类别原因计数图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "ccf",
+      "command": {
+        "id": "ccf",
+        "menu_label": "互相关（CCF）",
+        "dialog_title": "Cross Correlation",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x",
+            "label": "序列 X"
+          }
+        ]
+      },
+      "help": {
+        "title": "互相关（CCF）",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "formula_reference",
+        "purpose": "计算两列对齐序列在正负滞后上的互相关，并画置信带。",
+        "output_description": "CCF 表与带置信限的图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "chi_square",
+      "command": {
+        "id": "chi_square",
+        "menu_label": "列联表卡方",
+        "dialog_title": "列联表卡方",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "row_category",
+            "label": "行分类列"
+          }
+        ]
+      },
+      "help": {
+        "title": "列联表卡方",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "检验两个分类变量是否独立。",
+        "output_description": "观察表、检验表、单元格统计、百分比表、观察热图、调整残差热图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "chi_square_gof",
+      "command": {
+        "id": "chi_square_gof",
+        "menu_label": "卡方拟合优度",
+        "dialog_title": "卡方拟合优度",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "category",
+            "label": "分类列"
+          }
+        ]
+      },
+      "help": {
+        "title": "卡方拟合优度",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "检验一个分类变量的观察频数是否符合指定或等比例。",
+        "output_description": "观察与期望表、卡方检验表、观察/期望条图、有效性提示。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "chi_square_mosaic_link",
+      "command": {
+        "id": "chi_square_mosaic_link",
+        "menu_label": "卡方–马赛克联动",
+        "dialog_title": "Chi-Square Mosaic Link",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "row_category",
+            "label": "行分类列"
+          }
+        ]
+      },
+      "help": {
+        "title": "卡方–马赛克联动",
+        "category": "分布与单变量",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "orchestration",
+        "purpose": "同一分类列组合输出卡方调整残差表/热图与马赛克图。",
+        "output_description": "卡方表、残差热图、马赛克图 + ChiSquareMosaicLinkFacts。",
+        "interpretation_limits": "不写合格判定或因果结论。"
+      }
+    },
+    {
+      "id": "cluster_observations",
+      "command": {
+        "id": "cluster_observations",
+        "menu_label": "层次聚类（观测）",
+        "dialog_title": "Cluster Observations",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "层次聚类（观测）",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "对多维观测做 complete linkage 凝聚层次聚类，并按 k 切簇。",
+        "output_description": "合并历程、分配表、前两列散点。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "cluster_variables",
+      "command": {
+        "id": "cluster_variables",
+        "menu_label": "变量聚类",
+        "dialog_title": "Cluster Variables",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量列"
+          }
+        ]
+      },
+      "help": {
+        "title": "变量聚类",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "变量层次聚类：Pearson 相关距离、连结合并、dendrogram 与 amalgamation 表。",
+        "output_description": "Amalgamation Steps、Dendrogram。",
+        "interpretation_limits": "禁止与观测量聚类混读。"
+      }
+    },
+    {
+      "id": "cochran_q",
+      "command": {
+        "id": "cochran_q",
+        "menu_label": "Cochran Q 检验",
+        "dialog_title": "Cochran Q 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "≥3 列配对二元"
+          }
+        ]
+      },
+      "help": {
+        "title": "Cochran Q 检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "配对二元、k≥3 处理的边际阳性率检验。",
+        "output_description": "处理成功计数表、Cochran Q 检验表、阳性率条图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "contour_plot",
+      "command": {
+        "id": "contour_plot",
+        "menu_label": "等值线图",
+        "dialog_title": "等值线图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x_variable",
+            "label": "X 变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "等值线图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "在规则网格上对 z(x,y) 画等值线。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "correlation",
+      "command": {
+        "id": "correlation",
+        "menu_label": "相关分析",
+        "dialog_title": "相关分析",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（至少两列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "相关分析",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "度量两列及以上数值的线性（Pearson）或单调（Spearman）相关，并给出协方差矩阵与可选偏相关。",
+        "output_description": "相关矩阵、协方差矩阵、可选偏相关矩阵、成对详细结果、散点/矩阵图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "correlation_plot",
+      "command": {
+        "id": "correlation_plot",
+        "menu_label": "相关图",
+        "dialog_title": "相关图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "相关图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "多变量两两散点矩阵，辅助看线性或非线性形态。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "correlogram",
+      "command": {
+        "id": "correlogram",
+        "menu_label": "Correlogram（相关热图）",
+        "dialog_title": "Correlogram",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "Correlogram（相关热图）",
+        "category": "图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "formula_reference",
+        "purpose": "把多列两两相关矩阵画成热图并输出系数表。",
+        "output_description": "相关矩阵表与热图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "cox_counting_process",
+      "command": {
+        "id": "cox_counting_process",
+        "menu_label": "Cox 计数过程",
+        "dialog_title": "Cox Counting Process",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "start",
+            "label": "Start"
+          }
+        ]
+      },
+      "help": {
+        "title": "Cox 计数过程",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "计数过程形式 Cox 比例风险：区间 (Start,End] + Case ID + Efron ties + 稳健 VC。",
+        "output_description": "模型摘要与系数/HR 表；CoxCountingProcessFacts。",
+        "interpretation_limits": "禁止过程合格、已证明因果。"
+      }
+    },
+    {
+      "id": "cox_regression",
+      "command": {
+        "id": "cox_regression",
+        "menu_label": "Cox 回归",
+        "dialog_title": "Cox Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "Cox 回归",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "固定协变量 Cox 比例风险：估计相对风险 HR。",
+        "output_description": "模型摘要与系数/HR 表。",
+        "interpretation_limits": "禁止过程合格、已证明因果、寿命达标。"
+      }
+    },
+    {
+      "id": "cross_tabulation",
+      "command": {
+        "id": "cross_tabulation",
+        "menu_label": "交叉表",
+        "dialog_title": "交叉表 / Tally",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "row_category",
+            "label": "行分类列"
+          }
+        ]
+      },
+      "help": {
+        "title": "交叉表",
+        "category": "描述统计",
+        "menu_path": "统计 > 表格",
+        "implemented_status": "implemented",
+        "purpose": "独立交叉表：观察频数与行%/列%/合计%，不做卡方检验。",
+        "output_description": "观察频数表、百分比表、热图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "cusum",
+      "command": {
+        "id": "cusum",
+        "menu_label": "CUSUM 控制图",
+        "dialog_title": "CUSUM 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "CUSUM 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 时间加权",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：CUSUM 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "database_import",
+      "command": null,
+      "help": {
+        "title": "数据库导入",
+        "category": "数据",
+        "menu_path": "数据 > 数据库导入…",
+        "implemented_status": "partial",
+        "purpose": "通过 Provider 连接数据库、发现表/视图与列，按 ImportPlan 导入工作表。",
+        "output_description": "ImportedTable/DataTable（含 provenance）；失败不写入主窗口工作表。",
+        "interpretation_limits": null
+      }
+    },
+    {
+      "id": "definitive_screening_design",
+      "command": {
+        "id": "definitive_screening_design",
+        "menu_label": "确定性筛选设计",
+        "dialog_title": "Definitive Screening Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "确定性筛选设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "4～12 连续因子；会议矩阵 D=[C;-C;0]；3 水平编码。",
+        "output_description": "Design Summary、Design Table。",
+        "interpretation_limits": "禁止宣称最优设计。"
+      }
+    },
+    {
+      "id": "density_plot",
+      "command": {
+        "id": "density_plot",
+        "menu_label": "密度图",
+        "dialog_title": "密度图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variable",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "密度图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "高斯核密度估计曲线（Silverman 带宽）。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "descriptive",
+      "command": {
+        "id": "descriptive",
+        "menu_label": "显示描述性统计",
+        "dialog_title": "显示描述性统计",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "显示描述性统计",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "概括一列或多列数值的位置、散布和形状，并可按 By 变量分组。",
+        "output_description": "描述统计表；可选箱线与个体值图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "discriminant",
+      "command": {
+        "id": "discriminant",
+        "menu_label": "线性判别分析",
+        "dialog_title": "Discriminant Analysis",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "类别响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "线性判别分析",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "用等协方差线性判别对类别响应分类并报告混淆矩阵。",
+        "output_description": "类均值、混淆矩阵、LD 投影散点。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "distribution_calculator",
+      "command": {
+        "id": "distribution_calculator",
+        "menu_label": "分布计算器",
+        "dialog_title": "Distribution Calculator",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "分布计算器",
+        "category": "推断 / 仿真",
+        "menu_path": "统计 > 推断 / 仿真",
+        "implemented_status": "formula_reference",
+        "purpose": "正态/t/χ²/F/Weibull 的 PDF、CDF、分位数工具。",
+        "output_description": "Parameters 与 Result 表。",
+        "interpretation_limits": "禁止分布已正态 / 过程合格。"
+      }
+    },
+    {
+      "id": "distribution_identification",
+      "command": {
+        "id": "distribution_identification",
+        "menu_label": "个体分布识别",
+        "dialog_title": "个体分布识别",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "个体分布识别",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 变换 / 分布",
+        "implemented_status": "implemented",
+        "purpose": "比较正态、Weibull、对数正态、指数二参数的 Anderson–Darling，辅助选分布。",
+        "output_description": "AD 排序表 + 概率图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "doe_bbd",
+      "command": {
+        "id": "doe_bbd",
+        "menu_label": "Box–Behnken 设计",
+        "dialog_title": "Box-Behnken Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "Box–Behnken 设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "生成 BBD：边中点 + 中心点；明确避开所有因素同时极端的角点。",
+        "output_description": "设计信息与边中点/中心点矩阵。",
+        "interpretation_limits": "解释层只陈述设计结构。"
+      }
+    },
+    {
+      "id": "doe_ccd",
+      "command": {
+        "id": "doe_ccd",
+        "menu_label": "中心复合设计 CCD",
+        "dialog_title": "Central Composite Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "中心复合设计 CCD",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "生成 CCD（CCC/CCI/CCF）设计矩阵：立方点、星点、中心点；输出 coded/actual 与可行性诊断。",
+        "output_description": "设计信息、因素定义、设计矩阵（Run ID / point type / coded / actual）。",
+        "interpretation_limits": "解释层只陈述设计结构，不写过程已优化。"
+      }
+    },
+    {
+      "id": "doe_d_optimal",
+      "command": {
+        "id": "doe_d_optimal",
+        "menu_label": "D-最优设计",
+        "dialog_title": "D-Optimal Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "D-最优设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "在 2^k 全因子候选集中用 Fedorov 交换选取 n 个运行点，最大化 det(X'X)。",
+        "output_description": "设计信息、因素定义、设计矩阵（编码/实际水平）。",
+        "interpretation_limits": "解释层只陈述设计结构与 det 指标，不写预测质量已最优。"
+      }
+    },
+    {
+      "id": "doe_factorial",
+      "command": {
+        "id": "doe_factorial",
+        "menu_label": "2 水平析因设计生成",
+        "dialog_title": "2 水平全因子 / 部分析因设计",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应列（可选，选择后进行响应分析）"
+          }
+        ]
+      },
+      "help": {
+        "title": "2 水平析因设计生成",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "生成 2^k 全因子或 2^(k-p) 部分析因设计矩阵，也可对已有设计表做响应分析。",
+        "output_description": "设计信息/生成器/定义关系/别名/设计矩阵；或响应分析表+图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "doe_plackett_burman",
+      "command": {
+        "id": "doe_plackett_burman",
+        "menu_label": "Plackett–Burman 设计生成",
+        "dialog_title": "Plackett-Burman Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "Plackett–Burman 设计生成",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "生成 Plackett–Burman 两水平筛选设计矩阵。",
+        "output_description": "设计信息与编码运行表。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "doe_response",
+      "command": {
+        "id": "doe_response",
+        "menu_label": "DOE 响应分析",
+        "dialog_title": "2 水平析因响应分析",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应列（可选，选择后进行响应分析）"
+          }
+        ]
+      },
+      "help": {
+        "title": "DOE 响应分析",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "implemented",
+        "purpose": "对已有 2 水平设计表拟合响应。",
+        "output_description": "与 doe_factorial 响应页相同。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "dotplot",
+      "command": {
+        "id": "dotplot",
+        "menu_label": "点图",
+        "dialog_title": "点图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "y_variable",
+            "label": "Y 变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "点图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "formula_reference",
+        "purpose": "一维分布点图，可选分组与 jitter。",
+        "output_description": "输出表或 PlotSpec。",
+        "interpretation_limits": "解释层只陈述统计证据。"
+      }
+    },
+    {
+      "id": "ecdf_plot",
+      "command": {
+        "id": "ecdf_plot",
+        "menu_label": "经验累积分布图",
+        "dialog_title": "经验累积分布图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variable",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "经验累积分布图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "F̂(x)=#{y≤x}/n，右端为 1。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "eda_4plot",
+      "command": {
+        "id": "eda_4plot",
+        "menu_label": "EDA 四图",
+        "dialog_title": "EDA 四图（NIST）",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "EDA 四图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "NIST 单变量四图打包：run sequence、lag-1、histogram、normal probability。",
+        "output_description": "四图 + 说明表；EdaPlotFacts.kind=eda_4plot。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "emp_crossed",
+      "command": {
+        "id": "emp_crossed",
+        "menu_label": "EMP Crossed",
+        "dialog_title": "EMP Crossed（Wheeler）",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "EMP Crossed",
+        "category": "MSA",
+        "menu_path": "质量工具 > MSA",
+        "implemented_status": "implemented",
+        "purpose": "Wheeler EMP Crossed：用交叉 Gage 方差分量做 ICC 分级。",
+        "output_description": "分量表 + EMP 统计表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "ewma",
+      "command": {
+        "id": "ewma",
+        "menu_label": "EWMA 控制图",
+        "dialog_title": "EWMA 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "EWMA 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 时间加权",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：EWMA 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "expanded_gage_rr",
+      "command": {
+        "id": "expanded_gage_rr",
+        "menu_label": "Expanded Gage R&R",
+        "dialog_title": "Expanded Gage R&R（三因子平衡）",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Expanded Gage R&R",
+        "category": "MSA",
+        "menu_path": "质量工具 > MSA",
+        "implemented_status": "implemented",
+        "purpose": "Expanded Gage：平衡 Part×Operator×附加因子三因子随机 ANOVA。",
+        "output_description": "ANOVA 表 + 分量表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "expanded_gage_unbalanced",
+      "command": {
+        "id": "expanded_gage_unbalanced",
+        "menu_label": "不平衡 Expanded Gage R&R",
+        "dialog_title": "Expanded Gage Unbalanced",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量"
+          }
+        ]
+      },
+      "help": {
+        "title": "不平衡 Expanded Gage R&R",
+        "category": "MSA",
+        "menu_path": "统计 > MSA",
+        "implemented_status": "formula_reference",
+        "purpose": "不平衡 Part×Operator（+可选附加因子）GLM 方差分量：VarComp、%Contribution、%Study Var、NDC。",
+        "output_description": "ANOVA、Gage R&R VarComp、%Study Var。",
+        "interpretation_limits": "禁止测量系统合格 / 过程已合格。"
+      }
+    },
+    {
+      "id": "factor_analysis",
+      "command": {
+        "id": "factor_analysis",
+        "menu_label": "因子分析",
+        "dialog_title": "Factor Analysis",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量列"
+          }
+        ]
+      },
+      "help": {
+        "title": "因子分析",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "探索性因子分析：相关阵主成分提取、Loadings、% Var、Communalities 与 Scree 图；可选 Varimax。",
+        "output_description": "Factor Loadings、Variance Explained、Communalities、Scree Plot。",
+        "interpretation_limits": "禁止宣称与 Minitab golden 对齐。"
+      }
+    },
+    {
+      "id": "fine_gray_regression",
+      "command": {
+        "id": "fine_gray_regression",
+        "menu_label": "Fine-Gray 竞争风险回归",
+        "dialog_title": "Fine-Gray Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "Fine-Gray 竞争风险回归",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "IPCW 加权 Fine-Gray 子分布风险回归：包装 fine_gray.cpp（binary/continuous/multi）。",
+        "output_description": "Fine-Gray 系数/HR 表；FineGrayRegressionFacts。",
+        "interpretation_limits": "禁止过程合格、已证明因果。"
+      }
+    },
+    {
+      "id": "fisher_exact",
+      "command": {
+        "id": "fisher_exact",
+        "menu_label": "Fisher 精确检验",
+        "dialog_title": "Fisher 精确检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "两列分类（2×2）"
+          }
+        ]
+      },
+      "help": {
+        "title": "Fisher 精确检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "对恰好 2×2 的分类交叉表做 Fisher 双侧精确检验，并报告可选优势比。",
+        "output_description": "交叉表、Fisher精确检验表、观察频数热图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "friedman",
+      "command": {
+        "id": "friedman",
+        "menu_label": "Friedman 检验",
+        "dialog_title": "Friedman 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "Friedman 检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "区组设计下比较多个处理的位置（非参数重复测量）。",
+        "output_description": "处理摘要、Friedman 检验表、可选 Nemenyi 成对/Grouping、按处理箱线/个体值。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "g_chart",
+      "command": {
+        "id": "g_chart",
+        "menu_label": "G 图",
+        "dialog_title": "G 图（稀有事件间隔）",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "间隔列"
+          }
+        ]
+      },
+      "help": {
+        "title": "G 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 多元 / 稀有事件",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：G 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "gage_rr",
+      "command": {
+        "id": "gage_rr",
+        "menu_label": "Crossed Gage R&R",
+        "dialog_title": "Crossed Gage R&R",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Crossed Gage R&R",
+        "category": "MSA",
+        "menu_path": "质量工具 > MSA",
+        "implemented_status": "implemented",
+        "purpose": "交叉设计下把测量变异分解为重复性、再现性与零件。",
+        "output_description": "ANOVA/分量表、ndc、上述图序。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "general_manova",
+      "command": {
+        "id": "general_manova",
+        "menu_label": "General MANOVA",
+        "dialog_title": "General MANOVA",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "responses",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "General MANOVA",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "2～4 响应 + 1～2 因子 + 可选协变量；Type III SSCP；Wilks/Pillai/LH/Roy 按效应。",
+        "output_description": "按效应 MANOVA 表、Cell Mean Vectors。",
+        "interpretation_limits": "禁止过程已合格 / 已证明差异。"
+      }
+    },
+    {
+      "id": "generalized_variance",
+      "command": {
+        "id": "generalized_variance",
+        "menu_label": "广义方差图",
+        "dialog_title": "广义方差 |S| 多元控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（多列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "广义方差图",
+        "category": "控制图",
+        "menu_path": "控制图 > 多元 / 稀有事件",
+        "implemented_status": "implemented",
+        "purpose": "多元广义方差 |S| 子组控制图（Montgomery）。",
+        "output_description": "|S| 图、摘要与逐子组表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "glm_three_factor",
+      "command": {
+        "id": "glm_three_factor",
+        "menu_label": "三因子 GLM",
+        "dialog_title": "GLM Three-Factor",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "三因子 GLM",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "不平衡三因子连续响应：Type III Adj SS、Fitted Means；可选 AB/AC/BC 两两交互。",
+        "output_description": "ANOVA Type III、Fitted Means、Residual Diagnostics。",
+        "interpretation_limits": "禁止过程已合格。"
+      }
+    },
+    {
+      "id": "glm_two_way",
+      "command": {
+        "id": "glm_two_way",
+        "menu_label": "双因子 GLM",
+        "dialog_title": "GLM Two-Way",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "双因子 GLM",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "不平衡双因子连续响应：Type III Adj SS、Fitted Means（回归预测按水平平均）与残差诊断。",
+        "output_description": "ANOVA (Type III)、Fitted Means、Residual Diagnostics。",
+        "interpretation_limits": "禁止过程已合格 / 已优化。"
+      }
+    },
+    {
+      "id": "graph_gallery",
+      "command": {
+        "id": "graph_gallery",
+        "menu_label": "探索性图形",
+        "dialog_title": "Graph Gallery",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x_variable",
+            "label": "X 变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "探索性图形画廊",
+        "category": "探索性图形",
+        "menu_path": "图形 > 探索性图形",
+        "implemented_status": "graph_reference",
+        "purpose": "在相同列角色下切换 scatter/bar/box/histogram/dotplot 候选图型。",
+        "output_description": "PlotSpec + graph_gallery 摘要。",
+        "interpretation_limits": "不写合格判定。"
+      }
+    },
+    {
+      "id": "heatmap_plot",
+      "command": {
+        "id": "heatmap_plot",
+        "menu_label": "热图",
+        "dialog_title": "热图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "相关变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "热图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "用颜色表示表格或分箱密度。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "hexbin_plot",
+      "command": {
+        "id": "hexbin_plot",
+        "menu_label": "Hexbin",
+        "dialog_title": "Hexbin / 二维分箱",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x_variable",
+            "label": "X 变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "Hexbin",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "二维矩形分箱计数着色（Binned Scatter）。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "histogram",
+      "command": {
+        "id": "histogram",
+        "menu_label": "直方图",
+        "dialog_title": "直方图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "直方图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "把数值分成若干区间，用矩形高度表示频数或密度。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "hotelling_t2",
+      "command": {
+        "id": "hotelling_t2",
+        "menu_label": "Hotelling T²",
+        "dialog_title": "Hotelling T² 多元控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（多列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "Hotelling T²",
+        "category": "控制图",
+        "menu_path": "控制图 > 多元 / 稀有事件",
+        "implemented_status": "implemented",
+        "purpose": "多元个体 Hotelling T² 控制图。",
+        "output_description": "T² 图、摘要表、逐点表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "imr",
+      "command": {
+        "id": "imr",
+        "menu_label": "I-MR 控制图",
+        "dialog_title": "I-MR 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "I-MR 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计量图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：I-MR 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "imr_rs",
+      "command": {
+        "id": "imr_rs",
+        "menu_label": "I-MR-R/S 控制图",
+        "dialog_title": "I-MR-R/S 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "I-MR-R/S 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计量图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：I-MR-R/S 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "interval_plot",
+      "command": {
+        "id": "interval_plot",
+        "menu_label": "区间散点图",
+        "dialog_title": "区间散点图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "区间图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "按组显示均值和置信区间。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "isolation_forest",
+      "command": {
+        "id": "isolation_forest",
+        "menu_label": "Isolation Forest",
+        "dialog_title": "Isolation Forest",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "Isolation Forest",
+        "category": "预测 / 经典 ML",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "对多维数值观测计算孤立分数，标记相对孤立点。",
+        "output_description": "分数表、异常标记、分数图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "km_interval",
+      "command": {
+        "id": "km_interval",
+        "menu_label": "区间删失 Kaplan–Meier",
+        "dialog_title": "Interval-Censored KM",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "left",
+            "label": "区间左端 L"
+          }
+        ]
+      },
+      "help": {
+        "title": "区间删失 Kaplan–Meier",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "对左/区间/右删失寿命数据用 Turnbull NPMLE 估计生存函数。",
+        "output_description": "摘要、生存表与曲线。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "kmeans",
+      "command": {
+        "id": "kmeans",
+        "menu_label": "K-Means 聚类",
+        "dialog_title": "Cluster K-Means",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "K-Means 聚类",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "把多维数值观测分成 k 个簇，并报告质心与簇内平方和。",
+        "output_description": "簇摘要、质心、分配表、前两列散点。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "kruskal_wallis",
+      "command": {
+        "id": "kruskal_wallis",
+        "menu_label": "Kruskal-Wallis 检验",
+        "dialog_title": "Kruskal-Wallis 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Kruskal-Wallis 检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "不假设正态，比较 k 组位置。",
+        "output_description": "KW 表、成对比较表、Grouping Information、组箱线/个体值。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "laney_p_chart",
+      "command": {
+        "id": "laney_p_chart",
+        "menu_label": "Laney P' 图",
+        "dialog_title": "Laney P' 图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defectives",
+            "label": "不合格品数"
+          }
+        ]
+      },
+      "help": {
+        "title": "Laney P' 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计数图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：Laney P' 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "laney_u_chart",
+      "command": {
+        "id": "laney_u_chart",
+        "menu_label": "Laney U' 图",
+        "dialog_title": "Laney U' 图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defects",
+            "label": "缺陷数"
+          }
+        ]
+      },
+      "help": {
+        "title": "Laney U' 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计数图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：Laney U' 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "life_data_lognormal",
+      "command": {
+        "id": "life_data_lognormal",
+        "menu_label": "寿命 Lognormal",
+        "dialog_title": "Life Data Lognormal",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "寿命数据 Lognormal",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "Lognormal MLE；0～2 协变量；右删失；回归表 + 百分位。",
+        "output_description": "Regression Table、Percentiles、Distribution Summary。",
+        "interpretation_limits": "禁止可靠性合格承诺。"
+      }
+    },
+    {
+      "id": "life_data_regression",
+      "command": {
+        "id": "life_data_regression",
+        "menu_label": "寿命数据回归",
+        "dialog_title": "Life Data Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "寿命数据回归",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "Weibull / Lognormal / Exponential 寿命协变量回归：右删失 MLE、回归表与可选 1%/5% 百分位。",
+        "output_description": "Regression Table、Percentile Table、分布参数（Shape/Sigma）。",
+        "interpretation_limits": "禁止寿命已达标 / 已证明稳定。"
+      }
+    },
+    {
+      "id": "logistic_regression",
+      "command": {
+        "id": "logistic_regression",
+        "menu_label": "二元 Logistic 回归",
+        "dialog_title": "二元 Logistic 回归",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "二元响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "二元 Logistic 回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "implemented",
+        "purpose": "用对数几率模型预测二元事件概率。",
+        "output_description": "系数表（含 VIF）、拟合优度表、拟合与残差/影响点（含杠杆阈值）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "mann_whitney",
+      "command": {
+        "id": "mann_whitney",
+        "menu_label": "Mann-Whitney 检验",
+        "dialog_title": "Mann-Whitney 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "两列独立样本"
+          }
+        ]
+      },
+      "help": {
+        "title": "Mann-Whitney 检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "不假设正态，比较两独立样本的位置。",
+        "output_description": "秩和表、位置差与 CI、箱线/个体值图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "manova_one_way",
+      "command": {
+        "id": "manova_one_way",
+        "menu_label": "单因子 MANOVA",
+        "dialog_title": "MANOVA One-Way",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "responses",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "单因子 MANOVA",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "2～4 连续响应 + 1 分类因子；Wilks/Pillai/LH/Roy；H/E SSCP 与特征值。",
+        "output_description": "MANOVA Test Table、Group Mean Vectors、Eigen analysis。",
+        "interpretation_limits": "禁止过程已合格 / 已证明差异。"
+      }
+    },
+    {
+      "id": "marginal_plot",
+      "command": {
+        "id": "marginal_plot",
+        "menu_label": "边际图",
+        "dialog_title": "边际图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x_variable",
+            "label": "X 变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "边际图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "散点加上 x/y 边际直方图或箱线。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "matrix_plot",
+      "command": {
+        "id": "matrix_plot",
+        "menu_label": "矩阵图",
+        "dialog_title": "矩阵图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "矩阵图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "所选数值列的两两散点。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "mcnemar",
+      "command": {
+        "id": "mcnemar",
+        "menu_label": "McNemar 检验",
+        "dialog_title": "McNemar 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "两列配对二元结果"
+          }
+        ]
+      },
+      "help": {
+        "title": "McNemar 检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "配对二元结果的边际比例检验（2×2 不一致对）。",
+        "output_description": "2×2 交叉表、McNemar 检验表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "mewma",
+      "command": {
+        "id": "mewma",
+        "menu_label": "MEWMA",
+        "dialog_title": "多元 EWMA",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（多列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "MEWMA",
+        "category": "控制图",
+        "menu_path": "控制图 > 多元 / 稀有事件",
+        "implemented_status": "implemented",
+        "purpose": "多元 EWMA（MEWMA）控制图。",
+        "output_description": "MEWMA T² 图与摘要。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "mixed_effects_reml",
+      "command": {
+        "id": "mixed_effects_reml",
+        "menu_label": "混合效应 REML",
+        "dialog_title": "Mixed Effects REML",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "混合效应 REML",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "formula_reference",
+        "purpose": "1～2 随机因子 + 1～2 固定因子 + 可选协变量；REML 方差分量与固定效应 BLUE。",
+        "output_description": "Variance Components、Fixed Effects BLUE。",
+        "interpretation_limits": "禁止测量系统合格判定。"
+      }
+    },
+    {
+      "id": "mixture_analyze",
+      "command": {
+        "id": "mixture_analyze",
+        "menu_label": "Mixture 分析",
+        "dialog_title": "Analyze Mixture Design",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "components",
+            "label": "分量列"
+          }
+        ]
+      },
+      "help": {
+        "title": "Mixture 分析",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "对混料设计数据拟合 Scheffé 线性（可选二次）模型，输出完整 Terms 表、ANOVA 与残差；可选过程变量与 PV×组分交叉。无常数项。",
+        "output_description": "Terms、ANOVA、Fits and Residuals、Design Info。",
+        "interpretation_limits": "禁止配方已优化 / 过程已合格。"
+      }
+    },
+    {
+      "id": "mixture_design",
+      "command": {
+        "id": "mixture_design",
+        "menu_label": "Mixture 设计",
+        "dialog_title": "Mixture Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "Mixture 设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "生成 simplex-lattice {q,m=2} 混料设计矩阵（q=3～4）并写入工作表。",
+        "output_description": "Design Info、Design Matrix、worksheet_export。",
+        "interpretation_limits": "禁止宣称配方已优化。"
+      }
+    },
+    {
+      "id": "mixture_extreme_vertices_design",
+      "command": {
+        "id": "mixture_extreme_vertices_design",
+        "menu_label": "极端顶点混料设计",
+        "dialog_title": "Mixture Extreme Vertices Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "极端顶点混料设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "XVERT 窄化极端顶点混料设计。",
+        "output_description": "输出表或 PlotSpec。",
+        "interpretation_limits": "解释层只陈述统计证据。"
+      }
+    },
+    {
+      "id": "mixture_process_variable",
+      "command": {
+        "id": "mixture_process_variable",
+        "menu_label": "Mixture + 过程变量",
+        "dialog_title": "Mixture Process Variable",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "components",
+            "label": "组分"
+          }
+        ]
+      },
+      "help": {
+        "title": "Mixture + 过程变量",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "2～4 组分 + 1 过程变量；Scheffé 线性/二次 + 过程项 + 可选组分×过程交互。",
+        "output_description": "Coefficients、ANOVA、Fits/Residuals。",
+        "interpretation_limits": "禁止过程已合格。"
+      }
+    },
+    {
+      "id": "mood_median",
+      "command": {
+        "id": "mood_median",
+        "menu_label": "Mood 中位数检验",
+        "dialog_title": "Mood 中位数检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Mood 中位数检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "不假设正态，比较 k 组中位数（基于总体中位数的 2×k 表）。",
+        "output_description": "各组 Above/Below（含 CI）、Mood 检验表、箱线/个体值。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "mosaic_plot",
+      "command": {
+        "id": "mosaic_plot",
+        "menu_label": "马赛克图",
+        "dialog_title": "Mosaic Plot",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "categories",
+            "label": "分类列（2～3，可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "马赛克图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "2～3 个分类列的组合频数/比例可视化。",
+        "output_description": "组合标签 + 值 PlotSpec。",
+        "interpretation_limits": "不写合格判定。"
+      }
+    },
+    {
+      "id": "moving_average",
+      "command": {
+        "id": "moving_average",
+        "menu_label": "移动平均控制图",
+        "dialog_title": "移动平均控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "移动平均控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 时间加权",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：移动平均控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "msa_type1",
+      "command": {
+        "id": "msa_type1",
+        "menu_label": "MSA Type 1 / Bias / Stability",
+        "dialog_title": "MSA Type 1 / Bias / Stability",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "MSA Type 1 / Bias / Stability",
+        "category": "MSA",
+        "menu_path": "质量工具 > MSA",
+        "implemented_status": "implemented",
+        "purpose": "对标准件评估偏倚、线性与 Type 1 Cg/Cgk；Stability 看重复测量是否漂移。",
+        "output_description": "Cg/Cgk、S and R-Sq、Gage Linearity、Gage Bias、图形。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "multi_vari",
+      "command": {
+        "id": "multi_vari",
+        "menu_label": "Multi-Vari 图",
+        "dialog_title": "Multi-Vari 图",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Multi-Vari 图",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 质量图 / 规划",
+        "implemented_status": "implemented",
+        "purpose": "用 2～4 个因子展示测量值在各层的位置与散布。",
+        "output_description": "Multi-Vari 图与覆盖诊断。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "multiple_correspondence",
+      "command": {
+        "id": "multiple_correspondence",
+        "menu_label": "多重对应分析",
+        "dialog_title": "Multiple Correspondence",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "分类变量（逗号列号）"
+          }
+        ]
+      },
+      "help": {
+        "title": "多重对应分析",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "3～6 列分类；指示矩阵；Column Contributions。",
+        "output_description": "Summary、Column Contributions。",
+        "interpretation_limits": "禁止全量 MCA 宣称。"
+      }
+    },
+    {
+      "id": "nested_gage_rr",
+      "command": {
+        "id": "nested_gage_rr",
+        "menu_label": "Nested Gage R&R",
+        "dialog_title": "Nested Gage R&R",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Nested Gage R&R",
+        "category": "MSA",
+        "menu_path": "质量工具 > MSA",
+        "implemented_status": "implemented",
+        "purpose": "零件嵌套在操作者下的 Gage 研究。",
+        "output_description": "ANOVA/分量/ndc 与嵌套图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "nhpp_repairable",
+      "command": {
+        "id": "nhpp_repairable",
+        "menu_label": "可修复系统 NHPP",
+        "dialog_title": "NHPP Crow-AMSAA",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "累积失效时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "可修复系统 NHPP",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "对累积失效时间拟合 Crow–AMSAA 幂律 NHPP，估计 β、λ 并给出强度/累积均值表与可选 Duane 图。",
+        "output_description": "Observation Summary、Parameter Estimates、Intensity/Mean、可选 Duane 图。",
+        "interpretation_limits": "禁止 ROCOF 合格 / 已证明稳定。"
+      }
+    },
+    {
+      "id": "nominal_logistic",
+      "command": {
+        "id": "nominal_logistic",
+        "menu_label": "名义 Logistic 回归",
+        "dialog_title": "Nominal Logistic",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "名义响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "名义 Logistic 回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "对名义（无序）多水平响应拟合广义 logit 模型。",
+        "output_description": "模型摘要、Logistic 回归表。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。"
+      }
+    },
+    {
+      "id": "nonlinear_regression",
+      "command": {
+        "id": "nonlinear_regression",
+        "menu_label": "非线性回归",
+        "dialog_title": "Nonlinear Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "非线性回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "单 Y + 单 X；内置模型；GN/LM；参数表 + Summary of Fit。",
+        "output_description": "Method、Parameter Estimates、Summary of Fit。",
+        "interpretation_limits": "禁止外推无验证。"
+      }
+    },
+    {
+      "id": "nonnormal_capability",
+      "command": {
+        "id": "nonnormal_capability",
+        "menu_label": "非正态过程能力",
+        "dialog_title": "非正态过程能力分析",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "非正态过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "formula_reference",
+        "purpose": "在 Weibull 或对数正态假设下用 Z 分数计算 overall Pp/Ppk。",
+        "output_description": "分布参数表、Overall 指数、PPM（无 Within 期望列）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "nonparametric_capability",
+      "command": {
+        "id": "nonparametric_capability",
+        "menu_label": "非参数过程能力",
+        "dialog_title": "Nonparametric Capability Analysis",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "非参数过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "formula_reference",
+        "purpose": "用经验分位数估计 Cnp/Cnpk，不假设特定分布。",
+        "output_description": "Overall Capability、Observed PPM 与 Capability Histogram。",
+        "interpretation_limits": "禁止单独作为过程合格结论。"
+      }
+    },
+    {
+      "id": "normality_test",
+      "command": {
+        "id": "normality_test",
+        "menu_label": "正态性检验",
+        "dialog_title": "正态性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "正态性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "用 Anderson–Darling 或 Ryan–Joiner 检验一列数据是否与正态分布一致。",
+        "output_description": "AD 或 RJ 表 + 正态概率图 + 直方图。悬停点对应原始行。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "np_chart",
+      "command": {
+        "id": "np_chart",
+        "menu_label": "NP 图",
+        "dialog_title": "NP 图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defectives",
+            "label": "不合格品数"
+          }
+        ]
+      },
+      "help": {
+        "title": "NP 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计数图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：NP 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_poisson_rate",
+      "command": {
+        "id": "one_poisson_rate",
+        "menu_label": "单样本泊松率",
+        "dialog_title": "单样本泊松率检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defects",
+            "label": "缺陷数"
+          }
+        ]
+      },
+      "help": {
+        "title": "单样本泊松率",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验缺陷发生速率 λ 是否等于假设值。",
+        "output_description": "率、区间、检验表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_proportion",
+      "command": {
+        "id": "one_proportion",
+        "menu_label": "单比例检验",
+        "dialog_title": "单比例检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "events",
+            "label": "事件数"
+          }
+        ]
+      },
+      "help": {
+        "title": "单比例检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验事件比例是否等于假设 p₀。",
+        "output_description": "比例、区间、检验表（含 CI 方法列）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_proportion_equivalence",
+      "command": {
+        "id": "one_proportion_equivalence",
+        "menu_label": "单比例等价性检验",
+        "dialog_title": "单比例等价性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "events",
+            "label": "事件数"
+          }
+        ]
+      },
+      "help": {
+        "title": "单比例等价性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验样本比例相对目标比例的差是否落入等价界限（Wald z-TOST）。",
+        "output_description": "事件/试验/比例表、z-TOST 表、等价区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_sample_equivalence",
+      "command": {
+        "id": "one_sample_equivalence",
+        "menu_label": "单样本等价性检验",
+        "dialog_title": "单样本等价性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "单样本等价性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验均值是否落入规定等价界限内（TOST），而不是“是否等于目标”。",
+        "output_description": "区间、两个单侧 p、`ci_method`、`both_pvalues_below_alpha` 与是否落入界限。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_sample_t",
+      "command": {
+        "id": "one_sample_t",
+        "menu_label": "单样本 t 检验",
+        "dialog_title": "单样本 t 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "单样本 t 检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验一列均值是否等于给定 μ₀。",
+        "output_description": "均值/标准差/SE、t、DF、p、区间；双侧可有均值区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_sample_z",
+      "command": {
+        "id": "one_sample_z",
+        "menu_label": "单样本 Z 检验",
+        "dialog_title": "单样本 Z 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "单样本 Z 检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "在已知总体标准差 σ 时，检验一列均值是否等于给定 μ₀。",
+        "output_description": "描述表（含 Known σ 与样本 StDev）、Z/P、置信区间；双侧可有区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "one_way_anova",
+      "command": {
+        "id": "one_way_anova",
+        "menu_label": "单因素 ANOVA",
+        "dialog_title": "单因素 ANOVA",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "单因素 ANOVA",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "implemented",
+        "purpose": "检验多个组的均值是否全部相等。",
+        "output_description": "组均值表、ANOVA 表、Tukey 下限/上限表、Grouping Information、组均值区间图、Tukey 差值区间图、残差四图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "ordinal_logistic",
+      "command": {
+        "id": "ordinal_logistic",
+        "menu_label": "有序 Logistic 回归",
+        "dialog_title": "Ordinal Logistic",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "有序响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "有序 Logistic 回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "对有序多水平响应拟合比例优势 logit 模型。",
+        "output_description": "模型摘要与系数表。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "orthogonal_regression",
+      "command": {
+        "id": "orthogonal_regression",
+        "menu_label": "正交回归",
+        "dialog_title": "Orthogonal Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x",
+            "label": "X 列"
+          }
+        ]
+      },
+      "help": {
+        "title": "正交回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "在 X 与 Y 均有测量误差时估计等方差正交回归斜率与可选截距。",
+        "output_description": "斜率/截距/SE/CI 摘要表与散点拟合图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。"
+      }
+    },
+    {
+      "id": "outlier_test",
+      "command": {
+        "id": "outlier_test",
+        "menu_label": "异常值检验",
+        "dialog_title": "异常值检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "异常值检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验单个最极端观测是否能被看作异常值（Grubbs 或 Dixon r10）。",
+        "output_description": "方法表、检验表与个体值图；异常候选点可识别。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "p_chart",
+      "command": {
+        "id": "p_chart",
+        "menu_label": "P 图",
+        "dialog_title": "P 图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defectives",
+            "label": "不合格品数"
+          }
+        ]
+      },
+      "help": {
+        "title": "P 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计数图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：P 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "paired_equivalence",
+      "command": {
+        "id": "paired_equivalence",
+        "menu_label": "配对等价性检验",
+        "dialog_title": "配对等价性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "两列配对样本"
+          }
+        ]
+      },
+      "help": {
+        "title": "配对等价性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验配对差值是否落入规定等价界限内（Paired TOST）。",
+        "output_description": "配对差值描述统计、TOST 表、等价区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "paired_t",
+      "command": {
+        "id": "paired_t",
+        "menu_label": "配对 t 检验",
+        "dialog_title": "配对 t 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "配对变量（两列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "配对 t 检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "对成对观测的差值做单样本 t，检验平均差值是否为 0。",
+        "output_description": "差值描述、t/p/区间、配对散点与差值区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "parallel_plot",
+      "command": {
+        "id": "parallel_plot",
+        "menu_label": "平行坐标图",
+        "dialog_title": "平行坐标图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "平行坐标图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "每个观测一条折线，轴为各变量（常做列内缩放）。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "pareto",
+      "command": {
+        "id": "pareto",
+        "menu_label": "柏拉图",
+        "dialog_title": "柏拉图",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "category",
+            "label": "缺陷类别"
+          }
+        ]
+      },
+      "help": {
+        "title": "柏拉图",
+        "category": "探索性图形",
+        "menu_path": "质量工具 > 质量图 / 规划",
+        "implemented_status": "implemented",
+        "purpose": "按类别频数从大到小排序，并画累积百分比。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "pca",
+      "command": {
+        "id": "pca",
+        "menu_label": "主成分分析",
+        "dialog_title": "主成分分析",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "主成分分析",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "implemented",
+        "purpose": "把相关数值列换成互不相关的主成分。",
+        "output_description": "特征值、系数、载荷、得分（含原始行）、T²/Q。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "pie_plot",
+      "command": {
+        "id": "pie_plot",
+        "menu_label": "饼图",
+        "dialog_title": "饼图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "category",
+            "label": "分类变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "饼图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "类别频数占合计的比例为扇区角。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "pls_regression",
+      "command": {
+        "id": "pls_regression",
+        "menu_label": "偏最小二乘回归",
+        "dialog_title": "PLS Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "偏最小二乘回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "1～4 响应 + 多预测；单响应 NIPALS 或 PLS2 NIPALS；LOO CV；Model Selection + Coefficients。",
+        "output_description": "Model Selection、Coefficients 表。",
+        "interpretation_limits": "禁止 Minitab golden 对齐声明。"
+      }
+    },
+    {
+      "id": "poisson_capability",
+      "command": {
+        "id": "poisson_capability",
+        "menu_label": "泊松过程能力",
+        "dialog_title": "泊松过程能力分析",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defects",
+            "label": "缺陷数"
+          }
+        ]
+      },
+      "help": {
+        "title": "泊松过程能力",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 过程能力",
+        "implemented_status": "implemented",
+        "purpose": "用单位缺陷数评估泊松过程。",
+        "output_description": "Mean DPU/CI、累计 DPU、U 图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "poisson_gof",
+      "command": {
+        "id": "poisson_gof",
+        "menu_label": "泊松拟合优度",
+        "dialog_title": "泊松拟合优度",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "counts",
+            "label": "计数列（非负整数）"
+          }
+        ]
+      },
+      "help": {
+        "title": "泊松拟合优度",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "formula_reference",
+        "purpose": "检验一列非负整数计数是否服从泊松分布（估计 λ=样本均值）。",
+        "output_description": "泊松参数表、卡方检验表。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "poisson_regression",
+      "command": {
+        "id": "poisson_regression",
+        "menu_label": "Poisson 回归",
+        "dialog_title": "Poisson Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "计数响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "Poisson 回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "对非负计数响应拟合 log 链 Poisson GLM，并报告系数与偏差。",
+        "output_description": "模型摘要、系数、拟合残差、残差散点。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "probability_plot",
+      "command": {
+        "id": "probability_plot",
+        "menu_label": "概率图",
+        "dialog_title": "正态概率图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variable",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "正态概率图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "排序观测对 Blom 正态分位。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "probit_reliability",
+      "command": {
+        "id": "probit_reliability",
+        "menu_label": "Probit 可靠性",
+        "dialog_title": "Probit Reliability",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "events",
+            "label": "事件数"
+          }
+        ]
+      },
+      "help": {
+        "title": "Probit 可靠性",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "用 logit 链接拟合二项失效比例与应力/剂量关系，并估计 LD50。",
+        "output_description": "模型摘要、系数表、LD50 表、拟合表与散点图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写产品已满足可靠性目标。"
+      }
+    },
+    {
+      "id": "random_forest",
+      "command": {
+        "id": "random_forest",
+        "menu_label": "随机森林",
+        "dialog_title": "Random Forest",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "随机森林",
+        "category": "预测 / 经典 ML",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "Bagging CART 集成：多数表决/均值预测与平均不纯度下降重要性。",
+        "output_description": "Model Summary、Variable Importance、Confusion（分类）。",
+        "interpretation_limits": "解释层只陈述统计证据；禁用过程合格。"
+      }
+    },
+    {
+      "id": "randomization_test",
+      "command": {
+        "id": "randomization_test",
+        "menu_label": "随机化检验（两样本均值差）",
+        "dialog_title": "Randomization Test",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "first",
+            "label": "样本 1"
+          }
+        ]
+      },
+      "help": {
+        "title": "随机化检验（两样本均值差）",
+        "category": "推断 / 仿真",
+        "menu_path": "统计 > 推断 / 仿真",
+        "implemented_status": "formula_reference",
+        "purpose": "对两独立样本均值差做标签置换检验，给出双侧 P 值。",
+        "output_description": "摘要表与置换均值差直方图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。"
+      }
+    },
+    {
+      "id": "regression",
+      "command": {
+        "id": "regression",
+        "menu_label": "线性回归",
+        "dialog_title": "线性回归",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（第一列响应，其余为预测变量）"
+          }
+        ]
+      },
+      "help": {
+        "title": "线性回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "implemented",
+        "purpose": "用一个或多个预测变量拟合带截距的线性模型。",
+        "output_description": "系数表、ANOVA（Seq SS/Adj SS）、Durbin-Watson 表、拟合优度、异常观测、残差图/拟合线图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "reliability",
+      "command": {
+        "id": "reliability",
+        "menu_label": "可靠性分析（Kaplan-Meier / Weibull）",
+        "dialog_title": "Reliability Analysis",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "寿命/时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "可靠性分析",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "用寿命/删失数据估计生存函数或参数寿命分布。",
+        "output_description": "KM/参数表、百分位、比较表、生存曲线与概率图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "reliability_test_plan",
+      "command": {
+        "id": "reliability_test_plan",
+        "menu_label": "可靠性试验计划",
+        "dialog_title": "Reliability Demonstration Test Plan",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "可靠性试验计划",
+        "category": "功效与样本量",
+        "menu_path": "统计 > 功效与样本量",
+        "implemented_status": "formula_reference",
+        "purpose": "Weibull 演示型试验计划：给定 β、R、CL、T0/tm 与允许失效数，计算样本量 n 与假设摘要。",
+        "output_description": "Test Plan、Assumptions Summary。",
+        "interpretation_limits": "禁止寿命已达标 / 过程已优化。"
+      }
+    },
+    {
+      "id": "reliability_warranty",
+      "command": {
+        "id": "reliability_warranty",
+        "menu_label": "保修摘要",
+        "dialog_title": "Warranty Summary",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "exposure_col",
+            "label": "暴露量列（可选，列求和优先于标量）"
+          }
+        ]
+      },
+      "help": null
+    },
+    {
+      "id": "report_templates",
+      "command": null,
+      "help": {
+        "title": "报告模板（客户/工程师/审计）",
+        "category": "报告",
+        "menu_path": "文件 > 导出 PDF",
+        "implemented_status": "implemented",
+        "purpose": "用同一份 OutputPage/Facts 生成客户版、工程师版或审计版报告；模板只改变展示与证据密度，不重算统计。",
+        "output_description": "PDF；审计版另有 audit JSON。JSON schema 含 profile、evidence、provenance、source_page Facts。",
+        "interpretation_limits": null
+      }
+    },
+    {
+      "id": "response_optimization",
+      "command": {
+        "id": "response_optimization",
+        "menu_label": "DOE 响应优化",
+        "dialog_title": "DOE 响应优化",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应列（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "DOE 响应优化",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "implemented",
+        "purpose": "在因子编码空间里找使一个或多个响应最接近目标的设置。",
+        "output_description": "候选表、各响应 d、总体 D、最佳组合。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "rsm_response",
+      "command": {
+        "id": "rsm_response",
+        "menu_label": "响应曲面分析",
+        "dialog_title": "响应曲面分析（RSM）",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "响应曲面分析",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "对已有连续因子设计表拟合二次响应曲面（线性+交互+纯二次）。",
+        "output_description": "模型摘要、系数表、ANOVA（含可选失拟/纯误差）、残差四图、等值线与曲面。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "run_chart",
+      "command": {
+        "id": "run_chart",
+        "menu_label": "运行图",
+        "dialog_title": "运行图",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值观测（一列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "运行图",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 质量图 / 规划",
+        "implemented_status": "implemented",
+        "purpose": "按行序画个体运行图（中位数中心线），并给出聚类/混合/趋势/振荡四模式近似 P。",
+        "output_description": "关于中位数的游程表、上升/下降游程表、中位数中心运行图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "runs_test",
+      "command": {
+        "id": "runs_test",
+        "menu_label": "游程检验",
+        "dialog_title": "游程检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "数值序列（一列）"
+          }
+        ]
+      },
+      "help": {
+        "title": "游程检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "检验一列数值按行序相对比较准则 K 是否随机（Wald–Wolfowitz / Minitab Runs）。",
+        "output_description": "比较准则表、Runs检验表、带中心线 K 的序列控制图式图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "scatter_plot",
+      "command": {
+        "id": "scatter_plot",
+        "menu_label": "散点图",
+        "dialog_title": "散点图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "x_variable",
+            "label": "X 变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "散点图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 关系与多元",
+        "implemented_status": "implemented",
+        "purpose": "每个 complete-case 点画 (x,y)。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "seasonal_forecasting",
+      "command": {
+        "id": "seasonal_forecasting",
+        "menu_label": "季节性预测",
+        "dialog_title": "季节性预测",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "value",
+            "label": "时间序列值"
+          }
+        ]
+      },
+      "help": {
+        "title": "季节性预测（Winters）",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "formula_reference",
+        "purpose": "对单列时间顺序数据做季节性预测（Winters）。",
+        "output_description": "拟合与预测明细（含原始行）、准确度、季节指数（若有）、预测区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "sign_test",
+      "command": {
+        "id": "sign_test",
+        "menu_label": "符号检验",
+        "dialog_title": "符号检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "一列或两列配对"
+          }
+        ]
+      },
+      "help": {
+        "title": "符号检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "对单样本中位数或配对差做符号检验（二项精确），并报告中位数置信区间。",
+        "output_description": "符号摘要、符号检验表、中位数置信区间表、箱线/个体值；配对另有散点。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "simple_correspondence",
+      "command": {
+        "id": "simple_correspondence",
+        "menu_label": "简单对应分析",
+        "dialog_title": "Simple Correspondence",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "row_var",
+            "label": "行变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "简单对应分析",
+        "category": "多变量",
+        "menu_path": "统计 > 多变量",
+        "implemented_status": "formula_reference",
+        "purpose": "2 列分类变量；列联表；惯性分解；行/列贡献；1～2 组件。",
+        "output_description": "Summary、Row/Column Contributions。",
+        "interpretation_limits": "禁止因果结论。"
+      }
+    },
+    {
+      "id": "simplex_design_plot",
+      "command": {
+        "id": "simplex_design_plot",
+        "menu_label": "混料三角图",
+        "dialog_title": "Simplex Design Plot",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "components",
+            "label": "分量列（3～4，可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "混料三角图",
+        "category": "探索性图形",
+        "menu_path": "图形 > DOE",
+        "implemented_status": "implemented",
+        "purpose": "在三角坐标系绘制混料设计点（proportions）。",
+        "output_description": "三角坐标散点 PlotSpec。",
+        "interpretation_limits": "不写合格判定。"
+      }
+    },
+    {
+      "id": "special_cause_rules",
+      "command": null,
+      "help": {
+        "title": "特殊原因规则 Catalog",
+        "category": "控制图",
+        "menu_path": "帮助 > 算法",
+        "implemented_status": "formula_reference",
+        "purpose": "Minitab Tests 1–8 与 DataLab 图种适用表、默认策略说明。",
+        "output_description": "本条目为规则百科；实际输出见各控制图命令；Run Chart/ANOM/Zone 交叉说明见上文。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "split_plot_analyze",
+      "command": {
+        "id": "split_plot_analyze",
+        "menu_label": "裂区析因分析",
+        "dialog_title": "Split-Plot Analyze",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "裂区析因分析",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "1 难改因子 + 1～2 易改因子；WP/SP 双误差 ANOVA；whole-plot residuals。",
+        "output_description": "Split-Plot ANOVA、Fits/Residuals、WP Residual。",
+        "interpretation_limits": "禁止设计已最优 / 过程已合格。"
+      }
+    },
+    {
+      "id": "split_plot_design",
+      "command": {
+        "id": "split_plot_design",
+        "menu_label": "2 水平裂区设计",
+        "dialog_title": "Split-Plot Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "2 水平裂区设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "2～4 因子、1 HTC；设计矩阵 + Whole plot 列。",
+        "output_description": "Design Summary、Design Table（含 WholePlot）。",
+        "interpretation_limits": "禁止宣称最优设计。"
+      }
+    },
+    {
+      "id": "stepwise_regression",
+      "command": {
+        "id": "stepwise_regression",
+        "menu_label": "逐步回归",
+        "dialog_title": "Stepwise Regression",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应"
+          }
+        ]
+      },
+      "help": {
+        "title": "逐步回归",
+        "category": "回归",
+        "menu_path": "统计 > 回归",
+        "implemented_status": "formula_reference",
+        "purpose": "按 α 或 Forward AICc/BIC 对线性回归候选预测做逐步选择。",
+        "output_description": "步骤表、选入项、终模型系数。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。"
+      }
+    },
+    {
+      "id": "t_chart",
+      "command": {
+        "id": "t_chart",
+        "menu_label": "T 图",
+        "dialog_title": "T 图（稀有事件间隔）",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "间隔列"
+          }
+        ]
+      },
+      "help": {
+        "title": "T 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 多元 / 稀有事件",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：T 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "t_power",
+      "command": {
+        "id": "t_power",
+        "menu_label": "t 功效与样本量",
+        "dialog_title": "t 功效与样本量",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "t 功效与样本量",
+        "category": "功效与样本量",
+        "menu_path": "统计 > 功效与样本量",
+        "implemented_status": "formula_reference",
+        "purpose": "在给定效应、α 和功效目标下，估计样本量或可检测效应。mode 覆盖 t/ANOVA/比例/方差/泊松，以及等价 TOST、2 水平 DOE、正态容差样本量。",
+        "output_description": "功效与样本量表和功效曲线。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "taguchi_analyze",
+      "command": {
+        "id": "taguchi_analyze",
+        "menu_label": "Taguchi 分析",
+        "dialog_title": "Analyze Taguchi Design",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "factors",
+            "label": "因子"
+          }
+        ]
+      },
+      "help": {
+        "title": "Taguchi 分析",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "静态 Taguchi：对控制因子水平与外阵响应重复计算 Means/S/N 响应表（含 Delta/Rank）并绘制多水平主效应图。",
+        "output_description": "Response Table for Means、Response Table for Signal to Noise Ratios、Diagnostics、主效应图。",
+        "interpretation_limits": "禁止过程已优化 / 已合格 / 过程已稳定。"
+      }
+    },
+    {
+      "id": "taguchi_orthogonal_design",
+      "command": {
+        "id": "taguchi_orthogonal_design",
+        "menu_label": "Taguchi 正交设计",
+        "dialog_title": "Taguchi Orthogonal Design",
+        "menu_path": "统计",
+        "requires_data": false,
+        "roles": []
+      },
+      "help": {
+        "title": "Taguchi 正交设计",
+        "category": "DOE",
+        "menu_path": "统计 > DOE",
+        "implemented_status": "formula_reference",
+        "purpose": "生成 Taguchi L8/L9/L12 正交设计矩阵并可写入工作表。",
+        "output_description": "设计信息、设计矩阵、worksheet_export。",
+        "interpretation_limits": "禁止宣称已优化工艺。"
+      }
+    },
+    {
+      "id": "time_series_decomposition",
+      "command": {
+        "id": "time_series_decomposition",
+        "menu_label": "时间序列分解",
+        "dialog_title": "时间序列分解",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间列（可选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "时间序列分解",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "implemented",
+        "purpose": "对单列时间顺序数据做时间序列分解。",
+        "output_description": "拟合与预测明细（含原始行）、准确度、季节指数（若有）、预测区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "time_series_plot",
+      "command": {
+        "id": "time_series_plot",
+        "menu_label": "时间序列图",
+        "dialog_title": "时间序列图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "时间序列图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 时间 / 条形 / 其他",
+        "implemented_status": "implemented",
+        "purpose": "按行序或时间列连接观测。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "time_series_smoothing",
+      "command": {
+        "id": "time_series_smoothing",
+        "menu_label": "时间序列平滑",
+        "dialog_title": "时间序列平滑",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "时间序列"
+          }
+        ]
+      },
+      "help": {
+        "title": "指数平滑",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "implemented",
+        "purpose": "对单列时间顺序数据做指数平滑。",
+        "output_description": "拟合与预测明细（含原始行）、准确度、季节指数（若有）、预测区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "tolerance_intervals",
+      "command": {
+        "id": "tolerance_intervals",
+        "menu_label": "容差区间",
+        "dialog_title": "容差区间",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "容差区间",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 容差 / 抽样",
+        "implemented_status": "formula_reference",
+        "purpose": "给出以指定置信覆盖总体至少 P 比例的区间。",
+        "output_description": "过程数据 N/N*、按 method 主表、method_family 与 achieved_confidence。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "trend_analysis",
+      "command": {
+        "id": "trend_analysis",
+        "menu_label": "趋势分析",
+        "dialog_title": "Trend Analysis",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间列（可选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "趋势分析",
+        "category": "时间序列",
+        "menu_path": "统计 > 时间序列",
+        "implemented_status": "formula_reference",
+        "purpose": "对时间顺序数值序列估计线性趋势，可选 Mann-Kendall 单调趋势检验。",
+        "output_description": "线性趋势摘要表、拟合明细、趋势散点图。",
+        "interpretation_limits": "解释层只陈述统计证据，不写过程合格或规格已满足。"
+      }
+    },
+    {
+      "id": "two_factor_anova",
+      "command": {
+        "id": "two_factor_anova",
+        "menu_label": "双因素 ANOVA",
+        "dialog_title": "双因素 ANOVA",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "response",
+            "label": "响应变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "双因素 ANOVA",
+        "category": "ANOVA",
+        "menu_path": "统计 > ANOVA",
+        "implemented_status": "implemented",
+        "purpose": "把响应变异分解为因子 A、因子 B 和交互作用。",
+        "output_description": "ANOVA 表（可能含 *）、残差四图、交互均值图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "two_poisson_rate",
+      "command": {
+        "id": "two_poisson_rate",
+        "menu_label": "双样本泊松率",
+        "dialog_title": "双样本泊松率检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "first_events",
+            "label": "第一组缺陷数"
+          }
+        ]
+      },
+      "help": {
+        "title": "双样本泊松率",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "比较两组泊松率（差值或率比）。",
+        "output_description": "两组率、差值或率比检验表；ratio 模式可有率比区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "two_proportion_equivalence",
+      "command": {
+        "id": "two_proportion_equivalence",
+        "menu_label": "两比例等价性检验",
+        "dialog_title": "两比例等价性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "first_events",
+            "label": "第一组事件数"
+          }
+        ]
+      },
+      "help": {
+        "title": "两比例等价性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验两组比例差是否落入等价界限（Wald z-TOST）。",
+        "output_description": "两组描述、z-TOST 表、等价区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "two_proportions",
+      "command": {
+        "id": "two_proportions",
+        "menu_label": "两比例检验",
+        "dialog_title": "两比例检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "first_events",
+            "label": "第一组事件数"
+          }
+        ]
+      },
+      "help": {
+        "title": "两比例检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "比较两组事件比例之差。",
+        "output_description": "两组比例、差值区间图、检验表（含方法与 CI）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "two_sample_equivalence",
+      "command": {
+        "id": "two_sample_equivalence",
+        "menu_label": "双样本等价性检验",
+        "dialog_title": "双样本等价性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "两列独立样本"
+          }
+        ]
+      },
+      "help": {
+        "title": "双样本等价性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验两组均值差是否落入等价界限。",
+        "output_description": "差值区间、TOST 表、`ci_method` 与 `both_pvalues_below_alpha`。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "two_sample_equivalence_ratio",
+      "command": {
+        "id": "two_sample_equivalence_ratio",
+        "menu_label": "双样本均值比等价性检验",
+        "dialog_title": "双样本均值比等价性检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "检验列 + 参考列"
+          }
+        ]
+      },
+      "help": {
+        "title": "双样本均值比等价性检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "检验两组均值比值 ρ=μ_test/μ_ref 是否落入比值等价界限（TOST）。",
+        "output_description": "描述统计、TOST 表、比值区间图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "two_sample_t",
+      "command": {
+        "id": "two_sample_t",
+        "menu_label": "双样本 t 检验",
+        "dialog_title": "双样本 t 检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "两列独立样本"
+          }
+        ]
+      },
+      "help": {
+        "title": "双样本 t 检验",
+        "category": "基础统计",
+        "menu_path": "统计 > 基础统计",
+        "implemented_status": "implemented",
+        "purpose": "比较两组均值差是否为 0。",
+        "output_description": "两组描述 + 检验表 + 差值区间。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "u_chart",
+      "command": {
+        "id": "u_chart",
+        "menu_label": "U 图",
+        "dialog_title": "U 图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "defects",
+            "label": "缺陷数"
+          }
+        ]
+      },
+      "help": {
+        "title": "U 图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计数图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：U 图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "variability_chart",
+      "command": {
+        "id": "variability_chart",
+        "menu_label": "变异性图",
+        "dialog_title": "变异性图",
+        "menu_path": "质量工具",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "measurement",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "变异性图",
+        "category": "质量工具",
+        "menu_path": "质量工具 > 质量图 / 规划",
+        "implemented_status": "formula_reference",
+        "purpose": "按 1～2 个因子展示各单元均值（含极差）与标准差双面板。",
+        "output_description": "单元统计表 + 均值/极差图 + 标准差图。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "variance_test",
+      "command": {
+        "id": "variance_test",
+        "menu_label": "方差检验",
+        "dialog_title": "方差检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "first",
+            "label": "第一样本 / 测量列"
+          }
+        ]
+      },
+      "help": {
+        "title": "等方差检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "检验两组或多组方差/标准差是否相等。",
+        "output_description": "方法表（含 P 与可选 CI）与组散布信息。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "violin_plot",
+      "command": {
+        "id": "violin_plot",
+        "menu_label": "小提琴图",
+        "dialog_title": "小提琴图",
+        "menu_path": "图形",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量（可多选）"
+          }
+        ]
+      },
+      "help": {
+        "title": "小提琴图",
+        "category": "探索性图形",
+        "menu_path": "图形 > 分布与单变量",
+        "implemented_status": "implemented",
+        "purpose": "分组镜像 KDE + 箱线五数。",
+        "output_description": "PlotSpec / ChartModel 图形，可在属性页改系列、轴、主题。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "weibayes",
+      "command": {
+        "id": "weibayes",
+        "menu_label": "Weibayes",
+        "dialog_title": "Weibayes",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "time",
+            "label": "时间"
+          }
+        ]
+      },
+      "help": {
+        "title": "Weibayes",
+        "category": "可靠性",
+        "menu_path": "统计 > 可靠性",
+        "implemented_status": "formula_reference",
+        "purpose": "固定形状先验 β 的 Weibull 特征寿命估计（少失效窄化）。",
+        "output_description": "Parameter Estimates、Percentiles、Censoring Summary。",
+        "interpretation_limits": "禁止寿命已达标 / 过程合格。"
+      }
+    },
+    {
+      "id": "wilcoxon_signed_rank",
+      "command": {
+        "id": "wilcoxon_signed_rank",
+        "menu_label": "Wilcoxon 符号秩检验",
+        "dialog_title": "Wilcoxon 符号秩检验",
+        "menu_path": "统计",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "一列或两列配对"
+          }
+        ]
+      },
+      "help": {
+        "title": "Wilcoxon 符号秩检验",
+        "category": "假设检验",
+        "menu_path": "统计 > 假设检验",
+        "implemented_status": "implemented",
+        "purpose": "对配对差或单样本中位数做符号秩检验。",
+        "output_description": "符号秩表；位置估计（Walsh）表；箱线/个体值；配对另有散点。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "xbar_r",
+      "command": {
+        "id": "xbar_r",
+        "menu_label": "Xbar-R 控制图",
+        "dialog_title": "Xbar-R 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "Xbar-R 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计量图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：Xbar-R 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "xbar_s",
+      "command": {
+        "id": "xbar_s",
+        "menu_label": "Xbar-S 控制图",
+        "dialog_title": "Xbar-S 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "变量"
+          }
+        ]
+      },
+      "help": {
+        "title": "Xbar-S 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计量图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：Xbar-S 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "z_mr",
+      "command": {
+        "id": "z_mr",
+        "menu_label": "Z-MR 控制图",
+        "dialog_title": "Z-MR 控制图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "Z-MR 控制图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计量图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：Z-MR 控制图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    },
+    {
+      "id": "zone_chart",
+      "command": {
+        "id": "zone_chart",
+        "menu_label": "区域图",
+        "dialog_title": "区域图",
+        "menu_path": "控制图",
+        "requires_data": true,
+        "roles": [
+          {
+            "id": "variables",
+            "label": "测量值"
+          }
+        ]
+      },
+      "help": {
+        "title": "区域图",
+        "category": "控制图",
+        "menu_path": "控制图 > 计量图",
+        "implemented_status": "implemented",
+        "purpose": "用控制图监视过程：区域图。",
+        "output_description": "控制图、参数表、逐点/逐子组表（含 source_row 与失败测试集合）。",
+        "interpretation_limits": "解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。"
+      }
+    }
+  ]
+}

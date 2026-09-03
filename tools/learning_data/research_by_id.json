@@ -1,0 +1,2812 @@
+{
+  "accelerated_life": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "acceptance_sampling": {
+    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
+    "not_for": "不能替代 SPC 或 MSA 证据。",
+    "typical_sample_size": "视工具；计算器无需数据",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "抽样计划与批量不匹配。",
+      "功效分析假设 σ 错误。"
+    ],
+    "sources": [
+      "aiag_spc",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "acf_pacf": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "adf_test": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "analyze_definitive_screening": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "analyze_variability": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "anom": {
+    "used_for": "识别哪些组均值偏离总均值（ANOM）。",
+    "not_for": "需正态/方差假设；不等 n 谨慎。",
+    "typical_sample_size": "每组 n≥5",
+    "dataset_hint": "anova_cavity",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "anom_attribute": {
+    "used_for": "属性数据 ANOM。",
+    "not_for": "小计数需合并。",
+    "typical_sample_size": "每组 n≥20",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "area_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "arima": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "attribute_agreement": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "bar_chart": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "batch_capability": {
+    "used_for": "批次间能力评估。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "best_subsets_regression": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "between_within_capability": {
+    "used_for": "分解组间/组内变异的能力。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "anova_cavity",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "binary_doe_probit": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "binary_response_doe": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "binomial_capability": {
+    "used_for": "二项不良率能力。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "bootstrap_mean": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "bootstrap_two_sample": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "box_cox": {
+    "used_for": "Box-Cox 变换辅助正态化。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "boxplot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "two_line_thickness",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "bubble_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "c_chart": {
+    "used_for": "固定检验面积缺陷数监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "capability": {
+    "used_for": "估计 Cp/Cpk 等相对规格的能力指数。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "capability_sixpack": {
+    "used_for": "能力六合一图形诊断。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "cart_tree": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "cause_and_effect": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "ccf": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "chi_square": {
+    "used_for": "检验分类变量独立性。",
+    "not_for": "期望频数过小需合并类别。",
+    "typical_sample_size": "总 n≥50",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "chi_square_gof": {
+    "used_for": "检验分类分布是否符合理论比例。",
+    "not_for": "不能证明数据生成机制。",
+    "typical_sample_size": "每类期望≥5",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "chi_square_mosaic_link": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "cluster_observations": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "cluster_variables": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "cochran_q": {
+    "used_for": "相关样本多组二分类比例。",
+    "not_for": "仅适用二元响应。",
+    "typical_sample_size": "k≥3 处理",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "contour_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "doe_factorial_demo",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "correlation": {
+    "used_for": "量化两列或多列数值的线性/单调关联强度。",
+    "not_for": "相关≠因果；不能预测规格合格。",
+    "typical_sample_size": "n≥30",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "correlation_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "correlogram": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "cox_counting_process": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "cox_regression": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "cross_tabulation": {
+    "used_for": "列联表汇总与比例展示。",
+    "not_for": "仅汇总不检验时需另做卡方。",
+    "typical_sample_size": "视列联表大小",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "cusum": {
+    "used_for": "累积和检测小偏移。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "database_import": {
+    "used_for": "外部数据库导入工作区的流程示意。",
+    "not_for": "当前版本可能无独立菜单。",
+    "typical_sample_size": "N/A",
+    "implemented_note": "orchestration；菜单可能不存在。",
+    "common_mistakes": [
+      "把导入当分析完成。"
+    ],
+    "sources": [
+      "nist_eda"
+    ]
+  },
+  "definitive_screening_design": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "density_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "descriptive": {
+    "used_for": "汇总测量值中心、散布与形状，可按产线/模腔分组。",
+    "not_for": "不能判断稳定性或规格符合性。",
+    "typical_sample_size": "n≥30；分组每组≥5",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "discriminant": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "distribution_calculator": {
+    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
+    "not_for": "不能替代 SPC 或 MSA 证据。",
+    "typical_sample_size": "视工具；计算器无需数据",
+    "dataset_hint": null,
+    "common_mistakes": [
+      "抽样计划与批量不匹配。",
+      "功效分析假设 σ 错误。"
+    ],
+    "sources": [
+      "aiag_spc",
+      "montgomery_spc"
+    ]
+  },
+  "distribution_identification": {
+    "used_for": "拟合候选分布识别。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "doe_bbd": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "doe_ccd": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "doe_d_optimal": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "doe_factorial": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "doe_plackett_burman": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "doe_response": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "dotplot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "ecdf_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "eda_4plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "emp_crossed": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "gage_rr_balance",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
+  },
+  "ewma": {
+    "used_for": "对微小漂移敏感的 EWMA。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "expanded_gage_rr": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "gage_rr_balance",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
+  },
+  "expanded_gage_unbalanced": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "gage_rr_balance",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
+  },
+  "factor_analysis": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "fine_gray_regression": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "fisher_exact": {
+    "used_for": "小样本 2×2 精确检验。",
+    "not_for": "大表计算慢。",
+    "typical_sample_size": "小计数",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "friedman": {
+    "used_for": "重复测量/区组非参数。",
+    "not_for": "区组内配对完整。",
+    "typical_sample_size": "区组≥10",
+    "dataset_hint": "anova_cavity",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "g_chart": {
+    "used_for": "几何分布间隔/良率事件监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "gage_rr": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "gage_rr_balance",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
+  },
+  "general_manova": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "generalized_variance": {
+    "used_for": "多变量广义方差监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "corr_temp_offset",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "glm_three_factor": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "glm_two_way": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "graph_gallery": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "heatmap_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "hexbin_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "histogram": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "hotelling_t2": {
+    "used_for": "多变量 T² 监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "corr_temp_offset",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "imr": {
+    "used_for": "单件慢节拍个体值与移动极差监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "imr_rs": {
+    "used_for": "I-MR-R/S 组合监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "interval_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "isolation_forest": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "km_interval": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "kmeans": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "kruskal_wallis": {
+    "used_for": "多组非参数位置比较。",
+    "not_for": "显著后需事后非参数比较。",
+    "typical_sample_size": "每组 n≥5",
+    "dataset_hint": "anova_cavity",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "laney_p_chart": {
+    "used_for": "过度离散时的 Laney P 图。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "laney_u_chart": {
+    "used_for": "过度离散时的 Laney U 图。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "life_data_lognormal": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "life_data_regression": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "logistic_regression": {
+    "used_for": "建模二分类响应与因子关系。",
+    "not_for": "不能证明因果；需足够事件数。",
+    "typical_sample_size": "事件≥10",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "mann_whitney": {
+    "used_for": "两独立组非参数位置比较。",
+    "not_for": "检验分布位置而非仅中位数（一般解释）。",
+    "typical_sample_size": "每组 n≥10",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "manova_one_way": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "marginal_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "matrix_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "mcnemar": {
+    "used_for": "配对二分类变化检验。",
+    "not_for": "仅 2×2 配对表。",
+    "typical_sample_size": "discordant≥10",
+    "dataset_hint": "paired_rework",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`"
+  },
+  "mewma": {
+    "used_for": "多变量 EWMA。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "corr_temp_offset",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "mixed_effects_reml": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "mixture_analyze": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "mixture_design": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "mixture_extreme_vertices_design": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "mixture_process_variable": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "mood_median": {
+    "used_for": "多组中位数差异检验。",
+    "not_for": "对离群较稳健。",
+    "typical_sample_size": "每组 n≥10",
+    "dataset_hint": "anova_cavity",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "mosaic_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "moving_average": {
+    "used_for": "移动平均平滑监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "ts_weekly_yield",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "msa_type1": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "gage_rr_balance",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
+  },
+  "multi_vari": {
+    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
+    "not_for": "不能替代 SPC 或 MSA 证据。",
+    "typical_sample_size": "视工具；计算器无需数据",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "抽样计划与批量不匹配。",
+      "功效分析假设 σ 错误。"
+    ],
+    "sources": [
+      "aiag_spc",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "multiple_correspondence": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "nested_gage_rr": {
+    "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
+    "not_for": "不能证明量具通过或产品合格。",
+    "typical_sample_size": "AIAG 10×3×2/3",
+    "dataset_hint": "gage_rr_balance",
+    "common_mistakes": [
+      "零件未覆盖过程范围。",
+      "操作员培训不一致。"
+    ],
+    "sources": [
+      "aiag_msa",
+      "minitab_gage"
+    ],
+    "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
+  },
+  "nhpp_repairable": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "nominal_logistic": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "nonlinear_regression": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "nonnormal_capability": {
+    "used_for": "非正态数据能力（如 Johnson/百分位）。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "nonparametric_capability": {
+    "used_for": "非参数百分位能力。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "normality_test": {
+    "used_for": "评估数据与正态假设偏离，为参数/非参数选型提供证据。",
+    "not_for": "未拒绝≠证明正态；小样本功效低。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "np_chart": {
+    "used_for": "不合格品数监控（固定样本量）。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "one_poisson_rate": {
+    "used_for": "估计单位长度/面积缺陷发生率。",
+    "not_for": "需明确观测长度/面积。",
+    "typical_sample_size": "缺陷总数≥10",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "one_proportion": {
+    "used_for": "估计/检验单一事件比例。",
+    "not_for": "不能代表多阶段过程整体不良。",
+    "typical_sample_size": "事件数≥5",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "one_proportion_equivalence": {
+    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
+    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
+    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "等价限事后挑选。",
+      "忽略方差估计方法。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "one_sample_equivalence": {
+    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
+    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
+    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "等价限事后挑选。",
+      "忽略方差估计方法。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "one_sample_t": {
+    "used_for": "检验样本均值是否偏离假设目标值。",
+    "not_for": "不能证明过程长期受控。",
+    "typical_sample_size": "n≥15",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "one_sample_z": {
+    "used_for": "已知 σ 时检验均值；或大样本近似。",
+    "not_for": "σ 估计错误则结论无效。",
+    "typical_sample_size": "n≥30",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "one_way_anova": {
+    "used_for": "比较≥3 组均值是否全等。",
+    "not_for": "显著后需事后比较；残差需检查。",
+    "typical_sample_size": "每水平 n≥5",
+    "dataset_hint": "anova_cavity",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "ordinal_logistic": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "orthogonal_regression": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "outlier_test": {
+    "used_for": "识别可能来自特殊原因的极端观测。",
+    "not_for": "统计离群≠必须删除；需工程确认。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "p_chart": {
+    "used_for": "不合格品率监控（变样本量）。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "paired_equivalence": {
+    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
+    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
+    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "dataset_hint": "paired_rework",
+    "common_mistakes": [
+      "等价限事后挑选。",
+      "忽略方差估计方法。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`"
+  },
+  "paired_t": {
+    "used_for": "比较同一单元处理前后均值差。",
+    "not_for": "配对必须一一对应。",
+    "typical_sample_size": "配对 n≥15",
+    "dataset_hint": "paired_rework",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`"
+  },
+  "parallel_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "pareto": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "pca": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "pie_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "pls_regression": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "poisson_capability": {
+    "used_for": "Poisson 缺陷率能力。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "poisson_gof": {
+    "used_for": "检验计数是否符合 Poisson。",
+    "not_for": "过度离散需负二项等。",
+    "typical_sample_size": "总计数≥20",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "poisson_regression": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "probability_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "probit_reliability": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "random_forest": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "randomization_test": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "regression": {
+    "used_for": "建立预测因子与连续响应的关系。",
+    "not_for": "外推风险；残差诊断必备。",
+    "typical_sample_size": "n≥10×参数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "reliability": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "reliability_test_plan": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "reliability_warranty": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "report_templates": {
+    "used_for": "报告模板与输出页编排参考。",
+    "not_for": "当前版本可能无独立菜单。",
+    "typical_sample_size": "N/A",
+    "implemented_note": "orchestration；菜单可能不存在。",
+    "common_mistakes": [
+      "把导入当分析完成。"
+    ],
+    "sources": [
+      "nist_eda"
+    ]
+  },
+  "response_optimization": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "rsm_response": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "run_chart": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "runs_test": {
+    "used_for": "检验序列随机性。",
+    "not_for": "不能定位特殊原因来源。",
+    "typical_sample_size": "n≥25",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "scatter_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "corr_temp_offset",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "seasonal_forecasting": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "sign_test": {
+    "used_for": "配对符号检验，最稳健。",
+    "not_for": "功效低于 Wilcoxon。",
+    "typical_sample_size": "n≥15",
+    "dataset_hint": "paired_rework",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`"
+  },
+  "simple_correspondence": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "simplex_design_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "doe_factorial_demo",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "special_cause_rules": {
+    "used_for": "理解 Western Electric/Nelson 规则如何标记可疑模式。",
+    "not_for": "触发≠必须停线；需工程调查。",
+    "typical_sample_size": "依附控制图点数≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "规则提示特殊原因线索，不替代假设检验。",
+    "common_mistakes": [
+      "规则过多致假警报。",
+      "触发后不调查根因。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "split_plot_analyze": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "split_plot_design": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "stepwise_regression": {
+    "used_for": "多变量降维、分类、聚类或重采样推断。",
+    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
+    "typical_sample_size": "样本远大于特征数",
+    "dataset_hint": "corr_temp_offset",
+    "common_mistakes": [
+      "数据泄漏。",
+      "过拟合未交叉验证。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_doe"
+    ],
+    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+  },
+  "t_chart": {
+    "used_for": "时间间隔 T 图。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "reliability_cycles",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "t_power": {
+    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
+    "not_for": "不能替代 SPC 或 MSA 证据。",
+    "typical_sample_size": "视工具；计算器无需数据",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "抽样计划与批量不匹配。",
+      "功效分析假设 σ 错误。"
+    ],
+    "sources": [
+      "aiag_spc",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "taguchi_analyze": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "taguchi_orthogonal_design": {
+    "used_for": "结构化试验筛选/优化因子与响应关系。",
+    "not_for": "不能替代量产 SPC；外推需谨慎。",
+    "typical_sample_size": "2^k 或 RSM 3–5 水平",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "不随机化。",
+      "因子水平不现实。"
+    ],
+    "sources": [
+      "montgomery_doe",
+      "minitab_doe"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "time_series_decomposition": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "time_series_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "ts_weekly_yield",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "time_series_smoothing": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "tolerance_intervals": {
+    "used_for": "估计覆盖比例的总体区间。",
+    "not_for": "失控或未代表样本时指数无预测意义；不写过程合格。",
+    "typical_sample_size": "≥30 独立观测",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "未先验证受控。",
+      "规格限设错。"
+    ],
+    "sources": [
+      "minitab_cap",
+      "aiag_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "trend_analysis": {
+    "used_for": "分析时序趋势、季节、自相关或短期预测。",
+    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
+    "typical_sample_size": "≥50 点识别季节",
+    "dataset_hint": "ts_weekly_yield",
+    "common_mistakes": [
+      "非平稳直接回归。",
+      "忽略异常点。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+  },
+  "two_factor_anova": {
+    "used_for": "评估两因子主效应与交互。",
+    "not_for": "不能外推未试验水平。",
+    "typical_sample_size": "每单元≥3 重复",
+    "dataset_hint": "doe_factorial_demo",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+  },
+  "two_poisson_rate": {
+    "used_for": "比较两组 Poisson 发生率。",
+    "not_for": "长度单位需一致。",
+    "typical_sample_size": "每组缺陷≥5",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "two_proportion_equivalence": {
+    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
+    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
+    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "等价限事后挑选。",
+      "忽略方差估计方法。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "two_proportions": {
+    "used_for": "比较两组比例差异。",
+    "not_for": "样本独立；小计数用精确法。",
+    "typical_sample_size": "每组 n≥30",
+    "dataset_hint": "attribute_defect",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "two_sample_equivalence": {
+    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
+    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
+    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "等价限事后挑选。",
+      "忽略方差估计方法。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "two_sample_equivalence_ratio": {
+    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
+    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
+    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "等价限事后挑选。",
+      "忽略方差估计方法。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "two_sample_t": {
+    "used_for": "比较两独立组均值差异。",
+    "not_for": "组间非独立时不可用；不等方差选 Welch。",
+    "typical_sample_size": "每组 n≥15",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "u_chart": {
+    "used_for": "单位缺陷数监控（变检验单位）。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "attribute_defect",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+  },
+  "variability_chart": {
+    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
+    "not_for": "不能替代 SPC 或 MSA 证据。",
+    "typical_sample_size": "视工具；计算器无需数据",
+    "dataset_hint": "smt_paste_height",
+    "common_mistakes": [
+      "抽样计划与批量不匹配。",
+      "功效分析假设 σ 错误。"
+    ],
+    "sources": [
+      "aiag_spc",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "variance_test": {
+    "used_for": "比较两组或多样本方差是否齐性。",
+    "not_for": "对非正态敏感；小样本功效低。",
+    "typical_sample_size": "每组 n≥10",
+    "dataset_hint": "two_line_thickness",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+  },
+  "violin_plot": {
+    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
+    "not_for": "图形本身不提供显著性（需配套检验）。",
+    "typical_sample_size": "n≥20",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
+    "common_mistakes": [
+      "过度解读偶然模式。",
+      "坐标截断误导。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "weibayes": {
+    "used_for": "基于失效/删失数据分析寿命与应力效应。",
+    "not_for": "不能写成产品已达标；外推需工程论证。",
+    "typical_sample_size": "失效事件≥10",
+    "dataset_hint": "reliability_cycles",
+    "common_mistakes": [
+      "忽略删失。",
+      "混合失效模式。"
+    ],
+    "sources": [
+      "nist_reliability"
+    ],
+    "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
+  },
+  "wilcoxon_signed_rank": {
+    "used_for": "配对非参数差值检验。",
+    "not_for": "差值分布需近似对称。",
+    "typical_sample_size": "n≥15",
+    "dataset_hint": "paired_rework",
+    "common_mistakes": [
+      "把 p 值当成工程决策唯一依据。",
+      "忽略测量系统噪声。"
+    ],
+    "sources": [
+      "nist_eda",
+      "montgomery_spc"
+    ],
+    "manufacturing_scenario": "装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`"
+  },
+  "xbar_r": {
+    "used_for": "子组 2–10 的均值与极差监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "anova_cavity",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "xbar_s": {
+    "used_for": "子组较大时用标准差监控散布。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "anova_cavity",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "注塑：`模腔尺寸_mm`、`模腔`（1/2/3 穴）"
+  },
+  "z_mr": {
+    "used_for": "标准化个体与 MR 监控。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  },
+  "zone_chart": {
+    "used_for": "区域规则辅助识别模式。",
+    "not_for": "不能证明能力合格或产品可放行；不替代抽样验收。",
+    "typical_sample_size": "≥20 子组/点",
+    "dataset_hint": "smt_paste_height",
+    "chart_note": "看超出控制限、趋势、周期、游程；模式识别不替代假设检验。",
+    "common_mistakes": [
+      "未按时间排序。",
+      "控制限内就当合格。"
+    ],
+    "sources": [
+      "nist_spc",
+      "aiag_spc",
+      "wheeler"
+    ],
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+  }
+}
