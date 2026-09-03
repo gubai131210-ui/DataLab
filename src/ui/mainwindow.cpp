@@ -550,6 +550,8 @@ void MainWindow::create_commands()
                     formula_registry_dialog_->raise();
                     formula_registry_dialog_->activateWindow();
                 });
+            connect(algorithm_help_dialog_, &AlgorithmHelpDialog::open_in_learning_center, this,
+                    [this](const QString& id) { open_learning_center(); learning_center_page_->select_entry(id); });
         }
         algorithm_help_dialog_->show();
         algorithm_help_dialog_->raise();

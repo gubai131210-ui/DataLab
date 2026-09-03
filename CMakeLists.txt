@@ -1064,6 +1064,8 @@ add_datalab_test(worksheet_model_test tests/worksheet_model_test.cpp datalab_ui)
 add_datalab_test(learning_center_store_test tests/learning_center_store_test.cpp datalab_application datalab_ui)
 target_link_libraries(learning_center_store_test PRIVATE Qt6::Sql)
 add_datalab_test(learning_center_worksheet_registry_test tests/learning_center_worksheet_registry_test.cpp datalab_application)
+add_datalab_test(learning_center_analysis_sample_test tests/learning_center_analysis_sample_test.cpp datalab_application datalab_ui)
+target_link_libraries(learning_center_analysis_sample_test PRIVATE Qt6::Sql)
 
 add_datalab_test(worksheet_column_ops_test tests/worksheet_column_ops_test.cpp datalab_ui)
 

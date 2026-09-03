@@ -20,6 +20,7 @@ public:
 
 signals:
     void open_in_formula_registry(const QString& id);
+    void open_in_learning_center(const QString& id);
 
 private slots:
     void on_search_text_changed(const QString& text);
@@ -28,6 +29,7 @@ private slots:
     void copy_entry_summary();
     void open_selected_reference();
     void emit_open_in_formula_registry();
+    void emit_open_in_learning_center();
 
 private:
     void rebuild_tree(const QString& filter);
@@ -47,6 +49,7 @@ private:
     QPushButton* copy_summary_button_ = nullptr;
     QPushButton* open_reference_button_ = nullptr;
     QPushButton* formula_registry_button_ = nullptr;
+    QPushButton* learning_center_button_ = nullptr;
     QString current_entry_id_;
     QString current_formula_plain_text_;
     QString current_reference_url_;
