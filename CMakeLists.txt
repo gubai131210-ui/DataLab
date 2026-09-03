@@ -18,13 +18,23 @@ if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     message(STATUS "MinGW big object format: -Wa,-mbig-obj")
 endif()
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test Concurrent)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Sql Svg Test Concurrent Network)
 
 qt_standard_project_setup()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(MES_FOR_Q_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../Mes_For_Q")
+if(EXISTS "${MES_FOR_Q_DIR}/CMakeLists.txt")
+    set(MES_FOR_Q_BUILD_APP OFF CACHE BOOL "Build Mes_For_Q standalone app" FORCE)
+    add_subdirectory("${MES_FOR_Q_DIR}" mes_for_q_build EXCLUDE_FROM_ALL)
+    set(DATALAB_HAS_MES_CORE TRUE)
+    message(STATUS "MES integration: mes_core from ${MES_FOR_Q_DIR}")
+else()
+    message(STATUS "MES integration: Mes_For_Q not found, skipping mes_core")
+endif()
 
 # 分层目标（依赖方向：ui → {application, infrastructure, reporting} → domain）
 # 注意：include 根统一为 src/，分层由链接依赖 + tools/check_layering.ps1 约束。
@@ -65,6 +75,13 @@ add_library(datalab_domain STATIC
     src/domain/report_text_catalog_part20.cpp
     src/domain/report_text_catalog_part21.cpp
     src/domain/report_text_catalog_part22.cpp
+    src/domain/report_text_catalog_part23.cpp
+    src/domain/report_text_catalog_part24.cpp
+    src/domain/report_text_catalog_part25.cpp
+    src/domain/report_text_catalog_part26.cpp
+    src/domain/report_text_catalog_part27.cpp
+    src/domain/report_text_catalog_part28.cpp
+    src/domain/report_text_catalog_part29.cpp
     src/domain/quality_diagnostics.cpp
     src/domain/quality_diagnostics.h
     src/domain/statistics/descriptive_statistics.cpp
@@ -144,8 +161,12 @@ add_library(datalab_domain STATIC
     src/domain/statistics/variance_tests.h
     src/domain/statistics/time_series_decomposition.cpp
     src/domain/statistics/time_series_decomposition.h
+    src/domain/statistics/trend_analysis.cpp
+    src/domain/statistics/trend_analysis.h
     src/domain/statistics/doe_factorial.cpp
     src/domain/statistics/doe_factorial.h
+    src/domain/statistics/doe_d_optimal.cpp
+    src/domain/statistics/doe_d_optimal.h
     src/domain/statistics/rsm_analysis.cpp
     src/domain/statistics/rsm_analysis.h
     src/domain/statistics/response_optimization.cpp
@@ -218,6 +239,14 @@ add_library(datalab_domain STATIC
     src/domain/statistics/nonlinear_regression.h
     src/domain/statistics/split_plot_design.cpp
     src/domain/statistics/split_plot_design.h
+    src/domain/statistics/pls_regression.cpp
+    src/domain/statistics/pls_regression.h
+    src/domain/statistics/definitive_screening_design.cpp
+    src/domain/statistics/definitive_screening_design.h
+    src/domain/statistics/analyze_definitive_screening.cpp
+    src/domain/statistics/analyze_definitive_screening.h
+    src/domain/statistics/mixture_extreme_vertices_design.cpp
+    src/domain/statistics/mixture_extreme_vertices_design.h
     src/domain/statistics/adf_test.cpp
     src/domain/statistics/adf_test.h
     src/domain/statistics/poisson_regression.cpp
@@ -226,8 +255,12 @@ add_library(datalab_domain STATIC
     src/domain/statistics/isolation_forest.h
     src/domain/statistics/bootstrap_mean.cpp
     src/domain/statistics/bootstrap_mean.h
+    src/domain/statistics/orthogonal_regression.cpp
+    src/domain/statistics/orthogonal_regression.h
     src/domain/statistics/bootstrap_two_sample.cpp
     src/domain/statistics/bootstrap_two_sample.h
+    src/domain/statistics/randomization_test.cpp
+    src/domain/statistics/randomization_test.h
     src/domain/statistics/probit_reliability.cpp
     src/domain/statistics/probit_reliability.h
     src/domain/statistics/hierarchical_cluster.cpp
@@ -256,6 +289,8 @@ add_library(datalab_domain STATIC
     src/domain/statistics/aalen_johansen_cif.h
     src/domain/statistics/cox_regression.cpp
     src/domain/statistics/cox_regression.h
+    src/domain/statistics/cox_counting_process.cpp
+    src/domain/statistics/cox_counting_process.h
     src/domain/statistics/gray_test.cpp
     src/domain/statistics/gray_test.h
     src/domain/statistics/fine_gray.cpp
@@ -282,9 +317,24 @@ add_library(datalab_domain STATIC
     src/domain/statistics/equivalence_test.h
     src/domain/statistics/grubbs_test.cpp
     src/domain/statistics/grubbs_test.h
+    src/domain/license/license_types.h
+    src/domain/license/license_encoding.cpp
+    src/domain/license/license_encoding.h
+    src/domain/license/license_fingerprint.cpp
+    src/domain/license/license_fingerprint.h
+    src/domain/license/license_public_key.h
+    src/domain/license/license_token.cpp
+    src/domain/license/license_token.h
 )
 
+add_library(datalab_monocypher STATIC
+    third_party/monocypher/monocypher.c
+)
+target_include_directories(datalab_monocypher PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/monocypher)
+
 target_include_directories(datalab_domain PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(datalab_domain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/monocypher)
+target_link_libraries(datalab_domain PRIVATE datalab_monocypher)
 
 # ---------------------------------------------------------------------------
 # application：分析编排（AnalysisService / InterpretationService / 构建器）
@@ -322,6 +372,15 @@ add_library(datalab_application STATIC
     src/application/report_localization.h
     src/application/command_recommendation_engine.cpp
     src/application/command_recommendation_engine.h
+    src/application/mes/mes_table_adapter.cpp
+    src/application/mes/mes_table_adapter.h
+    src/application/license/license_service.cpp
+    src/application/license/license_service.h
+    src/application/learning/learning_dataset_store.cpp
+    src/application/learning/learning_dataset_store.h
+    src/application/learning/learning_tutorial_catalog.cpp
+    src/application/learning/learning_tutorial_catalog.h
+    src/application/learning/learning_types.h
 )
 
 target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -329,6 +388,8 @@ target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR
 target_link_libraries(datalab_application
     PUBLIC
         datalab_domain
+    PRIVATE
+        Qt6::Sql
 )
 
 # ---------------------------------------------------------------------------
@@ -339,6 +400,8 @@ add_library(datalab_reporting STATIC
     src/reporting/chart_interaction.cpp
     src/reporting/chart_interaction.h
     src/reporting/chart_geometry.h
+    src/reporting/chart_plot_context.cpp
+    src/reporting/chart_plot_context.h
     src/reporting/chart_renderer.cpp
     src/reporting/chart_renderer.h
     src/reporting/chart_adapter.cpp
@@ -391,6 +454,10 @@ add_library(datalab_infrastructure STATIC
     src/infrastructure/report_layout_cursor.h
     src/infrastructure/report_painter.cpp
     src/infrastructure/report_painter.h
+    src/infrastructure/license/license_store.cpp
+    src/infrastructure/license/license_store.h
+    src/infrastructure/license/machine_identity.cpp
+    src/infrastructure/license/machine_identity.h
 )
 
 target_include_directories(datalab_infrastructure PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -412,6 +479,7 @@ target_link_libraries(datalab_infrastructure
     PRIVATE
         datalab_reporting
         Qt6::Sql
+        Qt6::Network
         datalab_miniz
 )
 
@@ -456,10 +524,18 @@ add_library(datalab_ui STATIC
     src/ui/graph_properties_dialog.h
     src/ui/algorithm_help_catalog.cpp
     src/ui/algorithm_help_catalog.h
+    src/ui/input_option_catalog.cpp
+    src/ui/input_option_catalog.h
     src/ui/algorithm_help_dialog.cpp
     src/ui/algorithm_help_dialog.h
+    src/ui/learning_center_page.cpp
+    src/ui/learning_center_page.h
     src/ui/database_import_wizard.cpp
     src/ui/database_import_wizard.h
+    src/ui/mes_tool_dialog.cpp
+    src/ui/mes_tool_dialog.h
+    src/ui/usage_permission_dialog.cpp
+    src/ui/usage_permission_dialog.h
     src/ui/command_wizard_dialog.cpp
     src/ui/command_wizard_dialog.h
     src/ui/formula_renderer.cpp
@@ -516,6 +592,54 @@ add_library(datalab_ui STATIC
     src/ui/nonlinear_regression_dialog.h
     src/ui/split_plot_design_dialog.cpp
     src/ui/split_plot_design_dialog.h
+    src/ui/pls_regression_dialog.cpp
+    src/ui/pls_regression_dialog.h
+    src/ui/definitive_screening_design_dialog.cpp
+    src/ui/definitive_screening_design_dialog.h
+    src/ui/analyze_definitive_screening_dialog.cpp
+    src/ui/analyze_definitive_screening_dialog.h
+    src/ui/mixture_extreme_vertices_design_dialog.cpp
+    src/ui/mixture_extreme_vertices_design_dialog.h
+    src/ui/bubble_plot_dialog.cpp
+    src/ui/bubble_plot_dialog.h
+    src/ui/dotplot_dialog.cpp
+    src/ui/dotplot_dialog.h
+    src/ui/simplex_design_plot_dialog.cpp
+    src/ui/simplex_design_plot_dialog.h
+    src/ui/ccd_design_dialog.cpp
+    src/ui/ccd_design_dialog.h
+    src/ui/cox_counting_process_dialog.cpp
+    src/ui/cox_counting_process_dialog.h
+    src/ui/fine_gray_regression_dialog.cpp
+    src/ui/fine_gray_regression_dialog.h
+    src/ui/bootstrap_two_sample_dialog.cpp
+    src/ui/bootstrap_two_sample_dialog.h
+    src/ui/randomization_test_dialog.cpp
+    src/ui/randomization_test_dialog.h
+    src/ui/bootstrap_mean_dialog.cpp
+    src/ui/bootstrap_mean_dialog.h
+    src/ui/orthogonal_regression_dialog.cpp
+    src/ui/orthogonal_regression_dialog.h
+    src/ui/trend_analysis_dialog.cpp
+    src/ui/trend_analysis_dialog.h
+    src/ui/doe_d_optimal_dialog.cpp
+    src/ui/doe_d_optimal_dialog.h
+    src/ui/anom_attribute_dialog.cpp
+    src/ui/anom_attribute_dialog.h
+    src/ui/bbd_design_dialog.cpp
+    src/ui/bbd_design_dialog.h
+    src/ui/mosaic_plot_dialog.cpp
+    src/ui/mosaic_plot_dialog.h
+    src/ui/graph_gallery_dialog.cpp
+    src/ui/graph_gallery_dialog.h
+    src/ui/chi_square_mosaic_link_dialog.cpp
+    src/ui/chi_square_mosaic_link_dialog.h
+    src/ui/response_optimization_dialog.cpp
+    src/ui/response_optimization_dialog.h
+    src/ui/best_subsets_regression_dialog.cpp
+    src/ui/best_subsets_regression_dialog.h
+    src/ui/parallel_plot_dialog.cpp
+    src/ui/parallel_plot_dialog.h
     src/ui/row_visibility_clipboard.cpp
     src/ui/row_visibility_clipboard.h
     src/ui/algorithm_help_types.h
@@ -525,6 +649,18 @@ qt_add_resources(datalab_ui algorithm_help_resources
     PREFIX "/help"
     BASE resources/help
     FILES resources/help/algorithm_help.json
+)
+
+qt_add_resources(datalab_ui learning_center_resources
+    PREFIX "/help"
+    BASE resources/help
+    FILES resources/help/learning_center.sqlite
+)
+
+qt_add_resources(datalab_ui input_option_catalog_resources
+    PREFIX "/ui"
+    BASE resources/ui
+    FILES resources/ui/input_option_catalog.json
 )
 
 target_include_directories(datalab_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -540,7 +676,12 @@ target_link_libraries(datalab_ui
         Qt6::Concurrent
 )
 
+if(DATALAB_HAS_MES_CORE)
+    target_link_libraries(datalab_ui PRIVATE mes_core Qt6::Network)
+endif()
+
 set(DATALAB_ICON_FILES
+    resources/icons/Q_MES.ico
     resources/icons/app-mark.svg
     resources/icons/new.svg
     resources/icons/open.svg
@@ -599,6 +740,7 @@ set(DATALAB_ICON_FILES
     resources/icons/cusum.svg
     resources/icons/time_series_smoothing.svg
     resources/icons/time_series_decomposition.svg
+    resources/icons/trend_analysis.svg
     resources/icons/seasonal_forecasting.svg
     resources/icons/arima.svg
     resources/icons/doe_factorial.svg
@@ -637,6 +779,10 @@ qt_add_executable(DataLab
     main.cpp
 )
 
+if(WIN32)
+    target_sources(DataLab PRIVATE app.rc)
+endif()
+
 qt_add_resources(DataLab translations
     PREFIX "/i18n"
     FILES
@@ -661,6 +807,65 @@ target_link_libraries(DataLab
         Qt6::Svg
 )
 
+add_custom_command(TARGET DataLab POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/dist"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:DataLab>"
+        "${CMAKE_SOURCE_DIR}/dist/$<TARGET_FILE_NAME:DataLab>"
+    VERBATIM
+)
+
+add_executable(generate_license_keys
+    tools/generate_license_keys.cpp
+)
+target_include_directories(generate_license_keys PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/monocypher)
+target_link_libraries(generate_license_keys PRIVATE datalab_monocypher)
+
+add_executable(DataLabLicenseAdmin WIN32
+    tools/license_admin/main.cpp
+    tools/license_admin/license_admin_window.cpp
+    tools/license_admin/license_admin_window.h
+    tools/license_admin/license_admin_store.cpp
+    tools/license_admin/license_admin_store.h
+    tools/license_admin/license_record_dialog.cpp
+    tools/license_admin/license_record_dialog.h
+)
+target_include_directories(DataLabLicenseAdmin PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/monocypher
+    ${CMAKE_CURRENT_SOURCE_DIR}/tools/license_admin
+)
+target_link_libraries(DataLabLicenseAdmin
+    PRIVATE
+        datalab_domain
+        Qt6::Widgets
+        Qt6::Sql
+)
+set_source_files_properties(
+    tools/license_admin/license_admin_window.cpp
+    tools/license_admin/license_record_dialog.cpp
+    PROPERTIES SKIP_AUTOMOC ON
+)
+
+add_custom_command(TARGET DataLabLicenseAdmin POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/dist-license-admin"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:DataLabLicenseAdmin>"
+        "${CMAKE_SOURCE_DIR}/dist-license-admin/$<TARGET_FILE_NAME:DataLabLicenseAdmin>"
+    VERBATIM
+)
+
+add_custom_target(package_dist
+    COMMAND powershell -NoProfile -ExecutionPolicy Bypass
+        -File "${CMAKE_SOURCE_DIR}/tools/package_dist.ps1"
+        -BuildDir "${CMAKE_BINARY_DIR}"
+        -SkipConfigure
+        -SkipBuild
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    DEPENDS DataLab DataLabLicenseAdmin
+    COMMENT "Package portable dist/ and dist-license-admin/"
+)
+
 # ---------------------------------------------------------------------------
 # 测试
 # ---------------------------------------------------------------------------
@@ -682,6 +887,20 @@ add_datalab_test(nonnormal_capability_phase6_test tests/nonnormal_capability_pha
 add_datalab_test(graph_visibility_phase7_test tests/graph_visibility_phase7_test.cpp datalab_domain datalab_application datalab_infrastructure)
 
 add_datalab_test(column_extract_import_test tests/column_extract_import_test.cpp datalab_domain datalab_infrastructure)
+add_datalab_test(mes_table_adapter_test tests/mes_table_adapter_test.cpp datalab_domain datalab_application)
+add_datalab_test(license_fingerprint_test tests/license_fingerprint_test.cpp datalab_domain)
+add_datalab_test(license_version_independence_test tests/license_version_independence_test.cpp datalab_domain)
+add_datalab_test(license_token_test tests/license_token_test.cpp datalab_domain datalab_monocypher)
+add_datalab_test(license_service_test tests/license_service_test.cpp datalab_domain datalab_application datalab_monocypher)
+target_include_directories(license_token_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/monocypher)
+target_include_directories(license_service_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/monocypher)
+add_datalab_test(license_admin_store_test tests/license_admin_store_test.cpp)
+target_sources(license_admin_store_test PRIVATE tools/license_admin/license_admin_store.cpp)
+target_include_directories(license_admin_store_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/tools/license_admin
+)
+target_link_libraries(license_admin_store_test PRIVATE Qt6::Sql)
 
 add_datalab_test(quality_statistics_test tests/quality_statistics_test.cpp datalab_domain datalab_application)
 
@@ -725,6 +944,13 @@ add_datalab_test(algorithm_wave8_track_test tests/algorithm_wave8_track_test.cpp
 add_datalab_test(algorithm_wave9_track_test tests/algorithm_wave9_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave10_track_test tests/algorithm_wave10_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(algorithm_wave11_track_test tests/algorithm_wave11_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave12_track_test tests/algorithm_wave12_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave13_track_test tests/algorithm_wave13_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave14_track_test tests/algorithm_wave14_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave15_track_test tests/algorithm_wave15_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave16_track_test tests/algorithm_wave16_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave17_track_test tests/algorithm_wave17_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
+add_datalab_test(algorithm_wave18_track_test tests/algorithm_wave18_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(g9_formula_substitution_track_test tests/g9_formula_substitution_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(g9_show_your_work_deepen_track_test tests/g9_show_your_work_deepen_track_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(ui_menu_ia_track_test tests/ui_menu_ia_track_test.cpp datalab_ui)
@@ -736,6 +962,16 @@ add_datalab_test(
 )
 set_tests_properties(
     g6_command_wizard_track_test
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+add_datalab_test(
+    g7_input_preset_track_test
+    tests/g7_input_preset_track_test.cpp
+    datalab_application
+    datalab_ui
+)
+set_tests_properties(
+    g7_input_preset_track_test
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 add_datalab_test(p2_rsm_special_cause_test tests/p2_rsm_special_cause_test.cpp datalab_domain datalab_application datalab_infrastructure)
@@ -762,6 +998,7 @@ target_compile_definitions(minitab_fixture_test
 add_test(NAME minitab_fixture_test COMMAND minitab_fixture_test)
 
 add_datalab_test(chart_geometry_test tests/chart_geometry_test.cpp datalab_reporting)
+add_datalab_test(chart_plot_context_test tests/chart_plot_context_test.cpp datalab_reporting)
 
 add_datalab_test(chart_renderer_test tests/chart_renderer_test.cpp datalab_reporting)
 add_datalab_test(chart_interaction_test tests/chart_interaction_test.cpp datalab_reporting datalab_application datalab_infrastructure datalab_domain)
@@ -822,6 +1059,10 @@ add_test(NAME minitab_numerical_golden_test COMMAND minitab_numerical_golden_tes
 add_datalab_test(import_state_reset_test tests/import_state_reset_test.cpp datalab_domain datalab_infrastructure)
 
 add_datalab_test(worksheet_model_test tests/worksheet_model_test.cpp datalab_ui)
+add_datalab_test(learning_center_store_test tests/learning_center_store_test.cpp datalab_application datalab_ui)
+target_link_libraries(learning_center_store_test PRIVATE Qt6::Sql)
+
+add_datalab_test(worksheet_column_ops_test tests/worksheet_column_ops_test.cpp datalab_ui)
 
 add_datalab_test(output_serialization_test tests/output_serialization_test.cpp datalab_infrastructure)
 

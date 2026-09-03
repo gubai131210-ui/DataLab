@@ -2,10 +2,16 @@
 
 #include <QMainWindow>
 
+#include <QList>
+#include <map>
+#include <string>
+
+#include "application/license/license_service.h"
 #include "domain/quality_types.h"
 
 class AlgorithmHelpDialog;
 class FormulaRegistryDialog;
+class LearningCenterPage;
 class CommandRegistry;
 class OutputWorkspace;
 class ProjectNavigator;
@@ -16,6 +22,7 @@ class QDockWidget;
 class QLabel;
 class QLineEdit;
 class QUndoStack;
+class QAction;
 
 class MainWindow final : public QMainWindow {
     Q_OBJECT
@@ -31,7 +38,15 @@ private:
     void open_project();
     void import_data();
     void import_database();
+    void open_mes_tools();
+    void open_usage_permission();
+    void open_learning_center();
+    void import_learning_dataset(const QString& dataset_id, const QString& worksheet_name);
+    void save_current_worksheet_to_registry();
+    void activate_worksheet(const QString& name);
     void open_command_wizard();
+    void apply_license_gate();
+    void refresh_license_status();
     void save_project();
     void export_pdf();
     void exclude_selected_row();
@@ -39,11 +54,16 @@ private:
     void hide_selected_row();
     void clear_hidden_rows();
     void display_table();
+    void reset_worksheet_sort_to_import_order();
     void run_from_spec(const QString& id);
     void copy_selection();
     void copy_chart();
     void cut_selection();
     void clear_selection();
+    void clear_selected_columns();
+    void remove_selected_columns();
+    QList<int> selected_source_columns() const;
+    bool selection_covers_whole_columns() const;
     void paste_clipboard();
     bool ensure_data();
     QStringList column_labels() const;
@@ -63,6 +83,8 @@ private:
         bool already_applied = false);
 
     datalab::domain::DataTable table_;
+    std::map<std::string, datalab::domain::DataTable> worksheets_;
+    std::string active_worksheet_name_;
     std::vector<datalab::domain::CleaningOperation> cleaning_operations_;
     WorksheetView* data_table_ = nullptr;
     OutputWorkspace* output_workspace_ = nullptr;
@@ -82,4 +104,9 @@ private:
     bool suppress_table_edit_undo_ = false;
     AlgorithmHelpDialog* algorithm_help_dialog_ = nullptr;
     FormulaRegistryDialog* formula_registry_dialog_ = nullptr;
+    LearningCenterPage* learning_center_page_ = nullptr;
+    datalab::application::license::LicenseService license_service_;
+    QAction* usage_permission_action_ = nullptr;
+    QAction* mes_tools_action_ = nullptr;
+    bool license_restricted_ = false;
 };

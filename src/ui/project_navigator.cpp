@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QFrame>
 #include <QFont>
+#include <QSizePolicy>
 #include <QTreeWidgetItemIterator>
 
 ProjectNavigator::ProjectNavigator(QWidget* parent)
@@ -45,7 +46,11 @@ ProjectNavigator::ProjectNavigator(QWidget* parent)
         }
         const QString id = item->data(0, Qt::UserRole).toString();
         if (!id.isEmpty()) {
-            emit analysis_activated(id);
+            if (item->parent() == worksheets_) {
+                emit worksheet_activated(id);
+            } else {
+                emit analysis_activated(id);
+            }
         }
     });
 }
@@ -72,7 +77,8 @@ void ProjectNavigator::clear_contents()
 
 void ProjectNavigator::add_worksheet(const QString& name)
 {
-    new QTreeWidgetItem(worksheets_, {name});
+    auto* item = new QTreeWidgetItem(worksheets_, {name});
+    item->setData(0, Qt::UserRole, name);
     worksheets_->setExpanded(true);
 }
 
@@ -113,4 +119,32 @@ void ProjectNavigator::add_report(const QString& name)
 {
     new QTreeWidgetItem(reports_, {name});
     reports_->setExpanded(true);
+}
+
+void ProjectNavigator::configure_dock_panel()
+{
+    setMinimumWidth(200);
+    setMaximumHeight(QWIDGETSIZE_MAX);
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    setIndentation(18);
+    setRootIsDecorated(true);
+    setStyleSheet(QStringLiteral(
+        "QTreeWidget { background: #e8f0f2; border: 0; padding: 8px 6px; color: #49636d; }"
+        "QTreeWidget::item { height: 30px; padding: 4px 7px; border-radius: 5px; }"
+        "QTreeWidget::item:hover { background: #dcebed; }"
+        "QTreeWidget::item:selected { background: #cfe9e8; color: #146f77; font-weight: 600; }"));
+    if (topLevelItemCount() > 0) {
+        topLevelItem(0)->setExpanded(true);
+    }
+    if (worksheets_ != nullptr) {
+        worksheets_->setExpanded(true);
+    }
+    if (analyses_ != nullptr) {
+        analyses_->setExpanded(true);
+    }
+    if (reports_ != nullptr) {
+        reports_->setExpanded(true);
+    }
 }

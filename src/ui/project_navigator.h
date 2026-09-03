@@ -15,9 +15,11 @@ public:
     void rename_analysis(const QString& id, const QString& name);
     void remove_analysis(const QString& id);
     void add_report(const QString& name);
+    void configure_dock_panel();
 
 signals:
     void analysis_activated(const QString& id);
+    void worksheet_activated(const QString& name);
 
 private:
     QTreeWidgetItem* worksheets_ = nullptr;
