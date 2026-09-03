@@ -3,9 +3,9 @@
 #include <QMainWindow>
 
 #include <QList>
-#include <map>
 #include <string>
 
+#include "application/learning/worksheet_registry.h"
 #include "application/license/license_service.h"
 #include "domain/quality_types.h"
 
@@ -83,8 +83,7 @@ private:
         bool already_applied = false);
 
     datalab::domain::DataTable table_;
-    std::map<std::string, datalab::domain::DataTable> worksheets_;
-    std::string active_worksheet_name_;
+    datalab::application::learning::WorksheetRegistry worksheet_registry_;
     std::vector<datalab::domain::CleaningOperation> cleaning_operations_;
     WorksheetView* data_table_ = nullptr;
     OutputWorkspace* output_workspace_ = nullptr;

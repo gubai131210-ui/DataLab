@@ -381,6 +381,8 @@ add_library(datalab_application STATIC
     src/application/learning/learning_tutorial_catalog.cpp
     src/application/learning/learning_tutorial_catalog.h
     src/application/learning/learning_types.h
+    src/application/learning/worksheet_registry.cpp
+    src/application/learning/worksheet_registry.h
 )
 
 target_include_directories(datalab_application PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -1061,6 +1063,7 @@ add_datalab_test(import_state_reset_test tests/import_state_reset_test.cpp datal
 add_datalab_test(worksheet_model_test tests/worksheet_model_test.cpp datalab_ui)
 add_datalab_test(learning_center_store_test tests/learning_center_store_test.cpp datalab_application datalab_ui)
 target_link_libraries(learning_center_store_test PRIVATE Qt6::Sql)
+add_datalab_test(learning_center_worksheet_registry_test tests/learning_center_worksheet_registry_test.cpp datalab_application)
 
 add_datalab_test(worksheet_column_ops_test tests/worksheet_column_ops_test.cpp datalab_ui)
 

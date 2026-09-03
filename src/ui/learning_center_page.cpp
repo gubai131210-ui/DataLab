@@ -227,21 +227,41 @@ void LearningCenterPage::export_database()
 void LearningCenterPage::rebuild_tree(const QString& filter)
 {
     tree_->clear();
-    QMap<QString, QTreeWidgetItem*> category_nodes;
+    QMap<QString, QTreeWidgetItem*> path_nodes;
     for (const LearningTutorialEntry& entry : entries_) {
         if (!matches_filter(entry, filter)) {
             continue;
         }
-        const QString category = entry.category.isEmpty() ? QStringLiteral("其他") : entry.category;
-        QTreeWidgetItem* parent = category_nodes.value(category, nullptr);
+
+        QString path = entry.menu_path.trimmed();
+        if (path.isEmpty()) {
+            path = entry.category.isEmpty() ? QStringLiteral("其他") : entry.category;
+        }
+        const QStringList segments = path.split(
+            QStringLiteral(">"), Qt::SkipEmptyParts);
+        QTreeWidgetItem* parent = nullptr;
+        QString accumulated;
+        for (int index = 0; index < segments.size(); ++index) {
+            const QString segment = segments.at(index).trimmed();
+            if (segment.isEmpty()) {
+                continue;
+            }
+            accumulated = accumulated.isEmpty() ? segment : accumulated + QStringLiteral(" > ") + segment;
+            QTreeWidgetItem*& node = path_nodes[accumulated];
+            if (node == nullptr) {
+                node = parent == nullptr
+                    ? new QTreeWidgetItem(tree_, {segment})
+                    : new QTreeWidgetItem(parent, {segment});
+            }
+            parent = node;
+        }
         if (parent == nullptr) {
-            parent = new QTreeWidgetItem(tree_, {category});
-            category_nodes.insert(category, parent);
+            parent = new QTreeWidgetItem(tree_, {QStringLiteral("其他")});
         }
         auto* item = new QTreeWidgetItem(parent, {entry.title});
         item->setData(0, Qt::UserRole, entry.command_id);
     }
-    tree_->expandAll();
+    tree_->expandToDepth(1);
 }
 
 void LearningCenterPage::show_entry(const LearningTutorialEntry& entry)

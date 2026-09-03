@@ -26,6 +26,7 @@
 #include "ui/formula_registry_dialog.h"
 #include "ui/learning_center_page.h"
 #include "application/learning/learning_dataset_store.h"
+#include "application/learning/worksheet_registry.h"
 #include "ui/formula_substitution_dialog.h"
 #include "ui/taguchi_analyze_dialog.h"
 #include "ui/mixture_design_dialog.h"
@@ -1272,8 +1273,7 @@ void MainWindow::new_project()
         return;
     }
     table_ = {};
-    worksheets_.clear();
-    active_worksheet_name_.clear();
+    worksheet_registry_.clear();
     cleaning_operations_.clear();
     undo_stack_->clear();
     worksheet_model_->set_table(table_);
@@ -1416,37 +1416,20 @@ void MainWindow::save_current_worksheet_to_registry()
     if (worksheet_model_ == nullptr) {
         return;
     }
-    const datalab::domain::DataTable current = worksheet_model_->table();
-    if (current.columns.empty() && current.rows.empty()) {
-        return;
-    }
-    std::string key = active_worksheet_name_;
-    if (key.empty()) {
-        key = current.name.empty() ? "工作表1" : current.name;
-        active_worksheet_name_ = key;
-    }
-    worksheets_[key] = current;
+    worksheet_registry_.save_current(worksheet_model_->table());
 }
 
 void MainWindow::activate_worksheet(const QString& name)
 {
-    if (name.isEmpty()) {
+    if (name.isEmpty() || worksheet_model_ == nullptr) {
         return;
     }
-    save_current_worksheet_to_registry();
-    const std::string worksheet_key = name.toStdString();
-    auto iterator = worksheets_.find(worksheet_key);
-    if (iterator == worksheets_.end()) {
-        if (table_.name == worksheet_key
-            || (table_.name.empty() && active_worksheet_name_ == worksheet_key)) {
-            worksheets_[worksheet_key] = worksheet_model_->table();
-            iterator = worksheets_.find(worksheet_key);
-        } else {
-            return;
-        }
+    const auto activated = worksheet_registry_.activate(
+        name.toStdString(), worksheet_model_->table());
+    if (!activated.has_value()) {
+        return;
     }
-    active_worksheet_name_ = worksheet_key;
-    table_ = iterator->second;
+    table_ = *activated;
     display_table();
     statusBar()->showMessage(QStringLiteral("已切换到工作表：%1").arg(name));
 }
@@ -1466,14 +1449,13 @@ void MainWindow::import_learning_dataset(const QString& dataset_id, const QStrin
         return;
     }
 
-    save_current_worksheet_to_registry();
+    if (worksheet_model_ != nullptr) {
+        worksheet_registry_.save_current(worksheet_model_->table());
+    }
 
     datalab::domain::DataTable table = *imported;
-    table.name = worksheet_name.toStdString();
-    const std::string worksheet_key = worksheet_name.toStdString();
-    worksheets_[worksheet_key] = table;
-    active_worksheet_name_ = worksheet_key;
-    table_ = std::move(table);
+    worksheet_registry_.import_new(worksheet_name.toStdString(), std::move(table));
+    table_ = worksheet_registry_.worksheets().at(worksheet_name.toStdString());
     display_table();
 
     bool worksheet_exists = false;
@@ -1636,9 +1618,9 @@ void MainWindow::import_data()
         navigator_->clear_contents();
         table_ = *result.first;
         display_table();
-        worksheets_.clear();
-        active_worksheet_name_ = table_.name.empty() ? "工作表1" : table_.name;
-        worksheets_[active_worksheet_name_] = table_;
+        worksheet_registry_.clear();
+        worksheet_registry_.import_new(
+            table_.name.empty() ? "工作表1" : table_.name, table_);
         navigator_->add_worksheet(QString::fromStdString(table_.name));
         QString import_summary = QStringLiteral("已导入 %1 行数据：%2。")
             .arg(static_cast<qulonglong>(table_.rows.size()))
