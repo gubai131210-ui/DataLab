@@ -695,6 +695,18 @@ void MainWindow::create_layout()
                 const datalab::domain::DataTable after = worksheet_model_->table();
                 push_table_change(before, after, QStringLiteral("编辑列名"), true);
             });
+    connect(worksheet_model_, &WorksheetModel::display_limit_reached, this,
+            [this](Qt::Orientation orientation) {
+                if (orientation == Qt::Horizontal) {
+                    statusBar()->showMessage(
+                        QStringLiteral("工作表最多 %1 列（与 Minitab 相同）。")
+                            .arg(WorksheetModel::kMaxColumns));
+                } else {
+                    statusBar()->showMessage(
+                        QStringLiteral("工作表最多 %1 行。")
+                            .arg(WorksheetModel::kMaxRows));
+                }
+            });
     data_table_ = new WorksheetView(central);
     data_table_->setModel(worksheet_sort_proxy_);
     data_table_->setSortingEnabled(false);
@@ -1226,7 +1238,10 @@ void MainWindow::paste_clipboard()
     if (text.isEmpty()) {
         return;
     }
-    const QModelIndex start = data_table_->currentIndex();
+    QModelIndex start = data_table_->currentIndex();
+    if (worksheet_sort_proxy_ != nullptr) {
+        start = worksheet_sort_proxy_->mapToSource(start);
+    }
     QString normalized = text;
     while (normalized.endsWith(QLatin1Char('\n'))
            || normalized.endsWith(QLatin1Char('\r'))) {
@@ -1243,12 +1258,22 @@ void MainWindow::paste_clipboard()
         .split(QLatin1Char('\n'), Qt::KeepEmptyParts);
     const datalab::domain::DataTable before = table_;
     datalab::domain::DataTable after = before;
+    bool hit_column_limit = false;
+    bool hit_row_limit = false;
     for (int row_offset = 0; row_offset < lines.size(); ++row_offset) {
         const QStringList cells = lines[row_offset].split(delimiter, Qt::KeepEmptyParts);
         for (int column_offset = 0; column_offset < cells.size(); ++column_offset) {
             const int row = start.row() + row_offset;
             const int column = start.column() + column_offset;
             if (row < 0 || column < 0) {
+                continue;
+            }
+            if (row >= WorksheetModel::kMaxRows) {
+                hit_row_limit = true;
+                continue;
+            }
+            if (column >= WorksheetModel::kMaxColumns) {
+                hit_column_limit = true;
                 continue;
             }
             if (row >= static_cast<int>(after.rows.size())) {
@@ -1266,7 +1291,18 @@ void MainWindow::paste_clipboard()
         }
     }
     push_table_change(before, after, QStringLiteral("粘贴单元格"));
-    statusBar()->showMessage(QStringLiteral("已从剪贴板粘贴 %1 行数据。").arg(lines.size()));
+    if (hit_column_limit) {
+        statusBar()->showMessage(
+            QStringLiteral("已粘贴数据，但超出工作表列上限 %1（与 Minitab 相同）。")
+                .arg(WorksheetModel::kMaxColumns));
+    } else if (hit_row_limit) {
+        statusBar()->showMessage(
+            QStringLiteral("已粘贴数据，但超出工作表行上限 %1。")
+                .arg(WorksheetModel::kMaxRows));
+    } else {
+        statusBar()->showMessage(
+            QStringLiteral("已从剪贴板粘贴 %1 行数据。").arg(lines.size()));
+    }
 }
 
 void MainWindow::new_project()

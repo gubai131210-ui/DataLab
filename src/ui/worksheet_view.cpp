@@ -1,8 +1,13 @@
 #include "ui/worksheet_view.h"
 
+#include "ui/worksheet_model.h"
+
+#include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
+#include <QAbstractProxyModel>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QKeyEvent>
 #include <QLineEdit>
 #include <QStyledItemDelegate>
 
@@ -70,9 +75,16 @@ WorksheetView::WorksheetView(QWidget* parent)
                     model()->setHeaderData(section, Qt::Horizontal, name);
                 }
             });
+    horizontalHeader()->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(horizontalHeader(), &QHeaderView::customContextMenuRequested,
+            this, [this](const QPoint& pos) {
+                const int section = horizontalHeader()->logicalIndexAt(pos);
+                if (section >= 0) {
+                    selectColumn(section);
+                }
+                emit header_context_menu_requested(pos);
+            });
 }
-
-#include <QAbstractItemDelegate>
 
 bool WorksheetView::is_editing() const
 {
@@ -89,9 +101,95 @@ void WorksheetView::commit_editing()
     }
 }
 
+void WorksheetView::scroll_source_rows_into_view(
+    QAbstractProxyModel* proxy,
+    const std::vector<std::size_t>& source_rows)
+{
+    if (proxy == nullptr || source_rows.empty()) {
+        return;
+    }
+    QModelIndex anchor;
+    for (const std::size_t row : source_rows) {
+        const QModelIndex source = proxy->sourceModel()->index(static_cast<int>(row), 0);
+        const QModelIndex mapped = proxy->mapFromSource(source);
+        if (!mapped.isValid()) {
+            continue;
+        }
+        scrollTo(mapped, QAbstractItemView::PositionAtCenter);
+        if (!anchor.isValid()) {
+            anchor = mapped;
+        }
+    }
+    if (anchor.isValid()) {
+        setCurrentIndex(anchor);
+    }
+}
+
 void WorksheetView::currentChanged(const QModelIndex& current,
                                     const QModelIndex& previous)
 {
     QTableView::currentChanged(current, previous);
     emit active_cell_changed(current);
+}
+
+WorksheetModel* WorksheetView::source_worksheet_model() const
+{
+    QAbstractItemModel* current = model();
+    while (auto* proxy = qobject_cast<QAbstractProxyModel*>(current)) {
+        current = proxy->sourceModel();
+    }
+    return qobject_cast<WorksheetModel*>(current);
+}
+
+QModelIndex WorksheetView::map_to_source(const QModelIndex& index) const
+{
+    QModelIndex mapped = index;
+    QAbstractItemModel* current = model();
+    while (auto* proxy = qobject_cast<QAbstractProxyModel*>(current)) {
+        mapped = proxy->mapToSource(mapped);
+        current = proxy->sourceModel();
+    }
+    return mapped;
+}
+
+void WorksheetView::grow_grid_for_cursor(CursorAction cursorAction)
+{
+    WorksheetModel* source = source_worksheet_model();
+    if (source == nullptr) {
+        return;
+    }
+    const QModelIndex current = currentIndex();
+    if (!current.isValid()) {
+        return;
+    }
+    const QModelIndex source_index = map_to_source(current);
+    switch (cursorAction) {
+    case MoveNext:
+    case MoveRight:
+    case MoveDown:
+        source->grow_if_at_edge(source_index.row(), source_index.column());
+        break;
+    default:
+        break;
+    }
+}
+
+void WorksheetView::keyPressEvent(QKeyEvent* event)
+{
+    if (event != nullptr && (event->modifiers() & Qt::ControlModifier) == 0) {
+        const int key = event->key();
+        if (key == Qt::Key_Tab || key == Qt::Key_Right) {
+            grow_grid_for_cursor(MoveNext);
+        } else if (key == Qt::Key_Return || key == Qt::Key_Enter || key == Qt::Key_Down) {
+            grow_grid_for_cursor(MoveDown);
+        }
+    }
+    QTableView::keyPressEvent(event);
+}
+
+QModelIndex WorksheetView::moveCursor(CursorAction cursorAction,
+                                      Qt::KeyboardModifiers modifiers)
+{
+    grow_grid_for_cursor(cursorAction);
+    return QTableView::moveCursor(cursorAction, modifiers);
 }

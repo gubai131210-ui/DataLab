@@ -2,6 +2,7 @@
 #include "ui/report_table_model.h"
 #include "ui/worksheet_model.h"
 #include "ui/worksheet_sort_filter_proxy.h"
+#include "ui/worksheet_view.h"
 
 #include <QTest>
 
@@ -12,8 +13,11 @@ private slots:
     void worksheetRolesExposeRowIdAndCellState();
     void selectionTsvIncludesHeaders();
     void sortFilterProxyFiltersWithoutLosingSourceRow();
+    void sortFilterProxyDefaultsToImportOrderUntilHeaderClick();
     void previewModelFetchMoreAppendsRows();
     void reportTableModelExposesKindsAndRuleIds();
+    void tabAtLastColumnGrowsVisibleGrid();
+    void downAtLastRowGrowsVisibleGrid();
 };
 
 void WorksheetInteractionTest::worksheetRolesExposeRowIdAndCellState()
@@ -86,6 +90,36 @@ void WorksheetInteractionTest::sortFilterProxyFiltersWithoutLosingSourceRow()
     QCOMPARE(model.data(source, datalab::ui::RowIdRole).toULongLong(), 1ull);
 }
 
+void WorksheetInteractionTest::sortFilterProxyDefaultsToImportOrderUntilHeaderClick()
+{
+    WorksheetModel model;
+    datalab::domain::DataTable table;
+    table.columns = {"v"};
+    table.rows = {{"30"}, {"10"}, {"20"}};
+    table.row_ids = {0, 1, 2};
+    table.column_types = {datalab::domain::ColumnType::numeric};
+    table.cell_states = {
+        {datalab::domain::CellState::valid},
+        {datalab::domain::CellState::valid},
+        {datalab::domain::CellState::valid}};
+    table.import_metadata.original_row_count = 3;
+    table.import_metadata.column_count = 1;
+    model.set_table(table);
+
+    datalab::ui::WorksheetSortFilterProxyModel proxy;
+    proxy.setSourceModel(&model);
+    proxy.set_sortable_columns({0});
+    QCOMPARE(proxy.mapToSource(proxy.index(0, 0)).row(), 0);
+    QCOMPARE(proxy.mapToSource(proxy.index(2, 0)).row(), 2);
+
+    proxy.sort(0, Qt::AscendingOrder);
+    QVERIFY(proxy.mapToSource(proxy.index(0, 0)).row() != 0);
+
+    proxy.clear_sort();
+    QCOMPARE(proxy.mapToSource(proxy.index(0, 0)).row(), 0);
+    QCOMPARE(proxy.mapToSource(proxy.index(2, 0)).row(), 2);
+}
+
 void WorksheetInteractionTest::previewModelFetchMoreAppendsRows()
 {
     datalab::ui::DatabasePreviewModel model;
@@ -156,6 +190,35 @@ void WorksheetInteractionTest::reportTableModelExposesKindsAndRuleIds()
     QCOMPARE(model.data(model.index(0, 1), datalab::ui::ReportColumnKindRole).toString(),
              QStringLiteral("number"));
     QCOMPARE(model.data(model.index(0, 0), datalab::ui::ReportRowIdRole).toULongLong(), 7ull);
+}
+
+void WorksheetInteractionTest::tabAtLastColumnGrowsVisibleGrid()
+{
+    WorksheetModel model;
+    datalab::ui::WorksheetSortFilterProxyModel proxy;
+    proxy.setSourceModel(&model);
+    WorksheetView view;
+    view.setModel(&proxy);
+    QCOMPARE(model.columnCount(), WorksheetModel::kDefaultColumns);
+
+    const int last_column = WorksheetModel::kDefaultColumns - 1;
+    view.setCurrentIndex(proxy.index(0, last_column));
+    QTest::keyClick(&view, Qt::Key_Tab);
+    QVERIFY(model.columnCount() > WorksheetModel::kDefaultColumns);
+    QVERIFY(model.table().columns.empty());
+}
+
+void WorksheetInteractionTest::downAtLastRowGrowsVisibleGrid()
+{
+    WorksheetModel model;
+    WorksheetView view;
+    view.setModel(&model);
+    QCOMPARE(model.rowCount(), WorksheetModel::kDefaultRows);
+
+    view.setCurrentIndex(model.index(WorksheetModel::kDefaultRows - 1, 0));
+    QTest::keyClick(&view, Qt::Key_Down);
+    QVERIFY(model.rowCount() > WorksheetModel::kDefaultRows);
+    QVERIFY(model.table().rows.empty());
 }
 
 QTEST_MAIN(WorksheetInteractionTest)
