@@ -1,41 +1,42 @@
 # Goal：学习中心教学升级（专用数据集 + 黑带文案 + Agent 教学闭环）
 
 > **用途**：新开一场 Goal 对话时的**唯一权威操作手册**（本轮教学升级）。  
-> **状态**：框架与文案模板已由用户在 Canvas 确认（2026-09-03）；**若干执行参数仍待用户拍板**（见 §0）。  
+> **状态**：§0 已由用户拍板（2026-09-03 10:16 UTC+8），**决策锁定，禁止子 Agent 重问或改口**。  
 > **Canvas 标杆**：`~/.cursor/projects/d-QT-CppPrograms-DataLab/canvases/learning-center-tutorial-example.canvas.tsx`  
 > **母框架**：[`goal-execution-framework.md`](goal-execution-framework.md)  
-> **已落地基线（勿推倒重来）**：[`goal-learning-center-black-belt-plan.md`](goal-learning-center-black-belt-plan.md) — 学习中心页面 / SQLite / 导入 / 对齐测试 **已存在**；本 Goal 是**内容与 schema 升级**，不是重建学习中心。  
-> **研究笔记（旧）**：[`learning-center-research-notes.md`](learning-center-research-notes.md)、[`learning-center-dataset-mapping.md`](learning-center-dataset-mapping.md)
+> **已落地基线（勿推倒重来）**：[`goal-learning-center-black-belt-plan.md`](goal-learning-center-black-belt-plan.md) — 学习中心**页面 / 导入 / 对齐测试框架**保留；本 Goal **删除旧共享演示表并重建内容+UI 教学层**，不是重建整窗导航。  
+> **研究笔记（旧，可作参考但 mapping 作废）**：[`learning-center-research-notes.md`](learning-center-research-notes.md)、[`learning-center-dataset-mapping.md`](learning-center-dataset-mapping.md)
 
 ---
 
-## §0 开场前必须问用户（有一项未答就不要开工）
+## §0 用户已拍板决策（2026-09-03）— 锁定
 
-| # | 问题 | 推荐默认（用户可改） |
+| # | 问题 | **用户决定（锁定）** |
 |---|------|----------------------|
-| Q1 | **全程锁定哪一个模型？**（六 Agent 禁止中途换模型） | 由用户在新对话首条消息写死模型名；子 Agent 全部 `model: "inherit"` |
-| Q2 | **范围节奏**：先做 `imr` 标杆验收，再按菜单分 Wave；还是一次铺开全部 ~184？ | **先 imr 金标 → 再按包 Wave（每 Wave 8–15 条）** |
-| Q3 | **UI**：Wave-0 是否**必须**改 `LearningCenterPage` 最小渲染（glossary / dialog 详解可见）？折叠披露与练习勾选是否推迟到本 Goal 末段「UI 增强切片」（**不要叫 Wave-2**，以免与 §7 内容包重名）？ | **Wave-0 必做最小渲染**（否则「页面能读到关键词」无法验收）；折叠/练习交互 = 可选「UI 增强切片」 |
-| Q4 | **「一算法一专用集」严格度**：真 · 1:1，还是同构极小共享？ | **默认 1 主命令 1 表**；例外仅当 `roles`/`inputs`+埋点完全一致（例：若未来拆出并行 id；**现网只有 `imr` / `imr_rs`，没有单独 Individuals id**） |
-| Q5 | **旧共享表**（如 `smt_paste_height`）：删除、保留「综合练习」、还是迁移别名？ | **库内可保留**；教程默认改链新专用 id；重跑 mapping 脚本不得把主链冲回共享宽表 |
-| Q6 | **中文路径编译**：是否仍由用户本机 Qt Creator / `package_dist`，Agent 只跑 Python verify？ | **是** |
+| Q1 | 全程模型 | **使用用户当前对话所用模型**；全程不换。所有 Task 子 Agent **`model: "inherit"`**，禁止建议换模型 |
+| Q2 | 范围节奏 | **本 Goal 一次铺开全集**（`analysis_commands::all()` ∪ `algorithm_help.json` 全部 id）。内部仍可按菜单包排队施工，但**不得**停在金标或「下一 Goal 再铺」；金标只作质量闸门，闸门通过后**连续做完** |
+| Q3 | UI | **UI 一次做完**：glossary / dialog 详解 / 埋点 / 0–6 分节 + **折叠披露** + **7+ 练习闭环可交互展示**（非仅 JSON 入库）。禁止「内容先做、UI 下轮」 |
+| Q4 | 数据集严格度 | **同构工具可共享极小族**（`roles`/`inputs`/埋点教学信号一致才共享；白名单写入 mapping）。默认仍「一主命令一表」，共享是例外不是回归十表打天下 |
+| Q5 | 旧共享表 | **删除旧表，重新做**（`smt_paste_height` 等 10 张共享集及旧 mapping 主链一律淘汰；生成器/CSV/测试期望全量重写） |
+| Q6 | 本机编译 | **是**：Agent 跑 Python verify；用户本机 Qt Creator / `package_dist` 自测 |
 
-**编排者纪律**：用户未回复 §0 前，只允许读代码与写调研草稿，**禁止**改 schema / 大批量生成数据 / 宣称 Goal 完成。
+**编排者纪律**：§0 已关闭。子 Agent **禁止**再问范围/UI/旧表策略；若与本表冲突，以本表为准。
 
-### §0.1 现网硬约束（不必再问用户；写进 Wave plan 文首）
+### §0.1 现网硬约束（写进 Wave plan 文首）
 
 | # | 约束 | 为何 |
 |---|------|------|
-| H1 | `catalog_version` 现为字符串 **`learning-center-v1`**。升级时必须**同时**改 `tools/build_learning_center_db.py` 的 `META_VERSION` 与 `LearningDatasetStore::kExpectedCatalogVersion`（建议 `learning-center-v2`）。只改 sqlite 会导致页面报版本不匹配并禁用导入。 |
+| H1 | `catalog_version` 现为字符串 **`learning-center-v1`**。升级时必须**同时**改 `tools/build_learning_center_db.py` 的 `META_VERSION` 与 `LearningDatasetStore::kExpectedCatalogVersion`（本 Goal 用 **`learning-center-v2`**）。只改 sqlite 会导致页面报版本不匹配并禁用导入。 |
 | H2 | 工作表名公式是 `demo_{dataset_id}`（`LearningCenterPage` + store）。金标 **`dataset_id` 用 `imr_spi_shift`**，导入后显示 `demo_imr_spi_shift`。**禁止**再把 id 写成 `demo_imr_spi_shift`（会变成 `demo_demo_…`）。Canvas 里的 `demo_imr_spi_shift` 指**工作表显示名**，不是 sqlite 主键。 |
 | H3 | **没有**独立 `tutorials.json` 主源。现网是 `build_learning_center_db.py` 的 `GENERATORS` + `build_tutorial_row()` **每次重生**步骤文案。金标/0–6/7+ 必须做成**生成器覆盖层**并接入 builder；**禁止**只手改 sqlite 却不改生成脚本（下次 build 会冲掉）。 |
-| H4 | `tools/build_learning_dataset_mapping.py` 仍可能默认挂 `smt_paste_height`。Agent2 必须规定：mapping 生成与校验改为「专用主集」；重跑不得把 1:1 冲回共享。 |
-| H5 | 测试/gate 现状敏感：`listsTenDatasets`（恰好 10 张）、教程约 184、`used_for`/`not_for`/`scenario`/`click_steps≥2` 等。加专用表后必须**改测试期望**，不能假装仍是 10。DDL 优先 `ADD COLUMN`，保留 `research_sources` 等旧列。 |
+| H4 | 旧 `build_learning_dataset_mapping.py` / 10 共享表生成器：**删除或整段替换**，不得残留「默认挂 smt_paste_height」。新 mapping = 专用主集 + **极小同构共享白名单**。 |
+| H5 | 测试/gate：`listsTenDatasets` 等「恰好 10 张」断言**必须改掉**（旧表删除后张数 = 新专用集数量）。教程数仍对齐 commands∪help；`used_for`/`not_for`/`scenario`/`click_steps≥2` 等质量门保留或加严。DDL 优先 `ADD COLUMN`，保留 `research_sources` 等旧列名以免解析器大破。 |
 | H6 | glossary「基础统计术语」**禁止**为了术语课新增第 185 个假 command id；用 `related_ids` 指向已有命令或课内嵌 glossary。 |
 | H7 | `dialog_fill` 保持「角色→列名」object，供现网解析；详解走**并列** `dialog_fill_detail`。禁止用详解数组覆盖 `dialog_fill` 导致 `parse_dialog_fill` 变空。 |
 | H8 | 金标对话框字段以 `analysis_commands` 的 `imr` 为准（含 Nelson / 特殊原因等），Canvas 可少写字段但实现不得删真实 inputs。 |
-| H9 | 页面已缓存教程 `entries_`（184 条元数据）是允许的；§8「禁止整库 dataset 常驻」指**禁止**把所有单元格 load 进巨大 `QVector`，不要误拆 entries 缓存。 |
-| H10 | 旧 [`goal-learning-center-black-belt-plan.md`](goal-learning-center-black-belt-plan.md) 仍写「强制共享」——**本手册 §2 已覆盖**；Agent2 plan 文首必须写「数据集策略以本手册为准」。 |
+| H9 | 页面已缓存教程 `entries_`（元数据）是允许的；§8「禁止整库 dataset 常驻」指**禁止**把所有单元格 load 进巨大 `QVector`，不要误拆 entries 缓存。 |
+| H10 | 旧 [`goal-learning-center-black-belt-plan.md`](goal-learning-center-black-belt-plan.md) 仍写「强制共享」——**以本手册 §0/§2 为准**；Agent2 plan 文首必须写「数据集策略以本手册为准；旧 10 表删除重建」。 |
+| H11 | **UI 一次做完**：`LearningCenterPage` 需支持分节折叠（0–6 默认展开策略由 Agent2 定；7+ 练习区可折）与练习内容展示；**禁止**推倒重做导航树/导入按钮链路。 |
 
 ---
 
@@ -46,26 +47,27 @@
 1. **一算法一（主）专用演示集**：少列、故意埋入本工具该看见的模式；禁止再用一张宽表糊弄几十个菜单。  
 2. **黑带课堂文案骨架（0–6）**：关键词 → 背景 → 专用数据 → 为何此工具 → 逐步+参数表 → 读输出 → 误用。  
 3. **Agent 教学 skill 叠加（7+）**：先修自测 → 步间自解释 → 褪脚手架层级 → 检索小测 → 错念纠正（可与 §6 误用互补）。  
-4. **与现程序衔接**：不换 Table 内核、不换帮助对话框、不新建第二套分析向导；只扩展 learning 层 schema / 生成脚本 / 目录解析 /（可选）页面渲染。
+4. **与现程序衔接**：不换 Table 内核、不换帮助对话框、不新建第二套分析向导；扩展 learning 层 schema / 生成脚本 / 目录解析，并**一次做完** `LearningCenterPage` 教学 UI（分节折叠 + 练习区）。
 
 **非目标（本 Goal 不做）**
 
 - 重做 `AlgorithmHelpDialog` / 改 `algorithm_help.json` 公式语义。  
 - 在学习中心内嵌分析设置对话框。  
 - 用浏览器代替用户本机 `package_dist`。  
-- 把旧 black-belt plan 的「强制共享大表」当作仍有效的决策（**已被本文件 §2 覆盖**）。
+- 把旧 black-belt plan 的「强制共享大表」当作仍有效的决策（**已被本文件 §0/§2 覆盖**）。  
+- 把工作缩成「只做 imr」或「UI 留到下一 Goal」（与 Q2/Q3 冲突）。
 
 ---
 
 ## §2 决策覆盖（相对旧 plan 的变更）
 
-| 项 | 旧 black-belt plan | **本 Goal（以用户 Canvas 确认为准）** |
+| 项 | 旧 black-belt plan | **本 Goal（用户 2026-09-03 锁定）** |
 |----|--------------------|----------------------------------------|
-| 数据集策略 | 强制共享（约 10 张表挂几十命令） | **一算法一专用主集**；同构共享仅例外 |
+| 数据集策略 | 强制共享（约 10 张表挂几十命令） | **删除旧 10 表并重建**；默认专用主集；**同构极小族可共享**（白名单） |
 | 教程深度 | 用途/场景/步骤/输出/误用 | **+ 关键词 glossary**；参数字段「填什么/代表什么」；对着埋点读图 |
-| 练习闭环 | 无 | **+ 先修 / 自解释 / 褪脚手架 / 检索 / 错念**（JSON 可存，UI 可渐进） |
-| 页面 | 已建 `LearningCenterPage` | **扩展渲染**，禁止推倒重做导航/导入链路 |
-| 覆盖范围 | 全集 id | **仍要求最终全集**；交付节奏按 Wave（见 Q2） |
+| 练习闭环 | 无 | **+ 先修 / 自解释 / 褪脚手架 / 检索 / 错念**；JSON 入库且 **UI 展示** |
+| 页面 | 已建 `LearningCenterPage` | **扩展渲染 + 折叠 + 练习区一次做完**；禁止推倒导航/导入链路 |
+| 覆盖范围 | 全集 id | **本 Goal 一次铺开全集**；内部 Wave 只是施工队列，不得截断交付 |
 
 ---
 
@@ -79,7 +81,7 @@
 | `src/application/learning/learning_tutorial_catalog.*` | 读 tutorials | 解析新列 / JSON；旧库缺列时降级为空 |
 | `src/application/learning/learning_dataset_store.*` | sqlite → `domain::Table` | 支持更多 dataset；连接清理逻辑不动坏 |
 | `src/application/learning/worksheet_registry.*` | 多工作表 | **禁止回退单表覆盖导入** |
-| `src/ui/learning_center_page.*` | 独立窗口 UI | `build_entry_html` 增加分节；可选折叠 |
+| `src/ui/learning_center_page.*` | 独立窗口 UI | 分节折叠 + 0–6/7+ 全展示；**禁止**推倒导航/导入 |
 | `MainWindow::import_learning_dataset` | 新建 worksheet | 签名与「不清输出页」行为保持 |
 | `resources/help/learning_center.sqlite` + qrc | 嵌入库 | 由生成脚本重建；`meta.catalog_version` 递增 |
 | `tools/build_learning_center_db.py` | 建库 | 主改点之一 |
@@ -101,7 +103,7 @@
  ├─ 算法、公式与参考资料 → AlgorithmHelpDialog（不动语义）
  └─ 学习中心             → LearningCenterPage
                               ├ 左：搜索 + 与命令表同步的树
-                              ├ 右：教程 HTML（0–6 + 可选 7+）
+                              ├ 右：教程 UI（0–6 分节折叠 + 7+ 练习区）
                               └ 导入 → LearningDatasetStore → WorksheetRegistry / MainWindow
 ```
 
@@ -219,9 +221,9 @@ datasets 强化：
 
 1. Schema + `build_learning_center_db.py` + types/catalog 解析（兼容旧字段）。  
 2. 在 **生成脚本** 中落地金标：`imr_spi_shift` 生成器 + 教程覆盖层（完整 0–6 + 7+ JSON），再 build sqlite。  
-3. Wave-0：`LearningCenterPage` **最小渲染**（glossary、dialog 详解、埋点、误用）；折叠/练习交互仅当用户在 Q3 要求「UI 增强切片」时做。  
-4. 同步改 `listsTenDatasets` 等测试期望；扩展 verify 断言。  
-5. 金标门禁 PASS 后，按内容 Wave 批量：专用生成器 + mapping，禁止只改 sqlite。  
+3. Wave-0：`LearningCenterPage` **完整教学 UI**（glossary、dialog 详解、埋点、误用、分节折叠、7+ 练习区）。  
+4. 同步改掉「恰好 10 张表」等测试；扩展 verify；**删除旧共享表生成器/CSV**。  
+5. 金标门禁 PASS 后，连续按内容 Wave 铺完全集：专用/极小同构族生成器 + mapping。  
 6. 更新 mapping md / research；`META_VERSION` + `kExpectedCatalogVersion` → `learning-center-v2`。
 
 **完成标准（每 Wave）**
@@ -316,27 +318,28 @@ datasets 强化：
 
 ---
 
-## §7 Wave 建议切分（Agent2 可微调，不可删金标）
+## §7 施工队列（内部 Wave；本 Goal 必须全部做完）
+
+> Q2=全部铺开：下表是**施工顺序**，不是「做完 Wave-0 就收工」。Orchestrator 在同一 Goal 内连续清零。
 
 | Wave | 内容 | 出口 |
 |------|------|------|
-| Wave-0 | Schema + catalog + **页面最小渲染** + **imr / imr_spi_shift 金标** | Agent4+6 过金标 |
-| Wave-1 | 控制图包（`imr` 族、Xbar、P/U…）专用集 | gate |
+| Wave-0 | Schema + catalog + **完整教学 UI**（分节折叠 + 7+ 练习区）+ **imr / imr_spi_shift 金标** | Agent4+6 过金标后立即进入 Wave-1 |
+| Wave-1 | 控制图包（`imr` 族、Xbar、P/U…）专用/极小共享族 | gate |
 | Wave-2 | 质量工具 / MSA / 能力 | gate |
 | Wave-3 | 统计推断 / ANOVA / 回归相关 | gate |
 | Wave-4 | 图形 + DOE + 可靠性 + 其余 | gate |
-| Wave-5 | 旧共享表策略落地 + 文档 + package 说明 | Agent5+6 |
-| （可选）UI 增强切片 | 折叠披露 / 练习勾选 — **名称勿与 Wave-2 混淆** | 仅当 Q3 要求 |
+| Wave-5 | **删除旧 10 共享表残留**（生成器/CSV/mapping/文档）+ 测试期望重写 + package 说明 | Agent5+6 |
 
-（具体 id 列表由 Agent2 从 `analysis_commands::all()` ∪ help 生成锁表。）
+（具体 id 列表与同构共享白名单由 Agent2 从 `analysis_commands::all()` ∪ help 生成锁表。）
 
 ---
 
 ## §8 禁止偷懒（执行 Agent 必读；Plan 必须粘贴）
 
 1. **禁止**推倒重做学习中心窗口/导入链路「为了干净」。  
-2. **禁止**恢复默认「10 张共享表挂几十命令」而不写例外白名单。  
-3. **禁止**金标未过就批量生成上百条水文案。  
+2. **禁止**恢复「10 张共享表挂几十命令」；同构共享必须有白名单且族要小。  
+3. **禁止**金标未过就批量灌水文案；也**禁止**金标过后借口「下轮再铺」截断全集。  
 4. **禁止**教程步骤不写真实 `menu_path` / 角色名。  
 5. **禁止** glossary 为空却满篇 UCL/Cpk/%GR&R。  
 6. **禁止**专用集无埋点注释（「随机正态」充数）。  
@@ -353,53 +356,54 @@ datasets 强化：
 17. **禁止** Agent6 没出 QA 报告就 UpdateGoal complete。  
 18. **禁止**用浏览器代替用户本机 `package_dist`。  
 19. **禁止**把 Canvas 里的 skill 叠加块删掉只留摘要。  
-20. **禁止** UI 把 0–6 与 7+ 糊成一堵墙且无分节（若本 Goal 含 UI）。  
+20. **禁止** UI 只入库不展示，或把 0–6 与 7+ 糊成一堵墙且无折叠分节（Q3=一次做完）。  
 21. **禁止**只改 sqlite / 不改 `build_learning_center_db.py` 生成器（下次 build 会冲掉）。  
 22. **禁止** `dataset_id` 以 `demo_` 开头导致工作表变成 `demo_demo_…`。  
 23. **禁止**只改 `META_VERSION` 或只改 `kExpectedCatalogVersion`（必须双写）。  
 24. **禁止**用详解 JSON 覆盖原 `dialog_fill` 对象格式。  
-25. **禁止**为术语课新增虚假 command_id 撑到 185+。
+25. **禁止**为术语课新增虚假 command_id 撑到 185+。  
+26. **禁止**保留 `smt_paste_height` 等旧共享表「先留着」——Q5=删除重建。  
+27. **禁止**把同构共享扩成变相大宽表（白名单必须写清服务哪些 command_id、埋点是否仍成立）。
 
 ---
 
 ## §9 完成定义（整场 Goal）
 
-- [ ] §0 用户答复已记入 plan 文首。  
-- [ ] Wave-0 金标 `imr` + `imr_spi_shift`：生成脚本可复现；文案 0–6 + 7+；**页面最小渲染**能读到关键词与参数释义（与 Q3 默认一致）。  
-- [ ] 约定范围内全部 Wave 的 mapping / tutorials / datasets 按「专用主集」策略落地。  
-- [ ] Python learning_center gate PASS。  
+- [ ] §0 用户答复已记入本文（已锁定）。  
+- [ ] Wave-0：金标 `imr` + `imr_spi_shift` + **完整教学 UI**（折叠 + 练习区）通过 Agent4+6。  
+- [ ] Wave-1…5：**全集** tutorials/datasets 落地；旧 10 共享表及主链 mapping **已删除**；同构共享仅白名单。  
+- [ ] Python learning_center gate PASS；「恰好 10 dataset」类旧断言已替换。  
 - [ ] Agent5 收尾 + git push。  
-- [ ] Agent6 QA 报告：**金标通过**；抽检问题已关闭或登记为已知限制。  
-- [ ] 提示用户本机：`cmake --build build-mingw --target package_dist`（或其惯用包）并抽查学习中心导入。
+- [ ] Agent6 QA 报告：金标通过；每内容包有抽检；无「旧表残留 / UI 未做完 / 范围缩水」。  
+- [ ] 提示用户本机：`package_dist` 并抽查学习中心导入与 UI 分节。
 
 ---
 
 ## §10 新对话开场粘贴（Mega Prompt）
 
-把下面整段贴进**新 Goal 对话**首条（并补上模型名与 §0 答案）：
+把下面整段贴进**新 Goal 对话**首条即可（§0 已填，勿再问）：
 
 ```text
 按 docs/research/goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md 执行学习中心教学升级 Goal。
 
-【模型锁定】全程只使用：________（填写）。所有 Task 子 Agent 必须 model: "inherit"。中途禁止换模型。
+【模型锁定】全程只使用我当前对话所用模型。所有 Task 子 Agent 必须 model: "inherit"。中途禁止换模型。
 
-【§0 答复】
-Q2 范围节奏：________
-Q3 UI 范围：________
-Q4 1:1 严格度：________
-Q5 旧共享表：________
-Q6 编译/package 仍由我本机执行：是
+【§0 已拍板 — 禁止重问】
+Q1 模型：inherit 当前对话模型，不换
+Q2 范围：本 Goal 一次铺开全集（内部 Wave 只是施工队列）
+Q3 UI：一次做完（分节折叠 + 7+ 练习区展示）
+Q4 数据：同构工具可共享极小族（白名单）；默认仍专用主集
+Q5 旧表：删除重建（smt_paste_height 等 10 表及旧 mapping 主链淘汰）
+Q6 编译/package：由我本机执行；你跑 Python verify
 
 【硬约束】
-- 这是升级，不是重建：衔接 learning_types / catalog / dataset_store / LearningCenterPage / WorksheetRegistry / build_learning_center_db.py。
-- 数据集默认「一算法一专用主集」；覆盖旧 black-belt plan 的强制共享策略。
-- 文案以 Canvas learning-center-tutorial-example 为金标：保留 0–6，叠加 7+ skill，禁止删掉上一版深度内容只留骨架。
-- 六 Agent 顺序：调研 → 计划 → 执行 → 测试 → 收尾检查 → 教学检验；每岗 DoD 未过不得进入下一岗。
-- 先 Wave-0（imr + dataset_id=imr_spi_shift → 工作表 demo_imr_spi_shift）金标，再分 Wave；金标未过禁止大批量灌文案。
-- 遵守该手册 §0.1 硬约束与 §8 禁止偷懒全文。
-- catalog_version 双写 learning-center-v2；内容必须进 build_learning_center_db.py 生成器，禁止只手改 sqlite。
-- 中文路径：不要强跑易失败的 cmake/package；完成后 commit+push，并提示我本机 package_dist 自测。
-- 每阶段结束输出：文件列表 + DoD + 风险 + go/no-go。
+- 升级不是重建窗口：衔接 learning_types / catalog / dataset_store / LearningCenterPage / WorksheetRegistry / build_learning_center_db.py。
+- 文案以 Canvas learning-center-tutorial-example 为金标：保留 0–6，叠加 7+ skill。
+- 六 Agent：调研 → 计划 → 执行 → 测试 → 收尾 → 教学检验；每岗 DoD 未过不得进下一岗。
+- 先 Wave-0 金标（imr + imr_spi_shift → 工作表 demo_imr_spi_shift）闸门，通过后连续铺完 Wave-1…5，禁止截断。
+- 遵守手册 §0.1 / §8；catalog 双写 learning-center-v2；内容进生成器，禁止只手改 sqlite。
+- 中文路径：不强跑 cmake/package；完成后 commit+push，提示我本机 package_dist。
+- 每阶段：文件列表 + DoD + 风险 + go/no-go。
 ```
 
 ---
@@ -422,3 +426,4 @@ Q6 编译/package 仍由我本机执行：是
 |------|------|
 | 2026-09-03 | 初稿：六 Agent、专用集覆盖共享策略、衔接现网学习中心、§0 待问项、mega prompt |
 | 2026-09-03 | 子 Agent 审查后补 §0.1 硬约束：catalog 双写、dataset_id 命名、生成器管线、测试 10 表、dialog_fill 并列等 |
+| 2026-09-03 | §0 用户拍板：inherit 模型；全集铺开；UI 一次做完；同构极小共享；旧表删除重建；本机 package |
