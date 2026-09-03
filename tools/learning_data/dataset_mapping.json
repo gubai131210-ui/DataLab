@@ -1,0 +1,2828 @@
+{
+  "generated_at": "2026-09-03",
+  "catalog_version": "learning-center-mapping-v1",
+  "datasets": {
+    "smt_paste_height": {
+      "title": "SMT 锡膏印刷高度",
+      "industry": "electronics",
+      "story": "某 SMT 线体印刷后 3D 锡膏检测，按时间顺序记录高度，用于描述统计、正态性、I-MR、能力、直方图等。",
+      "row_count": 80,
+      "columns": [
+        {
+          "index": 0,
+          "name": "锡膏高度_um",
+          "role_hint": "measurement",
+          "unit": "μm",
+          "description": "3D 锡膏高度"
+        },
+        {
+          "index": 1,
+          "name": "产线",
+          "role_hint": "factor",
+          "description": "产线 A/B"
+        },
+        {
+          "index": 2,
+          "name": "班次",
+          "role_hint": "factor",
+          "description": "早/中/晚班"
+        },
+        {
+          "index": 3,
+          "name": "检测时间",
+          "role_hint": "time",
+          "description": "ISO 时间戳"
+        },
+        {
+          "index": 4,
+          "name": "钢网编号",
+          "role_hint": "factor",
+          "description": "钢网 ID"
+        }
+      ],
+      "serves_commands": [
+        "area_plot",
+        "bar_chart",
+        "box_cox",
+        "bubble_plot",
+        "capability",
+        "capability_sixpack",
+        "chi_square_mosaic_link",
+        "correlation_plot",
+        "cusum",
+        "density_plot",
+        "descriptive",
+        "distribution_identification",
+        "dotplot",
+        "ecdf_plot",
+        "eda_4plot",
+        "ewma",
+        "graph_gallery",
+        "heatmap_plot",
+        "hexbin_plot",
+        "histogram",
+        "imr",
+        "imr_rs",
+        "interval_plot",
+        "marginal_plot",
+        "matrix_plot",
+        "mosaic_plot",
+        "multi_vari",
+        "nonnormal_capability",
+        "nonparametric_capability",
+        "normality_test",
+        "one_sample_t",
+        "one_sample_z",
+        "outlier_test",
+        "parallel_plot",
+        "pie_plot",
+        "probability_plot",
+        "run_chart",
+        "tolerance_intervals",
+        "variability_chart",
+        "violin_plot",
+        "z_mr",
+        "zone_chart"
+      ]
+    },
+    "two_line_thickness": {
+      "title": "两产线光学膜厚",
+      "industry": "electronics",
+      "story": "两条镀膜产线抽检膜厚，比较均值与方差、箱线图、双样本 t。",
+      "row_count": 60,
+      "columns": [
+        {
+          "index": 0,
+          "name": "膜厚_um",
+          "role_hint": "measurement",
+          "unit": "μm"
+        },
+        {
+          "index": 1,
+          "name": "产线",
+          "role_hint": "factor",
+          "description": "A 线 / B 线"
+        },
+        {
+          "index": 2,
+          "name": "抽检批次",
+          "role_hint": "factor"
+        },
+        {
+          "index": 3,
+          "name": "检测时间",
+          "role_hint": "time"
+        }
+      ],
+      "serves_commands": [
+        "batch_capability",
+        "boxplot",
+        "mann_whitney",
+        "one_proportion_equivalence",
+        "one_sample_equivalence",
+        "two_proportion_equivalence",
+        "two_sample_equivalence",
+        "two_sample_equivalence_ratio",
+        "two_sample_t",
+        "variance_test"
+      ]
+    },
+    "paired_rework": {
+      "title": "装配返工前后扭矩",
+      "industry": "assembly",
+      "story": "返工前后同一工件扭矩配对测量，用于 paired t / Wilcoxon / 符号检验。",
+      "row_count": 40,
+      "columns": [
+        {
+          "index": 0,
+          "name": "返工前扭矩_Nm",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 1,
+          "name": "返工后扭矩_Nm",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 2,
+          "name": "工件号",
+          "role_hint": "id"
+        },
+        {
+          "index": 3,
+          "name": "缺陷类型",
+          "role_hint": "factor"
+        }
+      ],
+      "serves_commands": [
+        "mcnemar",
+        "paired_equivalence",
+        "paired_t",
+        "sign_test",
+        "wilcoxon_signed_rank"
+      ]
+    },
+    "anova_cavity": {
+      "title": "注塑三模腔尺寸",
+      "industry": "molding",
+      "story": "三穴模具尺寸抽检，单因素 ANOVA、ANOM、Kruskal-Wallis、箱线图。",
+      "row_count": 90,
+      "columns": [
+        {
+          "index": 0,
+          "name": "模腔尺寸_mm",
+          "role_hint": "measurement",
+          "unit": "mm"
+        },
+        {
+          "index": 1,
+          "name": "模腔",
+          "role_hint": "factor",
+          "description": "穴 1/2/3"
+        },
+        {
+          "index": 2,
+          "name": "材料批次",
+          "role_hint": "factor"
+        },
+        {
+          "index": 3,
+          "name": "机台号",
+          "role_hint": "factor"
+        }
+      ],
+      "serves_commands": [
+        "anom",
+        "between_within_capability",
+        "friedman",
+        "kruskal_wallis",
+        "mood_median",
+        "one_way_anova",
+        "xbar_r",
+        "xbar_s"
+      ]
+    },
+    "corr_temp_offset": {
+      "title": "回流温度与焊点偏移",
+      "industry": "electronics",
+      "story": "回流焊炉温与 AOI 焊点偏移，用于相关、回归、散点图、多变量图。",
+      "row_count": 55,
+      "columns": [
+        {
+          "index": 0,
+          "name": "炉温_℃",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 1,
+          "name": "焊点偏移_um",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 2,
+          "name": "链速_mm_min",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 3,
+          "name": "产品型号",
+          "role_hint": "factor"
+        },
+        {
+          "index": 4,
+          "name": "轨道号",
+          "role_hint": "factor"
+        }
+      ],
+      "serves_commands": [
+        "best_subsets_regression",
+        "bootstrap_mean",
+        "bootstrap_two_sample",
+        "cart_tree",
+        "cluster_observations",
+        "cluster_variables",
+        "correlation",
+        "discriminant",
+        "factor_analysis",
+        "general_manova",
+        "generalized_variance",
+        "hotelling_t2",
+        "isolation_forest",
+        "kmeans",
+        "manova_one_way",
+        "mewma",
+        "mixed_effects_reml",
+        "multiple_correspondence",
+        "nominal_logistic",
+        "nonlinear_regression",
+        "ordinal_logistic",
+        "orthogonal_regression",
+        "pca",
+        "pls_regression",
+        "poisson_regression",
+        "random_forest",
+        "randomization_test",
+        "regression",
+        "scatter_plot",
+        "simple_correspondence",
+        "stepwise_regression"
+      ]
+    },
+    "attribute_defect": {
+      "title": "装配班次不良计数",
+      "industry": "assembly",
+      "story": "各班次抽检不良与缺陷分类，用于 p/np/c/u 图、卡方、帕累托、比例检验。",
+      "row_count": 48,
+      "columns": [
+        {
+          "index": 0,
+          "name": "班次",
+          "role_hint": "factor"
+        },
+        {
+          "index": 1,
+          "name": "检验数",
+          "role_hint": "trials"
+        },
+        {
+          "index": 2,
+          "name": "不良数",
+          "role_hint": "events"
+        },
+        {
+          "index": 3,
+          "name": "缺陷数",
+          "role_hint": "defects"
+        },
+        {
+          "index": 4,
+          "name": "缺陷类型",
+          "role_hint": "category"
+        },
+        {
+          "index": 5,
+          "name": "检验面积_dm2",
+          "role_hint": "length"
+        },
+        {
+          "index": 6,
+          "name": "产线",
+          "role_hint": "factor"
+        }
+      ],
+      "serves_commands": [
+        "anom_attribute",
+        "attribute_agreement",
+        "binomial_capability",
+        "c_chart",
+        "chi_square",
+        "chi_square_gof",
+        "cochran_q",
+        "cross_tabulation",
+        "fisher_exact",
+        "g_chart",
+        "laney_p_chart",
+        "laney_u_chart",
+        "logistic_regression",
+        "np_chart",
+        "one_poisson_rate",
+        "one_proportion",
+        "p_chart",
+        "pareto",
+        "poisson_capability",
+        "poisson_gof",
+        "two_poisson_rate",
+        "two_proportions",
+        "u_chart"
+      ]
+    },
+    "gage_rr_balance": {
+      "title": "三座标 MSA 交叉研究",
+      "industry": "msa",
+      "story": "10 零件 × 3 操作员 × 3 次重复测量，Gage R&R 系列教程。",
+      "row_count": 90,
+      "columns": [
+        {
+          "index": 0,
+          "name": "零件号",
+          "role_hint": "part"
+        },
+        {
+          "index": 1,
+          "name": "操作员",
+          "role_hint": "operator"
+        },
+        {
+          "index": 2,
+          "name": "重复序号",
+          "role_hint": "replicate"
+        },
+        {
+          "index": 3,
+          "name": "测量值_mm",
+          "role_hint": "measurement",
+          "unit": "mm"
+        }
+      ],
+      "serves_commands": [
+        "emp_crossed",
+        "expanded_gage_rr",
+        "expanded_gage_unbalanced",
+        "gage_rr",
+        "msa_type1",
+        "nested_gage_rr"
+      ]
+    },
+    "doe_factorial_demo": {
+      "title": "回流焊 2³ 析因试验",
+      "industry": "electronics",
+      "story": "温度×链速×氮气流量对焊点强度的全因子 DOE，含响应面与优化类命令。",
+      "row_count": 24,
+      "columns": [
+        {
+          "index": 0,
+          "name": "温度_℃",
+          "role_hint": "factor"
+        },
+        {
+          "index": 1,
+          "name": "链速_mm_min",
+          "role_hint": "factor"
+        },
+        {
+          "index": 2,
+          "name": "氮气流量_L_min",
+          "role_hint": "factor"
+        },
+        {
+          "index": 3,
+          "name": "响应_强度_MPa",
+          "role_hint": "response"
+        },
+        {
+          "index": 4,
+          "name": "响应_虚焊率",
+          "role_hint": "response"
+        },
+        {
+          "index": 5,
+          "name": "运行序号",
+          "role_hint": "order"
+        },
+        {
+          "index": 6,
+          "name": "成分_A_pct",
+          "role_hint": "mixture"
+        },
+        {
+          "index": 7,
+          "name": "成分_B_pct",
+          "role_hint": "mixture"
+        },
+        {
+          "index": 8,
+          "name": "成分_C_pct",
+          "role_hint": "mixture"
+        }
+      ],
+      "serves_commands": [
+        "analyze_definitive_screening",
+        "analyze_variability",
+        "binary_doe_probit",
+        "binary_response_doe",
+        "contour_plot",
+        "doe_response",
+        "glm_three_factor",
+        "glm_two_way",
+        "mixture_analyze",
+        "mixture_process_variable",
+        "response_optimization",
+        "rsm_response",
+        "simplex_design_plot",
+        "split_plot_analyze",
+        "taguchi_analyze",
+        "two_factor_anova"
+      ]
+    },
+    "reliability_cycles": {
+      "title": "电源模块寿命循环",
+      "industry": "reliability",
+      "story": "加速应力下循环至失效/删失，KM、Weibull、Cox、ALT 等可靠性教程。",
+      "row_count": 45,
+      "columns": [
+        {
+          "index": 0,
+          "name": "循环次数",
+          "role_hint": "time"
+        },
+        {
+          "index": 1,
+          "name": "失效状态",
+          "role_hint": "event",
+          "description": "0=删失 1=失效"
+        },
+        {
+          "index": 2,
+          "name": "应力_V",
+          "role_hint": "stress"
+        },
+        {
+          "index": 3,
+          "name": "单元号",
+          "role_hint": "id"
+        },
+        {
+          "index": 4,
+          "name": "失效模式",
+          "role_hint": "category"
+        },
+        {
+          "index": 5,
+          "name": "事件时间_小时",
+          "role_hint": "time"
+        }
+      ],
+      "serves_commands": [
+        "accelerated_life",
+        "cox_counting_process",
+        "cox_regression",
+        "fine_gray_regression",
+        "km_interval",
+        "life_data_lognormal",
+        "life_data_regression",
+        "nhpp_repairable",
+        "probit_reliability",
+        "reliability",
+        "reliability_warranty",
+        "t_chart",
+        "weibayes"
+      ]
+    },
+    "ts_weekly_yield": {
+      "title": "周度装配良率",
+      "industry": "assembly",
+      "story": "52 周良率序列，用于时序图、平滑、分解、ARIMA、ADF、ACF。",
+      "row_count": 52,
+      "columns": [
+        {
+          "index": 0,
+          "name": "周次",
+          "role_hint": "time"
+        },
+        {
+          "index": 1,
+          "name": "良率_pct",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 2,
+          "name": "产量_件",
+          "role_hint": "measurement"
+        },
+        {
+          "index": 3,
+          "name": "年份",
+          "role_hint": "factor"
+        }
+      ],
+      "serves_commands": [
+        "acf_pacf",
+        "adf_test",
+        "arima",
+        "ccf",
+        "correlogram",
+        "moving_average",
+        "runs_test",
+        "seasonal_forecasting",
+        "time_series_decomposition",
+        "time_series_plot",
+        "time_series_smoothing",
+        "trend_analysis"
+      ]
+    }
+  },
+  "mappings": [
+    {
+      "command_id": "accelerated_life",
+      "title": "加速寿命分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "acceptance_sampling",
+      "title": "属性一次抽样",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "acf_pacf",
+      "title": "ACF/PACF",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "variables": "良率_pct"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "adf_test",
+      "title": "ADF 单位根检验",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "variables": "良率_pct"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "analyze_definitive_screening",
+      "title": "分析确定性筛选设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "analyze_variability",
+      "title": "Analyze Variability",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "factors": "温度_℃"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "anom",
+      "title": "均值分析 (ANOM)",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "response": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "anom_attribute",
+      "title": "属性 ANOM（二项/泊松）",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "area_plot",
+      "title": "面积图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "time": "检测时间"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "arima",
+      "title": "ARIMA / Best ARIMA",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "time": "周次"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "attribute_agreement",
+      "title": "属性一致性分析",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "bar_chart",
+      "title": "条形图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "category": "钢网编号"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "batch_capability",
+      "title": "批次过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "measurement": "膜厚_um"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "best_subsets_regression",
+      "title": "Best Subsets 回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "between_within_capability",
+      "title": "组间/组内过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "variables": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "binary_doe_probit",
+      "title": "二值 DOE Probit/Gompit",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "factors": "温度_℃"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "binary_response_doe",
+      "title": "二值响应 DOE",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "factors": "温度_℃"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "binomial_capability",
+      "title": "二项过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "bootstrap_mean",
+      "title": "Bootstrap 均值 CI",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "bootstrap_two_sample",
+      "title": "Bootstrap 双样本均值差 CI",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {},
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "box_cox",
+      "title": "Box-Cox 变换",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "boxplot",
+      "title": "箱线图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "variables": "膜厚_um"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "bubble_plot",
+      "title": "气泡图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "c_chart",
+      "title": "C 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "defects": "缺陷数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "capability",
+      "title": "正态过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "capability_sixpack",
+      "title": "过程能力 Sixpack",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cart_tree",
+      "title": "CART 单树",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cause_and_effect",
+      "title": "因果图",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "ccf",
+      "title": "互相关（CCF）",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {},
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "chi_square",
+      "title": "列联表卡方",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "chi_square_gof",
+      "title": "卡方拟合优度",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "category": "缺陷类型"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "chi_square_mosaic_link",
+      "title": "卡方–马赛克联动",
+      "menu_path": "图形",
+      "implemented_status": "orchestration",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cluster_observations",
+      "title": "层次聚类（观测）",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cluster_variables",
+      "title": "变量聚类",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cochran_q",
+      "title": "Cochran Q 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "variables": "不良数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "contour_plot",
+      "title": "等值线图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {},
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "correlation",
+      "title": "相关分析",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "correlation_plot",
+      "title": "相关图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "correlogram",
+      "title": "Correlogram（相关热图）",
+      "menu_path": "图形",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "variables": "良率_pct"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cox_counting_process",
+      "title": "Cox 计数过程",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {},
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cox_regression",
+      "title": "Cox 回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cross_tabulation",
+      "title": "交叉表",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "cusum",
+      "title": "CUSUM 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "database_import",
+      "title": "数据库导入",
+      "menu_path": "数据 > 数据库导入…",
+      "implemented_status": "partial",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "definitive_screening_design",
+      "title": "确定性筛选设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "density_plot",
+      "title": "密度图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "descriptive",
+      "title": "显示描述性统计",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "discriminant",
+      "title": "线性判别分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "distribution_calculator",
+      "title": "分布计算器",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "distribution_identification",
+      "title": "个体分布识别",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "doe_bbd",
+      "title": "Box–Behnken 设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "doe_ccd",
+      "title": "中心复合设计 CCD",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "doe_d_optimal",
+      "title": "D-最优设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "doe_factorial",
+      "title": "2 水平析因设计生成",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "doe_plackett_burman",
+      "title": "Plackett–Burman 设计生成",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "doe_response",
+      "title": "DOE 响应分析",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "dotplot",
+      "title": "点图",
+      "menu_path": "图形",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "ecdf_plot",
+      "title": "经验累积分布图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "eda_4plot",
+      "title": "EDA 四图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "emp_crossed",
+      "title": "EMP Crossed",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "gage_rr_balance",
+      "role_map": {
+        "measurement": "测量值_mm"
+      },
+      "import_worksheet_name": "demo_gage_rr_balance",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "ewma",
+      "title": "EWMA 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "expanded_gage_rr",
+      "title": "Expanded Gage R&R",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "gage_rr_balance",
+      "role_map": {
+        "measurement": "测量值_mm"
+      },
+      "import_worksheet_name": "demo_gage_rr_balance",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "expanded_gage_unbalanced",
+      "title": "不平衡 Expanded Gage R&R",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "gage_rr_balance",
+      "role_map": {
+        "measurement": "测量值_mm"
+      },
+      "import_worksheet_name": "demo_gage_rr_balance",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "factor_analysis",
+      "title": "因子分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "fine_gray_regression",
+      "title": "Fine-Gray 竞争风险回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "fisher_exact",
+      "title": "Fisher 精确检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "variables": "不良数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "friedman",
+      "title": "Friedman 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "response": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "g_chart",
+      "title": "G 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "variables": "不良数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "gage_rr",
+      "title": "Crossed Gage R&R",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "gage_rr_balance",
+      "role_map": {
+        "measurement": "测量值_mm"
+      },
+      "import_worksheet_name": "demo_gage_rr_balance",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "general_manova",
+      "title": "General MANOVA",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {},
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "generalized_variance",
+      "title": "广义方差图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "glm_three_factor",
+      "title": "三因子 GLM",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "glm_two_way",
+      "title": "双因子 GLM",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "graph_gallery",
+      "title": "探索性图形画廊",
+      "menu_path": "图形",
+      "implemented_status": "graph_reference",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "heatmap_plot",
+      "title": "热图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "hexbin_plot",
+      "title": "Hexbin",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "histogram",
+      "title": "直方图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "hotelling_t2",
+      "title": "Hotelling T²",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "imr",
+      "title": "I-MR 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "imr_rs",
+      "title": "I-MR-R/S 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "interval_plot",
+      "title": "区间图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "isolation_forest",
+      "title": "Isolation Forest",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "km_interval",
+      "title": "区间删失 Kaplan–Meier",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {},
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "kmeans",
+      "title": "K-Means 聚类",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "kruskal_wallis",
+      "title": "Kruskal-Wallis 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "response": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "laney_p_chart",
+      "title": "Laney P' 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "laney_u_chart",
+      "title": "Laney U' 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "defects": "缺陷数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "life_data_lognormal",
+      "title": "寿命数据 Lognormal",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "life_data_regression",
+      "title": "寿命数据回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "logistic_regression",
+      "title": "二元 Logistic 回归",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mann_whitney",
+      "title": "Mann-Whitney 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "variables": "膜厚_um"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "manova_one_way",
+      "title": "单因子 MANOVA",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {},
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "marginal_plot",
+      "title": "边际图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "matrix_plot",
+      "title": "矩阵图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mcnemar",
+      "title": "McNemar 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "paired_rework",
+      "role_map": {
+        "variables": "返工前扭矩_Nm",
+        "variables_second": "返工后扭矩_Nm"
+      },
+      "import_worksheet_name": "demo_paired_rework",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mewma",
+      "title": "MEWMA",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mixed_effects_reml",
+      "title": "混合效应 REML",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mixture_analyze",
+      "title": "Mixture 分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {},
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mixture_design",
+      "title": "Mixture 设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "mixture_extreme_vertices_design",
+      "title": "极端顶点混料设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "mixture_process_variable",
+      "title": "Mixture + 过程变量",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {},
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mood_median",
+      "title": "Mood 中位数检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "response": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "mosaic_plot",
+      "title": "马赛克图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "moving_average",
+      "title": "移动平均控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "variables": "良率_pct"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "msa_type1",
+      "title": "MSA Type 1 / Bias / Stability",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "gage_rr_balance",
+      "role_map": {
+        "measurement": "测量值_mm"
+      },
+      "import_worksheet_name": "demo_gage_rr_balance",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "multi_vari",
+      "title": "Multi-Vari 图",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "measurement": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "multiple_correspondence",
+      "title": "多重对应分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "nested_gage_rr",
+      "title": "Nested Gage R&R",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "gage_rr_balance",
+      "role_map": {
+        "measurement": "测量值_mm"
+      },
+      "import_worksheet_name": "demo_gage_rr_balance",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "nhpp_repairable",
+      "title": "可修复系统 NHPP",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "nominal_logistic",
+      "title": "名义 Logistic 回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "nonlinear_regression",
+      "title": "非线性回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "nonnormal_capability",
+      "title": "非正态过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "nonparametric_capability",
+      "title": "非参数过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "measurement": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "normality_test",
+      "title": "正态性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "np_chart",
+      "title": "NP 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_poisson_rate",
+      "title": "单样本泊松率",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "defects": "缺陷数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_proportion",
+      "title": "单比例检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "events": "不良数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_proportion_equivalence",
+      "title": "单比例等价性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {},
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_sample_equivalence",
+      "title": "单样本等价性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "variables": "膜厚_um"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_sample_t",
+      "title": "单样本 t 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_sample_z",
+      "title": "单样本 Z 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "one_way_anova",
+      "title": "单因素 ANOVA",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "response": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "ordinal_logistic",
+      "title": "有序 Logistic 回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "orthogonal_regression",
+      "title": "正交回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "x": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "outlier_test",
+      "title": "异常值检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "p_chart",
+      "title": "P 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "paired_equivalence",
+      "title": "配对等价性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "paired_rework",
+      "role_map": {
+        "variables": "返工前扭矩_Nm",
+        "variables_second": "返工后扭矩_Nm"
+      },
+      "import_worksheet_name": "demo_paired_rework",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "paired_t",
+      "title": "配对 t 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "paired_rework",
+      "role_map": {
+        "variables": "返工前扭矩_Nm",
+        "variables_second": "返工后扭矩_Nm"
+      },
+      "import_worksheet_name": "demo_paired_rework",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "parallel_plot",
+      "title": "平行坐标图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "pareto",
+      "title": "柏拉图",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "category": "缺陷类型"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "pca",
+      "title": "主成分分析",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "pie_plot",
+      "title": "饼图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "category": "钢网编号"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "pls_regression",
+      "title": "偏最小二乘回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "poisson_capability",
+      "title": "泊松过程能力",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "defects": "缺陷数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "poisson_gof",
+      "title": "泊松拟合优度",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {},
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "poisson_regression",
+      "title": "Poisson 回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "probability_plot",
+      "title": "正态概率图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {},
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "probit_reliability",
+      "title": "Probit 可靠性",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {},
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "random_forest",
+      "title": "随机森林",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "randomization_test",
+      "title": "随机化检验（两样本均值差）",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {},
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "regression",
+      "title": "线性回归",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "variables": "炉温_℃"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "reliability",
+      "title": "可靠性分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "reliability_test_plan",
+      "title": "可靠性试验计划",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "reliability_warranty",
+      "title": "保修摘要",
+      "menu_path": "统计",
+      "implemented_status": "command_only",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {},
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "report_templates",
+      "title": "报告模板（客户/工程师/审计）",
+      "menu_path": "文件 > 导出 PDF",
+      "implemented_status": "implemented",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "response_optimization",
+      "title": "DOE 响应优化",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "rsm_response",
+      "title": "响应曲面分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "run_chart",
+      "title": "运行图",
+      "menu_path": "质量工具",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "runs_test",
+      "title": "游程检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "variables": "良率_pct"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "scatter_plot",
+      "title": "散点图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {},
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "seasonal_forecasting",
+      "title": "季节性预测（Winters）",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {},
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "sign_test",
+      "title": "符号检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "paired_rework",
+      "role_map": {
+        "variables": "返工前扭矩_Nm",
+        "variables_second": "返工后扭矩_Nm"
+      },
+      "import_worksheet_name": "demo_paired_rework",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "simple_correspondence",
+      "title": "简单对应分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {},
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "simplex_design_plot",
+      "title": "混料三角图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {},
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "special_cause_rules",
+      "title": "特殊原因规则 Catalog",
+      "menu_path": "帮助 > 算法",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "split_plot_analyze",
+      "title": "裂区析因分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "split_plot_design",
+      "title": "2 水平裂区设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "stepwise_regression",
+      "title": "逐步回归",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "corr_temp_offset",
+      "role_map": {
+        "response": "焊点偏移_um"
+      },
+      "import_worksheet_name": "demo_corr_temp_offset",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "t_chart",
+      "title": "T 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "variables": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "t_power",
+      "title": "t 功效与样本量",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "taguchi_analyze",
+      "title": "Taguchi 分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "factors": "温度_℃"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "taguchi_orthogonal_design",
+      "title": "Taguchi 正交设计",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": false,
+      "dataset_id": null,
+      "role_map": {},
+      "import_worksheet_name": null,
+      "no_import_reason": "无需导入：计算器/设计生成/编排参考，直接打开菜单"
+    },
+    {
+      "command_id": "time_series_decomposition",
+      "title": "时间序列分解",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "time": "周次"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "time_series_plot",
+      "title": "时间序列图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "time": "周次"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "time_series_smoothing",
+      "title": "指数平滑",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "variables": "良率_pct"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "tolerance_intervals",
+      "title": "容差区间",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "measurement": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "trend_analysis",
+      "title": "趋势分析",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "ts_weekly_yield",
+      "role_map": {
+        "time": "周次"
+      },
+      "import_worksheet_name": "demo_ts_weekly_yield",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_factor_anova",
+      "title": "双因素 ANOVA",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "doe_factorial_demo",
+      "role_map": {
+        "response": "响应_强度_MPa"
+      },
+      "import_worksheet_name": "demo_doe_factorial_demo",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_poisson_rate",
+      "title": "双样本泊松率",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "first_events": "不良数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_proportion_equivalence",
+      "title": "两比例等价性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {},
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_proportions",
+      "title": "两比例检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "first_events": "不良数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_sample_equivalence",
+      "title": "双样本等价性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "variables": "膜厚_um"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_sample_equivalence_ratio",
+      "title": "双样本均值比等价性检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "variables": "膜厚_um"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "two_sample_t",
+      "title": "双样本 t 检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {
+        "variables": "膜厚_um",
+        "by": "产线"
+      },
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "u_chart",
+      "title": "U 图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "attribute_defect",
+      "role_map": {
+        "defects": "缺陷数"
+      },
+      "import_worksheet_name": "demo_attribute_defect",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "variability_chart",
+      "title": "变异性图",
+      "menu_path": "质量工具",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "measurement": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "variance_test",
+      "title": "等方差检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "two_line_thickness",
+      "role_map": {},
+      "import_worksheet_name": "demo_two_line_thickness",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "violin_plot",
+      "title": "小提琴图",
+      "menu_path": "图形",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "weibayes",
+      "title": "Weibayes",
+      "menu_path": "统计",
+      "implemented_status": "formula_reference",
+      "requires_data": true,
+      "dataset_id": "reliability_cycles",
+      "role_map": {
+        "time": "循环次数"
+      },
+      "import_worksheet_name": "demo_reliability_cycles",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "wilcoxon_signed_rank",
+      "title": "Wilcoxon 符号秩检验",
+      "menu_path": "统计",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "paired_rework",
+      "role_map": {
+        "variables": "返工前扭矩_Nm",
+        "variables_second": "返工后扭矩_Nm"
+      },
+      "import_worksheet_name": "demo_paired_rework",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "xbar_r",
+      "title": "Xbar-R 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "variables": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "xbar_s",
+      "title": "Xbar-S 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "anova_cavity",
+      "role_map": {
+        "variables": "模腔尺寸_mm"
+      },
+      "import_worksheet_name": "demo_anova_cavity",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "z_mr",
+      "title": "Z-MR 控制图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    },
+    {
+      "command_id": "zone_chart",
+      "title": "区域图",
+      "menu_path": "控制图",
+      "implemented_status": "implemented",
+      "requires_data": true,
+      "dataset_id": "smt_paste_height",
+      "role_map": {
+        "variables": "锡膏高度_um"
+      },
+      "import_worksheet_name": "demo_smt_paste_height",
+      "no_import_reason": null
+    }
+  ]
+}
