@@ -9,18 +9,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools" / "learning_data"))
-from glossary_bank import BY_ID, glossary_for  # noqa: E402
+from glossary_bank import expected_ids, glossary_for  # noqa: E402
 
 OVERLAY_DIR = ROOT / "tools/learning_data/tutorial_overlays"
 HANZI = re.compile(r"[\u4e00-\u9fff]")
 ID_LIKE = re.compile(r"^[a-z][a-z0-9_]+$")
 BOILER = "第一次见到时把它读成车间里能指着说的那句话"
+PAD_PHRASES = (
+    BOILER,
+    "先对着本课例子读一遍",
+    "不要写成过程合格，不要写成过程合格",
+)
 FORBIDDEN_TERMS = {
     "没有练习表",
     "空 dataset",
     "禁止句",
     "过程合格（禁止写成结论）",
     "空表",
+    "不是放行",
+    "字段对照",
+    "不要补假数",
 }
 FORBIDDEN_GLOSS = (
     "本波锁表",
@@ -30,6 +38,8 @@ FORBIDDEN_GLOSS = (
     "输出禁写",
     "WAVE",
     "Wave-",
+    "没有练习表",
+    "先对着本课例子读一遍",
 )
 TEMPLATE = ["histogram", "scatter_plot", "graph_gallery"]
 SPC = {
@@ -186,9 +196,9 @@ def main() -> int:
             term = str(item.get("term") or "")
             if term in FORBIDDEN_TERMS:
                 errors.append(f"{cid}: forbidden glossary term {term!r}")
-            if cid != "imr" and hanzi_n(str(item.get("plain") or "")) < 12:
+            if cid != "imr" and hanzi_n(str(item.get("plain") or "")) < 6:
                 errors.append(f"{cid}: short glossary plain {item.get('plain')!r}")
-            if cid != "imr" and hanzi_n(str(item.get("remember") or "")) < 12:
+            if cid != "imr" and hanzi_n(str(item.get("remember") or "")) < 6:
                 errors.append(f"{cid}: short glossary remember {item.get('remember')!r}")
         for needle in FORBIDDEN_GLOSS:
             if needle in gloss_blob:
@@ -206,7 +216,7 @@ def main() -> int:
                 errors.append(f"{cid}: field still 配套练习表 {field!r}")
 
     overlay_ids = {path.stem for path in paths}
-    bank_ids = set(BY_ID)
+    bank_ids = expected_ids()
     missing = sorted(overlay_ids - bank_ids)
     extra = sorted(bank_ids - overlay_ids)
     if missing:

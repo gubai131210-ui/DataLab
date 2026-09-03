@@ -27,17 +27,17 @@
     {
       "term": "运行图",
       "plain": "按顺序描点并对照中位数等参考线。",
-      "remember": "没有 Shewhart 控制限，不要写成过程合格。"
+      "remember": "运行图没有 Shewhart 控制限，不要当成控制图。"
     },
     {
       "term": "中位数参考",
       "plain": "看点落在中位数上侧还是下侧。",
-      "remember": "中位数 ≠ UCL，更不是 USL，不要写成过程合格。"
+      "remember": "中位数 ≠ UCL，更不是 USL。"
     },
     {
       "term": "同侧游程",
       "plain": "连续落在同一侧，可能是漂移线索。",
-      "remember": "本课片 28–40 是教学游程，不要写成过程合格。"
+      "remember": "本课片 28–40 是教学游程。"
     }
   ],
   "buried_signals": [

@@ -48,7 +48,7 @@
     {
       "term": "多组秩",
       "plain": "单因素 ANOVA 的非参数亲戚：几组位置是否不同。",
-      "remember": "显著只说明不全一样，不要写成过程合格。"
+      "remember": "显著只说明不全一样。"
     }
   ],
   "buried_signals": [

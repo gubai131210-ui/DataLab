@@ -53,7 +53,7 @@
     {
       "term": "配伍秩",
       "plain": "同一块板/同一天经过几个处理，用秩来比。",
-      "remember": "这是配对的多组，不是独立 ANOVA，不要写成过程合格。"
+      "remember": "这是配对的多组，不是独立 ANOVA。"
     }
   ],
   "buried_signals": [

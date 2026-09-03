@@ -62,7 +62,7 @@
     {
       "term": "子组标准差 S",
       "plain": "同一子组里几个数的离散程度，子组较大时比极差更稳。",
-      "remember": "n 比较大时用 S 图盯组内，再读 Xbar，不要写成过程合格。"
+      "remember": "n 比较大时用 S 图盯组内，再读 Xbar。"
     }
   ],
   "buried_signals": [
