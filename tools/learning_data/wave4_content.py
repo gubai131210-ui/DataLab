@@ -856,7 +856,7 @@ def _seven_plus(mission, prereq, self_explain, fade_ds, retrieval, misc) -> dict
         fade = [
             {
                 "level": 0,
-                "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出；回答步间自解释。",
+                "student": "跟着 §4 填对话框、跟着 §5 对照埋点读输出。",
                 "scaffold": "参数表 + 读图话术 + 埋点全部给出。",
             },
             {

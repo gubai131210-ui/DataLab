@@ -625,7 +625,7 @@ def _seven_plus(mission: str, prereq: list, self_explain: list, fade_ds: str, re
         "fade_levels": [
             {
                 "level": 0,
-                "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图；回答步间自解释。",
+                "student": "跟着 §4 填对话框、跟着 §5 对照埋点读图。",
                 "scaffold": "参数表 + 读图话术 + 埋点行号全部给出。",
             },
             {

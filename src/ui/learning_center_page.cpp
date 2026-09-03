@@ -869,9 +869,7 @@ void LearningCenterPage::rebuild_detail(const LearningTutorialEntry& entry)
     QVector<CollapsibleSection*> practice_sections;
     practice_sections.push_back(new CollapsibleSection(
         QStringLiteral("7A. 先修检查"), prereq_block(entry.prereq_quiz, practice), false, practice));
-    practice_sections.push_back(new CollapsibleSection(
-        QStringLiteral("7B. 步间自解释"), self_explain_block(entry.self_explain, practice),
-        false, practice));
+    // 7B「步间自解释」对车间学员负担过大：隐藏整块；overlay/sqlite 仍保留 self_explain 供日后开关。
     practice_sections.push_back(new CollapsibleSection(
         QStringLiteral("7C. 褪脚手架"), fade_block(entry.fade_levels, practice), false, practice));
     practice_sections.push_back(new CollapsibleSection(
