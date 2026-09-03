@@ -12,6 +12,7 @@ import random
 from pathlib import Path
 
 from copy_depth import RELATED_BY_ID, polish_overlay
+from glossary_bank import glossary_for
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -1602,11 +1603,7 @@ def build_empty_overlays(wave4_ids: list[str], data_ids: set[str]) -> dict[str, 
                     "meaning": "requires_data 可能为 false，或仅公式参考。",
                 }
             )
-        glossary = [
-            {"term": (title[:16] if title else cid), "plain": f"命令「{title}」的学习入口。", "remember": "对照帮助边界。"},
-            {"term": "空 dataset", "plain": "本波锁表诚实为空。", "remember": "勿挂旧10表或 demo_ 前缀。"},
-            {"term": "禁止句", "plain": "过程合格/必须停线/已证明正态/量具通过。", "remember": "输出禁写。"},
-        ]
+        glossary = glossary_for(cid, {"title": title})
         related = []
         if "doe" in cid or "taguchi" in cid or "mixture" in cid or "split_plot" in cid:
             related = ["doe_response", "response_optimization"]

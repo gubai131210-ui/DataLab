@@ -9,6 +9,8 @@ import json
 import re
 from pathlib import Path
 
+from glossary_bank import glossary_for
+
 HERE = Path(__file__).resolve().parent
 OVERLAY_DIR = HERE / "tutorial_overlays"
 HANZI = re.compile(r"[\u4e00-\u9fff]")
@@ -162,53 +164,102 @@ def scrub(text: str) -> str:
     out = out.replace("同构共享", "可以共用同一张练习表")
     out = out.replace("同构", "同一张练习表")
     out = out.replace("白名单", "")
+    out = studentize_text(out)
     out = re.sub(r"\s{2,}", " ", out).strip()
     return out
 
 
+def studentize_text(text: str) -> str:
+    out = text or ""
+    replacements = (
+        ("本波锁表诚实为空", "这一课暂时没有配套练习表"),
+        ("本波不提供演示表", "这一课暂时没有配套练习表"),
+        ("勿把旧共享表硬挂过来", "不要把别的课的表硬套过来"),
+        ("勿挂旧10表或 demo_ 前缀", "不要拿以前的练习表顶替，工作表名字也不要乱加前缀"),
+        ("锁表 dataset 空。", ""),
+        ("锁表 dataset 空", "暂时没有可导入的练习表"),
+        ("本波 dataset 空", "本课没有练习表"),
+        ("dataset 空", "没有练习表"),
+        ("analysis_commands", "软件菜单"),
+        ("roles/inputs", "对话框字段"),
+        ("（配套练习表）", ""),
+        ("(配套练习表)", ""),
+    )
+    for old, new in replacements:
+        out = out.replace(old, new)
+    return out
+
+
+def clean_field_label(field: str) -> str:
+    field = field or ""
+    field = re.sub(r"\s*\(`[^`]+`\)", "", field)
+    field = field.replace(" (配套练习表)", "").replace("（配套练习表）", "")
+    return field.strip()
+
+
 def expand_meaning(item: dict) -> dict:
-    meaning = item.get("meaning") or ""
+    field = clean_field_label(item.get("field") or "")
+    item["field"] = field
     put = item.get("put") or ""
-    field = item.get("field") or ""
-    label = re.sub(r"\s*\(`[^`]+`\)", "", field).strip() or field
+    meaning = (item.get("meaning") or "").replace(" (配套练习表)", "").replace("（配套练习表）", "")
+    if (
+        "无演示表" in put
+        or "dataset 空" in meaning
+        or "本波" in meaning
+        or "analysis_commands" in meaning
+        or put.startswith("（")
+    ):
+        item["put"] = "按菜单实填"
+        item["meaning"] = (
+            f"「{field}」在软件对话框里有这一项。"
+            "本课没有预填练习表，打开菜单后按你手头的列来填，不要虚构没有的框。"
+        )
+        return item
     if hanzi_n(meaning) >= 12:
         item["meaning"] = scrub(meaning)
         return item
     if put in ("留空", "留空（用策略）", "无需导入"):
         extra = (
-            f"「{label}」本课故意不填：填了会改变图上的中心或分组，第 5 节要对着看的信号就对不准。"
+            f"「{field}」本课故意不填：填了会改变图上的中心或分组，第 5 节要对着看的信号就对不准。"
             if "阶段" in field or "历史" in field or "分面" in field or "分组" in field
-            else f"「{label}」本课留空即可；有需要时再按现场情况补。"
+            else f"「{field}」本课留空即可；有需要时再按现场情况补。"
         )
     elif put:
-        extra = f"在对话框里把「{put}」填进「{label}」。这一项决定图上或表上对应哪一列。"
+        extra = f"在对话框里把「{put}」填进「{field}」。这一项决定图上或表上对应哪一列。"
     else:
-        extra = f"「{label}」按第 4 节说明填写，不要虚构软件里没有的字段。"
+        extra = f"「{field}」按第 4 节说明填写，不要虚构软件里没有的字段。"
     item["meaning"] = scrub((meaning.rstrip("。") + "。" + extra).strip())
     return item
 
 
-def expand_glossary(item: dict) -> dict:
-    term = item.get("term") or "术语"
-    if term in ("禁止句", "空 dataset") or "同构" in term or "白名单" in term:
-        if "同构" in term:
-            item["term"] = "同一张练习表"
-        elif term == "空 dataset":
-            item["term"] = "没有练习表"
-        elif term == "禁止句":
-            item["term"] = "过程合格（禁止写成结论）"
-    for key in ("plain", "remember"):
-        text = item.get(key) or ""
-        if hanzi_n(text) < 12:
-            item[key] = expand_plain(term, text)
-        else:
-            item[key] = scrub(text)
-    return item
-
-
-def expand_plain(term: str, text: str) -> str:
-    base = scrub(text) or term
-    return f"{base}。第一次见到时把它读成车间里能指着说的那句话，不要用更怪的缩写代替。"
+def polish_student_copy(cid: str, overlay: dict) -> dict:
+    title = overlay.get("title") or cid
+    empty = not (overlay.get("dialog_fill") or {}) and not overlay.get("dataset_id")
+    if empty:
+        overlay["used_for"] = (
+            f"弄清菜单「{title}」什么时候用、对话框里有哪些真实字段。"
+            "当前版本可能还没有配套练习表。"
+        )
+        overlay["not_for"] = (
+            "不要把别的课的练习表硬套过来，也不要写成过程合格、必须停线或已证明正态。"
+        )
+        overlay["scenario"] = (
+            f"这一课暂时没有可导入的练习表。若软件里能打开「{title}」，"
+            "对照第 4 节核对字段；若菜单还没有，就只读帮助里的公式和边界。"
+        )
+        overlay["click_steps"] = [
+            f"打开「帮助」→「学习中心」，选择本教程「{title}」。",
+            "这一课暂时没有配套练习表，不要把别的课的表硬套过来。",
+            "若软件里能打开该菜单，对照第 4 节核对对话框里真实有的字段。",
+            "若菜单还没有或只是公式参考，就去「算法、公式与参考资料」读边界。",
+            "看完不要写成过程合格、必须停线或已证明正态。",
+        ]
+        return overlay
+    for key in ("used_for", "not_for", "scenario"):
+        if overlay.get(key):
+            overlay[key] = studentize_text(overlay[key])
+    overlay["click_steps"] = [studentize_text(step) for step in overlay.get("click_steps") or []]
+    return overlay
 
 
 def pad_option(text: str, title: str, *, good: bool) -> str:
@@ -494,17 +545,11 @@ def polish_overlay(cid: str, overlay: dict) -> dict:
         overlay["dialog_fill_detail"] = [
             expand_meaning(dict(item)) for item in overlay.get("dialog_fill_detail") or []
         ]
-        overlay["glossary"] = [expand_glossary(dict(item)) for item in overlay.get("glossary") or []]
-        for key in ("used_for", "not_for", "scenario", "skill_mission"):
-            if overlay.get(key):
-                text = scrub(str(overlay[key]))
-                overlay[key] = re.sub(
-                    r"\b(?!demo_)[a-z]+(?:_[a-z0-9]+)+\b",
-                    "配套练习表",
-                    text,
-                )
+        overlay["glossary"] = glossary_for(cid, overlay)
+        overlay = polish_student_copy(cid, overlay)
         overlay.update(make_seven_plus(cid, overlay))
         overlay = deep_scrub_obj(overlay)
+        overlay["glossary"] = glossary_for(cid, overlay)
         common = overlay.get("common_mistakes") or []
         overlay["common_mistakes"] = [
             scrub(x).replace("不对照 analysis_commands 的 roles/inputs", "不要虚构软件里没有的对话框字段")

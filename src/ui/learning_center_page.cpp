@@ -16,6 +16,7 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSet>
 #include <QSizePolicy>
 #include <QSplitter>
 #include <QToolButton>
@@ -39,6 +40,34 @@ using datalab::application::learning::LearningTutorialCatalog;
 using datalab::application::learning::LearningTutorialEntry;
 
 namespace {
+
+bool is_control_limit_lesson(const QString& command_id)
+{
+    static const QSet<QString> kIds = {
+        QStringLiteral("imr"),
+        QStringLiteral("xbar_r"),
+        QStringLiteral("xbar_s"),
+        QStringLiteral("p_chart"),
+        QStringLiteral("np_chart"),
+        QStringLiteral("c_chart"),
+        QStringLiteral("u_chart"),
+        QStringLiteral("laney_p_chart"),
+        QStringLiteral("laney_u_chart"),
+        QStringLiteral("ewma"),
+        QStringLiteral("cusum"),
+        QStringLiteral("moving_average"),
+        QStringLiteral("zone_chart"),
+        QStringLiteral("g_chart"),
+        QStringLiteral("t_chart"),
+        QStringLiteral("z_mr"),
+        QStringLiteral("imr_rs"),
+        QStringLiteral("hotelling_t2"),
+        QStringLiteral("mewma"),
+        QStringLiteral("generalized_variance"),
+        QStringLiteral("special_cause_rules"),
+    };
+    return kIds.contains(command_id);
+}
 
 QString table_html(const QStringList& headers, const QVector<QStringList>& rows)
 {
@@ -174,10 +203,12 @@ QWidget* glossary_block(const LearningTutorialEntry& entry, QWidget* parent)
     auto* wrap = new QWidget(parent);
     auto* layout = new QVBoxLayout(wrap);
     layout->setContentsMargins(4, 4, 4, 4);
+    const QString intro = is_control_limit_lesson(entry.command_id)
+        ? QStringLiteral("<p>首次出现的缩写先读这张表。本课是控制限课，请盯住 <b>UCL ≠ USL</b>。</p>")
+        : QStringLiteral("<p>首次出现的缩写先读这张表。</p>");
     layout->addWidget(rich_label(
-        QStringLiteral("<p>首次出现的缩写先读这张表。控制限课请盯住 <b>UCL ≠ USL</b>。</p>%1")
-            .arg(table_html({QStringLiteral("术语"), QStringLiteral("白话"), QStringLiteral("怎么记")},
-                            rows)),
+        intro + table_html({QStringLiteral("术语"), QStringLiteral("白话"), QStringLiteral("怎么记")},
+                            rows),
         wrap));
     return wrap;
 }
@@ -325,11 +356,13 @@ QWidget* output_block(const LearningTutorialEntry& entry, QWidget* parent)
     auto* wrap = new QWidget(parent);
     auto* layout = new QVBoxLayout(wrap);
     layout->setContentsMargins(4, 4, 4, 4);
+    const QString intro = is_control_limit_lesson(entry.command_id)
+        ? QStringLiteral(
+              "<p>对着埋点读图。禁止「过程合格 / 必须停线 / 已证明正态 / 点出 UCL=废品」。</p>")
+        : QStringLiteral(
+              "<p>对着输出读。禁止写成「过程合格 / 必须停线 / 已证明正态」。</p>");
     layout->addWidget(rich_label(
-        QStringLiteral("<p>对着埋点读图。禁止「过程合格 / 必须停线 / 已证明正态 / 点出 UCL=废品」。"
-                       "</p>%1")
-            .arg(table_html({QStringLiteral("输出"), QStringLiteral("怎么读")}, rows)),
-        wrap));
+        intro + table_html({QStringLiteral("输出"), QStringLiteral("怎么读")}, rows), wrap));
     return wrap;
 }
 

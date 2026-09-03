@@ -8,9 +8,29 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools" / "learning_data"))
+from glossary_bank import BY_ID, glossary_for  # noqa: E402
+
 OVERLAY_DIR = ROOT / "tools/learning_data/tutorial_overlays"
 HANZI = re.compile(r"[\u4e00-\u9fff]")
 ID_LIKE = re.compile(r"^[a-z][a-z0-9_]+$")
+BOILER = "第一次见到时把它读成车间里能指着说的那句话"
+FORBIDDEN_TERMS = {
+    "没有练习表",
+    "空 dataset",
+    "禁止句",
+    "过程合格（禁止写成结论）",
+    "空表",
+}
+FORBIDDEN_GLOSS = (
+    "本波锁表",
+    "锁表诚实",
+    "勿挂旧10表",
+    "对照帮助边界",
+    "输出禁写",
+    "WAVE",
+    "Wave-",
+)
 TEMPLATE = ["histogram", "scatter_plot", "graph_gallery"]
 SPC = {
     "imr",
@@ -153,6 +173,46 @@ def main() -> int:
                 errors.append(f"{cid}: dialog_fill missing {key}")
         if str(ov.get("dataset_id") or "").startswith("demo_"):
             errors.append(f"{cid}: dataset_id starts with demo_")
+
+        gloss = ov.get("glossary") or []
+        gloss_blob = json.dumps(gloss, ensure_ascii=False)
+        if BOILER in gloss_blob:
+            errors.append(f"{cid}: glossary boiler padding")
+        if "。。" in gloss_blob:
+            errors.append(f"{cid}: glossary double period")
+        if len(gloss) < 3:
+            errors.append(f"{cid}: glossary < 3")
+        for item in gloss:
+            term = str(item.get("term") or "")
+            if term in FORBIDDEN_TERMS:
+                errors.append(f"{cid}: forbidden glossary term {term!r}")
+            if cid != "imr" and hanzi_n(str(item.get("plain") or "")) < 12:
+                errors.append(f"{cid}: short glossary plain {item.get('plain')!r}")
+            if cid != "imr" and hanzi_n(str(item.get("remember") or "")) < 12:
+                errors.append(f"{cid}: short glossary remember {item.get('remember')!r}")
+        for needle in FORBIDDEN_GLOSS:
+            if needle in gloss_blob:
+                errors.append(f"{cid}: glossary developer note {needle!r}")
+        if cid != "imr":
+            expected = glossary_for(cid, ov)
+            if gloss != expected:
+                errors.append(f"{cid}: glossary != bank")
+        if cid in SPC:
+            if "UCL" not in gloss_blob or "USL" not in gloss_blob:
+                errors.append(f"{cid}: SPC glossary missing UCL/USL")
+        for detail in ov.get("dialog_fill_detail") or []:
+            field = str(detail.get("field") or "")
+            if "配套练习表" in field:
+                errors.append(f"{cid}: field still 配套练习表 {field!r}")
+
+    overlay_ids = {path.stem for path in paths}
+    bank_ids = set(BY_ID)
+    missing = sorted(overlay_ids - bank_ids)
+    extra = sorted(bank_ids - overlay_ids)
+    if missing:
+        errors.append(f"glossary_bank missing {missing[:8]}")
+    if extra:
+        errors.append(f"glossary_bank extra {extra[:8]}")
 
     if errors:
         print("FAIL")
