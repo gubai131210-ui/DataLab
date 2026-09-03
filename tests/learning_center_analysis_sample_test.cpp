@@ -51,7 +51,20 @@ private slots:
 
 void LearningCenterAnalysisSampleTest::statisticsMenuChiSquareOnCatShiftLine()
 {
-    QSKIP("Wave-0 仅金标 imr_spi_shift；cat_shift_line 待 Wave-3");
+    const auto loaded = load_dataset("cat_shift_line");
+    QVERIFY(loaded.has_value());
+    const DataTable& table = *loaded;
+    const auto row_cat = find_column(table, "班次");
+    const auto col_cat = find_column(table, "缺陷类型");
+    QVERIFY(row_cat.has_value());
+    QVERIFY(col_cat.has_value());
+
+    AnalysisConfiguration configuration;
+    configuration.inference.row_category_column = *row_cat;
+    configuration.inference.column_category_column = *col_cat;
+    const OutputPage page = AnalysisService::chi_square(table, configuration);
+    assert_has_output(page);
+    QVERIFY(page.facts.chi_square.has_value());
 }
 
 void LearningCenterAnalysisSampleTest::controlChartMenuImrOnSpiShift()
@@ -71,10 +84,10 @@ void LearningCenterAnalysisSampleTest::controlChartMenuImrOnSpiShift()
 
 void LearningCenterAnalysisSampleTest::graphMenuHistogramOnImrSpiShift()
 {
-    const auto loaded = load_dataset("imr_spi_shift");
+    const auto loaded = load_dataset("graph_hist_prob");
     QVERIFY(loaded.has_value());
     const DataTable& table = *loaded;
-    const auto measurement = find_column(table, "锡膏高度_um");
+    const auto measurement = find_column(table, "厚度_um");
     QVERIFY(measurement.has_value());
 
     AnalysisConfiguration configuration;
@@ -86,12 +99,41 @@ void LearningCenterAnalysisSampleTest::graphMenuHistogramOnImrSpiShift()
 
 void LearningCenterAnalysisSampleTest::qualityToolsMenuParetoOnDefectTail()
 {
-    QSKIP("Wave-0 仅金标 imr_spi_shift；pareto_defect_tail 待 Wave-2");
+    const auto loaded = load_dataset("pareto_defect_tail");
+    QVERIFY(loaded.has_value());
+    const DataTable& table = *loaded;
+    const auto defect = find_column(table, "缺陷类别");
+    QVERIFY(defect.has_value());
+
+    AnalysisConfiguration configuration;
+    configuration.chart_type = "pareto";
+    configuration.variable_columns = {*defect};
+    const OutputPage page = AnalysisService::pareto(table, configuration);
+    assert_has_output(page);
+    QVERIFY(!page.plots.empty());
 }
 
 void LearningCenterAnalysisSampleTest::qualityToolsMenuBetweenWithinOnLaterWave()
 {
-    QSKIP("Wave-0 仅金标 imr_spi_shift；cap_between_within 待 Wave-2");
+    const auto loaded = load_dataset("cap_between_within");
+    QVERIFY(loaded.has_value());
+    const DataTable& table = *loaded;
+    const auto measurement = find_column(table, "厚度_um");
+    const auto subgroup = find_column(table, "子组");
+    QVERIFY(measurement.has_value());
+    QVERIFY(subgroup.has_value());
+
+    AnalysisConfiguration configuration;
+    configuration.variable_columns = {*measurement};
+    configuration.selection.measurement_column = *measurement;
+    configuration.selection.subgroup_column = *subgroup;
+    configuration.specifications.lower = 95.0;
+    configuration.specifications.upper = 105.0;
+    configuration.specifications.target = 100.0;
+    configuration.capability_method = "between_within";
+    const OutputPage page =
+        AnalysisService::between_within_capability(table, configuration);
+    assert_has_output(page);
 }
 
 QTEST_MAIN(LearningCenterAnalysisSampleTest)

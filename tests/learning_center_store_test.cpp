@@ -126,15 +126,38 @@ void LearningCenterStoreTest::loadsAllTutorials()
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QCOMPARE(static_cast<int>(tutorials.size()), 184);
 
+    const QStringList banned{
+        QStringLiteral("smt_paste_height"),
+        QStringLiteral("two_line_thickness"),
+        QStringLiteral("paired_rework"),
+        QStringLiteral("anova_cavity"),
+        QStringLiteral("corr_temp_offset"),
+        QStringLiteral("attribute_defect"),
+        QStringLiteral("gage_rr_balance"),
+        QStringLiteral("doe_factorial_demo"),
+        QStringLiteral("reliability_cycles"),
+        QStringLiteral("ts_weekly_yield"),
+    };
+
     int with_dataset = 0;
+    bool gold_imr_mapped = false;
     for (const auto& tutorial : tutorials) {
-        if (tutorial.dataset_id.has_value()) {
-            ++with_dataset;
-            QCOMPARE(tutorial.dataset_id.value(), QStringLiteral("imr_spi_shift"));
-            QCOMPARE(tutorial.command_id, QStringLiteral("imr"));
+        if (!tutorial.dataset_id.has_value()) {
+            continue;
+        }
+        ++with_dataset;
+        const QString& dataset_id = tutorial.dataset_id.value();
+        QVERIFY2(!dataset_id.startsWith(QStringLiteral("demo_")),
+                 qPrintable(dataset_id));
+        QVERIFY2(!banned.contains(dataset_id), qPrintable(dataset_id));
+        if (tutorial.command_id == QStringLiteral("imr")) {
+            QCOMPARE(dataset_id, QStringLiteral("imr_spi_shift"));
+            gold_imr_mapped = true;
         }
     }
-    QCOMPARE(with_dataset, 1);
+    QVERIFY2(with_dataset >= 2,
+             "expected dedicated/isomorhic datasets beyond Wave-0 gold");
+    QVERIFY2(gold_imr_mapped, "gold imr must map to imr_spi_shift");
 }
 
 void LearningCenterStoreTest::noConnectionLeakAfterOperations()

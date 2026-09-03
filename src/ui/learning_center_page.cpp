@@ -387,7 +387,9 @@ QString self_explain_hint(const LearningSelfExplain& item)
             "σ 仍走平均移动极差。作答留在本窗口，不写回数据库。");
     }
     return QStringLiteral(
-        "参考：对照 §0 关键词、§4 参数表与 §5 读图。作答仅留在本窗口，不写回数据库。");
+        "参考：对照本题提示「%1」、§0 关键词、§4 参数表与 §5 读图。"
+        "作答仅留在本窗口，不写回数据库。")
+        .arg(item.prompt);
 }
 
 QWidget* self_explain_block(const QVector<LearningSelfExplain>& items, QWidget* parent)
@@ -489,9 +491,11 @@ QWidget* retrieval_block(const QStringList& items, QWidget* parent)
         auto* hint = new QLabel(card);
         hint->setWordWrap(true);
         hint->hide();
-        QObject::connect(reveal, &QPushButton::clicked, wrap, [hint]() {
-            hint->setText(QStringLiteral(
-                "对照 §0（UCL≠USL）、§2 埋点行号与 §5 读图。答案不写回 sqlite。"));
+        QObject::connect(reveal, &QPushButton::clicked, wrap, [hint, question]() {
+            hint->setText(
+                QStringLiteral("对照本题「%1」与 §0 关键词、§2 埋点行号、§5 读图；"
+                               "控制限课请再核对 UCL≠USL。答案不写回 sqlite。")
+                    .arg(question));
             hint->show();
         });
         card_layout->addWidget(label);
