@@ -36,11 +36,18 @@ struct LearningPrereqItem {
     QString q;
     QString good;
     QString bad;
+    QString why;
 };
 
 struct LearningSelfExplain {
     QString after;
     QString prompt;
+    QString hint;
+};
+
+struct LearningRetrievalItem {
+    QString q;
+    QString hint;
 };
 
 struct LearningFadeLevel {
@@ -75,7 +82,7 @@ struct LearningTutorialEntry {
     QVector<LearningPrereqItem> prereq_quiz;
     QVector<LearningSelfExplain> self_explain;
     QVector<LearningFadeLevel> fade_levels;
-    QStringList retrieval_quiz;
+    QVector<LearningRetrievalItem> retrieval_quiz;
     QVector<LearningMisconception> misconceptions;
     QString skill_mission;
 };

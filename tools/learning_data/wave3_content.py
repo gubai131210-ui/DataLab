@@ -402,14 +402,21 @@ WAVE3_COMMAND_IDS = sorted(GENERATORS)  # datasets; overlays are separate files
 
 
 def write_overlays() -> None:
-    """Validate that 56 Wave-3 overlay JSON files exist."""
-    expected = {p.stem for p in OVERLAY_DIR.glob("*.json")}
-    # Only check Wave-3 ids presence — other waves also live here.
+    """Polish Wave-3 overlay JSON (56) in place; other waves live in the same folder."""
+    from copy_depth import polish_overlay
+
     wave3 = json.loads((HERE / "wave3_overlay_ids.json").read_text(encoding="utf-8"))
-    missing = [cid for cid in wave3 if cid not in expected]
+    missing = [cid for cid in wave3 if not (OVERLAY_DIR / f"{cid}.json").is_file()]
     if missing:
         raise SystemExit(f"missing overlays: {missing}")
-    print(f"OK: {len(wave3)} Wave-3 overlays present in {OVERLAY_DIR}")
+    for cid in wave3:
+        path = OVERLAY_DIR / f"{cid}.json"
+        overlay = json.loads(path.read_text(encoding="utf-8"))
+        path.write_text(
+            json.dumps(polish_overlay(cid, overlay), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    print(f"Wrote {len(wave3)} Wave-3 overlays to {OVERLAY_DIR}")
 
 
 if __name__ == "__main__":

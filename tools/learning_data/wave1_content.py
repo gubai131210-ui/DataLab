@@ -1637,9 +1637,12 @@ def _build_overlays_part3() -> dict[str, dict]:
 
 
 def write_overlays() -> None:
+    from copy_depth import polish_overlay
+
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
     overlays = build_overlays()
     for cid, payload in overlays.items():
+        payload = polish_overlay(cid, payload)
         path = OVERLAY_DIR / f"{cid}.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {len(overlays)} Wave-1 overlays to {OVERLAY_DIR}")

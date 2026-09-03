@@ -33,6 +33,7 @@ using datalab::application::learning::LearningGlossaryItem;
 using datalab::application::learning::LearningMisconception;
 using datalab::application::learning::LearningOutputGuideItem;
 using datalab::application::learning::LearningPrereqItem;
+using datalab::application::learning::LearningRetrievalItem;
 using datalab::application::learning::LearningSelfExplain;
 using datalab::application::learning::LearningTutorialCatalog;
 using datalab::application::learning::LearningTutorialEntry;
@@ -360,18 +361,21 @@ QWidget* prereq_block(const QVector<LearningPrereqItem>& items, QWidget* parent)
         feedback->setWordWrap(true);
         card_layout->addWidget(feedback);
         QObject::connect(good_button, &QPushButton::clicked, wrap,
-                         [feedback, good = item.good]() {
-                             feedback->setText(
-                                 QStringLiteral("正确。本课期望理解：%1。可继续读 §0 关键词。")
-                                     .arg(good));
+                         [feedback, why = item.why]() {
+                             const QString text = why.isEmpty()
+                                 ? QStringLiteral(
+                                       "正确。请回到上面第 0 节关键词和第 5 节读图，核对本课要抓住的那一点。")
+                                 : QStringLiteral("正确。%1").arg(why);
+                             feedback->setText(text);
                              feedback->setStyleSheet(QStringLiteral("color:#1b6b4a;"));
                          });
         QObject::connect(bad_button, &QPushButton::clicked, wrap,
-                         [feedback, bad = item.bad, good = item.good]() {
-                             feedback->setText(
-                                 QStringLiteral("请回到 §0 对照：常见误解是「%1」；"
-                                                "更稳妥的理解是「%2」。")
-                                     .arg(bad, good));
+                         [feedback, why = item.why]() {
+                             const QString text = why.isEmpty()
+                                 ? QStringLiteral(
+                                       "这不是本课要抓的点。请回到上面第 0 节关键词和第 5 节读图，再选一次。")
+                                 : QStringLiteral("还差一点。%1").arg(why);
+                             feedback->setText(text);
                              feedback->setStyleSheet(QStringLiteral("color:#a33b3b;"));
                          });
         layout->addWidget(card);
@@ -381,15 +385,12 @@ QWidget* prereq_block(const QVector<LearningPrereqItem>& items, QWidget* parent)
 
 QString self_explain_hint(const LearningSelfExplain& item)
 {
-    if (item.prompt.contains(QStringLiteral("Nelson"))) {
-        return QStringLiteral(
-            "参考：本课关闭 Nelson estimate，避免过大 MR 被剔除后改写教学用 UCL/LCL。"
-            "σ 仍走平均移动极差。作答留在本窗口，不写回数据库。");
+    if (!item.hint.isEmpty()) {
+        return item.hint;
     }
     return QStringLiteral(
-        "参考：对照本题提示「%1」、§0 关键词、§4 参数表与 §5 读图。"
-        "作答仅留在本窗口，不写回数据库。")
-        .arg(item.prompt);
+        "请回到上面第 0 节关键词和第 5 节读图，用自己的话写下「为什么这样填/这样读」。"
+        "作答仅留在本窗口，不写回数据库。");
 }
 
 QWidget* self_explain_block(const QVector<LearningSelfExplain>& items, QWidget* parent)
@@ -470,7 +471,7 @@ QWidget* fade_block(const QVector<LearningFadeLevel>& items, QWidget* parent)
     return wrap;
 }
 
-QWidget* retrieval_block(const QStringList& items, QWidget* parent)
+QWidget* retrieval_block(const QVector<LearningRetrievalItem>& items, QWidget* parent)
 {
     if (items.isEmpty()) {
         return empty_block(QStringLiteral("本课无此块"), parent);
@@ -479,10 +480,10 @@ QWidget* retrieval_block(const QStringList& items, QWidget* parent)
     auto* layout = new QVBoxLayout(wrap);
     layout->setContentsMargins(4, 4, 4, 4);
     int index = 1;
-    for (const QString& question : items) {
+    for (const LearningRetrievalItem& item : items) {
         auto* card = new QFrame(wrap);
         auto* card_layout = new QVBoxLayout(card);
-        auto* label = new QLabel(QStringLiteral("%1. %2").arg(index).arg(question), card);
+        auto* label = new QLabel(QStringLiteral("%1. %2").arg(index).arg(item.q), card);
         label->setWordWrap(true);
         auto* edit = new QPlainTextEdit(card);
         edit->setPlaceholderText(QStringLiteral("合上教程作答（不写回数据库）"));
@@ -491,11 +492,13 @@ QWidget* retrieval_block(const QStringList& items, QWidget* parent)
         auto* hint = new QLabel(card);
         hint->setWordWrap(true);
         hint->hide();
-        QObject::connect(reveal, &QPushButton::clicked, wrap, [hint, question]() {
-            hint->setText(
-                QStringLiteral("对照本题「%1」与 §0 关键词、§2 埋点行号、§5 读图；"
-                               "控制限课请再核对 UCL≠USL。答案不写回 sqlite。")
-                    .arg(question));
+        const QString hint_text = item.hint.isEmpty()
+            ? QStringLiteral(
+                  "请回到上面第 0 节关键词和第 5 节读图，核对本课埋点和禁止误读。"
+                  "答案不写回数据库。")
+            : item.hint;
+        QObject::connect(reveal, &QPushButton::clicked, wrap, [hint, hint_text]() {
+            hint->setText(hint_text);
             hint->show();
         });
         card_layout->addWidget(label);

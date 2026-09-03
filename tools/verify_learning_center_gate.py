@@ -316,6 +316,7 @@ def main() -> int:
     failures: list[str] = []
 
     for script in (
+        "tools/verify_learning_center_copy_depth.py",
         "tools/verify_learning_center_db.py",
         "tools/verify_learning_research_notes.py",
         "tools/verify_learning_dataset_mapping.py",

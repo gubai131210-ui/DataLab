@@ -11,6 +11,8 @@ import math
 import random
 from pathlib import Path
 
+from copy_depth import RELATED_BY_ID, polish_overlay
+
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
 OVERLAY_DIR = HERE / "tutorial_overlays"
@@ -1539,7 +1541,7 @@ def build_data_overlays() -> dict[str, dict]:
             used_for=f"用专用集 `{ds}` 练习「{title}」。",
             not_for="替代推断/放行结论；禁止过程合格 / 已证明正态 / 必须停线。",
             scenario=f"导入 `demo_{ds}`。{fill_hint}。",
-            related=["histogram", "scatter_plot", "graph_gallery"],
+            related=RELATED_BY_ID.get(cid, ["descriptive"]),
             dialog_fill=fill,
             click_steps=[
                 f"导入 `demo_{ds}`。",
@@ -1665,6 +1667,7 @@ def write_overlays() -> None:
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
     overlays = build_overlays()
     assert len(overlays) == 83, len(overlays)
+    overlays = {cid: polish_overlay(cid, payload) for cid, payload in overlays.items()}
     for cid, payload in overlays.items():
         path = OVERLAY_DIR / f"{cid}.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -197,6 +197,7 @@ QVector<LearningPrereqItem> parse_prereq_quiz(const QJsonArray& array)
         item.q = object.value(QStringLiteral("q")).toString();
         item.good = object.value(QStringLiteral("good")).toString();
         item.bad = object.value(QStringLiteral("bad")).toString();
+        item.why = object.value(QStringLiteral("why")).toString();
         items.push_back(std::move(item));
     }
     return items;
@@ -210,6 +211,24 @@ QVector<LearningSelfExplain> parse_self_explain(const QJsonArray& array)
         LearningSelfExplain item;
         item.after = object.value(QStringLiteral("after")).toString();
         item.prompt = object.value(QStringLiteral("prompt")).toString();
+        item.hint = object.value(QStringLiteral("hint")).toString();
+        items.push_back(std::move(item));
+    }
+    return items;
+}
+
+QVector<LearningRetrievalItem> parse_retrieval_quiz(const QJsonArray& array)
+{
+    QVector<LearningRetrievalItem> items;
+    for (const QJsonValue& value : array) {
+        LearningRetrievalItem item;
+        if (value.isString()) {
+            item.q = value.toString();
+        } else {
+            const QJsonObject object = value.toObject();
+            item.q = object.value(QStringLiteral("q")).toString();
+            item.hint = object.value(QStringLiteral("hint")).toString();
+        }
         items.push_back(std::move(item));
     }
     return items;
@@ -281,7 +300,7 @@ LearningTutorialEntry parse_tutorial_row(QSqlQuery& query)
         column_text(query, QStringLiteral("self_explain"))));
     entry.fade_levels = parse_fade_levels(parse_json_array(
         column_text(query, QStringLiteral("fade_levels"))));
-    entry.retrieval_quiz = parse_string_array(parse_json_array(
+    entry.retrieval_quiz = parse_retrieval_quiz(parse_json_array(
         column_text(query, QStringLiteral("retrieval_quiz"))));
     entry.misconceptions = parse_misconceptions(parse_json_array(
         column_text(query, QStringLiteral("misconceptions"))));
