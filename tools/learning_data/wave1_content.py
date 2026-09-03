@@ -648,7 +648,7 @@ def _seven_plus(mission: str, prereq: list, self_explain: list, fade_ds: str, re
             },
             {
                 "wrong": "看完例题不做练习也会了",
-                "right": "必须有自解释 + 褪脚手架 + 检索小测。",
+                "right": "必须做褪脚手架和检索小测。",
             },
         ],
     }
@@ -1602,7 +1602,7 @@ def _build_overlays_part3() -> dict[str, dict]:
         "fade_levels": [
             {
                 "level": 0,
-                "student": "对照帮助页规则定义 + 金标 I-MR 课的 rule_policy/tests 字段说明；回答自解释题。",
+                "student": "对照帮助页规则定义 + 金标 I-MR 课的 rule_policy/tests 字段说明。",
                 "scaffold": "本课不导入表；参数含义表 + related_ids→imr 全部给出。",
             },
             {

@@ -895,7 +895,7 @@ def _seven_plus(mission, prereq, self_explain, fade_ds, retrieval, misc) -> dict
         "fade_levels": fade,
         "retrieval_quiz": retrieval,
         "misconceptions": misc
-        + [{"wrong": "看完例题不做练习也会了", "right": "必须有自解释 + 褪脚手架 + 检索小测。"}],
+        + [{"wrong": "看完例题不做练习也会了", "right": "必须做褪脚手架和检索小测。"}],
     }
 
 

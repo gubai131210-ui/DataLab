@@ -141,6 +141,17 @@ def main() -> int:
                 errors.append(f"{cid}: missing self_explain hint")
             elif hint.strip() == prompt.strip():
                 errors.append(f"{cid}: hint repeats prompt")
+        # 7B UI is hidden: student-visible fade/misconception copy must not mention 自解释.
+        for fade in ov.get("fade_levels") or []:
+            if isinstance(fade, dict):
+                for key in ("student", "scaffold"):
+                    if "自解释" in str(fade.get(key) or ""):
+                        errors.append(f"{cid}: fade {key} still mentions 自解释")
+        for misc in ov.get("misconceptions") or []:
+            if isinstance(misc, dict):
+                for key in ("wrong", "right"):
+                    if "自解释" in str(misc.get(key) or ""):
+                        errors.append(f"{cid}: misconception {key} still mentions 自解释")
         retrieval = ov.get("retrieval_quiz") or []
         if len(retrieval) < 3:
             errors.append(f"{cid}: retrieval {len(retrieval)} < 3")
