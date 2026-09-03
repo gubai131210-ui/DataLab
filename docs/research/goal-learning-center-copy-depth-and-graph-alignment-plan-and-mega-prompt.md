@@ -1,6 +1,7 @@
 # Goal：学习中心文案加深 + 练习闭环可读性 + 图形名实对齐
 
-> **用途**：新开一场 Goal 对话时的**唯一权威操作手册**（本轮）。  
+> **用途**：文案加深 + 练习闭环 + 图形对齐 Goal 的权威手册；**该 Goal 内容层已收口**。  
+> **后续 Goal（口吻升温 · 并肩版）**：见 [`goal-learning-center-copy-voice-warmth-plan-and-mega-prompt.md`](goal-learning-center-copy-voice-warmth-plan-and-mega-prompt.md)。禁止用本文件当下一场「口吻」对话的唯一决策源。  
 > **状态**：§0 已由用户拍板（2026-09-03 15:05 UTC+8），**决策锁定，禁止子 Agent 重问或改口**。  
 > **前一轮已收口基线（必须保留，禁止推倒）**：[`goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md`](goal-learning-center-pedagogy-upgrade-plan-and-mega-prompt.md)  
 > **母框架**：[`goal-execution-framework.md`](goal-execution-framework.md)  
