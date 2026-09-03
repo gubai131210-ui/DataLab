@@ -39,27 +39,28 @@
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+时间或类别轴上展示累积量、构成变化（描述性模式）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 堆叠面积难比较非底层系列。
 
-**典型样本量**: n≥20
+**典型样本量**: 时间点≥12；类别不宜过多。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+各缺陷类型月度堆叠面积，看构成是否变化。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 堆叠面积比较中间系列
+- 与折线趋势混淆
+- 纵轴非从零误导
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Run/Time Plot](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
+- [Minitab Area Graph](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/area-graphs/) — accessed 2026-09-03
 
 ### bar_chart — 条形图
 
@@ -70,27 +71,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+展示分类计数或汇总均值/合计的比较（描述性模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 截断纵轴可夸大差异；连续变量不宜强行分箱条图代替直方图。
 
-**典型样本量**: n≥20
+**典型样本量**: 类别级：每类至少 5 次观测；汇总条图依赖底层 n。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+三班次不良数条形图（计数），或各线体平均周期条图。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 纵轴不从零误导
+- 用条图表现时间序列趋势（应折线）
+- 混淆条图与直方图
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Bar Chart](https://www.itl.nist.gov/div898/handbook/eda/section3/barplot.htm) — accessed 2026-09-03
+- [Minitab Bar Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/bar-charts/) — accessed 2026-09-03
 
 ### boxplot — 箱线图
 
@@ -101,27 +103,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+比较多组位置、散布与离群点；快速看中位数差异与对称性（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 围栏外点不等于必须删除。
 
-**典型样本量**: n≥20
+**典型样本量**: 每组 n≥5 有意义；n≥20 更稳；极小样本箱线不稳定。
 
 **制造场景（列名示例）**
-光学膜：`膜厚_um`、`产线`（A/B 线）
+三模腔注塑件关键尺寸箱线图，比较腔间散布与中位偏移。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 把须线外点当测量错误必删
+- 组间样本量悬殊仍只比中位数
+- 与正态假设混为一谈
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `two_line_thickness`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Boxplot](https://www.itl.nist.gov/div898/handbook/eda/section3/boxplot.htm) — accessed 2026-09-03
+- [Minitab Boxplot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/boxplots/) — accessed 2026-09-03
 
 ### bubble_plot — 气泡图
 
@@ -132,27 +135,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+散点加第三维大小编码，观察三维关系模式。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 气泡面积感知非线性易误判。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥30；标签过多会重叠。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+工站节拍(x)、良率(y)、批量大小(气泡) 多维比较。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 气泡半径与数值非线性映射
+- 重叠气泡难读
+- 第三变量量纲未标准化
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab Bubble Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/bubble-plots/) — accessed 2026-09-03
+- [NIST Multivariate Graphs](https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc11.htm) — accessed 2026-09-03
 
 ### chi_square_mosaic_link — 卡方–马赛克联动
 
@@ -163,27 +167,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 不写合格判定或因果结论。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+马赛克图与卡方检验联动：看图找模式，用检验量化关联。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不能单靠图断言显著；期望频数过小检验失效。
 
-**典型样本量**: n≥20
+**典型样本量**: 总 n≥50；2×2 至少每格≥5。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+操作员×合格/不合格马赛克+卡方，验证是否独立。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 只看图不做检验
+- p<α 就当因果
+- 忽略分层或 Simpson 悖论
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Chi-Square](https://www.itl.nist.gov/div898/handbook/prc/section4/prc45.htm) — accessed 2026-09-03
+- [Minitab Chi-Square](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/chi-square-test-for-association/) — accessed 2026-09-03
 
 ### contour_plot — 等值线图
 
@@ -194,27 +199,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+两连续因子响应面等高线，看最优区域与坡度（DOE/回归可视化）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不外推实验域；不替代回归显著性检验；需足够设计点支撑曲面。
 
-**典型样本量**: n≥20
+**典型样本量**: 响应面设计至少 13 点（CCD）或等价；因子 2–3 个常见。
 
 **制造场景（列名示例）**
-DOE：`温度_℃`、`压力_MPa`、`响应_良率`
+注塑温度×压力对缩痕深度的等高线图。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 在未试验区域外推最优
+- 忽略拟合失拟
+- 混淆相关等高线与因果
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `doe_factorial_demo`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Contour Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/contour.htm) — accessed 2026-09-03
+- [Minitab Contour Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/contour-plots/) — accessed 2026-09-03
 
 ### correlation_plot — 相关图
 
@@ -225,27 +231,28 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+矩阵散点或相关视图，浏览多变量两两关系模式。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 多重比较未校正；相关≠因果。
 
-**典型样本量**: n≥20
+**典型样本量**: 每个变量对 n≥30；变量数 p 不宜过大（≤10 探索）。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+五条尺寸链测量相关图，找共变强的工序。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- p 个变量看 p(p-1)/2 对却不校正
+- 非线性关系只看 Pearson
+- 忽略时间序列自相关
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Correlation](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
+- [Minitab Matrix Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/matrix-plots/) — accessed 2026-09-03
 
 ### correlogram — Correlogram（相关热图）
 
@@ -254,30 +261,31 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **对话框角色**: `variables`（数值变量（可多选））
 - **algorithm_help purpose（对齐）**: 把多列两两相关矩阵画成热图并输出系数表。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+多变量相关矩阵热图，总览线性关系强度（模式观察）。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: n≥30；变量≤15 可读。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+产线 10 个 KPI 相关热图找冗余指标。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 不标显著性
+- 非线性关系误判为无关
+- 时间序列伪相关
 
-**图形解读要点**: 看模式、离群与趋势；图形/控制图不替代假设检验。
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Correlation Matrix](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
+- [Minitab Correlogram](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/correlogram/) — accessed 2026-09-03
 
 ### density_plot — 密度图
 
@@ -288,27 +296,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+平滑展示连续变量概率密度形状，比较分布轮廓（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 带宽选择影响形状。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥30；n≥100 密度估计更可靠。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+两供应商垫片厚度核密度对比，看尾部差异。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 带宽过小见假峰
+- 多组样本量差大仍直接叠加
+- 把密度峰值当过程目标
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Density](https://www.itl.nist.gov/div898/handbook/eda/section3/density.htm) — accessed 2026-09-03
+- [Minitab Density](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/density-plots/) — accessed 2026-09-03
 
 ### dotplot — 点图
 
@@ -317,30 +326,30 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **对话框角色**: `y_variable`（Y 变量（可多选））
 - **algorithm_help purpose（对齐）**: 一维分布点图，可选分组与 jitter。
 - **interpretation_limits**: 解释层只陈述统计证据。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+小样本下一维分布点排列，看清每个测量值位置与重复（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。
 
-**典型样本量**: n≥20
+**典型样本量**: n=5–50 最理想；大样本点过密需 jitter 或改直方图。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+首件 10 点膜厚点图，确认是否集中在规格附近。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 大样本不 jitter 叠点误判
+- 与统计意义上的点图（dot chart）混淆
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Dot Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/dotplot.htm) — accessed 2026-09-03
+- [ASQ Dot Plot](https://asq.org/quality-resources/dot-plot) — accessed 2026-09-03
 
 ### ecdf_plot — 经验累积分布图
 
@@ -351,27 +360,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+经验累积分布，比较样本 CDF 或分位数位置（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 阶梯线在小 n 下跳跃大。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥30；两组比较各≥30。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+两供应商垫片厚度 ECDF，看 99th 百分位谁更靠规格。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 小样本外推分位数
+- 不与规格限对照就下结论
+- 两组样本量差大误读交叉
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST EDA CDF](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
+- [Minitab ECDF](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/empirical-cdf-plots/) — accessed 2026-09-03
 
 ### eda_4plot — EDA 四图
 
@@ -382,27 +392,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合模式筛查。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 四图是筛查包，不替代完整控制图或检验。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥25；lag-1 需有序列顺序。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+量具重复性测量序列 EDA 四图，查独立性与正态性线索。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 忽略运行序图上的漂移
+- 概率图略弯就删数据
+- 未记录采样顺序
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST 4-Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
+- [NIST Lag Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/lagplot.htm) — accessed 2026-09-03
 
 ### graph_gallery — 探索性图形画廊
 
@@ -416,24 +427,25 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 可视化分布、关系或结构，支持 EDA 与沟通。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 不自动选最优图型。
 
-**典型样本量**: n≥20
+**典型样本量**: 依所选图型；一般 n≥20 起。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+导入膜厚与温度两列，在画廊中切换散点与箱线做初探。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 只换图不查数据质量
+- 多列角色未对齐
+- 把预览当最终报告图
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST EDA Graphical](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
+- [Minitab Graph Gallery](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/graph-gallery/) — accessed 2026-09-03
 
 ### heatmap_plot — 热图
 
@@ -444,27 +456,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+矩阵或网格上色展示相关、频次或响应强度模式。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 颜色尺度选择影响解读。
 
-**典型样本量**: n≥20
+**典型样本量**: 相关阵：n≥30；格子频数表：每格足够计数。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+工位×缺陷类型发生次数热图。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 未标数值只靠颜色
+- Rainbow 色图误导
+- 时间轴排序错误
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Heatmap/Contour](https://www.itl.nist.gov/div898/handbook/eda/section3/contour.htm) — accessed 2026-09-03
+- [Minitab Heatmap](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/heatmaps/) — accessed 2026-09-03
 
 ### hexbin_plot — Hexbin
 
@@ -475,27 +488,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+大样本二维关系密度热力分箱，看聚集区与稀疏区（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 丢失单点细节；不适合小样本。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥500 才有意义；上万点常见。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+上万点 SPI 体积-面积散点 hexbin，定位焊膏过量聚集区。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 小样本用 hexbin 过度平滑
+- 不检查坐标轴量纲
+- 把颜色深浅当因果
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Matplotlib Hexbin](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hexbin.html) — accessed 2026-09-03
+- [NIST Scatter](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
 
 ### histogram — 直方图
 
@@ -506,27 +520,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+探索性观察单变量分布形态、偏度、多峰与潜在离群；模式查看第一步。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 叠加正态曲线不是正态性检验。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥30 可看大致形状；n≥100 分箱更稳定；小样本仅作线索。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+SMT 锡膏印刷高度（μm）按班次直方图，初判是否右偏或双峰。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 分箱宽度随意改后过度解读峰形
+- 把直方图当能力合格证明
+- 多组叠加不分面导致误读
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST EDA 直方图](https://www.itl.nist.gov/div898/handbook/eda/section3/histogm.htm) — accessed 2026-09-03
+- [Minitab Histogram](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/histograms/) — accessed 2026-09-03
 
 ### interval_plot — 区间图
 
@@ -537,27 +552,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+展示各组均值及置信区间，比较位置差异线索（可视化，非完整推断报告）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 区间重叠不等于无差异（需正式检验）。
 
-**典型样本量**: n≥20
+**典型样本量**: 每组 n≥10；n≥30 区间更窄更稳。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+两固化炉平均硬度及 95% CI 区间图，辅助是否做双样本 t。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- CI 重叠就断言无差异
+- 不等方差仍用默认 CI
+- 混淆预测区间与置信区间
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab Interval Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/interval-plots/) — accessed 2026-09-03
+- [NIST CI](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm) — accessed 2026-09-03
 
 ### marginal_plot — 边际图
 
@@ -568,27 +584,27 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+散点图边缘叠加边际直方/密度，同时看联合与边缘分布。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥50 边际密度较稳。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 只读中心散点忽略边缘多峰
+- 分组边际未分色
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab Marginal Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/marginal-plots/) — accessed 2026-09-03
+- [NIST Bivariate EDA](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
 
 ### matrix_plot — 矩阵图
 
@@ -599,27 +615,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+多变量散点矩阵，系统浏览两两关系与离群。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 变量过多图不可读。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥30；变量数≤8 为宜。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+注塑压力、温度、周期、重量四变量矩阵图。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 不查对角线分布就回归
+- 多重比较无计划
+- 时间序列未按序看
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab Matrix Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/matrix-plots/) — accessed 2026-09-03
+- [NIST Scatterplot Matrix](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
 
 ### mosaic_plot — 马赛克图
 
@@ -630,27 +647,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 不写合格判定。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+两（多）分类变量列联表比例可视化，看关联模式。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 小期望频数格子不稳定；需卡方或 Fisher 确认。
 
-**典型样本量**: n≥20
+**典型样本量**: 总 n≥50；每格期望≥5 较稳。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+缺陷类型×班次马赛克图，看某班次是否某缺陷偏高。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 稀疏表过度解读格子比例
+- 把面积当因果
+- 类别合并随意改变结论
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab Mosaic](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/mosaic-plots/) — accessed 2026-09-03
+- [NIST Contingency](https://www.itl.nist.gov/div898/handbook/prc/section4/prc45.htm) — accessed 2026-09-03
 
 ### parallel_plot — 平行坐标图
 
@@ -661,27 +679,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+高维数值多变量平行坐标，看模式与簇（探索性）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 轴顺序影响观感；不适合报告因果。
 
-**典型样本量**: n≥20
+**典型样本量**: n=50–500；维数 4–12 常见。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+多传感器过程参数平行坐标，找异常批次轨迹。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 维度过高线条糊成一团
+- 未标准化不同量纲
+- 把交叉当交互效应
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Parallel Coordinates](https://www.itl.nist.gov/div898/handbook/eda/section3/parallel.htm) — accessed 2026-09-03
+- [Minitab Parallel Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/parallel-plots/) — accessed 2026-09-03
 
 ### pie_plot — 饼图
 
@@ -692,27 +711,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+展示整体中各类占比（部分-整体，类别少时）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 类别>5 难读；不适合精确比较；时间趋势用折线更好。
 
-**典型样本量**: n≥20
+**典型样本量**: 各类有足够计数；总 n≥30。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+不良四类占比饼图（类别≤4）。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 切片过多
+- 3D 饼图失真
+- 用饼图比较两组（用条图）
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Pie Chart caution](https://www.itl.nist.gov/div898/handbook/eda/section3/piechart.htm) — accessed 2026-09-03
+- [ASQ Pie Chart](https://asq.org/quality-resources/pie-chart) — accessed 2026-09-03
 
 ### probability_plot — 正态概率图
 
@@ -723,27 +743,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+正态（或其它分布）概率图，目视判断分布拟合与离群（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 Anderson-Darling 等检验更正式；概率图不是能力指数。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥20 可看；n≥50 尾部更可靠。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+轴径正态概率图，决定用正态还是 Johnson 能力分析。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 点略弯就断言非正态
+- 混用不同分布未说明
+- 删点直到变直
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Normal Probability Plot](https://www.itl.nist.gov/div898/handbook/eda/section3/normprpl.htm) — accessed 2026-09-03
+- [Minitab Probability Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/probability-plots/) — accessed 2026-09-03
 
 ### scatter_plot — 散点图
 
@@ -754,27 +775,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+观察两连续变量线性/非线性关系、离群与杠杆点（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 相关≠因果；外推需谨慎。
 
-**典型样本量**: n≥20
+**典型样本量**: n≥25 可见趋势；回归诊断建议 n≥30。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+回流炉区温度 vs 元件偏移量散点，筛查设定温度影响。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 把相关当因果
+- 忽略异方差或非线性
+- 离群点未追查就删除
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Scatter](https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm) — accessed 2026-09-03
+- [Minitab Scatterplot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/scatterplots/) — accessed 2026-09-03
 
 ### simplex_design_plot — 混料三角图
 
@@ -785,27 +807,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 不写合格判定。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+三元混料（如树脂/填料/助剂比例）在单纯形上的设计点与响应等高线（DOE 可视化）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+非混料问题勿用；不替代混料回归分析；约束外推无效。
 
-**典型样本量**: n≥20
+**典型样本量**: 混料设计 q 成分至少 q 个顶点+中心点；响应面需更多点。
 
 **制造场景（列名示例）**
-DOE：`温度_℃`、`压力_MPa`、`响应_良率`
+环氧封装胶 A/B/C 三组分配方单纯形图，标出抗拉强度等高线。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 成分和不为 1 仍用三角图
+- 在可行域外预测
+- 忽略工艺约束导致不可制造配方
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `doe_factorial_demo`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Mixture Designs](https://www.itl.nist.gov/div898/handbook/pri/section5/pri532.htm) — accessed 2026-09-03
+- [Cornell Mixture Experiments](https://www.wiley.com/en-us/Experiments+with+Mixtures%3A+Designs%2C+Models%2C+and+the+Analysis+of+Mixture+Data%2C+4th+Edition-p-9781118915172) — accessed 2026-09-03
 
 ### time_series_plot — 时间序列图
 
@@ -816,27 +839,28 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+按时间顺序看水平、趋势、季节与异常点（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 不自动给出预测区间；非平稳序列直接回归有风险。
 
-**典型样本量**: n≥20
+**典型样本量**: ≥24 点见季节；≥50 点趋势更可靠。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+周良率时间序列，查季节性低谷与趋势。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 忽略抽样间隔不等
+- 不查自相关就做回归
+- 把单次尖峰当永久改型
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Time Series](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
+- [Minitab Time Series Plot](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/time-series-plots/) — accessed 2026-09-03
 
 ### violin_plot — 小提琴图
 
@@ -847,27 +871,28 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+同时看分布形状与四分位，比较多组密度（模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 小样本密度尾部不可靠。
 
-**典型样本量**: n≥20
+**典型样本量**: 每组 n≥20 较稳；n<10 慎用。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+四工位扭矩分布小提琴图，比较形状而不只看均值。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 样本极小仍解读尾部形状
+- 与箱线图刻度不一致误比
+- 忽略组内相关性
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab Violin](https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/violin-plots/) — accessed 2026-09-03
+- [NIST EDA](https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm) — accessed 2026-09-03
 
 ## 帮助
 
@@ -1557,21 +1582,26 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 - **实现说明**: orchestration；菜单可能不存在。
 
 **常用来做什么**
-外部数据库导入工作区的流程示意。
+从 SQLite/ODBC 等数据源只读导入表到工作区，衔接 MES/历史库。
 
 **不能当什么用**
-当前版本可能无独立菜单。
+不替代数据清洗；大表需分页；写权限默认关闭。
 
-**典型样本量**: N/A
+**典型样本量**: 导入行数建议分批；学习中心演示 30–200 行。
 
 **制造场景（列名示例）**
-见共享数据集业务故事。
+从 MES SQLite 导入上周 SPI 检测结果到新工作表。
 
 **常见误用**
-- 把导入当分析完成。
+- 编码/时区列类型错
+- 全表一次载入内存
+- 连接名泄漏未关闭
+
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
+- [Qt SQL Programming](https://doc.qt.io/qt-6/qsqldatabase.html) — accessed 2026-09-03
+- [SQLite Documentation](https://www.sqlite.org/docs.html) — accessed 2026-09-03
 
 ## 文件
 
@@ -1584,21 +1614,24 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 - **实现说明**: orchestration；菜单可能不存在。
 
 **常用来做什么**
-报告模板与输出页编排参考。
+同一分析输出按客户/工程师/审计模板导出 PDF，控制证据密度与表述。
 
 **不能当什么用**
-当前版本可能无独立菜单。
+不重算统计；模板不改正文外的分析结论；不能替代原始数据审查。
 
-**典型样本量**: N/A
+**典型样本量**: 不适用。
 
 **制造场景（列名示例）**
-见共享数据集业务故事。
+能力分析完成后导出审计版 PDF 附 Cpk 表与图。
 
 **常见误用**
-- 把导入当分析完成。
+- 以为换模板会改 p 值
+- 审计版缺原始追溯
+- 工程师版过度删诊断
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
+- [ASQ Quality Reports](https://asq.org/quality-resources) — accessed 2026-09-03
+- [AIAG PPAP](https://www.aiag.org/quality/ppap/) — accessed 2026-09-03
 
 ## 统计
 
@@ -1641,28 +1674,31 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 - **对话框角色**: `variables`（序列）
 - **algorithm_help purpose（对齐）**: 计算单列序列的自相关与偏自相关，并画带置信限的 ACF/PACF 图。
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+识别 AR/MA 阶数、季节周期与自相关结构（诊断图）。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 图形解读主观；不替代 Ljung-Box 检验；非平稳序列需先差分。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥50；季节识别需≥2 季节。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+ACF/PACF 判断日尺寸偏差的 MA/AR 阶。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 非平稳直接看 ACF
+- 滞后截断误判阶数
+- 小样本过度解读
+
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST ACF](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm) — accessed 2026-09-03
+- [Minitab ACF/PACF](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/autocorrelation-and-partial-autocorrelation/) — accessed 2026-09-03
 
 ### adf_test — ADF 单位根检验
 
@@ -1671,28 +1707,29 @@ PCB  AOI 每面板固定检查“焊点总数”，记录“虚焊缺陷数”�
 - **对话框角色**: `variables`（序列）
 - **algorithm_help purpose（对齐）**: 对单列序列做 Augmented Dickey–Fuller 检验，报告 τ 与临界值。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+检验序列单位根/非平稳性，为差分或 ARIMA 定阶提供证据。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 低功效；临界值依赖规格；不能单独定模型阶。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥50 较稳；短序列功效低。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+ADF 检验周良率是否需一阶差分再建模。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- p>0.05 就当平稳
+- 结构突变未处理
+- 忽略季节单位根
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Dickey-Fuller](https://doi.org/10.2307/1912352) — accessed 2026-09-03
+- [Minitab ADF](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/unit-root-test/) — accessed 2026-09-03
 
 ### analyze_definitive_screening — 分析确定性筛选设计
 
@@ -1782,6 +1819,8 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 组间方差差异大仍解读
 - 与个体控制图混淆。
 
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
+
 **建议 dataset_id**: `anova_cavity`
 
 **权威来源**
@@ -1829,28 +1868,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `time`（时间列（可选））
 - **algorithm_help purpose（对齐）**: 对单列时间顺序数据做ARIMA / Best ARIMA。
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+平稳/差分后序列的 ARIMA 建模与预测，捕捉自回归移动平均结构。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 短序列定阶不稳；外生变量用 ARIMAX；不保证优于简单法。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥50；定阶需 ACF/PACF 与信息准则。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+日产量 ARIMA 预测下两周产出。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 非平稳未差分
+- 过拟合高阶
+- 不验证残差白噪声
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST ARIMA](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm) — accessed 2026-09-03
+- [Minitab ARIMA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/arima/) — accessed 2026-09-03
 
 ### best_subsets_regression — Best Subsets 回归
 
@@ -1859,28 +1899,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: 比较不同预测变量子集的线性回归拟合，按规模展示最佳模型摘要。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+枚举（或限规模）比较不同子集模型的 R²、Cp、BIC 等，选简约模型。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 候选>15 不可穷举；仍有过拟合风险。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥40；候选变量≤15。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+8 个模具参数 best subsets 选 3 因子解释翘曲。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 只看 R² 不看 Mallows Cp
+- 样本小仍多变量
+- 不做残差诊断
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Best Subsets](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/best-subsets-regression/) — accessed 2026-09-03
+- [NIST Model Selection](https://www.itl.nist.gov/div898/handbook/pmd/section4/pmd44.htm) — accessed 2026-09-03
 
 ### binary_doe_probit — 二值 DOE Probit/Gompit
 
@@ -1951,28 +1992,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（变量）
 - **algorithm_help purpose（对齐）**: 对单列样本均值做百分位或 BCa bootstrap 置信区间。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+重抽样估计均值置信区间，弱分布假设下推断。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关/分层数据需专门 bootstrap；不能修复偏倚设计。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 原始 n≥20；重抽样 B≥1000。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+偏态镀层厚度 bootstrap 均值 95% CI。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 有放回当无放回混淆
+- 时间序列独立 bootstrap 失真
+- B 太小区间不稳
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Bootstrap](https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc22.htm) — accessed 2026-09-03
+- [Efron Bootstrap](https://doi.org/10.1214/aos/1176345638) — accessed 2026-09-03
 
 ### bootstrap_two_sample — Bootstrap 双样本均值差 CI
 
@@ -1981,28 +2023,31 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `first`（样本 1）
 - **algorithm_help purpose（对齐）**: 对两独立样本均值差做百分位或 BCa bootstrap 置信区间。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+两独立样本均值差 bootstrap CI，非正态或方差不齐时的补充。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不替代随机化/配对设计；小样本功效仍低。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 每组 n≥15；B≥2000。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+两供应商强度差 bootstrap CI 辅助等价评估。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 配对数据当独立
+- 不等 n 解释不当
+- 与置换检验混淆
+
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Bootstrap Two Sample](https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc22.htm) — accessed 2026-09-03
+- [Minitab Bootstrapping](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/bootstrapping/) — accessed 2026-09-03
 
 ### cart_tree — CART 单树
 
@@ -2011,28 +2056,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: 用自研二叉递归划分做分类或回归单树，输出结点表与变量重要性。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+可解释的单树分类/回归，规则分段与变量重要性（探索/基线模型）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 单树易过拟合；不稳定；不能外推连续关系。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥100；叶最小样本≥5。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+决策树判断哪道量测最先把不良分开。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 深度过大过拟合
+- 不做剪枝或 CV
+- 把训练精度当泛化
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Breiman CART](https://doi.org/10.1201/9781315139470) — accessed 2026-09-03
+- [Minitab CART](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/classification-and-regression-trees/) — accessed 2026-09-03
 
 ### ccf — 互相关（CCF）
 
@@ -2041,28 +2087,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `x`（序列 X）
 - **algorithm_help purpose（对齐）**: 计算两列对齐序列在正负滞后上的互相关，并画置信带。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+两序列互相关，找领先/滞后关系与同步性。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 伪相关风险；需平稳或去趋势；不能证明因果。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥50 对齐点；预白化有时必要。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+CCF 查环境温度领先于尺寸偏移多少小时。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 非平稳伪相关
+- 不对齐时间戳
+- 多重滞后未校正
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Cross-Correlation](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
+- [Minitab Cross Correlation](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/cross-correlation/) — accessed 2026-09-03
 
 ### chi_square — 列联表卡方
 
@@ -2135,28 +2182,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（数值变量（可多选））
 - **algorithm_help purpose（对齐）**: 对多维观测做 complete linkage 凝聚层次聚类，并按 k 切簇。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+无监督地把相似观测分群，生成树状图与簇标签（探索分组）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 簇数主观；不能证明工艺类别；结果对距离/链接敏感。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n=30–500；维数不宜过高。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+多传感器波形层次聚类，发现异常批次簇。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- k 随意选
+- 未标准化
+- 把聚类当分类真值
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Cluster](https://www.itl.nist.gov/div898/handbook/eda/section3/hclus.htm) — accessed 2026-09-03
+- [Minitab Cluster Observations](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-observations/) — accessed 2026-09-03
 
 ### cluster_variables — 变量聚类
 
@@ -2165,28 +2213,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（变量列）
 - **algorithm_help purpose（对齐）**: 变量层次聚类：Pearson 相关距离、连结合并、dendrogram 与 amalgamation 表。
 - **interpretation_limits**: 禁止与观测量聚类混读。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+对变量按相关结构聚类，简化多变量集或选代表变量。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能替代领域知识删变量。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥50；变量数 5–30。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+20 个尺寸变量聚类选代表尺寸做 SPC。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 样本小相关不稳
+- 混用 Pearson/Spearman
+- 代表变量选择无验证
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Cluster Variables](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-variables/) — accessed 2026-09-03
+- [NIST Variable Clustering](https://www.itl.nist.gov/div898/handbook/eda/section3/hclus.htm) — accessed 2026-09-03
 
 ### cochran_q — Cochran Q 检验
 
@@ -2416,28 +2465,29 @@ SMT 锡膏印刷后测高：列「锡膏高度_um」「班次」「产线」「�
 - **对话框角色**: `response`（类别响应）
 - **algorithm_help purpose（对齐）**: 用等协方差线性判别对类别响应分类并报告混淆矩阵。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+已知类别标签下，找线性组合区分类别并评估误分类率。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需多元正态与同协方差近似；不能用于发现新类。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 每类 n≥20–30；总 n≥60。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+合格/返工品多尺寸 LDA 找区分边界。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 训练集上评估过乐观
+- 类不平衡忽略
+- 高维小样本过拟合
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Discriminant](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/discriminant-analysis/) — accessed 2026-09-03
+- [NIST Discriminant](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
 
 ### distribution_calculator — 分布计算器
 
@@ -2446,26 +2496,27 @@ SMT 锡膏印刷后测高：列「锡膏高度_um」「班次」「产线」「�
 - **对话框角色**: _无需列角色（计算器/设计生成类）_
 - **algorithm_help purpose（对齐）**: 正态/t/χ²/F/Weibull 的 PDF、CDF、分位数工具。
 - **interpretation_limits**: 禁止分布已正态 / 过程合格。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-质量工具：多变异、抽样 OC、功效或分布计算器。
+查 PDF/CDF/分位数、概率换算，教学与规格限概率计算。
 
 **不能当什么用**
-不能替代 SPC 或 MSA 证据。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能代替数据拟合分布；参数需明确来源。
 
-**典型样本量**: 视工具；计算器无需数据
+**典型样本量**: 不适用（理论计算）。
 
 **制造场景（列名示例）**
-见共享数据集业务故事。
+正态 N(10,0.2) 下 P(X>10.5) 用于规格裕量估算。
 
 **常见误用**
-- 抽样计划与批量不匹配。
-- 功效分析假设 σ 错误。
+- 分布族选错
+- 把理论分位当过程证据
+- 单位换算错误
 
 **权威来源**
-- [AIAG — Statistical Process Control (SPC) Reference Manual](https://www.aiag.org/quality/automotive-core-tools/spc) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Distributions](https://www.itl.nist.gov/div898/handbook/eda/section3/eda366.htm) — accessed 2026-09-03
+- [Minitab Probability Distributions](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/probability-distributions/) — accessed 2026-09-03
 
 ### doe_bbd — Box–Behnken 设计
 
@@ -2693,28 +2744,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（变量列）
 - **algorithm_help purpose（对齐）**: 探索性因子分析：相关阵主成分提取、Loadings、% Var、Communalities 与 Scree 图；可选 Varimax。
 - **interpretation_limits**: 禁止宣称与 Minitab golden 对齐。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+探索潜在因子结构、载荷与共同度（问卷/多传感器结构假设）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能证明潜变量存在；旋转解不唯一。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥100 或 n≥5×变量数；KMO 需检查。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+多道外观评分探索潜在「表面质量」因子。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 样本过小
+- 不做旋转与残差检查
+- 与 PCA 混用目的
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Factor Analysis](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/factor-analysis/) — accessed 2026-09-03
+- [NIST Factor](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc42.htm) — accessed 2026-09-03
 
 ### fine_gray_regression — Fine-Gray 竞争风险回归
 
@@ -2816,28 +2868,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `responses`（响应）
 - **algorithm_help purpose（对齐）**: 2～4 响应 + 1～2 因子 + 可选协变量；Type III SSCP；Wilks/Pillai/LH/Roy 按效应。
 - **interpretation_limits**: 禁止过程已合格 / 已证明差异。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+多因子/协变量下多响应 Type III MANOVA。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 设计不平衡时解释复杂；不能自动选模型。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 总 n≥60；每单元格足够。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+温度×湿度对多尺寸响应的 MANOVA。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 交互项乱加
+- 不平衡设计误读主效应
+- 不做假设诊断
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab General MANOVA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/multivariate-analysis-of-variance/) — accessed 2026-09-03
+- [NIST GLM Multivariate](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
 
 ### glm_three_factor — 三因子 GLM
 
@@ -2908,28 +2961,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（数值变量（可多选））
 - **algorithm_help purpose（对齐）**: 对多维数值观测计算孤立分数，标记相对孤立点。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+无监督多维异常检测，标记孤立点（探索性筛查）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能自动定根因；阈值需业务校准；与单变量 outlier 检验互补。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥100；异常比例不宜过高。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+多通道过程数据孤立森林标可疑批次。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 把异常分数当删除指令
+- 未追查测量错误
+- 高维诅咒未降维
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Liu Isolation Forest](https://doi.org/10.1109/ICDM.2008.17) — accessed 2026-09-03
+- [scikit-learn IsolationForest](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html) — accessed 2026-09-03
 
 ### km_interval — 区间删失 Kaplan–Meier
 
@@ -2969,28 +3023,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（数值变量（可多选））
 - **algorithm_help purpose（对齐）**: 把多维数值观测分成 k 个簇，并报告质心与簇内平方和。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+指定 k 的划分式聚类，快速分群（探索）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 对初值敏感；球形簇假设；不能给层次结构。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥30；k<√(n/2) 经验。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+k=3 对焊接能量曲线聚类分正常/边缘/异常。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- k 拍脑袋
+- 不同 seed 结果不稳
+- 未标准化
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST k-means](https://www.itl.nist.gov/div898/handbook/eda/section3/kmeans.htm) — accessed 2026-09-03
+- [Minitab Cluster k-means](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-observations/) — accessed 2026-09-03
 
 ### kruskal_wallis — Kruskal-Wallis 检验
 
@@ -3094,25 +3149,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-建模二分类响应与因子关系。
+二元合格/不合格、通过/失败与预测变量的 logit 关系建模与 odds 比。
 
 **不能当什么用**
-不能证明因果；需足够事件数。
+不能用于连续响应；分离完全时估计不稳定；因果需实验设计支持。
 
-**典型样本量**: 事件≥10
+**典型样本量**: 每系数至少 10–15 个事件；总 n≥50。
 
 **制造场景（列名示例）**
-装配：`班次`、`不良数`、`检验数`
+预测锡膏类型+炉温组合下虚焊发生概率。
 
 **常见误用**
-- 把 p 值当成工程决策唯一依据。
-- 忽略测量系统噪声。
+- 稀有事件样本不足
+- 把概率当计数
+- 忽略类不平衡
 
 **建议 dataset_id**: `attribute_defect`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Logistic](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm) — accessed 2026-09-03
+- [Minitab Binary Logistic](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/binary-logistic-regression/) — accessed 2026-09-03
 
 ### mann_whitney — Mann-Whitney 检验
 
@@ -3153,28 +3209,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `responses`（响应）
 - **algorithm_help purpose（对齐）**: 2～4 连续响应 + 1 分类因子；Wilks/Pillai/LH/Roy；H/E SSCP 与特征值。
 - **interpretation_limits**: 禁止过程已合格 / 已证明差异。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+单因子对多个连续响应同时检验组间差异（整体 Wilks 等）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需多元正态与同协方差；不能替代逐响应 ANOVA 的规划。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 每组 n≥20；响应数 2–4 常见。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+三供应商同时比较长度、宽度、高度三组均值。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 不做多变量正态检查
+- 显著后不查 univariate
+- 响应高度相关仍多检验
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST MANOVA](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
+- [Minitab MANOVA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/multivariate-analysis-of-variance/) — accessed 2026-09-03
 
 ### mcnemar — McNemar 检验
 
@@ -3214,28 +3271,29 @@ AOI 与人工复检：列「AOI判定」「人工判定」「板号」，评估�
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: 1～2 随机因子 + 1～2 固定因子 + 可选协变量；REML 方差分量与固定效应 BLUE。
 - **interpretation_limits**: 禁止测量系统合格判定。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+固定效应+随机效应（批次、操作员）方差分量与 BLUE 估计。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 随机水平需代表总体；小样本方差分量不稳。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 随机水平≥5；总 n≥50。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+操作员固定、批次随机对尺寸的混合模型。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 随机当固定
+- 嵌套/交叉搞错
+- REML 与 ML 混用比较
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Mixed Models](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/general-linear-model/) — accessed 2026-09-03
+- [NIST Variance Components](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc41.htm) — accessed 2026-09-03
 
 ### mixture_analyze — Mixture 分析
 
@@ -3400,28 +3458,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `variables`（分类变量（逗号列号））
 - **algorithm_help purpose（对齐）**: 3～6 列分类；指示矩阵；Column Contributions。
 - **interpretation_limits**: 禁止全量 MCA 宣称。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+≥3 分类变量 MCA，探索多属性共现（问卷、检查项）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 缺失与稀有类别敏感；解释需谨慎。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥150；变量 3–6 常见。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+多项外观检查项 MCA 找常见缺陷组合。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 类别未合并导致稀疏
+- 与 PCA 混淆
+- 不做惯性贡献解读
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab MCA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/multiple-correspondence-analysis/) — accessed 2026-09-03
+- [Greenacre MCA](https://doi.org/10.1201/9781315139470-14) — accessed 2026-09-03
 
 ### nhpp_repairable — 可修复系统 NHPP
 
@@ -3461,28 +3520,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（名义响应）
 - **algorithm_help purpose（对齐）**: 对名义（无序）多水平响应拟合广义 logit 模型。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+无序多类缺陷类型/故障模式与预测变量的广义 logit 建模。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 类别过多导致稀疏；不能自动选根因。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 每类至少 20–30；总 n≥100。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+三类失效模式（开路/短路/外观）与工艺参数名义 logit。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 有序等级误用名义模型
+- 参照水平选择影响 OR 解释
+- 样本极不均衡
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Nominal Logistic](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/nominal-logistic-regression/) — accessed 2026-09-03
+- [NIST GLM](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm) — accessed 2026-09-03
 
 ### nonlinear_regression — 非线性回归
 
@@ -3491,28 +3551,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: 单 Y + 单 X；内置模型；GN/LM；参数表 + Summary of Fit。
 - **interpretation_limits**: 禁止外推无验证。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+机理已知但曲线非线性的单 Y–X 关系（如饱和、指数衰减）参数估计。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 初值敏感；外推危险；不能替代 DOE 找最优。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 参数个数×5–10 点；全因子范围覆盖。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+胶水固化粘度随时间非线性衰减拟合。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 模型结构错设
+- 初值不当不收敛
+- 局部最优当全局
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Nonlinear](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63n.htm) — accessed 2026-09-03
+- [Minitab Nonlinear Regression](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/nonlinear-regression/) — accessed 2026-09-03
 
 ### normality_test — 正态性检验
 
@@ -3538,6 +3599,8 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - 只看 p 值不看直方图/正态概率图
 - 对多组数据只做一次合并检验
 - 未考虑测量分辨率造成的离散化。
+
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
@@ -3619,25 +3682,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-证明效应落在事前等价区间内（生物等效/工艺窗口）。
+单组比例落在目标比例 ±等价限内（如不良率接近目标）。
 
 **不能当什么用**
-不能证明完全无差异；等价限需法规/工程协议。
+稀有事件 n 需足够；近似失效时用精确法。
 
-**典型样本量**: 功效驱动，常 n≥20/组
+**典型样本量**: 取决于 p 与限宽；常 n≥100。
 
 **制造场景（列名示例）**
-光学膜：`膜厚_um`、`产线`（A/B 线）
+新线不良率与基准 2% ±1% 等价。
 
 **常见误用**
-- 等价限事后挑选。
-- 忽略方差估计方法。
+- 小 n 正态近似
+- 等价限无业务定义
+- 与置信区间混淆
 
 **建议 dataset_id**: `two_line_thickness`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab 1 Proportion Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
+- [NIST Proportions](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
 
 ### one_sample_equivalence — 单样本等价性检验
 
@@ -3648,25 +3712,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-证明效应落在事前等价区间内（生物等效/工艺窗口）。
+证明单组均值落在目标值 ±等价限内（TOST 思路），而非仅「不等于」。
 
 **不能当什么用**
-不能证明完全无差异；等价限需法规/工程协议。
+不能用于大差异筛查；等价限需监管/工程先验；非正态需稳健或变换。
 
-**典型样本量**: 功效驱动，常 n≥20/组
+**典型样本量**: 常 n=20–40/组，取决于等价限与 σ 估计。
 
 **制造场景（列名示例）**
-光学膜：`膜厚_um`、`产线`（A/B 线）
+新锡膏平均厚度与标准膏 ±2μm 等价验证。
 
 **常见误用**
-- 等价限事后挑选。
-- 忽略方差估计方法。
+- 等价限过宽
+- 用差异检验代替等价
+- p>α 当「未证明不等」
 
 **建议 dataset_id**: `two_line_thickness`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Schuirmann TOST](https://doi.org/10.1080/03610918708829567) — accessed 2026-09-03
+- [Minitab Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
 
 ### one_sample_t — 单样本 t 检验
 
@@ -3770,28 +3835,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（有序响应）
 - **algorithm_help purpose（对齐）**: 对有序多水平响应拟合比例优势 logit 模型。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+有序等级响应（如外观 1–5 级）与预测变量的比例优势模型。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 比例优势假设违背时结论受限；不宜当名义分类。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 每预测变量每等级至少 10 例；总 n≥100。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+划痕严重度等级（轻/中/重）与抛光参数有序 logit。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 有序当名义或连续乱用
+- 不检验比例优势
+- 等级间距不等仍当等距
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Ordinal Logistic](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/ordinal-logistic-regression/) — accessed 2026-09-03
+- [Agresti Categorical Data](https://www.wiley.com/en-us/Categorical+Data+Analysis%2C+3rd+Edition-p-9780470463635) — accessed 2026-09-03
 
 ### orthogonal_regression — 正交回归
 
@@ -3800,28 +3866,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `x`（X 列）
 - **algorithm_help purpose（对齐）**: 在 X 与 Y 均有测量误差时估计等方差正交回归斜率与可选截距。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+X、Y 均有测量误差时估计线性关系（Deming/正交回归）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需误差比 λ；X 可控无误差时用普通 OLS。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥30；λ 需方法学或重复性估计。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+两坐标仪互测同一批工件，X/Y 都有量测误差时拟合关系。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- X 无误差仍用正交回归
+- λ 随意设为 1
+- 与 Passing-Bablok 混淆场景
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Orthogonal/Deming](https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd14.htm) — accessed 2026-09-03
+- [Minitab Orthogonal Regression](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/orthogonal-regression/) — accessed 2026-09-03
 
 ### outlier_test — 异常值检验
 
@@ -3864,25 +3931,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-证明效应落在事前等价区间内（生物等效/工艺窗口）。
+配对差值在 ±δ 内等价（同一工件前后、左右对照）。
 
 **不能当什么用**
-不能证明完全无差异；等价限需法规/工程协议。
+配对差非正态且 n 小需谨慎；不能忽略周期/学习效应。
 
-**典型样本量**: 功效驱动，常 n≥20/组
+**典型样本量**: 配对 n≥16–30。
 
 **制造场景（列名示例）**
-装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`
+抛光前后表面粗糙度差在等价限内的配对等价。
 
 **常见误用**
-- 等价限事后挑选。
-- 忽略方差估计方法。
+- 独立样本方法误用
+- 配对顺序效应未随机
+- δ 过宽
 
 **建议 dataset_id**: `paired_rework`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Schuirmann TOST paired](https://doi.org/10.1080/03610918708829567) — accessed 2026-09-03
+- [Minitab Paired Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
 
 ### paired_t — 配对 t 检验
 
@@ -3925,25 +3993,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+降维、去相关、找主变异方向（过程监控、探索性）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+主成分不一定有物理意义；不能替代原始规格判定；样本相关阵需足够 n。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥5×变量数；n≥100 更稳。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+多尺寸测量 PCA 找共变模式，服务 T² 监控。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 未标准化不同量纲
+- 成分数凭感觉
+- 把 PC 当独立因子因果解释
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST PCA](https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc11.htm) — accessed 2026-09-03
+- [Minitab PCA](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/principal-components-analysis/) — accessed 2026-09-03
 
 ### pls_regression — 偏最小二乘回归
 
@@ -3952,28 +4021,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: 1～4 响应 + 多预测；单响应 NIPALS 或 PLS2 NIPALS；LOO CV；Model Selection + Coefficients。
 - **interpretation_limits**: 禁止 Minitab golden 对齐声明。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+预测变量多、共线严重时的偏最小二乘降维回归（光谱、多传感器）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 解释性弱于 OLS；需交叉验证选成分数。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥50；高维时 n 相对 p 仍要足够。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+近红外 200 波长预测涂层厚度 PLS。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 不 CV 选成分
+- 未标准化变量
+- 把载荷当因果权重
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab PLS](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/partial-least-squares-regression/) — accessed 2026-09-03
+- [NIPALS Wold](https://doi.org/10.1016/0022-5193(66)90014-5) — accessed 2026-09-03
 
 ### poisson_gof — 泊松拟合优度
 
@@ -4015,28 +4085,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（计数响应）
 - **algorithm_help purpose（对齐）**: 对非负计数响应拟合 log 链 Poisson GLM，并报告系数与偏差。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+计数型缺陷数/事件数随协变量变化的 Poisson GLM（率建模）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 过度离散需负二项；零膨胀另建模。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 总事件≥50；每系数有足够事件数。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+每千件划痕数与线速、湿度的 Poisson 回归。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 方差≈均值假设不成立
+- 暴露量不同未用 offset
+- 把比率当正态回归
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Poisson Regression](https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm) — accessed 2026-09-03
+- [Minitab Poisson Regression](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/poisson-regression/) — accessed 2026-09-03
 
 ### probit_reliability — Probit 可靠性
 
@@ -4076,28 +4147,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: Bagging CART 集成：多数表决/均值预测与平均不纯度下降重要性。
 - **interpretation_limits**: 解释层只陈述统计证据；禁用过程合格。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+集成多树提高预测与变量重要性，非线性关系探索。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 黑箱性较单树强；外推差；小样本优势不明显。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥200 更稳；类别平衡需注意。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+RF 预测良率并排序关键工艺参数。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 不调树数/深度
+- 泄漏未来信息
+- 重要性偏类别变量
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Breiman Random Forests](https://doi.org/10.1023/A:1010933404324) — accessed 2026-09-03
+- [Minitab Random Forests](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/random-forests/) — accessed 2026-09-03
 
 ### randomization_test — 随机化检验（两样本均值差）
 
@@ -4106,28 +4178,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `first`（样本 1）
 - **algorithm_help purpose（对齐）**: 对两独立样本均值差做标签置换检验，给出双侧 P 值。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+置换/随机化检验两样本均值差，弱分布假设下的 p 值。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关数据需块置换；不能补救糟糕抽样框。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 总 n≥20；置换次数≥5000。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+A/B 夹具均值差随机化检验（小样本）。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 配对当独立置换
+- 观测非交换仍置换
+- 只看 p 不看效应量
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [NIST Randomization Tests](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
+- [Minitab Randomization Test](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/randomization-test/) — accessed 2026-09-03
 
 ### regression — 线性回归
 
@@ -4138,25 +4211,27 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-建立预测因子与连续响应的关系。
+量化一个或多个预测变量对连续响应的线性关系，预测与筛选因子。
 
 **不能当什么用**
-外推风险；残差诊断必备。
+不能证明因果；外推超出数据域危险；残差非独立/异方差时 OLS 推断失真。
 
-**典型样本量**: n≥10×参数
+**典型样本量**: n≥10×预测变量数；预测 n≥30 更稳。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+回流温度、链速对焊点高度的多元线性回归，优化设定窗口。
 
 **常见误用**
-- 把 p 值当成工程决策唯一依据。
-- 忽略测量系统噪声。
+- R² 高就当因果
+- 忽略共线性
+- 残差有模式仍用线性
+- 离群点未诊断
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Regression](https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd14.htm) — accessed 2026-09-03
+- [Minitab Regression](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/) — accessed 2026-09-03
 
 ### reliability — 可靠性分析
 
@@ -4350,28 +4425,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `value`（时间序列值）
 - **algorithm_help purpose（对齐）**: 对单列时间顺序数据做季节性预测（Winters）。
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+带季节性的 Holt-Winters 类预测。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 结构突变时预测失效；需足够季节历史。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥2–3 完整季节周期；每季≥3 点。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+周需求季节性 Winters 预测备料。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 季节周期设错
+- 单季节数据硬套
+- 不更新模型
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Winters](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
+- [Minitab Winters](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/winters-method/) — accessed 2026-09-03
 
 ### sign_test — 符号检验
 
@@ -4411,28 +4487,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `row_var`（行变量）
 - **algorithm_help purpose（对齐）**: 2 列分类变量；列联表；惯性分解；行/列贡献；1～2 组件。
 - **interpretation_limits**: 禁止因果结论。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+两分类变量对应分析，低维展示关联结构（行/列剖面）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能因果；稀疏表不稳定。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: 总 n≥100；行列类别各≥3。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+缺陷位置×失效模式对应图找共现模式。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 类别过多维数难解释
+- 与卡方结论不一致不追查
+- 过度解读距离
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Correspondence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/simple-correspondence-analysis/) — accessed 2026-09-03
+- [Greenacre Correspondence](https://doi.org/10.1201/9781315139470-14) — accessed 2026-09-03
 
 ### split_plot_analyze — 裂区析因分析
 
@@ -4503,28 +4580,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `response`（响应）
 - **algorithm_help purpose（对齐）**: 按 α 或 Forward AICc/BIC 对线性回归候选预测做逐步选择。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格、量具通过或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-多变量降维、分类、聚类或重采样推断。
+从多个候选预测变量中自动筛选进入线性模型的子集（探索性变量选择）。
 
 **不能当什么用**
-黑箱/探索结果不能替代 DOE 因果验证。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 数据驱动选择膨胀 I 类错误；不能替代先验假设；预测性能需验证集。
 
-**典型样本量**: 样本远大于特征数
+**典型样本量**: n≥10–15×候选变量数；n≥50 起较稳。
 
 **制造场景（列名示例）**
-回流焊：`炉温_℃`、`焊点偏移_um`
+从 12 个过程参数中筛选影响圆度的关键因子。
 
 **常见误用**
-- 数据泄漏。
-- 过拟合未交叉验证。
+- 逐步法结果当确认性
+- 多重共线性下不稳定
+- 不做交叉验证
 
 **建议 dataset_id**: `corr_temp_offset`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Design and Analysis of Experiments](https://www.wiley.com/en-us/Design+and+Analysis+of+Experiments%2C+10th+Edition-p-9781119714611) — accessed 2026-09-03
+- [Minitab Stepwise](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/stepwise-regression/) — accessed 2026-09-03
+- [Harrell Regression Modeling](https://hbiostat.org/doc/rms.pdf) — accessed 2026-09-03
 
 ### t_power — t 功效与样本量
 
@@ -4533,28 +4611,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: _无需列角色（计算器/设计生成类）_
 - **algorithm_help purpose（对齐）**: 在给定效应、α 和功效目标下，估计样本量或可检测效应。mode 覆盖 t/ANOVA/比例/方差/泊松，以及等价 TOST、2 水平 DOE、正态容差样本量。
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-质量工具：多变异、抽样 OC、功效或分布计算器。
+规划 t 检验样本量或评估功效（α、β、效应量）。
 
 **不能当什么用**
-不能替代 SPC 或 MSA 证据。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 效应量需先验或试点；不能弥补错误设计。
 
-**典型样本量**: 视工具；计算器无需数据
+**典型样本量**: 功效计算本身；常目标功效 0.8–0.9。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+比较两线膜厚差 0.5μm 需各组多少 n（功效 0.9）。
 
 **常见误用**
-- 抽样计划与批量不匹配。
-- 功效分析假设 σ 错误。
+- 效应量设过小样本过大浪费
+- 单侧双侧混淆
+- 事后功效无意义
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [AIAG — Statistical Process Control (SPC) Reference Manual](https://www.aiag.org/quality/automotive-core-tools/spc) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Power](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
+- [Minitab Power for t](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/power-and-sample-size/2-sample-t/) — accessed 2026-09-03
 
 ### taguchi_analyze — Taguchi 分析
 
@@ -4627,25 +4706,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+分解趋势、季节、残差成分，理解周期与异常（探索）。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+不自动预测；分解假设可加性/乘性需判断；短序列季节不稳。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥24（月）；≥2 季节周期长度×2。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+月度能耗分解看季节与趋势。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 不足一季就分季节
+- 结构突变未分段
+- 残差不查自相关
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Decomposition](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
+- [Minitab Decomposition](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/decomposition/) — accessed 2026-09-03
 
 ### time_series_smoothing — 指数平滑
 
@@ -4656,25 +4736,28 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+单序列平滑去噪，短期预测（简单指数平滑等）。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+长期结构变化大时失效；不替代控制图判稳；需检查残差自相关。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥20 点；季节模型需≥2 完整季节。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+周产量单指数平滑做下月粗预测。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 非平稳直接平滑
+- α 不调
+- 把平滑当永久趋势
+
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Smoothing](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm) — accessed 2026-09-03
+- [Minitab Single Exp Smoothing](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/single-exponential-smoothing/) — accessed 2026-09-03
 
 ### trend_analysis — 趋势分析
 
@@ -4683,28 +4766,29 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **对话框角色**: `time`（时间列（可选））
 - **algorithm_help purpose（对齐）**: 对时间顺序数值序列估计线性趋势，可选 Mann-Kendall 单调趋势检验。
 - **interpretation_limits**: 解释层只陈述统计证据，不写过程合格或规格已满足。
-- **实现说明**: formula_reference：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
+- **实现说明**: formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。
 
 **常用来做什么**
-分析时序趋势、季节、自相关或短期预测。
+检验/估计时间序列单调趋势（Mann-Kendall 类或线性趋势）。
 
 **不能当什么用**
-预测区间≠规格合格；结构突变需重拟合。
+当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关存在时 p 值失真；不能证明因果。
 
-**典型样本量**: ≥50 点识别季节
+**典型样本量**: ≥20；有自相关需调整方法。
 
 **制造场景（列名示例）**
-周度：`周次`、`良率_pct`
+季度 ppm 趋势检验，判断是否在改善。
 
 **常见误用**
-- 非平稳直接回归。
-- 忽略异常点。
+- 忽略自相关
+- 把趋势当永远持续
+- 混用不同时间粒度
 
 **建议 dataset_id**: `ts_weekly_yield`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Trend](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm) — accessed 2026-09-03
+- [Minitab Trend Analysis](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/trend-analysis/) — accessed 2026-09-03
 
 ### two_factor_anova — 双因素 ANOVA
 
@@ -4779,25 +4863,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-证明效应落在事前等价区间内（生物等效/工艺窗口）。
+两组比例差在 ±δ 内等价。
 
 **不能当什么用**
-不能证明完全无差异；等价限需法规/工程协议。
+稀疏表需 Fisher/精确；不能证明优效。
 
-**典型样本量**: 功效驱动，常 n≥20/组
+**典型样本量**: 每组事件≥10；总 n 常≥200。
 
 **制造场景（列名示例）**
-光学膜：`膜厚_um`、`产线`（A/B 线）
+两班次不良率差在 ±0.5% 等价。
 
 **常见误用**
-- 等价限事后挑选。
-- 忽略方差估计方法。
+- δ 随意
+- 忽略聚类/批次
+- 与 RR/OR 等价混淆
 
 **建议 dataset_id**: `two_line_thickness`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [Minitab 2 Proportion Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
+- [NIST Two Proportions](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm) — accessed 2026-09-03
 
 ### two_proportions — 两比例检验
 
@@ -4840,25 +4925,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-证明效应落在事前等价区间内（生物等效/工艺窗口）。
+两独立组均值差在 ±δ 内等价的 TOST 检验。
 
 **不能当什么用**
-不能证明完全无差异；等价限需法规/工程协议。
+不能证明优于对照；方差不齐需方法调整；等价限需预先定义。
 
-**典型样本量**: 功效驱动，常 n≥20/组
+**典型样本量**: 常每组 20–50；功效分析必备。
 
 **制造场景（列名示例）**
-光学膜：`膜厚_um`、`产线`（A/B 线）
+新夹具与旧夹具均值差在 ±0.01mm 内等价。
 
 **常见误用**
-- 等价限事后挑选。
-- 忽略方差估计方法。
+- δ 事后挑选
+- 与 superiority 检验混淆
+- 忽略多重比较
 
 **建议 dataset_id**: `two_line_thickness`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [FDA Statistical Guidance](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/statistical-guidance-reporting-results-studies-evaluating-diagnostic-tests) — accessed 2026-09-03
+- [Minitab 2-Sample Equivalence](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
 
 ### two_sample_equivalence_ratio — 双样本均值比等价性检验
 
@@ -4869,25 +4955,26 @@ DOE：`温度_℃`、`压力_MPa`、`响应_良率`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-证明效应落在事前等价区间内（生物等效/工艺窗口）。
+两独立组均值比在 [θL, θU] 内等价（生物等效/比例型规格）。
 
 **不能当什么用**
-不能证明完全无差异；等价限需法规/工程协议。
+对数正态假设需检查；不能用于绝对差规格场景。
 
-**典型样本量**: 功效驱动，常 n≥20/组
+**典型样本量**: 每组 24–36 常见（比例限紧时更大）。
 
 **制造场景（列名示例）**
-光学膜：`膜厚_um`、`产线`（A/B 线）
+两种焊膏体积比在新/旧配方 0.9–1.1 等价。
 
 **常见误用**
-- 等价限事后挑选。
-- 忽略方差估计方法。
+- 算术均值当比例
+- 比值限无监管依据
+- 离群未调查
 
 **建议 dataset_id**: `two_line_thickness`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [ICH E9](https://www.ich.org/page/efficacy-guidelines) — accessed 2026-09-03
+- [Minitab Equivalence Ratio](https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/) — accessed 2026-09-03
 
 ### two_sample_t — 双样本 t 检验
 
@@ -5264,6 +5351,8 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - ignoring probability plot failures
 - wrong Sixpack type (normal vs nonnormal vs between/within).
 
+**图形解读要点**: 看分布/关系/趋势模式与离群；图形探索不替代假设检验。
+
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
@@ -5279,27 +5368,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+头脑风暴阶段整理人/机/料/法/环/测等潜在原因（结构化思考，非统计检验）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不能证明哪条原因成立；不替代 DOE 或回归验证；非数据驱动排序。
 
-**典型样本量**: n≥20
+**典型样本量**: 不适用；依赖团队知识与现场证据。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+焊点虚焊因果图，列出锡膏、炉温、钢网、操作等候选因素。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 鱼骨图当根因结论
+- 原因条目过细或过粗无法验证
+- 缺少数据验证闭环
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [ASQ Fishbone](https://asq.org/quality-resources/fishbone) — accessed 2026-09-03
+- [AIAG 质量工具](https://www.aiag.org/quality/) — accessed 2026-09-03
 
 ### distribution_identification — 个体分布识别
 
@@ -5588,27 +5678,28 @@ SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+按频次/成本排序不良或缺陷类型，识别少数关键项（80/20 模式观察）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+不证明因果；不替代统计检验判断组间差异；分类定义变更会改变排序。
 
-**典型样本量**: n≥20
+**典型样本量**: 累计至少 20–50 个事件；类别不宜过多（≤15）。
 
 **制造场景（列名示例）**
-装配：`班次`、`不良数`、`检验数`
+装配线一周不良代码柏拉图，聚焦前 3 项返工原因。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 类别划分不一致导致排名跳变
+- 把柏拉图当控制图用
+- 忽略测量系统对缺陷分类的影响
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `attribute_defect`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [AIAG 质量工具](https://www.aiag.org/quality/) — accessed 2026-09-03
+- [NIST Pareto](https://www.itl.nist.gov/div898/handbook/pri/section3/pareto.htm) — accessed 2026-09-03
 
 ### poisson_capability — 泊松过程能力
 
@@ -5650,27 +5741,28 @@ Poisson 缺陷率能力。
 - **interpretation_limits**: 解释层只陈述统计证据、假设状态和不可计算原因，不写过程合格、量具通过、分布已证明、规格已满足或必须删点。
 
 **常用来做什么**
-可视化分布、关系或结构，支持 EDA 与沟通。
+按时间/序号看过程中心是否漂移、跳变或循环（模式观察，控制图前奏）。
 
 **不能当什么用**
-图形本身不提供显著性（需配套检验）。
+无控制限，不能判特殊原因或稳态；不替代 I-MR/Xbar 控制图。
 
-**典型样本量**: n≥20
+**典型样本量**: ≥20 点可看趋势；50+ 更易见模式。
 
 **制造场景（列名示例）**
-SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`
+每日线体 OEE 或尺寸均值运行图，查换型后是否台阶变化。
 
 **常见误用**
-- 过度解读偶然模式。
-- 坐标截断误导。
+- 无控制限却宣称过程失控
+- 忽略抽样间隔变化
+- 混用不同子组定义
 
 **图形解读要点**: 看分布形状、离群、关联模式；不替代假设检验。
 
 **建议 dataset_id**: `smt_paste_height`
 
 **权威来源**
-- [NIST/SEMATECH e-Handbook — EDA](https://www.itl.nist.gov/div898/handbook/eda/eda.htm) — accessed 2026-09-03
-- [Montgomery — Introduction to Statistical Quality Control (7th ed.)](https://www.wiley.com/en-us/Introduction+to+Statistical+Quality+Control%2C+7th+Edition-p-9781119146816) — accessed 2026-09-03
+- [NIST Run Chart](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc32.htm) — accessed 2026-09-03
+- [Minitab Run Chart](https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/quality-tools/run-chart/) — accessed 2026-09-03
 
 ### tolerance_intervals — 容差区间
 

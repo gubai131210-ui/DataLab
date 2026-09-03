@@ -17,6 +17,11 @@ SUBAGENT_FILES = [
     "b1a0a3c8-14c3-4f50-a88c-4445efe78b2c/subagents/c82338e5-8151-425c-a5c3-fca8f9448807.jsonl",
     "b1a0a3c8-14c3-4f50-a88c-4445efe78b2c/subagents/9d1f0cb0-c1ea-4515-ad72-a97459c344ee.jsonl",
     "b1a0a3c8-14c3-4f50-a88c-4445efe78b2c/subagents/8637fdeb-0e9c-4173-a6b3-2346c0513102.jsonl",
+    "b1a0a3c8-14c3-4f50-a88c-4445efe78b2c/subagents/1d6976b0-8c06-428c-8d61-7293952e9edd.jsonl",
+]
+
+OVERLAY_JSON_FILES = [
+    ROOT / "docs/research/learning-center-research-agent-a.json",
 ]
 
 
@@ -123,15 +128,16 @@ def normalize_entry(raw: dict, base: dict) -> dict:
         out["common_mistakes"] = normalize_mistakes(raw["common_mistakes"])
     if raw.get("sources"):
         out["sources"] = normalize_sources(raw["sources"])
-    # control chart entries: ensure chart note
-    if raw.get("used_for") and "替代" in str(raw.get("not_for", "")):
-        if "chart_note" not in out and any(
-            k in out.get("used_for", "") for k in ("控制图", "监视", "监控", "EWMA", "CUSUM")
-        ):
-            out.setdefault(
-                "chart_note",
-                "看超出控制限、趋势、周期与游程；模式识别不替代假设检验。",
-            )
+    not_for = str(out.get("not_for", ""))
+    if "当前版本菜单中可能没有此项" in not_for or "仅公式参考" in not_for:
+        out["implemented_note"] = (
+            "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
+        )
+    used_for = str(out.get("used_for", ""))
+    not_for_text = str(out.get("not_for", ""))
+    if any(k in used_for + not_for_text for k in ("模式观察", "图形", "不替代")):
+        if "chart_note" not in out:
+            out["chart_note"] = "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
     return out
 
 
@@ -146,6 +152,11 @@ def main() -> int:
     base: dict = json.loads(base_path.read_text(encoding="utf-8"))
 
     overlay: dict = {}
+    for path in OVERLAY_JSON_FILES:
+        if path.exists():
+            chunk = json.loads(path.read_text(encoding="utf-8"))
+            print(f"Loaded {len(chunk)} ids from {path.name}")
+            overlay.update(chunk)
     for rel in SUBAGENT_FILES:
         path = TRANSCRIPT_DIR / rel
         chunk = load_subagent_json(path)
@@ -153,11 +164,15 @@ def main() -> int:
         overlay.update(chunk)
 
     merged_count = 0
+    skipped = []
     for cid, raw in overlay.items():
         if cid not in base:
-            base[cid] = {}
+            skipped.append(cid)
+            continue
         base[cid] = normalize_entry(raw, base[cid])
         merged_count += 1
+    if skipped:
+        print(f"Skipped {len(skipped)} overlay ids not in union: {skipped}")
 
     base_path.write_text(json.dumps(base, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Merged {merged_count} subagent overlays into {base_path}")

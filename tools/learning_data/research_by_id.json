@@ -50,34 +50,55 @@
     "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
   },
   "acf_pacf": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "识别 AR/MA 阶数、季节周期与自相关结构（诊断图）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 图形解读主观；不替代 Ljung-Box 检验；非平稳序列需先差分。",
+    "typical_sample_size": "≥50；季节识别需≥2 季节。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "非平稳直接看 ACF",
+      "滞后截断误判阶数",
+      "小样本过度解读"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST ACF",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab ACF/PACF",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/autocorrelation-and-partial-autocorrelation/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "ACF/PACF 判断日尺寸偏差的 MA/AR 阶。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "adf_test": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "检验序列单位根/非平稳性，为差分或 ARIMA 定阶提供证据。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 低功效；临界值依赖规格；不能单独定模型阶。",
+    "typical_sample_size": "≥50 较稳；短序列功效低。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "p>0.05 就当平稳",
+      "结构突变未处理",
+      "忽略季节单位根"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Dickey-Fuller",
+        "url": "https://doi.org/10.2307/1912352",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab ADF",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/unit-root-test/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "ADF 检验周良率是否需一阶差分再建模。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "analyze_definitive_screening": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
@@ -156,7 +177,8 @@
       }
     ],
     "manufacturing_scenario": "三模腔尺寸 ANOM：列「尺寸_mm」「模腔」「机台号」，识别哪个模腔均值系统性偏离三台合计平均水平。",
-    "menu_path": "统计 > ANOVA"
+    "menu_path": "统计 > ANOVA",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "anom_attribute": {
     "used_for": "多组二项不良率或泊松缺陷率的 ANOM 比较，识别哪几组率值偏离整体水平（属性版均值分析）。",
@@ -190,35 +212,54 @@
     "menu_path": "统计 > ANOVA"
   },
   "area_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "时间或类别轴上展示累积量、构成变化（描述性模式）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 堆叠面积难比较非底层系列。",
+    "typical_sample_size": "时间点≥12；类别不宜过多。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "堆叠面积比较中间系列",
+      "与折线趋势混淆",
+      "纵轴非从零误导"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Run/Time Plot",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Area Graph",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/area-graphs/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "各缺陷类型月度堆叠面积，看构成是否变化。"
   },
   "arima": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "平稳/差分后序列的 ARIMA 建模与预测，捕捉自回归移动平均结构。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 短序列定阶不稳；外生变量用 ARIMAX；不保证优于简单法。",
+    "typical_sample_size": "≥50；定阶需 ACF/PACF 与信息准则。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "非平稳未差分",
+      "过拟合高阶",
+      "不验证残差白噪声"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST ARIMA",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc45.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab ARIMA",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/arima/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "日产量 ARIMA 预测下两周产出。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "attribute_agreement": {
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
@@ -246,20 +287,29 @@
     "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
   },
   "bar_chart": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "展示分类计数或汇总均值/合计的比较（描述性模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 截断纵轴可夸大差异；连续变量不宜强行分箱条图代替直方图。",
+    "typical_sample_size": "类别级：每类至少 5 次观测；汇总条图依赖底层 n。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "纵轴不从零误导",
+      "用条图表现时间序列趋势（应折线）",
+      "混淆条图与直方图"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Bar Chart",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/barplot.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Bar Chart",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/bar-charts/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "三班次不良数条形图（计数），或各线体平均周期条图。"
   },
   "batch_capability": {
     "used_for": "批次间能力评估。",
@@ -287,19 +337,29 @@
     "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
   },
   "best_subsets_regression": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "枚举（或限规模）比较不同子集模型的 R²、Cp、BIC 等，选简约模型。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 候选>15 不可穷举；仍有过拟合风险。",
+    "typical_sample_size": "n≥40；候选变量≤15。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "只看 R² 不看 Mallows Cp",
+      "样本小仍多变量",
+      "不做残差诊断"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Best Subsets",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/best-subsets-regression/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Model Selection",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section4/pmd44.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "8 个模具参数 best subsets 选 3 因子解释翘曲。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "between_within_capability": {
     "used_for": "分解组间/组内变异的能力。",
@@ -400,34 +460,55 @@
     "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
   },
   "bootstrap_mean": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "重抽样估计均值置信区间，弱分布假设下推断。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关/分层数据需专门 bootstrap；不能修复偏倚设计。",
+    "typical_sample_size": "原始 n≥20；重抽样 B≥1000。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "有放回当无放回混淆",
+      "时间序列独立 bootstrap 失真",
+      "B 太小区间不稳"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Bootstrap",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc22.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Efron Bootstrap",
+        "url": "https://doi.org/10.1214/aos/1176345638",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "偏态镀层厚度 bootstrap 均值 95% CI。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "bootstrap_two_sample": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "两独立样本均值差 bootstrap CI，非正态或方差不齐时的补充。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不替代随机化/配对设计；小样本功效仍低。",
+    "typical_sample_size": "每组 n≥15；B≥2000。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "配对数据当独立",
+      "不等 n 解释不当",
+      "与置换检验混淆"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Bootstrap Two Sample",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section2/pmc22.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Bootstrapping",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/bootstrapping/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "两供应商强度差 bootstrap CI 辅助等价评估。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "box_cox": {
     "used_for": "Box-Cox 变换辅助正态化。",
@@ -454,36 +535,54 @@
     "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
   },
   "boxplot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "比较多组位置、散布与离群点；快速看中位数差异与对称性（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 围栏外点不等于必须删除。",
+    "typical_sample_size": "每组 n≥5 有意义；n≥20 更稳；极小样本箱线不稳定。",
     "dataset_hint": "two_line_thickness",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "把须线外点当测量错误必删",
+      "组间样本量悬殊仍只比中位数",
+      "与正态假设混为一谈"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Boxplot",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/boxplot.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Boxplot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/boxplots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+    "manufacturing_scenario": "三模腔注塑件关键尺寸箱线图，比较腔间散布与中位偏移。"
   },
   "bubble_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "散点加第三维大小编码，观察三维关系模式。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 气泡面积感知非线性易误判。",
+    "typical_sample_size": "n≥30；标签过多会重叠。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "气泡半径与数值非线性映射",
+      "重叠气泡难读",
+      "第三变量量纲未标准化"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab Bubble Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/bubble-plots/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Multivariate Graphs",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc11.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "工站节拍(x)、良率(y)、批量大小(气泡) 多维比较。"
   },
   "c_chart": {
     "used_for": "用于泊松型缺陷计数、固定“检验单位/面积/样本量”下监视总缺陷数 c；应关注缺陷数突增、同侧偏高及限不对称（常无 LCL）等模式，用于识别系统性缺陷源，但不替代泊松率检验或缺陷率置信区间推断。",
@@ -568,53 +667,83 @@
         "accessed": "2026-09-03"
       }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "cart_tree": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "可解释的单树分类/回归，规则分段与变量重要性（探索/基线模型）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 单树易过拟合；不稳定；不能外推连续关系。",
+    "typical_sample_size": "n≥100；叶最小样本≥5。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "深度过大过拟合",
+      "不做剪枝或 CV",
+      "把训练精度当泛化"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Breiman CART",
+        "url": "https://doi.org/10.1201/9781315139470",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab CART",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/classification-and-regression-trees/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "决策树判断哪道量测最先把不良分开。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "cause_and_effect": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "头脑风暴阶段整理人/机/料/法/环/测等潜在原因（结构化思考，非统计检验）。",
+    "not_for": "不能证明哪条原因成立；不替代 DOE 或回归验证；非数据驱动排序。",
+    "typical_sample_size": "不适用；依赖团队知识与现场证据。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "鱼骨图当根因结论",
+      "原因条目过细或过粗无法验证",
+      "缺少数据验证闭环"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "ASQ Fishbone",
+        "url": "https://asq.org/quality-resources/fishbone",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "AIAG 质量工具",
+        "url": "https://www.aiag.org/quality/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "焊点虚焊因果图，列出锡膏、炉温、钢网、操作等候选因素。"
   },
   "ccf": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "两序列互相关，找领先/滞后关系与同步性。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 伪相关风险；需平稳或去趋势；不能证明因果。",
+    "typical_sample_size": "≥50 对齐点；预白化有时必要。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "非平稳伪相关",
+      "不对齐时间戳",
+      "多重滞后未校正"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Cross-Correlation",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Cross Correlation",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/cross-correlation/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "CCF 查环境温度领先于尺寸偏移多少小时。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "chi_square": {
     "used_for": "检验两个分类变量是否独立，或比较多个组的分类比例是否相同（列联表分析）。",
@@ -679,50 +808,79 @@
     "menu_path": "统计 > 假设检验"
   },
   "chi_square_mosaic_link": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "马赛克图与卡方检验联动：看图找模式，用检验量化关联。",
+    "not_for": "不能单靠图断言显著；期望频数过小检验失效。",
+    "typical_sample_size": "总 n≥50；2×2 至少每格≥5。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "只看图不做检验",
+      "p<α 就当因果",
+      "忽略分层或 Simpson 悖论"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Chi-Square",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section4/prc45.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Chi-Square",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/tables/chi-square-test-for-association/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "操作员×合格/不合格马赛克+卡方，验证是否独立。"
   },
   "cluster_observations": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "无监督地把相似观测分群，生成树状图与簇标签（探索分组）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 簇数主观；不能证明工艺类别；结果对距离/链接敏感。",
+    "typical_sample_size": "n=30–500；维数不宜过高。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "k 随意选",
+      "未标准化",
+      "把聚类当分类真值"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Cluster",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/hclus.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Cluster Observations",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-observations/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "多传感器波形层次聚类，发现异常批次簇。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "cluster_variables": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "对变量按相关结构聚类，简化多变量集或选代表变量。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能替代领域知识删变量。",
+    "typical_sample_size": "n≥50；变量数 5–30。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "样本小相关不稳",
+      "混用 Pearson/Spearman",
+      "代表变量选择无验证"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Cluster Variables",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-variables/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Variable Clustering",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/hclus.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "20 个尺寸变量聚类选代表尺寸做 SPC。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "cochran_q": {
     "used_for": "随机区组设计中，多个相关二元处理（成功/失败）的比例是否相同，如多名评价者对多种方案的是/否判定。",
@@ -756,20 +914,29 @@
     "menu_path": "统计 > 假设检验"
   },
   "contour_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "两连续因子响应面等高线，看最优区域与坡度（DOE/回归可视化）。",
+    "not_for": "不外推实验域；不替代回归显著性检验；需足够设计点支撑曲面。",
+    "typical_sample_size": "响应面设计至少 13 点（CCD）或等价；因子 2–3 个常见。",
     "dataset_hint": "doe_factorial_demo",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "在未试验区域外推最优",
+      "忽略拟合失拟",
+      "混淆相关等高线与因果"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Contour Plot",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/contour.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Contour Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/contour-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+    "manufacturing_scenario": "注塑温度×压力对缩痕深度的等高线图。"
   },
   "correlation": {
     "used_for": "量化两个连续变量之间的线性关联强度与方向（如温度与尺寸偏移、压力与焊点强度），用于探索性分析与回归建模前筛查。",
@@ -803,35 +970,55 @@
     "menu_path": "统计 > 基础统计"
   },
   "correlation_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "矩阵散点或相关视图，浏览多变量两两关系模式。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 多重比较未校正；相关≠因果。",
+    "typical_sample_size": "每个变量对 n≥30；变量数 p 不宜过大（≤10 探索）。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "p 个变量看 p(p-1)/2 对却不校正",
+      "非线性关系只看 Pearson",
+      "忽略时间序列自相关"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Correlation",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Matrix Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/matrix-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "五条尺寸链测量相关图，找共变强的工序。"
   },
   "correlogram": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "多变量相关矩阵热图，总览线性关系强度（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。",
+    "typical_sample_size": "n≥30；变量≤15 可读。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "不标显著性",
+      "非线性关系误判为无关",
+      "时间序列伪相关"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Correlation Matrix",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Correlogram",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/correlogram/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "产线 10 个 KPI 相关热图找冗余指标。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "cox_counting_process": {
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
@@ -942,16 +1129,29 @@
     "manufacturing_scenario": "药片压片重量按“压片机号”“批次号”逐片称重，CUSUM 监视相对“目标重量_mg”的累积偏差，用于发现“冲模编号”磨损导致的缓慢减重。"
   },
   "database_import": {
-    "used_for": "外部数据库导入工作区的流程示意。",
-    "not_for": "当前版本可能无独立菜单。",
-    "typical_sample_size": "N/A",
+    "used_for": "从 SQLite/ODBC 等数据源只读导入表到工作区，衔接 MES/历史库。",
+    "not_for": "不替代数据清洗；大表需分页；写权限默认关闭。",
+    "typical_sample_size": "导入行数建议分批；学习中心演示 30–200 行。",
     "implemented_note": "orchestration；菜单可能不存在。",
     "common_mistakes": [
-      "把导入当分析完成。"
+      "编码/时区列类型错",
+      "全表一次载入内存",
+      "连接名泄漏未关闭"
     ],
     "sources": [
-      "nist_eda"
-    ]
+      {
+        "label": "Qt SQL Programming",
+        "url": "https://doc.qt.io/qt-6/qsqldatabase.html",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "SQLite Documentation",
+        "url": "https://www.sqlite.org/docs.html",
+        "accessed": "2026-09-03"
+      }
+    ],
+    "manufacturing_scenario": "从 MES SQLite 导入上周 SPI 检测结果到新工作表。",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "definitive_screening_design": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
@@ -978,20 +1178,29 @@
     "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
   },
   "density_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "平滑展示连续变量概率密度形状，比较分布轮廓（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 带宽选择影响形状。",
+    "typical_sample_size": "n≥30；n≥100 密度估计更可靠。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "带宽过小见假峰",
+      "多组样本量差大仍直接叠加",
+      "把密度峰值当过程目标"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Density",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/density.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Density",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/density-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "两供应商垫片厚度核密度对比，看尾部差异。"
   },
   "descriptive": {
     "used_for": "概括数值列的位置、散布与形状（均值、标准差、四分位、偏度、峰度），可按班次、产线、模腔等分组对比数据概况。",
@@ -1025,33 +1234,54 @@
     "menu_path": "统计 > 基础统计"
   },
   "discriminant": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "已知类别标签下，找线性组合区分类别并评估误分类率。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需多元正态与同协方差近似；不能用于发现新类。",
+    "typical_sample_size": "每类 n≥20–30；总 n≥60。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "训练集上评估过乐观",
+      "类不平衡忽略",
+      "高维小样本过拟合"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Discriminant",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/discriminant-analysis/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Discriminant",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "合格/返工品多尺寸 LDA 找区分边界。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "distribution_calculator": {
-    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
-    "not_for": "不能替代 SPC 或 MSA 证据。",
-    "typical_sample_size": "视工具；计算器无需数据",
+    "used_for": "查 PDF/CDF/分位数、概率换算，教学与规格限概率计算。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能代替数据拟合分布；参数需明确来源。",
+    "typical_sample_size": "不适用（理论计算）。",
     "dataset_hint": null,
     "common_mistakes": [
-      "抽样计划与批量不匹配。",
-      "功效分析假设 σ 错误。"
+      "分布族选错",
+      "把理论分位当过程证据",
+      "单位换算错误"
     ],
     "sources": [
-      "aiag_spc",
-      "montgomery_spc"
-    ]
+      {
+        "label": "NIST Distributions",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/eda366.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Probability Distributions",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/probability-distributions/",
+        "accessed": "2026-09-03"
+      }
+    ],
+    "manufacturing_scenario": "正态 N(10,0.2) 下 P(X>10.5) 用于规格裕量估算。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "distribution_identification": {
     "used_for": "拟合候选分布识别。",
@@ -1230,52 +1460,79 @@
     "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
   },
   "dotplot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "小样本下一维分布点排列，看清每个测量值位置与重复（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。",
+    "typical_sample_size": "n=5–50 最理想；大样本点过密需 jitter 或改直方图。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "大样本不 jitter 叠点误判",
+      "与统计意义上的点图（dot chart）混淆"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Dot Plot",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/dotplot.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "ASQ Dot Plot",
+        "url": "https://asq.org/quality-resources/dot-plot",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "首件 10 点膜厚点图，确认是否集中在规格附近。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "ecdf_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "经验累积分布，比较样本 CDF 或分位数位置（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 阶梯线在小 n 下跳跃大。",
+    "typical_sample_size": "n≥30；两组比较各≥30。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "小样本外推分位数",
+      "不与规格限对照就下结论",
+      "两组样本量差大误读交叉"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST EDA CDF",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab ECDF",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/empirical-cdf-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "两供应商垫片厚度 ECDF，看 99th 百分位谁更靠规格。"
   },
   "eda_4plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "NIST 四图：运行序、lag-1、直方图、正态概率——单变量综合模式筛查。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 四图是筛查包，不替代完整控制图或检验。",
+    "typical_sample_size": "n≥25；lag-1 需有序列顺序。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "忽略运行序图上的漂移",
+      "概率图略弯就删数据",
+      "未记录采样顺序"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST 4-Plot",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Lag Plot",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/lagplot.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "量具重复性测量序列 EDA 四图，查独立性与正态性线索。"
   },
   "emp_crossed": {
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
@@ -1379,19 +1636,29 @@
     "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
   },
   "factor_analysis": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "探索潜在因子结构、载荷与共同度（问卷/多传感器结构假设）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能证明潜变量存在；旋转解不唯一。",
+    "typical_sample_size": "n≥100 或 n≥5×变量数；KMO 需检查。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "样本过小",
+      "不做旋转与残差检查",
+      "与 PCA 混用目的"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Factor Analysis",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/factor-analysis/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Factor",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc42.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "多道外观评分探索潜在「表面质量」因子。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "fine_gray_regression": {
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
@@ -1538,19 +1805,29 @@
     "manufacturing_scenario": "量具 MSA：`零件号`、`操作员`、`测量值_mm`"
   },
   "general_manova": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "多因子/协变量下多响应 Type III MANOVA。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 设计不平衡时解释复杂；不能自动选模型。",
+    "typical_sample_size": "总 n≥60；每单元格足够。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "交互项乱加",
+      "不平衡设计误读主效应",
+      "不做假设诊断"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab General MANOVA",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/multivariate-analysis-of-variance/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST GLM Multivariate",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "温度×湿度对多尺寸响应的 MANOVA。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "generalized_variance": {
     "used_for": "用于同时监控两个及以上相关计量变量过程变异（协方差结构）是否稳定，|S| 广义方差图是多元 R/S 图的对应物；应关注 |S| 突增、持续偏高及与 T² 图联动报警等模式，用于发现多变量离散度增大，但不替代 Bartlett 协方差齐性检验或 NIST 指出的“尚无简单稳健多元变异性图”之严格推断。",
@@ -1631,67 +1908,103 @@
   },
   "graph_gallery": {
     "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 不自动选最优图型。",
+    "typical_sample_size": "依所选图型；一般 n≥20 起。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "只换图不查数据质量",
+      "多列角色未对齐",
+      "把预览当最终报告图"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST EDA Graphical",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Graph Gallery",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/graph-gallery/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "导入膜厚与温度两列，在画廊中切换散点与箱线做初探。"
   },
   "heatmap_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "矩阵或网格上色展示相关、频次或响应强度模式。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 颜色尺度选择影响解读。",
+    "typical_sample_size": "相关阵：n≥30；格子频数表：每格足够计数。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "未标数值只靠颜色",
+      "Rainbow 色图误导",
+      "时间轴排序错误"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Heatmap/Contour",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/contour.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Heatmap",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/heatmaps/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "工位×缺陷类型发生次数热图。"
   },
   "hexbin_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "大样本二维关系密度热力分箱，看聚集区与稀疏区（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 丢失单点细节；不适合小样本。",
+    "typical_sample_size": "n≥500 才有意义；上万点常见。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "小样本用 hexbin 过度平滑",
+      "不检查坐标轴量纲",
+      "把颜色深浅当因果"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Matplotlib Hexbin",
+        "url": "https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hexbin.html",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Scatter",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "上万点 SPI 体积-面积散点 hexbin，定位焊膏过量聚集区。"
   },
   "histogram": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "探索性观察单变量分布形态、偏度、多峰与潜在离群；模式查看第一步。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 叠加正态曲线不是正态性检验。",
+    "typical_sample_size": "n≥30 可看大致形状；n≥100 分箱更稳定；小样本仅作线索。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "分箱宽度随意改后过度解读峰形",
+      "把直方图当能力合格证明",
+      "多组叠加不分面导致误读"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST EDA 直方图",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/histogm.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Histogram",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/histograms/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "SMT 锡膏印刷高度（μm）按班次直方图，初判是否右偏或双峰。"
   },
   "hotelling_t2": {
     "used_for": "用于同时监控两个及以上相关计量变量的均值向量是否偏离历史受控中心，T² 统计量综合均值偏移与协方差结构；应关注 T² 突增、持续偏高及需配合 T² 分解/单变量图定位变量等模式，用于多变量均值监控，但不能替代 Hotelling T² 假设检验的 p 值推断，且报警时不直接指明哪一变量失控。",
@@ -1781,35 +2094,54 @@
     "manufacturing_scenario": "柔性产线按“零件图号”“批次号”混流生产，每批次首件及过程件测“关键尺寸_mm”，跨批次绘 I-MR、批次内绘 R，用于发现“夹具编号”切换后某图号批次内跳动异常。"
   },
   "interval_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "展示各组均值及置信区间，比较位置差异线索（可视化，非完整推断报告）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 区间重叠不等于无差异（需正式检验）。",
+    "typical_sample_size": "每组 n≥10；n≥30 区间更窄更稳。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "CI 重叠就断言无差异",
+      "不等方差仍用默认 CI",
+      "混淆预测区间与置信区间"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab Interval Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/interval-plots/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST CI",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "两固化炉平均硬度及 95% CI 区间图，辅助是否做双样本 t。"
   },
   "isolation_forest": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "无监督多维异常检测，标记孤立点（探索性筛查）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能自动定根因；阈值需业务校准；与单变量 outlier 检验互补。",
+    "typical_sample_size": "n≥100；异常比例不宜过高。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "把异常分数当删除指令",
+      "未追查测量错误",
+      "高维诅咒未降维"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Liu Isolation Forest",
+        "url": "https://doi.org/10.1109/ICDM.2008.17",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "scikit-learn IsolationForest",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "多通道过程数据孤立森林标可疑批次。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "km_interval": {
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
@@ -1836,19 +2168,29 @@
     "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
   },
   "kmeans": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "指定 k 的划分式聚类，快速分群（探索）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 对初值敏感；球形簇假设；不能给层次结构。",
+    "typical_sample_size": "n≥30；k<√(n/2) 经验。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "k 拍脑袋",
+      "不同 seed 结果不稳",
+      "未标准化"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST k-means",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/kmeans.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Cluster k-means",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/cluster-observations/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "k=3 对焊接能量曲线聚类分正常/边缘/异常。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "kruskal_wallis": {
     "used_for": "三个及以上独立组的非参数位置比较，正态或等方差不满足时替代单因素 ANOVA。",
@@ -1987,19 +2329,28 @@
     "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
   },
   "logistic_regression": {
-    "used_for": "建模二分类响应与因子关系。",
-    "not_for": "不能证明因果；需足够事件数。",
-    "typical_sample_size": "事件≥10",
+    "used_for": "二元合格/不合格、通过/失败与预测变量的 logit 关系建模与 odds 比。",
+    "not_for": "不能用于连续响应；分离完全时估计不稳定；因果需实验设计支持。",
+    "typical_sample_size": "每系数至少 10–15 个事件；总 n≥50。",
     "dataset_hint": "attribute_defect",
     "common_mistakes": [
-      "把 p 值当成工程决策唯一依据。",
-      "忽略测量系统噪声。"
+      "稀有事件样本不足",
+      "把概率当计数",
+      "忽略类不平衡"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Logistic",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Binary Logistic",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/binary-logistic-regression/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+    "manufacturing_scenario": "预测锡膏类型+炉温组合下虚焊发生概率。"
   },
   "mann_whitney": {
     "used_for": "两个独立组连续或有序数据的非参数位置比较（不要求正态），比较两分布是否位置不同。",
@@ -2033,51 +2384,78 @@
     "menu_path": "统计 > 假设检验"
   },
   "manova_one_way": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "单因子对多个连续响应同时检验组间差异（整体 Wilks 等）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需多元正态与同协方差；不能替代逐响应 ANOVA 的规划。",
+    "typical_sample_size": "每组 n≥20；响应数 2–4 常见。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "不做多变量正态检查",
+      "显著后不查 univariate",
+      "响应高度相关仍多检验"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST MANOVA",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab MANOVA",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/multivariate-analysis-of-variance/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "三供应商同时比较长度、宽度、高度三组均值。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "marginal_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "散点图边缘叠加边际直方/密度，同时看联合与边缘分布。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。",
+    "typical_sample_size": "n≥50 边际密度较稳。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "只读中心散点忽略边缘多峰",
+      "分组边际未分色"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab Marginal Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/marginal-plots/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Bivariate EDA",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "X-Y 尺寸配合散点+边缘分布，查边缘是否偏规格。"
   },
   "matrix_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "多变量散点矩阵，系统浏览两两关系与离群。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 变量过多图不可读。",
+    "typical_sample_size": "n≥30；变量数≤8 为宜。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "不查对角线分布就回归",
+      "多重比较无计划",
+      "时间序列未按序看"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab Matrix Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/matrix-plots/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Scatterplot Matrix",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "注塑压力、温度、周期、重量四变量矩阵图。"
   },
   "mcnemar": {
     "used_for": "配对二元数据，比较同一批对象在两种条件下的不一致比例是否对称（如两种检测方法、改机前后合格状态）。",
@@ -2139,19 +2517,29 @@
     "manufacturing_scenario": "反应釜同时记录“温度_℃”“压力_MPa”“pH值”，MEWMA 监视三变量均值向量缓慢漂移，早于单变量图发现“催化剂批次”导致的综合偏移。"
   },
   "mixed_effects_reml": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "固定效应+随机效应（批次、操作员）方差分量与 BLUE 估计。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 随机水平需代表总体；小样本方差分量不稳。",
+    "typical_sample_size": "随机水平≥5；总 n≥50。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "随机当固定",
+      "嵌套/交叉搞错",
+      "REML 与 ML 混用比较"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Mixed Models",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/anova/general-linear-model/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Variance Components",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc41.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "操作员固定、批次随机对尺寸的混合模型。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "mixture_analyze": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
@@ -2281,20 +2669,29 @@
     "menu_path": "统计 > 假设检验"
   },
   "mosaic_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "两（多）分类变量列联表比例可视化，看关联模式。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 小期望频数格子不稳定；需卡方或 Fisher 确认。",
+    "typical_sample_size": "总 n≥50；每格期望≥5 较稳。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "稀疏表过度解读格子比例",
+      "把面积当因果",
+      "类别合并随意改变结论"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab Mosaic",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/mosaic-plots/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Contingency",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section4/prc45.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "缺陷类型×班次马赛克图，看某班次是否某缺陷偏高。"
   },
   "moving_average": {
     "used_for": "用于对最近 w 个观测做简单（等权）滑动平均以平滑噪声并检测小幅均值变化；应关注滑动均值缓慢偏离中心线、连续同侧及窗口边界效应等模式，用于过程趋势监视，但不替代 EWMA（Minitab 指出 EWMA 通常更优）或时间序列 ARIMA 检验。",
@@ -2375,19 +2772,29 @@
     "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
   },
   "multiple_correspondence": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "≥3 分类变量 MCA，探索多属性共现（问卷、检查项）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 缺失与稀有类别敏感；解释需谨慎。",
+    "typical_sample_size": "n≥150；变量 3–6 常见。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "类别未合并导致稀疏",
+      "与 PCA 混淆",
+      "不做惯性贡献解读"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab MCA",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/multiple-correspondence-analysis/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Greenacre MCA",
+        "url": "https://doi.org/10.1201/9781315139470-14",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "多项外观检查项 MCA 找常见缺陷组合。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "nested_gage_rr": {
     "used_for": "评估测量系统变异是否掩盖产品/过程差异。",
@@ -2438,34 +2845,54 @@
     "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
   },
   "nominal_logistic": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "无序多类缺陷类型/故障模式与预测变量的广义 logit 建模。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 类别过多导致稀疏；不能自动选根因。",
+    "typical_sample_size": "每类至少 20–30；总 n≥100。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "有序等级误用名义模型",
+      "参照水平选择影响 OR 解释",
+      "样本极不均衡"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Nominal Logistic",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/nominal-logistic-regression/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST GLM",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "三类失效模式（开路/短路/外观）与工艺参数名义 logit。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "nonlinear_regression": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "机理已知但曲线非线性的单 Y–X 关系（如饱和、指数衰减）参数估计。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 初值敏感；外推危险；不能替代 DOE 找最优。",
+    "typical_sample_size": "参数个数×5–10 点；全因子范围覆盖。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "模型结构错设",
+      "初值不当不收敛",
+      "局部最优当全局"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Nonlinear",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63n.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Nonlinear Regression",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/nonlinear-regression/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "胶水固化粘度随时间非线性衰减拟合。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "nonnormal_capability": {
     "used_for": "非正态数据能力（如 Johnson/百分位）。",
@@ -2545,7 +2972,8 @@
       }
     ],
     "manufacturing_scenario": "注塑件关键尺寸：列「尺寸_mm」「模腔」「测量时间」，对各模腔分别做正态性评估，再决定是否用参数能力分析或变换。",
-    "menu_path": "统计 > 基础统计"
+    "menu_path": "统计 > 基础统计",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "np_chart": {
     "used_for": "用于二项型属性数据、每子组检验数量固定时，直接监视“不合格品个数 np”；应关注 np 突增、连续高于中心线及接近 UCL 的聚集模式，用于发现批量性失效，但不替代二项精确检验或 Fisher 精确检验。",
@@ -2639,34 +3067,52 @@
     "menu_path": "统计 > 基础统计"
   },
   "one_proportion_equivalence": {
-    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
-    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
-    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "used_for": "单组比例落在目标比例 ±等价限内（如不良率接近目标）。",
+    "not_for": "稀有事件 n 需足够；近似失效时用精确法。",
+    "typical_sample_size": "取决于 p 与限宽；常 n≥100。",
     "dataset_hint": "two_line_thickness",
     "common_mistakes": [
-      "等价限事后挑选。",
-      "忽略方差估计方法。"
+      "小 n 正态近似",
+      "等价限无业务定义",
+      "与置信区间混淆"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab 1 Proportion Equivalence",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Proportions",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+    "manufacturing_scenario": "新线不良率与基准 2% ±1% 等价。"
   },
   "one_sample_equivalence": {
-    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
-    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
-    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "used_for": "证明单组均值落在目标值 ±等价限内（TOST 思路），而非仅「不等于」。",
+    "not_for": "不能用于大差异筛查；等价限需监管/工程先验；非正态需稳健或变换。",
+    "typical_sample_size": "常 n=20–40/组，取决于等价限与 σ 估计。",
     "dataset_hint": "two_line_thickness",
     "common_mistakes": [
-      "等价限事后挑选。",
-      "忽略方差估计方法。"
+      "等价限过宽",
+      "用差异检验代替等价",
+      "p>α 当「未证明不等」"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Schuirmann TOST",
+        "url": "https://doi.org/10.1080/03610918708829567",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Equivalence",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+    "manufacturing_scenario": "新锡膏平均厚度与标准膏 ±2μm 等价验证。"
   },
   "one_sample_t": {
     "used_for": "检验单个连续总体的均值是否等于给定目标值（如名义尺寸、历史中心线、工艺设定值），总体方差未知时用 t 分布。",
@@ -2761,34 +3207,54 @@
     "menu_path": "统计 > ANOVA"
   },
   "ordinal_logistic": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "有序等级响应（如外观 1–5 级）与预测变量的比例优势模型。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 比例优势假设违背时结论受限；不宜当名义分类。",
+    "typical_sample_size": "每预测变量每等级至少 10 例；总 n≥100。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "有序当名义或连续乱用",
+      "不检验比例优势",
+      "等级间距不等仍当等距"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Ordinal Logistic",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/ordinal-logistic-regression/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Agresti Categorical Data",
+        "url": "https://www.wiley.com/en-us/Categorical+Data+Analysis%2C+3rd+Edition-p-9780470463635",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "划痕严重度等级（轻/中/重）与抛光参数有序 logit。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "orthogonal_regression": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "X、Y 均有测量误差时估计线性关系（Deming/正交回归）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 需误差比 λ；X 可控无误差时用普通 OLS。",
+    "typical_sample_size": "n≥30；λ 需方法学或重复性估计。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "X 无误差仍用正交回归",
+      "λ 随意设为 1",
+      "与 Passing-Bablok 混淆场景"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Orthogonal/Deming",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd14.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Orthogonal Regression",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/orthogonal-regression/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "两坐标仪互测同一批工件，X/Y 都有量测误差时拟合关系。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "outlier_test": {
     "used_for": "在假定数据来自单峰、近似对称总体时，识别可能远离主体分布的极端观测（如录入错误、特殊原因事件）。",
@@ -2851,19 +3317,28 @@
     "manufacturing_scenario": "终检站按“检验批次号”“抽检数量”“外观不良数”记录，因各批订单量不同用 p 图监视“外观不良率”，发现某“供应商批次”不良率抬升。"
   },
   "paired_equivalence": {
-    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
-    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
-    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "used_for": "配对差值在 ±δ 内等价（同一工件前后、左右对照）。",
+    "not_for": "配对差非正态且 n 小需谨慎；不能忽略周期/学习效应。",
+    "typical_sample_size": "配对 n≥16–30。",
     "dataset_hint": "paired_rework",
     "common_mistakes": [
-      "等价限事后挑选。",
-      "忽略方差估计方法。"
+      "独立样本方法误用",
+      "配对顺序效应未随机",
+      "δ 过宽"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Schuirmann TOST paired",
+        "url": "https://doi.org/10.1080/03610918708829567",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Paired Equivalence",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "装配返工：`返工前扭矩_Nm`、`返工后扭矩_Nm`、`工件号`"
+    "manufacturing_scenario": "抛光前后表面粗糙度差在等价限内的配对等价。"
   },
   "paired_t": {
     "used_for": "比较同一单元在两种处理下的均值差（如改机前后、返工前后、左右配对件、同一零件两次测量），分析差值是否为零。",
@@ -2897,82 +3372,128 @@
     "menu_path": "统计 > 基础统计"
   },
   "parallel_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "高维数值多变量平行坐标，看模式与簇（探索性）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 轴顺序影响观感；不适合报告因果。",
+    "typical_sample_size": "n=50–500；维数 4–12 常见。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "维度过高线条糊成一团",
+      "未标准化不同量纲",
+      "把交叉当交互效应"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Parallel Coordinates",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/parallel.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Parallel Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/parallel-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "多传感器过程参数平行坐标，找异常批次轨迹。"
   },
   "pareto": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "按频次/成本排序不良或缺陷类型，识别少数关键项（80/20 模式观察）。",
+    "not_for": "不证明因果；不替代统计检验判断组间差异；分类定义变更会改变排序。",
+    "typical_sample_size": "累计至少 20–50 个事件；类别不宜过多（≤15）。",
     "dataset_hint": "attribute_defect",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "类别划分不一致导致排名跳变",
+      "把柏拉图当控制图用",
+      "忽略测量系统对缺陷分类的影响"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "AIAG 质量工具",
+        "url": "https://www.aiag.org/quality/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Pareto",
+        "url": "https://www.itl.nist.gov/div898/handbook/pri/section3/pareto.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "装配：`班次`、`不良数`、`检验数`"
+    "manufacturing_scenario": "装配线一周不良代码柏拉图，聚焦前 3 项返工原因。"
   },
   "pca": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "降维、去相关、找主变异方向（过程监控、探索性）。",
+    "not_for": "主成分不一定有物理意义；不能替代原始规格判定；样本相关阵需足够 n。",
+    "typical_sample_size": "n≥5×变量数；n≥100 更稳。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "未标准化不同量纲",
+      "成分数凭感觉",
+      "把 PC 当独立因子因果解释"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST PCA",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section1/pmc11.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab PCA",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/principal-components-analysis/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "多尺寸测量 PCA 找共变模式，服务 T² 监控。"
   },
   "pie_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "展示整体中各类占比（部分-整体，类别少时）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 类别>5 难读；不适合精确比较；时间趋势用折线更好。",
+    "typical_sample_size": "各类有足够计数；总 n≥30。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "切片过多",
+      "3D 饼图失真",
+      "用饼图比较两组（用条图）"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Pie Chart caution",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/piechart.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "ASQ Pie Chart",
+        "url": "https://asq.org/quality-resources/pie-chart",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "不良四类占比饼图（类别≤4）。"
   },
   "pls_regression": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "预测变量多、共线严重时的偏最小二乘降维回归（光谱、多传感器）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 解释性弱于 OLS；需交叉验证选成分数。",
+    "typical_sample_size": "n≥50；高维时 n 相对 p 仍要足够。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "不 CV 选成分",
+      "未标准化变量",
+      "把载荷当因果权重"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab PLS",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/partial-least-squares-regression/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIPALS Wold",
+        "url": "https://doi.org/10.1016/0022-5193(66)90014-5",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "近红外 200 波长预测涂层厚度 PLS。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "poisson_capability": {
     "used_for": "Poisson 缺陷率能力。",
@@ -3031,35 +3552,54 @@
     "menu_path": "统计 > 假设检验"
   },
   "poisson_regression": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "计数型缺陷数/事件数随协变量变化的 Poisson GLM（率建模）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 过度离散需负二项；零膨胀另建模。",
+    "typical_sample_size": "总事件≥50；每系数有足够事件数。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "方差≈均值假设不成立",
+      "暴露量不同未用 offset",
+      "把比率当正态回归"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Poisson Regression",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section6/pmd63.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Poisson Regression",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/poisson-regression/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "每千件划痕数与线速、湿度的 Poisson 回归。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "probability_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "正态（或其它分布）概率图，目视判断分布拟合与离群（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 Anderson-Darling 等检验更正式；概率图不是能力指数。",
+    "typical_sample_size": "n≥20 可看；n≥50 尾部更可靠。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "点略弯就断言非正态",
+      "混用不同分布未说明",
+      "删点直到变直"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Normal Probability Plot",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/normprpl.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Probability Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/probability-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "轴径正态概率图，决定用正态还是 Johnson 能力分析。"
   },
   "probit_reliability": {
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
@@ -3086,49 +3626,79 @@
     "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
   },
   "random_forest": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "集成多树提高预测与变量重要性，非线性关系探索。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 黑箱性较单树强；外推差；小样本优势不明显。",
+    "typical_sample_size": "n≥200 更稳；类别平衡需注意。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "不调树数/深度",
+      "泄漏未来信息",
+      "重要性偏类别变量"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Breiman Random Forests",
+        "url": "https://doi.org/10.1023/A:1010933404324",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Random Forests",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/random-forests/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "RF 预测良率并排序关键工艺参数。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "randomization_test": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "置换/随机化检验两样本均值差，弱分布假设下的 p 值。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关数据需块置换；不能补救糟糕抽样框。",
+    "typical_sample_size": "总 n≥20；置换次数≥5000。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "配对当独立置换",
+      "观测非交换仍置换",
+      "只看 p 不看效应量"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "NIST Randomization Tests",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Randomization Test",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/randomization-test/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "A/B 夹具均值差随机化检验（小样本）。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "regression": {
-    "used_for": "建立预测因子与连续响应的关系。",
-    "not_for": "外推风险；残差诊断必备。",
-    "typical_sample_size": "n≥10×参数",
+    "used_for": "量化一个或多个预测变量对连续响应的线性关系，预测与筛选因子。",
+    "not_for": "不能证明因果；外推超出数据域危险；残差非独立/异方差时 OLS 推断失真。",
+    "typical_sample_size": "n≥10×预测变量数；预测 n≥30 更稳。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "把 p 值当成工程决策唯一依据。",
-      "忽略测量系统噪声。"
+      "R² 高就当因果",
+      "忽略共线性",
+      "残差有模式仍用线性",
+      "离群点未诊断"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Regression",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd14.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Regression",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "回流温度、链速对焊点高度的多元线性回归，优化设定窗口。"
   },
   "reliability": {
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
@@ -3205,16 +3775,28 @@
     "manufacturing_scenario": "可靠性：`循环次数`、`失效状态`、`应力_V`"
   },
   "report_templates": {
-    "used_for": "报告模板与输出页编排参考。",
-    "not_for": "当前版本可能无独立菜单。",
-    "typical_sample_size": "N/A",
+    "used_for": "同一分析输出按客户/工程师/审计模板导出 PDF，控制证据密度与表述。",
+    "not_for": "不重算统计；模板不改正文外的分析结论；不能替代原始数据审查。",
+    "typical_sample_size": "不适用。",
     "implemented_note": "orchestration；菜单可能不存在。",
     "common_mistakes": [
-      "把导入当分析完成。"
+      "以为换模板会改 p 值",
+      "审计版缺原始追溯",
+      "工程师版过度删诊断"
     ],
     "sources": [
-      "nist_eda"
-    ]
+      {
+        "label": "ASQ Quality Reports",
+        "url": "https://asq.org/quality-resources",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "AIAG PPAP",
+        "url": "https://www.aiag.org/quality/ppap/",
+        "accessed": "2026-09-03"
+      }
+    ],
+    "manufacturing_scenario": "能力分析完成后导出审计版 PDF 附 Cpk 表与图。"
   },
   "response_optimization": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
@@ -3265,20 +3847,29 @@
     "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
   },
   "run_chart": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "按时间/序号看过程中心是否漂移、跳变或循环（模式观察，控制图前奏）。",
+    "not_for": "无控制限，不能判特殊原因或稳态；不替代 I-MR/Xbar 控制图。",
+    "typical_sample_size": "≥20 点可看趋势；50+ 更易见模式。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "无控制限却宣称过程失控",
+      "忽略抽样间隔变化",
+      "混用不同子组定义"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Run Chart",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc32.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Run Chart",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/quality-and-process-improvement/quality-tools/run-chart/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "每日线体 OEE 或尺寸均值运行图，查换型后是否台阶变化。"
   },
   "runs_test": {
     "used_for": "检验序列是否随机（游程过多或过少），用于评估时间顺序数据、抽检顺序或二元序列的随机性。",
@@ -3312,35 +3903,54 @@
     "menu_path": "统计 > 假设检验"
   },
   "scatter_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "观察两连续变量线性/非线性关系、离群与杠杆点（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 相关≠因果；外推需谨慎。",
+    "typical_sample_size": "n≥25 可见趋势；回归诊断建议 n≥30。",
     "dataset_hint": "corr_temp_offset",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "把相关当因果",
+      "忽略异方差或非线性",
+      "离群点未追查就删除"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Scatter",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/scatter.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Scatterplot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/scatterplots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "回流炉区温度 vs 元件偏移量散点，筛查设定温度影响。"
   },
   "seasonal_forecasting": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "带季节性的 Holt-Winters 类预测。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 结构突变时预测失效；需足够季节历史。",
+    "typical_sample_size": "≥2–3 完整季节周期；每季≥3 点。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "季节周期设错",
+      "单季节数据硬套",
+      "不更新模型"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Winters",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Winters",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/winters-method/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "周需求季节性 Winters 预测备料。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "sign_test": {
     "used_for": "配对数据最基础的非参数检验：差值正负是否平衡，适用于仅知方向不知大小的有序或连续配对。",
@@ -3373,35 +3983,54 @@
     "menu_path": "统计 > 假设检验"
   },
   "simple_correspondence": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "两分类变量对应分析，低维展示关联结构（行/列剖面）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 不能因果；稀疏表不稳定。",
+    "typical_sample_size": "总 n≥100；行列类别各≥3。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "类别过多维数难解释",
+      "与卡方结论不一致不追查",
+      "过度解读距离"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Correspondence",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/multivariate/simple-correspondence-analysis/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Greenacre Correspondence",
+        "url": "https://doi.org/10.1201/9781315139470-14",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "缺陷位置×失效模式对应图找共现模式。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "simplex_design_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "三元混料（如树脂/填料/助剂比例）在单纯形上的设计点与响应等高线（DOE 可视化）。",
+    "not_for": "非混料问题勿用；不替代混料回归分析；约束外推无效。",
+    "typical_sample_size": "混料设计 q 成分至少 q 个顶点+中心点；响应面需更多点。",
     "dataset_hint": "doe_factorial_demo",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "成分和不为 1 仍用三角图",
+      "在可行域外预测",
+      "忽略工艺约束导致不可制造配方"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Mixture Designs",
+        "url": "https://www.itl.nist.gov/div898/handbook/pri/section5/pri532.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Cornell Mixture Experiments",
+        "url": "https://www.wiley.com/en-us/Experiments+with+Mixtures%3A+Designs%2C+Models%2C+and+the+Analysis+of+Mixture+Data%2C+4th+Edition-p-9781118915172",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
+    "manufacturing_scenario": "环氧封装胶 A/B/C 三组分配方单纯形图，标出抗拉强度等高线。"
   },
   "special_cause_rules": {
     "used_for": "用于在 Shewhart 控制图上系统应用 Western Electric（WE）/Nelson 等判异规则，识别越 3σ、同侧运行、Zone A/B 聚集、趋势、交替、分层/混合等非随机模式；应明确所选规则集与误报 ARL 权衡，用于触发调查而非直接判“不合格”，且不能替代正式假设检验来确认偏移显著性。",
@@ -3481,19 +4110,29 @@
     "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
   },
   "stepwise_regression": {
-    "used_for": "多变量降维、分类、聚类或重采样推断。",
-    "not_for": "黑箱/探索结果不能替代 DOE 因果验证。",
-    "typical_sample_size": "样本远大于特征数",
+    "used_for": "从多个候选预测变量中自动筛选进入线性模型的子集（探索性变量选择）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 数据驱动选择膨胀 I 类错误；不能替代先验假设；预测性能需验证集。",
+    "typical_sample_size": "n≥10–15×候选变量数；n≥50 起较稳。",
     "dataset_hint": "corr_temp_offset",
     "common_mistakes": [
-      "数据泄漏。",
-      "过拟合未交叉验证。"
+      "逐步法结果当确认性",
+      "多重共线性下不稳定",
+      "不做交叉验证"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_doe"
+      {
+        "label": "Minitab Stepwise",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/regression/stepwise-regression/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Harrell Regression Modeling",
+        "url": "https://hbiostat.org/doc/rms.pdf",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "回流焊：`炉温_℃`、`焊点偏移_um`"
+    "manufacturing_scenario": "从 12 个过程参数中筛选影响圆度的关键因子。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "t_chart": {
     "used_for": "用于稀有事件且间隔为连续时间（日期/时间戳或精确时长）的场合，经 Weibull 变换后类似 I 图监视事件间隔稳定性；应关注间隔异常缩短、变换后越界及零间隔（同时发生）等模式，用于比 G 图更精细的时间间隔监控，但不替代 Cox 比例风险或参数生存模型的正式检验。",
@@ -3525,19 +4164,29 @@
     "manufacturing_scenario": "压力容器产线记录“泄漏事件时间戳”，T 图监视“事件间隔_小时”是否因某“焊接参数版本”变更而异常缩短。"
   },
   "t_power": {
-    "used_for": "质量工具：多变异、抽样 OC、功效或分布计算器。",
-    "not_for": "不能替代 SPC 或 MSA 证据。",
-    "typical_sample_size": "视工具；计算器无需数据",
+    "used_for": "规划 t 检验样本量或评估功效（α、β、效应量）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 效应量需先验或试点；不能弥补错误设计。",
+    "typical_sample_size": "功效计算本身；常目标功效 0.8–0.9。",
     "dataset_hint": "smt_paste_height",
     "common_mistakes": [
-      "抽样计划与批量不匹配。",
-      "功效分析假设 σ 错误。"
+      "效应量设过小样本过大浪费",
+      "单侧双侧混淆",
+      "事后功效无意义"
     ],
     "sources": [
-      "aiag_spc",
-      "montgomery_spc"
+      {
+        "label": "NIST Power",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Power for t",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/power-and-sample-size/2-sample-t/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "比较两线膜厚差 0.5μm 需各组多少 n（功效 0.9）。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "taguchi_analyze": {
     "used_for": "结构化试验筛选/优化因子与响应关系。",
@@ -3588,50 +4237,78 @@
     "manufacturing_scenario": "DOE：`温度_℃`、`压力_MPa`、`响应_良率`"
   },
   "time_series_decomposition": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "分解趋势、季节、残差成分，理解周期与异常（探索）。",
+    "not_for": "不自动预测；分解假设可加性/乘性需判断；短序列季节不稳。",
+    "typical_sample_size": "≥24（月）；≥2 季节周期长度×2。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "不足一季就分季节",
+      "结构突变未分段",
+      "残差不查自相关"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Decomposition",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Decomposition",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/decomposition/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "月度能耗分解看季节与趋势。"
   },
   "time_series_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "按时间顺序看水平、趋势、季节与异常点（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 不自动给出预测区间；非平稳序列直接回归有风险。",
+    "typical_sample_size": "≥24 点见季节；≥50 点趋势更可靠。",
     "dataset_hint": "ts_weekly_yield",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "忽略抽样间隔不等",
+      "不查自相关就做回归",
+      "把单次尖峰当永久改型"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Time Series",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Time Series Plot",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/time-series-plots/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "周良率时间序列，查季节性低谷与趋势。"
   },
   "time_series_smoothing": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "单序列平滑去噪，短期预测（简单指数平滑等）。",
+    "not_for": "长期结构变化大时失效；不替代控制图判稳；需检查残差自相关。",
+    "typical_sample_size": "≥20 点；季节模型需≥2 完整季节。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "非平稳直接平滑",
+      "α 不调",
+      "把平滑当永久趋势"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Smoothing",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc43.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Single Exp Smoothing",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/single-exponential-smoothing/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "周产量单指数平滑做下月粗预测。",
+    "chart_note": "看分布/关系/趋势模式与离群；图形探索不替代假设检验。"
   },
   "tolerance_intervals": {
     "used_for": "估计覆盖比例的总体区间。",
@@ -3658,19 +4335,29 @@
     "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
   },
   "trend_analysis": {
-    "used_for": "分析时序趋势、季节、自相关或短期预测。",
-    "not_for": "预测区间≠规格合格；结构突变需重拟合。",
-    "typical_sample_size": "≥50 点识别季节",
+    "used_for": "检验/估计时间序列单调趋势（Mann-Kendall 类或线性趋势）。",
+    "not_for": "当前版本菜单中可能没有此项或仅公式参考；导入演示数据仅供学习对照。 自相关存在时 p 值失真；不能证明因果。",
+    "typical_sample_size": "≥20；有自相关需调整方法。",
     "dataset_hint": "ts_weekly_yield",
     "common_mistakes": [
-      "非平稳直接回归。",
-      "忽略异常点。"
+      "忽略自相关",
+      "把趋势当永远持续",
+      "混用不同时间粒度"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "NIST Trend",
+        "url": "https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc44.htm",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Trend Analysis",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/time-series/trend-analysis/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "周度：`周次`、`良率_pct`"
+    "manufacturing_scenario": "季度 ppm 趋势检验，判断是否在改善。",
+    "implemented_note": "formula_reference / 编排：当前版本菜单可能没有此项；公式见帮助对话框，数据仅供对照学习。"
   },
   "two_factor_anova": {
     "used_for": "同时评估两个因子主效应及交互效应对连续响应的影响（如温度×压力、操作员×量具、材料×机台）。",
@@ -3735,19 +4422,28 @@
     "menu_path": "统计 > 基础统计"
   },
   "two_proportion_equivalence": {
-    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
-    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
-    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "used_for": "两组比例差在 ±δ 内等价。",
+    "not_for": "稀疏表需 Fisher/精确；不能证明优效。",
+    "typical_sample_size": "每组事件≥10；总 n 常≥200。",
     "dataset_hint": "two_line_thickness",
     "common_mistakes": [
-      "等价限事后挑选。",
-      "忽略方差估计方法。"
+      "δ 随意",
+      "忽略聚类/批次",
+      "与 RR/OR 等价混淆"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab 2 Proportion Equivalence",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST Two Proportions",
+        "url": "https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+    "manufacturing_scenario": "两班次不良率差在 ±0.5% 等价。"
   },
   "two_proportions": {
     "used_for": "比较两个独立总体的比例是否不同（如两供应商、两班次、两种夹具的不良率差异）。",
@@ -3781,34 +4477,52 @@
     "menu_path": "统计 > 假设检验"
   },
   "two_sample_equivalence": {
-    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
-    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
-    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "used_for": "两独立组均值差在 ±δ 内等价的 TOST 检验。",
+    "not_for": "不能证明优于对照；方差不齐需方法调整；等价限需预先定义。",
+    "typical_sample_size": "常每组 20–50；功效分析必备。",
     "dataset_hint": "two_line_thickness",
     "common_mistakes": [
-      "等价限事后挑选。",
-      "忽略方差估计方法。"
+      "δ 事后挑选",
+      "与 superiority 检验混淆",
+      "忽略多重比较"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "FDA Statistical Guidance",
+        "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/statistical-guidance-reporting-results-studies-evaluating-diagnostic-tests",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab 2-Sample Equivalence",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+    "manufacturing_scenario": "新夹具与旧夹具均值差在 ±0.01mm 内等价。"
   },
   "two_sample_equivalence_ratio": {
-    "used_for": "证明效应落在事前等价区间内（生物等效/工艺窗口）。",
-    "not_for": "不能证明完全无差异；等价限需法规/工程协议。",
-    "typical_sample_size": "功效驱动，常 n≥20/组",
+    "used_for": "两独立组均值比在 [θL, θU] 内等价（生物等效/比例型规格）。",
+    "not_for": "对数正态假设需检查；不能用于绝对差规格场景。",
+    "typical_sample_size": "每组 24–36 常见（比例限紧时更大）。",
     "dataset_hint": "two_line_thickness",
     "common_mistakes": [
-      "等价限事后挑选。",
-      "忽略方差估计方法。"
+      "算术均值当比例",
+      "比值限无监管依据",
+      "离群未调查"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "ICH E9",
+        "url": "https://www.ich.org/page/efficacy-guidelines",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "Minitab Equivalence Ratio",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/statistics/basic-statistics/equivalence-test/",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "光学膜：`膜厚_um`、`产线`（A/B 线）"
+    "manufacturing_scenario": "两种焊膏体积比在新/旧配方 0.9–1.1 等价。"
   },
   "two_sample_t": {
     "used_for": "比较两个独立组的连续测量均值是否不同（如两条产线、两种材料、改机前后独立抽样）。",
@@ -3926,20 +4640,29 @@
     "menu_path": "统计 > 假设检验"
   },
   "violin_plot": {
-    "used_for": "可视化分布、关系或结构，支持 EDA 与沟通。",
-    "not_for": "图形本身不提供显著性（需配套检验）。",
-    "typical_sample_size": "n≥20",
+    "used_for": "同时看分布形状与四分位，比较多组密度（模式观察）。",
+    "not_for": "不替代正式假设检验、过程能力判定或控制图判稳；图形证据需结合专门分析确认。 小样本密度尾部不可靠。",
+    "typical_sample_size": "每组 n≥20 较稳；n<10 慎用。",
     "dataset_hint": "smt_paste_height",
     "chart_note": "看分布形状、离群、关联模式；不替代假设检验。",
     "common_mistakes": [
-      "过度解读偶然模式。",
-      "坐标截断误导。"
+      "样本极小仍解读尾部形状",
+      "与箱线图刻度不一致误比",
+      "忽略组内相关性"
     ],
     "sources": [
-      "nist_eda",
-      "montgomery_spc"
+      {
+        "label": "Minitab Violin",
+        "url": "https://support.minitab.com/en-us/minitab/help-and-how-to/graphs/violin-plots/",
+        "accessed": "2026-09-03"
+      },
+      {
+        "label": "NIST EDA",
+        "url": "https://www.itl.nist.gov/div898/handbook/eda/section3/eda33.htm",
+        "accessed": "2026-09-03"
+      }
     ],
-    "manufacturing_scenario": "SMT 印刷工站：`锡膏高度_um`、`产线`、`检测时间`"
+    "manufacturing_scenario": "四工位扭矩分布小提琴图，比较形状而不只看均值。"
   },
   "weibayes": {
     "used_for": "基于失效/删失数据分析寿命与应力效应。",
