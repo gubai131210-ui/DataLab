@@ -1,0 +1,15 @@
+# source: reference_implementation NIST PMC 3.2.2 + scripts/g_trust_imr_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=imr
+# config: method=average_moving_range
+# config: mr_length=2
+# config: nelson=0
+# config: input=converted/imr_ref_golden_input.csv
+# section: metrics
+Key	Value
+i_cl	2
+i_ucl	4.6595744680851068
+i_lcl	-0.65957446808510678
+sigma	0.88652482269503552
+mr_bar	1
+mr_ucl	3.2686170212765959
+mr_lcl	0

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Dump DataLab-equivalent golden values by mirroring domain ARIMA/regression logic."""
+"""Dump DataLab-equivalent golden values by mirroring domain ARIMA/regression logic.
+
+Scope: historical regression_golden.tsv / arima_trend_golden.tsv only.
+Does NOT cover G-Trust lock-table 10 commands — those use scripts/g_trust_*_reference.py.
+Evidence for this tool's outputs is formula-mirror / non-vendor (not vendor_oracle).
+"""
 
 from __future__ import annotations
 

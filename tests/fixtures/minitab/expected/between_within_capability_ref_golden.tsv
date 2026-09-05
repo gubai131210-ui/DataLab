@@ -1,0 +1,24 @@
+# source: reference_implementation NIST PMC 1.6 + domain between/within + scripts/g_trust_between_within_capability_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=between_within_capability
+# config: subgroup_col=子组
+# config: value_col=厚度_um
+# config: lsl=95.0
+# config: usl=105.0
+# config: target=100.0
+# config: within_sigma_method=R̄ / d2(n)
+# config: between_sigma_method=MR̄(子组均值) / d2(2)
+# config: between_within_sigma_method=sqrt(σ²_B + σ²_within)
+# config: specs_source=learning_overlay between_within_capability.json
+# config: input=converted/cap_between_within.csv
+# section: sigma
+Key	Value
+sigma_within	0.77042132416165099
+sigma_between	0.17082312686060491
+sigma_bw	0.78913215458085728
+# section: indices
+Key	Value
+mean	100.9012
+Cp	2.1120247818971545
+Cpk	1.7313534352080102
+Pp	1.2837932848611093
+Ppk	1.0524023831977423

@@ -1,0 +1,22 @@
+# source: reference_implementation NIST PMC 1.6 + scripts/g_trust_capability_sixpack_reference.py (indices via g_trust_capability_reference; plot contract only)
+# config: command_id=capability_sixpack
+# config: lsl=73.95
+# config: usl=74.05
+# config: target=74.0
+# config: subgroup_size=5
+# config: within_sigma_method=R̄ / d2(n)
+# config: overall_sigma_method=sample_standard_deviation
+# config: input=converted/PistonRingDiameter.csv
+# section: indices
+Key	Value
+mean	74.001176000000001
+within_sigma	0.0099914015477214624
+overall_sigma	0.010198880393961468
+Cp	1.6681009753297875
+Cpk	1.6288672403899969
+Pp	1.6341663028555256
+Ppk	1.5957307114123302
+# section: contract
+Key	Value
+min_plots	5
+expected_plots	6

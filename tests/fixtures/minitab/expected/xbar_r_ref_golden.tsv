@@ -1,0 +1,27 @@
+# source: reference_implementation NIST PMC 3.2.1 + scripts/g_trust_xbar_r_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=xbar_r
+# config: value_col=Machine 1
+# config: subgroup_col=Subgroup ID
+# config: special_causes=default
+# config: input=converted/CamshaftLength.csv
+# config: note=CrankshaftMovement Date groups unbalanced; used plan alternate
+# section: summary
+Key	Value
+subgroup_size	5
+subgroup_count	20
+r_bar	2.7200000000000104
+a2	0.57680171388644619
+d2	2.3260000000000001
+d3	0
+d4	2.1143594153052447
+sigma	1.1693895098882245
+# section: xbar_limits
+Key	Value
+cl	600.072
+ucl	601.64090066177118
+lcl	598.50309933822882
+# section: r_limits
+Key	Value
+cl	2.7200000000000104
+ucl	5.7510576096302879
+lcl	0

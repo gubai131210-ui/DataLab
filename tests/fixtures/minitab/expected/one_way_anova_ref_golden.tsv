@@ -1,0 +1,11 @@
+# source: reference_implementation NIST PRC 4.3 + scripts/g_trust_one_way_anova_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=one_way_anova
+# config: factor_col=Factor
+# config: response_col=Response
+# config: input=converted/one_way_anova_ref_golden_input.csv
+# config: synthetic_seed_note=fixed_table_20260905_balanced_3x5
+# section: anova
+Source	SS	DF	MS	F	P
+Factor	7.4333333333333407	2	3.7166666666666703	100.45045045045052	3.2064353009238137e-08
+Error	0.44400000000000012	12	0.037000000000000012	*	*
+Total	7.87733333333333	14	*	*	*

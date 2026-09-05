@@ -95,6 +95,26 @@
 | hidden vs excluded 可区分 | UI/Facts/JSON/报告 | 契约 | 🟡 `row_visibility` + 主 geom 双口径 + `member_source_rows`（interval/bar/violin/pie/category-heatmap/hexbin）+ **scatter/bar/density 受控分面**；Scatter/Bar `pdf_graph_*_faceted_cross_template_*` + `representative_graph_*_faceted_*`（Display N / Analysis N / hidden 计数）；Hexbin `:gate:hexbin_rectangular_bins` + 三模板/PDF/audit chain；Density `:gate:density_curve_not_discrete_marks` + 三模板/PDF/audit chain；相关矩阵热图不伪造 cell 成员 |
 | RowId 悬停/联动 | ADR 0007 | 契约 | 🟡 部分图表已有 |
 
+## G-Trust 锁表（Wave-4 已登记）
+
+> Goal：`goal-g-trust-minitab-golden-plan-and-mega-prompt.md`  
+> 证据：**仅** `golden` ← `reference_implementation`；**禁止**写成 vendor_oracle /「已与 Minitab 数值对齐」。  
+> Fixture：`tests/fixtures/minitab/expected/<id>_ref_golden.tsv` + `scripts/g_trust_<id>_reference.py`  
+> 门禁：`python tools/verify_g_trust_golden_gate.py`（默认全集）
+
+| command_id | expected | 类型 | 状态 |
+|---|---|---|---|
+| `imr` | `imr_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `xbar_r` | `xbar_r_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `p_chart` | `p_chart_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `capability` | `capability_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `capability_sixpack` | `capability_sixpack_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `between_within_capability` | `between_within_capability_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `gage_rr` | `gage_rr_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `two_sample_t` | `two_sample_t_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `normality_test` | `normality_test_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+| `one_way_anova` | `one_way_anova_ref_golden.tsv` | `golden`←`reference_implementation` | ref-golden 已冻 |
+
 ## 更新规则
 
 1. 状态从 ❌/🟡 改为 ✅ 必须附：证据类型、输入 hash（如适用）、容差、测试名、review PASS。  

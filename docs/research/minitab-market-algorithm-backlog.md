@@ -12,7 +12,7 @@
 |---|---|
 | ✅ 深度闭环 | 命令/领域/服务/Facts/解释/序列化/公式 md 已齐；可列手工验收（acceptance 勾选可能仍开） |
 | 🟡 已接入待深化 | 已有入口与主计算，相对 Minitab 仍缺方法选项、表形、图、后比较或诊断深度 |
-| ⚪ 已实现待 golden | 产品可用，数值未与 Minitab 导出对齐 |
+| ⚪ 已实现待 golden | 产品可用，数值未与 Minitab 导出对齐；**G-Trust 锁表**可另注「ref-golden 已冻」（`reference_implementation`，**≠** vendor ✅） |
 | ❌ 未实现 | 市场常见且属产品范围，仓库尚无独立闭环 |
 | ⏸ 刻意延后/产品外 | `deferred-capability-agreement.md` §5，或明确不做 |
 
@@ -28,12 +28,12 @@
 |---|---|---|
 | Descriptive statistics | ✅ | 箱线+个体值；继续按表形小修即可 |
 | 1-sample Z | ✅ | 命令 `one_sample_z`；已知 σ |
-| 1/2-sample t、paired t | ✅ | 区间图已有 |
+| 1/2-sample t、paired t | ✅ | 区间图已有；`two_sample_t` **ref-golden 已冻**（≠ vendor_oracle） |
 | 1/2 proportions | ✅ | exact/normal/wilson/AC；两比例 Newcombe/AC；不做 Blaker |
 | 1/2-sample Poisson rate | ✅ | 含率比；不做 Blaker |
 | 1/2 variances / equal variances | ✅ | F / Levene / Bonett / Bartlett |
 | Correlation / covariance | ✅ | Pearson/Spearman+散点；协方差矩阵+可选偏相关 |
-| Normality test | ✅ | AD 默认 + Ryan–Joiner 可选 |
+| Normality test | ✅ | AD 默认 + Ryan–Joiner 可选；`normality_test` **ref-golden 已冻**（≠ vendor_oracle） |
 | Outlier test（Grubbs / Dixon r10） | ✅ | `outlier_test` method=`grubbs`\|`dixon_r10` |
 | Poisson GOF | ✅ | 命令 `poisson_gof`；独立于 chi_square_gof |
 
@@ -66,7 +66,7 @@
 
 | 市场算法 | 状态 | 说明 / 下一步 |
 |---|---|---|
-| One-way / Two-way ANOVA | ✅ | Tukey 区间+Grouping；残差图 |
+| One-way / Two-way ANOVA | ✅ | Tukey 区间+Grouping；残差图；`one_way_anova` **ref-golden 已冻**（≠ vendor_oracle） |
 | GLM / Mixed / MANOVA | ❌ | 大缝；非本阶段默认 |
 | Analysis of means (ANOM) | ✅ | 命令 `anom`；正态均值；Nelson 近似限 |
 | Equal variances（见上） | ✅ | |
@@ -84,11 +84,11 @@
 
 | 市场算法 | 状态 | 说明 / 下一步 |
 |---|---|---|
-| Xbar / R / S / Xbar-R / Xbar-S | ✅ | Test 规则+阶段 |
-| I / MR / I-MR / I-MR-R/S | ✅ | |
+| Xbar / R / S / Xbar-R / Xbar-S | ✅ | Test 规则+阶段；`xbar_r` **ref-golden 已冻**（≠ vendor_oracle） |
+| I / MR / I-MR / I-MR-R/S | ✅ | `imr` **ref-golden 已冻**（≠ vendor_oracle） |
 | Zone chart | ✅ | 命令 `zone_chart`；Jaehn 计分 + 个体/得分双图 |
 | Z-MR | ✅ | 命令 `z_mr`；Z + MR(Z)；可选分组 |
-| P / NP / C / U / Laney P'/U' | ✅ | |
+| P / NP / C / U / Laney P'/U' | ✅ | `p_chart` **ref-golden 已冻**（≠ vendor_oracle） |
 | MA（移动平均图） | ✅ | 命令 `moving_average`；窗宽 `ma_window` |
 | EWMA / CUSUM | ✅ | |
 | Multivariate T² / GV / MEWMA | ✅ | T²+GV+MEWMA；个体 GV 替代 ⏸ |
@@ -104,8 +104,8 @@
 |---|---|---|
 | Box-Cox / Johnson | ✅ / ⚪ | Johnson 待 golden |
 | Individual distribution ID | ✅ | |
-| Normal capability / Sixpack | ✅ | |
-| Nonnormal / between-within | ✅ / ⚪ | 非正态待 golden |
+| Normal capability / Sixpack | ✅ | `capability` / `capability_sixpack` **ref-golden 已冻**（≠ vendor_oracle） |
+| Nonnormal / between-within | ✅ / ⚪ | `between_within_capability` **ref-golden 已冻**（≠ vendor_oracle）；非正态仍待 vendor/后续 golden |
 | Attribute capability（二项/泊松） | ✅ | |
 | Batch capability | ✅ | `batch_capability`（2026-08-22） |
 | Nonparametric capability | ✅ | `nonparametric_capability`（Wave-2 窄化 + Wave-4 直方图/PPM/Cnp 表形） |
@@ -119,7 +119,7 @@
 
 | 市场算法 | 状态 | 说明 / 下一步 |
 |---|---|---|
-| Gage R&R Crossed / Nested | ✅ | %Tol、Run Chart、By Part 等 |
+| Gage R&R Crossed / Nested | ✅ | %Tol、Run Chart、By Part 等；`gage_rr` **ref-golden 已冻**（≠ vendor_oracle） |
 | Gage R&R Expanded | ✅/⚪ | 平衡三因子 `expanded_gage_rr` ✅；不平衡/固定/嵌套 GLM ⚪ |
 | Gage linearity and bias | ✅ | |
 | Type 1 Gage | ✅ | Cg 全公差口径（非 Minitab K=20%） |

@@ -1,0 +1,15 @@
+# source: reference_implementation NIST EDA 3.5.3 Welch + scripts/g_trust_two_sample_t_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=two_sample_t
+# config: variance_method=welch
+# config: alternative=two_sided
+# config: confidence=0.95
+# config: input=converted/two_sample_t_ref_golden_input.csv
+# config: synthetic_seed_note=fixed_table_20260905
+# section: summary
+Key	Value
+mean_difference	0.55600000000000094
+t_statistic	6.7947624135320162
+degrees_of_freedom	16.027614618562453
+p_value	4.2668608393192642e-06
+confidence_lower	0.38255724368680222
+confidence_upper	0.72944275631319966

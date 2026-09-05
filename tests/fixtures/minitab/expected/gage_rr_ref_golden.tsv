@@ -1,0 +1,16 @@
+# source: reference_implementation crossed ANOVA Gage R&R + scripts/g_trust_gage_rr_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=gage_rr
+# config: part_col=Part
+# config: operator_col=Operator
+# config: meas_col=Measurement
+# config: tolerance=0.0
+# config: study_var_multiplier=6.0
+# config: interaction_retained=1
+# config: input=converted/gage_rr_crossed.csv
+# section: summary
+Key	Value
+percent_study_variation_total_gage_rr	5.7036534514937722
+ndc	24
+part_count	5
+operator_count	2
+replicate_count	3

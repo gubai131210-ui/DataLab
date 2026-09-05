@@ -1,0 +1,11 @@
+# source: reference_implementation NIST EDA 3.5.e Anderson-Darling + Stephens adjustment + scripts/g_trust_normality_test_reference.py (Python 3.10+ stdlib float64)
+# config: command_id=normality_test
+# config: method=anderson_darling
+# config: alpha=0.05
+# config: input=converted/PistonRingDiameter.csv
+# section: summary
+Key	Value
+method	anderson_darling
+A2	0.19333225380235319
+A2_star	0.19452008716971483
+p_value	0.89222919817962587
