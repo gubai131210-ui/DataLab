@@ -23,8 +23,8 @@ README 仍偏早期 MVP，已落后代码。
 | 分层 / 帮助公式 | **强** | ui→application→domain；`algorithm_help` |
 | 学习中心 | **中→强** | 教学/深度/口吻多轮 Goal 已收口（184 课） |
 | 许可 / MES | **中** | 门禁接线；MES 旁路 `Mes_For_Q` |
-| 图形交互 / 报表产品化 | **中** | 行联动主路径；注释/拼版/Word 导出仍弱 |
-| Minitab golden | **弱→中** | 大量公式已实现，对齐待导出（`deferred-capability-agreement.md`） |
+| 图形交互 / 报表产品化 | **中** | 行联动主路径；注释/拼版/Word 导出仍弱（下一 Goal：G-Chart+Teach） |
+| Minitab golden | **中** | G-Trust（`2118ad2`）已冻 10 命令 `golden`←`reference_implementation`；真·vendor 仍待导出 |
 
 **总判**：命令面已接近「可卖的 Minitab 质量子集」；下一杠杆在 **可信度、工作流、报告、轻闭环**，不是再堆偏门命令。
 
@@ -98,10 +98,10 @@ README 仍偏早期 MVP，已落后代码。
 
 | ID | 名称 | 验收抓手 |
 |----|------|----------|
-| G-Trust | 高频命令 golden | VALIDATION_MATRIX 变绿 + 测试；**权威手册已写**：[`goal-g-trust-minitab-golden-plan-and-mega-prompt.md`](goal-g-trust-minitab-golden-plan-and-mega-prompt.md)（§0：ref-golden，非 vendor；五 Agent；2026-09-05） |
+| G-Trust | 高频命令 golden | **已完成** `2118ad2`；手册 [`goal-g-trust-minitab-golden-plan-and-mega-prompt.md`](goal-g-trust-minitab-golden-plan-and-mega-prompt.md) |
+| **G-Chart+Teach** | Track C 图形窄化 + Track E 岗位路径 | **下一场**；权威手册：[`goal-g-chart-edit-and-teach-path-plan-and-mega-prompt.md`](goal-g-chart-edit-and-teach-path-plan-and-mega-prompt.md)（注释+自定义参考线+双图拼版 PDF；进料/制程/PPAP 跟做路径） |
 | G-Workflow | 工程记忆 + 报告模板 | 换表重跑同设置；PDF 可给审核 |
 | G-MES-Lite | 映射 + 多列汇总 | 旁路导入到一张汇总表 |
-| G-Chart-Edit | 注释/拼版窄化 | 指定图种可标注进 PDF |
 
 ---
 
