@@ -19,8 +19,19 @@ HANZI = re.compile(r"[\u4e00-\u9fff]")
 SHELL = "这一项决定图上或表上对应哪一列"
 BAN = ("你的任务是", "这一课只练", "本课只练", "禁止过程合格", "抖主要")
 SKIP = frozenset({"imr", "between_within_capability"})  # gold / handcrafted — never overwrite
+# Soft-shell A–F (research 2026-09-05): already_good MUST return False; scrub must strip.
+SOFT_SHELLS = (
+    "这条练习线是为",
+    "目标不是背菜单",
+    "更像一张对照纸条",
+    "不妨先当一次助手",
+    "还是那张本课练习表",
+    "导入本课练习表后打开",
+    "告诉你该看哪一列、输出哪一块",
+    "而是认出练习表里的变化",
+)
 # Near-shell phrases that make already_good() return False (Agent6 NO-GO list).
-NEAR_SHELLS = (
+NEAR_SHELLS = SOFT_SHELLS + (
     "本课要练的那一类信号",
     "这一课要对着看的那类信号",
     "这一课要对着看的信号",
@@ -213,6 +224,34 @@ def hn(text: str) -> int:
 
 def scrub_ban(text: str) -> str:
     out = scrub(text or "")
+    # Soft-shell A–F: strip / rewrite so BAN path never leaves them standing.
+    out = re.sub(r"这条练习线是为「[^」]+」准备的。?", "", out)
+    out = re.sub(r"这条练习线是为[^。]*。?", "", out)
+    out = re.sub(
+        r"当学员第一次点「[^」]+」时，目标不是背菜单，而是认出练习表里的变化。?",
+        "",
+        out,
+    )
+    out = re.sub(r"目标不是背菜单[^。]*。?", "", out)
+    out = re.sub(
+        r"「[^」]+」更像一张对照纸条：告诉你该看哪一列、输出哪一块。?",
+        "",
+        out,
+    )
+    out = re.sub(r"更像一张对照纸条：告诉你该看哪一列、输出哪一块。?", "", out)
+    out = re.sub(r"更像一张对照纸条。?", "", out)
+    out = out.replace("不妨先当一次助手：", "不妨")
+    out = out.replace("不妨先当一次助手", "不妨先")
+    out = re.sub(r"还是那张本课练习表。菜单走「[^」]+」。?", "", out)
+    out = re.sub(r"还是那张本课练习表。?", "", out)
+    out = re.sub(r"导入本课练习表后打开「", "不妨先打开「", out)
+    out = re.sub(r"导入本课练习表后打开", "不妨先打开", out)
+    out = re.sub(r"告诉你该看哪一列、输出哪一块。?", "", out)
+    # Leftover red-line scrap that used to sit before invite (Agent3 residual).
+    out = re.sub(r"^停不停线可以等信号看清楚再和规程对一下。?", "", out)
+    out = re.sub(r"^停不停线、放不放行，可以等信号看清楚再和现场规程对一下。?", "", out)
+    out = re.sub(r"停不停线可以等信号看清楚再和规程对一下。?(?=不妨)", "", out)
+    out = re.sub(r"而是认出练习表里的变化。?", "", out)
     reps = (
         ("禁止过程合格。", "不等于放行样板；通常还要对照规程。"),
         ("禁止过程合格", "不等于放行样板"),
@@ -252,6 +291,11 @@ def scrub_ban(text: str) -> str:
         ("常见读法是先说出看见了什么；放行或停线通常还要对照规程。", ""),
         ("常见读法是先说出看见了什么；不等于放行样板，通常还要对照规程。", ""),
         ("车间现场要看「", "现场要看「"),
+        ("读完先停在「看见了什么」；放行通常还要对照规程。", ""),
+        ("停线与否留给现场规程。", "停线或放行通常还要对照规程。"),
+        ("停不停线可以稍后再谈。", "停不停线可以等信号看清楚再和规程对一下。"),
+        ("埋点见第 5 节。", ""),
+        ("变化大概在大约第", "变化大约在第"),
     )
     for a, b in reps:
         out = out.replace(a, b)
@@ -395,30 +439,43 @@ def _strip_used_shells(text: str) -> str:
     return re.sub(r"。{2,}", "。", text).strip()
 
 
+def _has_soft(text: str) -> bool:
+    return any(s in (text or "") for s in SOFT_SHELLS)
+
+
 def warm_used_for(cid: str, overlay: dict) -> str:
+    """2–4 collaborative sentences from title + cols + buried what/row. No soft shells."""
     title = overlay.get("title") or cid
     fam = family_of(cid)
     cols = col_phrase(overlay)
     row_phrase, what, _ = buried_bits(overlay)
-    lead = USED_LEAD[fam]
     close = USED_CLOSE[fam]
+    parts: list[str] = []
 
-    mid: list[str] = []
-    if cols:
-        mid.append(f"不妨打开「{title}」，把「{cols}」填进对话框。")
-    else:
-        mid.append(f"不妨打开「{title}」，先对照第 4 节核对真实字段。")
-    if what:
+    if what and cols:
         loc = f"{row_phrase}附近" if row_phrase else "练习表里"
-        mid.append(f"本集在{loc}埋了「{what}」，方便对着输出读。")
+        parts.append(
+            f"对着「{cols}」这类现场列时，菜单「{title}」多半用来把{loc}「{what}」这一类变化摊开看一眼。"
+        )
+        parts.append(f"不妨打开「{title}」，把「{cols}」填进对话框，指着输出说看见了什么。")
+    elif what:
+        loc = f"{row_phrase}附近" if row_phrase else "练习表里"
+        parts.append(f"「{title}」这一课，对着{loc}「{what}」读图或读表最顺手。")
+        parts.append("不妨先打开菜单，对照第 4 节核对真实字段，再回到第 5 节对埋点。")
+    elif cols:
+        parts.append(f"「{title}」对话框里主要盯「{cols}」这些列。")
+        parts.append("不妨按第 4 节填好后运行，先说出图上或表上最扎眼的那一块。")
     else:
-        scrap = _strip_used_shells(overlay.get("used_for") or "")
-        scrap = re.sub(r"放不放行通常还要对照规程和规格。?", "", scrap)
-        if 12 <= hn(scrap) <= 60 and not any(s in scrap for s in NEAR_SHELLS):
-            mid.append(scrap if scrap.endswith("。") else scrap + "。")
-        else:
-            mid.append(f"这一课盯的是「{title}」现场里那一类读图/读表问题。")
-    return ensure_min(lead + "".join(mid) + close, 40, "常见读法是先指着本课埋点说完，再和规程对一下。")
+        # Empty practice table / term lesson — allow 暂无练习表, ban 背菜单 preaching.
+        parts.append(
+            f"「{title}」这一课暂时可能没有可导入的练习表；不妨对照第 4 节把对话框真实字段看一遍。"
+        )
+        parts.append(USED_LEAD[fam])
+
+    parts.append(close)
+    text = "".join(parts)
+    assert not _has_soft(text), f"warm_used_for produced soft shell for {cid}"
+    return ensure_min(text, 40, "常见读法是先指着本课埋点说完，再和规程对一下。")
 
 
 def warm_not_for(cid: str, overlay: dict) -> str:
@@ -426,6 +483,9 @@ def warm_not_for(cid: str, overlay: dict) -> str:
     fam = family_of(cid)
     existing = scrub_ban(overlay.get("not_for") or "")
     existing = re.sub(r"练习安排不等于放行样板[^。]*。?", "", existing)
+    # Drop soft scraps left after scrub.
+    if _has_soft(existing) or hn(existing) < 12:
+        existing = ""
     tips = {
         "msa": f"「{title}」回答量具波动，不替代过程能力或客户放行。",
         "cap": f"「{title}」要在相对稳定的数据上读；失控尖峰集不要硬拿来谈能力。",
@@ -439,10 +499,13 @@ def warm_not_for(cid: str, overlay: dict) -> str:
         "util": f"「{title}」若没有练习表，不要把别的课的表硬套过来。",
         "graph": f"「{title}」是读图探索，不等于已经证明正态或可以放行。",
     }
-    return ensure_min(f"{tips[fam]}{existing}{NOT_FOR_TAIL}", 30, "通常还要对照规程，把结论停在看见了什么。")
+    text = f"{tips[fam]}{existing}{NOT_FOR_TAIL}"
+    assert not _has_soft(text), f"warm_not_for produced soft shell for {cid}"
+    return ensure_min(text, 30, "通常还要对照规程，把结论停在看见了什么。")
 
 
 def warm_scenario(cid: str, overlay: dict) -> str:
+    """Scene-first collaborative scenario; empty-table ok; no soft-shell preaching."""
     title = overlay.get("title") or cid
     cols = col_phrase(overlay)
     row_phrase, what, _ = buried_bits(overlay)
@@ -455,11 +518,38 @@ def warm_scenario(cid: str, overlay: dict) -> str:
     existing = re.sub(r"不妨先打开「[^」]+」[^。]*。?", "", existing)
     existing = re.sub(r"对照埋点[：—\-]?[^。]*。?", "", existing)
     existing = re.sub(r"停不停线、放不放行，可以等信号看清楚再和现场规程对一下。?", "", existing)
+    existing = re.sub(r"停不停线可以等信号看清楚再和规程对一下。?", "", existing)
     existing = re.sub(r"大约第 \d+ 行附近：[^。]*。?", "", existing)
+    # Bare red-line leftovers must not become the "production scrap" head.
+    if existing.startswith("停不停线") or existing in ("", "。"):
+        existing = ""
+    existing = re.sub(r"对话框带上 [^。]+。?", "", existing)
+    existing = re.sub(r"输出里优先核对[^。]*。?", "", existing)
+    existing = re.sub(r"看清楚信号后，再决定要不要拿去和现场规程对齐。?", "", existing)
+    existing = re.sub(r"跑完先指着输出说看见了什么，再和规程对一下放不放行。?", "", existing)
+    existing = re.sub(r"顺着表看大约第 \d+ 行：[^。]*。?", "", existing)
+    existing = re.sub(r"把 [^。]+ 按第 4 节填好。?", "", existing)
+    existing = re.sub(r"对照第 4 节核对手里的字段。?", "", existing)
+    existing = re.sub(r"去找「[^」]+」。?", "", existing)
+    existing = re.sub(r"去找第 5 节写的线索。?", "", existing)
+    existing = re.sub(r"常见读法是：[^。]*。?", "", existing)
+    existing = re.sub(r"先把看见的信号说完整，再谈停线或放行。?", "", existing)
+    existing = re.sub(r"放行结论通常还要对照规格与规程。?", "", existing)
+    existing = re.sub(r"关键列：[^。]*。?", "", existing)
+    existing = re.sub(r"埋点：[^。]*。?", "", existing)
+    existing = re.sub(r"不妨先运行一次，确认输出和埋点对得上。?", "", existing)
     existing = re.sub(r"。{2,}", "。", existing).strip("。").strip()
+    if _has_soft(existing) or hn(existing) < 8:
+        existing = ""
 
     empty = not (overlay.get("dialog_fill") or {}) and not any(overlay.get("buried_signals") or [])
-    if empty or "暂时没有" in existing or "没有练习表" in existing or "锁表" in (overlay.get("scenario") or ""):
+    no_table = (
+        empty
+        or "暂时没有" in (overlay.get("scenario") or "")
+        or "没有练习表" in (overlay.get("scenario") or "")
+        or "锁表" in (overlay.get("scenario") or "")
+    )
+    if no_table and not what and not cols:
         col_bit = f"（例如 {cols}）" if cols else ""
         text = (
             f"这一课暂时可能没有可导入的练习表。"
@@ -467,15 +557,18 @@ def warm_scenario(cid: str, overlay: dict) -> str:
             f"若菜单还没有，就只读帮助里的公式和边界——先分清适用场合；放行通常还要对照规程。"
         )
     else:
-        # Keep only a short production scrap if it still smells like a line/measurement.
-        scrap = existing if hn(existing) >= 8 and "这一类问题" not in existing else ""
+        scrap = existing if hn(existing) >= 8 else ""
         if scrap and not scrap.endswith("。"):
             scrap += "。"
         if not scrap:
             if cols and what:
-                scrap = f"产线上对着「{cols}」采数；练习表里能看见「{what}」。"
+                loc = f"{row_phrase}" if row_phrase else "表里某一段"
+                scrap = f"产线/测量数据里有「{cols}」；{loc}附近能看见「{what}」。"
             elif cols:
-                scrap = f"测量/产线数据里有「{cols}」这些列，按第 4 节填进对话框。"
+                scrap = f"手头表有「{cols}」这些列，按第 4 节对上对话框后再跑。"
+            elif what:
+                loc = f"{row_phrase}附近" if row_phrase else "练习表里"
+                scrap = f"本集在{loc}埋了「{what}」，方便对着输出核对。"
             else:
                 scrap = f"打开「{title}」前，先核对手头列名是否对得上第 4 节。"
         invite = f"不妨先打开「{title}」"
@@ -487,6 +580,7 @@ def warm_scenario(cid: str, overlay: dict) -> str:
             loc = f"{row_phrase}：" if row_phrase else ""
             buried_line = f"对照埋点——{loc}{what}。"
         text = f"{scrap}{invite}{buried_line}停不停线、放不放行，可以等信号看清楚再和现场规程对一下。"
+    assert not _has_soft(text), f"warm_scenario produced soft shell for {cid}"
     return ensure_min(text, 40, "不妨先把本课埋点指清楚，再谈规程。")
 
 
@@ -742,6 +836,8 @@ def already_good(overlay: dict) -> bool:
         return False
     if has_near_shell(overlay):
         return False
+    if any(_has_soft(overlay.get(k) or "") for k in ("used_for", "scenario", "not_for")):
+        return False
     if SHELL in blob:
         return False
     # Incomplete / previous-generation wrappers still need a full rewrite.
@@ -751,7 +847,7 @@ def already_good(overlay: dict) -> bool:
         return False
     if "帮你看清" in used or "不妨先按第 4 节把" in scenario or "不妨先把" in scenario and "按第 4 节填进对话框并运行" in scenario:
         return False
-    if scenario.count("不妨先打开") >= 1 and "对照埋点——" in scenario and "产线上对着" not in scenario and "测量/产线" not in scenario and "还是那条" not in scenario:
+    if scenario.count("不妨先打开") >= 1 and "对照埋点——" in scenario and "产线上对着" not in scenario and "测量/产线" not in scenario and "还是那条" not in scenario and "产线/测量" not in scenario and "手头表有" not in scenario:
         # Likely still carries an unfinished scrap head — rewrite once more.
         if "大约第" in scenario.split("不妨先打开")[0]:
             return False
@@ -820,22 +916,36 @@ def apply_warmth(cid: str, overlay: dict) -> dict:
 
 
 def audit(ids: list[str], name: str) -> dict:
-    short = ban_n = shell_n = near_n = collab_n = 0
+    short = ban_n = shell_n = near_n = soft_n = collab_n = 0
     for i in ids:
         d = json.loads((OVERLAY_DIR / f"{i}.json").read_text(encoding="utf-8"))
         blob = json.dumps(d, ensure_ascii=False)
+        uf_sc_nf = " ".join([d.get("used_for") or "", d.get("scenario") or "", d.get("not_for") or ""])
         if any(b in blob for b in BAN):
             ban_n += 1
         if SHELL in blob:
             shell_n += 1
         if any(s in blob for s in NEAR_SHELLS):
             near_n += 1
+        if any(s in uf_sc_nf for s in SOFT_SHELLS):
+            soft_n += 1
         if re.search(r"不妨|常见读法|通常还要", blob):
             collab_n += 1
         if hn(d.get("used_for")) < 40 or hn(d.get("scenario")) < 40:
             short += 1
-    print(f"{name}: n={len(ids)} collab={collab_n} ban={ban_n} shell={shell_n} near={near_n} short={short}")
-    return {"collab": collab_n, "ban": ban_n, "shell": shell_n, "near": near_n, "short": short, "n": len(ids)}
+    print(
+        f"{name}: n={len(ids)} collab={collab_n} ban={ban_n} shell={shell_n} "
+        f"near={near_n} soft={soft_n} short={short}"
+    )
+    return {
+        "collab": collab_n,
+        "ban": ban_n,
+        "shell": shell_n,
+        "near": near_n,
+        "soft": soft_n,
+        "short": short,
+        "n": len(ids),
+    }
 
 
 def micro_scrub_overlay(overlay: dict) -> dict:
@@ -897,8 +1007,8 @@ def main() -> None:
     r4 = audit(WAVE4, "W4")
     if r2["ban"] or r3["ban"] or r4["ban"] or r2["shell"] or r3["shell"] or r4["shell"]:
         raise SystemExit("audit failed: ban/shell remaining")
-    if r2["near"] or r3["near"] or r4["near"]:
-        raise SystemExit("audit failed: near-shell remaining")
+    if r2["soft"] or r3["soft"] or r4["soft"]:
+        raise SystemExit("audit failed: soft-shell remaining in used_for/scenario/not_for")
     if r2["short"] or r3["short"] or r4["short"]:
         raise SystemExit("audit failed: short remaining")
     if r2["collab"] < r2["n"] or r3["collab"] < r3["n"] or r4["collab"] < r4["n"]:

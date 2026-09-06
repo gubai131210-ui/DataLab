@@ -107,6 +107,7 @@ FILL_REQUIRED = {
 
 
 # Voice-warmth blacklist (student-visible). Must not remain as raw strings.
+# Soft-shell phrases (2026-09-05 research): warmth templates that swap titles only.
 VOICE_BLACKLIST = (
     "你的任务是",
     "这一课只练",
@@ -126,6 +127,15 @@ VOICE_BLACKLIST = (
     "练习表 练习表",
     "对话框：variables",
     "把这一类现场问题摊开看一眼",
+    # Soft warmth shells — blacklist-0 ≠ Goal complete
+    "这条练习线是为",
+    "目标不是背菜单",
+    "更像一张对照纸条",
+    "不妨先当一次助手",
+    "还是那张本课练习表",
+    "导入本课练习表后打开",
+    # Residual scrap that must not lead scenario
+    "停不停线可以等信号看清楚再和规程对一下。不妨",
 )
 SHELL_MEANING = "这一项决定图上或表上对应哪一列"
 SHELL_MEANING_NEAR = (
