@@ -2,6 +2,7 @@
 
 #include "domain/column_extract.h"
 #include "ui/worksheet_model.h"
+#include "ui/report_table_model.h"
 
 namespace datalab::ui {
 
@@ -45,6 +46,14 @@ bool WorksheetSortFilterProxyModel::lessThan(
     if (!sortable_columns_.empty()
         && sortable_columns_.count(left.column()) == 0) {
         return left.row() < right.row();
+    }
+    const QVariant left_number = sourceModel()->data(left, ReportNumericSortRole);
+    const QVariant right_number = sourceModel()->data(right, ReportNumericSortRole);
+    if (left_number.isValid() || right_number.isValid()) {
+        if (!left_number.isValid() || !right_number.isValid()) {
+            return left_number.isValid();
+        }
+        return left_number.toDouble() < right_number.toDouble();
     }
     const QVariant left_type = sourceModel()->data(left, ColumnTypeRole);
     const QVariant right_type = sourceModel()->data(right, ColumnTypeRole);

@@ -402,6 +402,8 @@ add_library(datalab_reporting STATIC
     src/reporting/chart_interaction.cpp
     src/reporting/chart_interaction.h
     src/reporting/chart_geometry.h
+    src/reporting/chart_downsampling.cpp
+    src/reporting/chart_downsampling.h
     src/reporting/chart_plot_context.cpp
     src/reporting/chart_plot_context.h
     src/reporting/chart_renderer.cpp
@@ -879,6 +881,8 @@ function(add_datalab_test name source)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 add_datalab_test(descriptive_statistics_test tests/descriptive_statistics_test.cpp datalab_domain)
+add_datalab_test(analytics_correctness_regression_test tests/analytics_correctness_regression_test.cpp datalab_domain)
+add_datalab_test(analysis_workspace_regression_test tests/analysis_workspace_regression_test.cpp datalab_ui)
 add_datalab_test(report_contract_phase0_test tests/report_contract_phase0_test.cpp datalab_domain)
 add_datalab_test(report_profile_phase1_test tests/report_profile_phase1_test.cpp datalab_domain datalab_application datalab_infrastructure)
 add_datalab_test(report_export_phase2_test tests/report_export_phase2_test.cpp datalab_domain datalab_application datalab_infrastructure)

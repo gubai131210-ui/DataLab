@@ -1,4 +1,5 @@
 #include "ui/report_table_model.h"
+#include "domain/column_extract.h"
 
 namespace datalab::ui {
 
@@ -36,6 +37,22 @@ QVariant ReportTableModel::data(const QModelIndex& index, int role) const
     }
     const std::size_t row = static_cast<std::size_t>(index.row());
     const std::size_t column = static_cast<std::size_t>(index.column());
+    if (role == ReportNumericSortRole && row < table_.rows.size()
+        && column < table_.rows[row].size()) {
+        QString text = QString::fromStdString(table_.rows[row][column]).trimmed();
+        if (text.endsWith(QLatin1Char('%'))) {
+            text.chop(1);
+        }
+        if (text.startsWith(QLatin1Char('<')) || text.startsWith(QLatin1Char('>'))
+            || text.startsWith(QChar(0x2264)) || text.startsWith(QChar(0x2265))) {
+            text.remove(0, 1);
+            if (text.startsWith(QLatin1Char('='))) {
+                text.remove(0, 1);
+            }
+        }
+        double number = 0.0;
+        return domain::parse_finite_number(text.toStdString(), number) ? QVariant(number) : QVariant();
+    }
     if (role == ReportRowIdRole && row < table_.row_ids.size()) {
         return static_cast<qulonglong>(table_.row_ids[row]);
     }

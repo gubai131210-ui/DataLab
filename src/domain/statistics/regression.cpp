@@ -195,8 +195,8 @@ bool invert_matrix(const Matrix& input, Matrix& inverse)
 
 double two_sided_p(double statistic, double degrees_of_freedom)
 {
-    return std::clamp(2.0 * (1.0 - student_t_cdf(
-        std::abs(statistic), degrees_of_freedom)), 0.0, 1.0);
+    return std::clamp(2.0 * student_t_cdf(
+        -std::abs(statistic), degrees_of_freedom), 0.0, 1.0);
 }
 
 std::optional<double> regression_rss(
@@ -558,8 +558,18 @@ RegressionResult fit_linear_regression(
                 + critical * coefficient.standard_error;
         }
         if (index > 0) {
+            long double predictor_mean = 0.0L;
+            for (const auto& row : design) {
+                predictor_mean += row[index];
+            }
+            predictor_mean /= static_cast<long double>(design.size());
+            long double centered_sum_squares = 0.0L;
+            for (const auto& row : design) {
+                const long double difference = row[index] - predictor_mean;
+                centered_sum_squares += difference * difference;
+            }
             coefficient.vif = cross_inverse[index][index]
-                * std::max(0.0, cross_product[index][index]);
+                * static_cast<double>(centered_sum_squares);
             if (coefficient.vif.has_value() && *coefficient.vif > 5.0) {
                 add_warning(result.diagnostics, "collinearity_investigation",
                             "VIF>5 提示共线性调查，不会自动删除预测变量。");

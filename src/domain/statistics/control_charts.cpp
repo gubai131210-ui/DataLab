@@ -167,10 +167,12 @@ void mark_special_cause_tests(
         int side = 0;
         std::size_t run_start = 0;
         for (std::size_t index = 0; index < count; ++index) {
-            if (!usable_point(result, index)
-                || (index > 0 && !same_segment(result, index - 1, index))) {
+            if (!usable_point(result, index)) {
                 side = 0;
                 continue;
+            }
+            if (index > 0 && !same_segment(result, index - 1, index)) {
+                side = 0;
             }
             const int current_side = side_at(result, index);
             if (current_side == 0) {
@@ -181,8 +183,11 @@ void mark_special_cause_tests(
                 side = current_side;
                 run_start = index;
             }
-            if (index - run_start + 1 >= 9) {
-                record_window(result, 2, run_start, index - run_start + 1);
+            const std::size_t run_length = index - run_start + 1;
+            if (run_length == 9) {
+                record_window(result, 2, run_start, 9);
+            } else if (run_length > 9) {
+                result.special_cause_points[1].push_back(index);
             }
         }
     }

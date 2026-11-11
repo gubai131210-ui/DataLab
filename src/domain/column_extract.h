@@ -16,6 +16,9 @@ bool parse_time_cell_to_epoch(
     std::string& original_text);
 bool cell_looks_like_time(const std::string& cell);
 void populate_data_table_contract(DataTable& table);
+// Refresh edited columns and dimensions without changing existing row identities.
+void refresh_data_table_contract(
+    DataTable& table, const std::vector<std::size_t>& changed_columns = {});
 std::string validate_data_table_contract(const DataTable& table);
 
 struct ExtractedNumericColumn {

@@ -26,6 +26,8 @@ public:
 
     ChartModel model() const;
     void set_model(const ChartModel& model);
+    // Refresh controls without replacing the current edit session's baseline.
+    void refresh_model(const ChartModel& model);
     void set_selected_path(const QString& path);
     // Presentation-only: excluded vs hidden counts (never merges into one flag).
     void set_row_visibility_summary(
@@ -52,6 +54,7 @@ private:
     ChartModel defaults_;
     ChartModel model_;
     ChartModel original_;
+    bool refreshing_ = false;
     QLabel* selection_path_ = nullptr;
     QLabel* visibility_banner_ = nullptr;
     std::size_t excluded_count_ = 0;

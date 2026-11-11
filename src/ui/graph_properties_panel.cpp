@@ -15,6 +15,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
+#include <QScopedValueRollback>
 #include <QSpinBox>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -373,6 +374,9 @@ GraphPropertiesPanel::GraphPropertiesPanel(const ChartModel& model, QWidget* par
 
 void GraphPropertiesPanel::schedule_apply()
 {
+    if (refreshing_) {
+        return;
+    }
     if (apply_debounce_timer_ == nullptr) {
         apply_changes();
         return;
@@ -387,8 +391,17 @@ ChartModel GraphPropertiesPanel::model() const
 
 void GraphPropertiesPanel::set_model(const ChartModel& model)
 {
-    model_ = model;
     original_ = model;
+    refresh_model(model);
+}
+
+void GraphPropertiesPanel::refresh_model(const ChartModel& model)
+{
+    const QScopedValueRollback<bool> refresh_guard(refreshing_, true);
+    if (apply_debounce_timer_ != nullptr) {
+        apply_debounce_timer_->stop();
+    }
+    model_ = model;
     title_->setText(model.title);
     subtitle_->setText(model.subtitle);
     x_axis_title_->setText(model.x_axis_title);
@@ -490,6 +503,9 @@ void GraphPropertiesPanel::refresh_visibility_banner()
 
 void GraphPropertiesPanel::apply_changes()
 {
+    if (refreshing_) {
+        return;
+    }
     model_.title = title_->text();
     model_.subtitle = subtitle_->text();
     model_.x_axis_title = x_axis_title_->text();
@@ -561,13 +577,13 @@ void GraphPropertiesPanel::apply_changes()
 
 void GraphPropertiesPanel::restore_defaults()
 {
-    set_model(defaults_);
+    refresh_model(defaults_);
     emit model_changed(model_);
 }
 
 void GraphPropertiesPanel::revert_changes()
 {
-    set_model(original_);
+    refresh_model(original_);
     emit model_changed(model_);
 }
 

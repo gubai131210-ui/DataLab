@@ -89,6 +89,8 @@
 #include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QClipboard>
+#include <QComboBox>
+#include <QToolButton>
 #include <QContextMenuEvent>
 #include <QDateTime>
 #include <QDockWidget>
@@ -305,7 +307,7 @@ MainWindow::MainWindow(QWidget *parent)
     resize(1440, 900);
     setMinimumSize(1080, 680);
     setStyleSheet(QStringLiteral(
-        "QMainWindow { background: #eef3f5; color: #243b44; }"
+        "QMainWindow { background: #f4f6f8; color: #243b44; }"
         "QMenuBar { background: #ffffff; color: #243b44; spacing: 4px; padding: 3px 8px;"
         " border-bottom: 1px solid #d9e3e6; }"
         "QMenuBar::item { padding: 7px 11px; border-radius: 5px; }"
@@ -624,12 +626,14 @@ void MainWindow::create_layout()
     }
     connect(navigator_, &ProjectNavigator::analysis_activated, this, [this](const QString& id) {
         if (output_workspace_ != nullptr) {
+            workspace_mode_->setCurrentIndex(1);
             output_workspace_->show_page(id);
         }
     });
     connect(navigator_, &ProjectNavigator::worksheet_activated, this, &MainWindow::activate_worksheet);
 
     context_dock_ = new QDockWidget(QStringLiteral("上下文信息"), this);
+    context_dock_->setObjectName(QStringLiteral("analysis_context_dock"));
     context_dock_->setAllowedAreas(Qt::RightDockWidgetArea);
     context_dock_->setMinimumWidth(220);
     auto* context = new QWidget(context_dock_);
@@ -658,6 +662,7 @@ void MainWindow::create_layout()
     context_layout->addStretch(1);
     context_dock_->setWidget(context);
     addDockWidget(Qt::RightDockWidgetArea, context_dock_);
+    context_dock_->hide();
     if (view_menu != nullptr) {
         view_menu->addAction(context_dock_->toggleViewAction());
     }
@@ -666,6 +671,23 @@ void MainWindow::create_layout()
     auto* layout = new QVBoxLayout(central);
     layout->setContentsMargins(4, 2, 4, 4);
     layout->setSpacing(4);
+    auto* workbar = new QHBoxLayout();
+    workspace_mode_ = new QComboBox(central);
+    workspace_mode_->setObjectName(QStringLiteral("workspace_mode"));
+    workspace_mode_->addItem(QStringLiteral("数据准备"));
+    workspace_mode_->addItem(QStringLiteral("分析工作台"));
+    workbar->addWidget(workspace_mode_);
+    worksheet_visibility_action_ = new QAction(QStringLiteral("显示工作表"), this);
+    worksheet_visibility_action_->setCheckable(true);
+    auto* worksheet_toggle = new QToolButton(central);
+    worksheet_toggle->setDefaultAction(worksheet_visibility_action_);
+    workbar->addWidget(worksheet_toggle);
+    workbar->addStretch();
+    auto* report_button = new QToolButton(central);
+    report_button->setDefaultAction(commands_->get(QStringLiteral("export_pdf")));
+    report_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    workbar->addWidget(report_button);
+    layout->addLayout(workbar);
 
     worksheet_model_ = new WorksheetModel(this);
     worksheet_sort_proxy_ = new datalab::ui::WorksheetSortFilterProxyModel(this);
@@ -815,6 +837,7 @@ void MainWindow::create_layout()
                     }
                 }
                 if (!rows.empty()) {
+                    worksheet_visibility_action_->setChecked(true);
                     data_table_->scroll_source_rows_into_view(worksheet_sort_proxy_, rows);
                     data_table_->setFocus();
                 }
@@ -850,6 +873,7 @@ void MainWindow::create_layout()
             this, &MainWindow::refresh_context_dock);
 
     auto* output_pane = new QFrame(central);
+    output_pane_ = output_pane;
     output_pane->setObjectName(QStringLiteral("pane_card"));
     auto* output_layout = new QVBoxLayout(output_pane);
     output_layout->setContentsMargins(6, 4, 6, 6);
@@ -863,6 +887,7 @@ void MainWindow::create_layout()
     output_layout->addWidget(output_workspace_, 1);
 
     auto* worksheet_pane = new QFrame(central);
+    worksheet_pane_ = worksheet_pane;
     worksheet_pane->setObjectName(QStringLiteral("pane_card"));
     auto* worksheet_layout = new QVBoxLayout(worksheet_pane);
     worksheet_layout->setContentsMargins(6, 4, 6, 6);
@@ -889,22 +914,31 @@ void MainWindow::create_layout()
     worksheet_filter_edit_->hide();
     worksheet_layout->addWidget(data_table_, 1);
     output_pane->setMinimumHeight(280);
-    worksheet_pane->setMinimumHeight(280);
+    worksheet_pane->setMinimumHeight(160);
 
     auto* workspace = new QSplitter(Qt::Vertical, central);
     workspace->setObjectName(QStringLiteral("main_workspace"));
     workspace->addWidget(output_pane);
     workspace->addWidget(worksheet_pane);
-    workspace->setStretchFactor(0, 1);
+    workspace->setStretchFactor(0, 4);
     workspace->setStretchFactor(1, 1);
     workspace->setChildrenCollapsible(false);
-    workspace->setSizes({400, 380});
+    workspace->setSizes({600, 180});
     layout->addWidget(workspace);
+    connect(workspace_mode_, &QComboBox::currentIndexChanged, this,
+        [this](int mode) {
+            output_pane_->setVisible(mode == 1);
+            worksheet_pane_->setVisible(mode == 0 || worksheet_visibility_action_->isChecked());
+            worksheet_visibility_action_->setEnabled(mode == 1);
+        });
+    connect(worksheet_visibility_action_, &QAction::toggled, this,
+        [this](bool visible) {
+            worksheet_pane_->setVisible(workspace_mode_->currentIndex() == 0 || visible);
+        });
+    output_pane_->hide();
+    worksheet_visibility_action_->setEnabled(false);
     if (view_menu != nullptr) {
-        QAction* worksheet_action = view_menu->addAction(QStringLiteral("活动工作表"));
-        worksheet_action->setCheckable(true);
-        worksheet_action->setChecked(true);
-        connect(worksheet_action, &QAction::toggled, worksheet_pane, &QWidget::setVisible);
+        view_menu->addAction(worksheet_visibility_action_);
         view_menu->addSeparator();
     }
     setCentralWidget(central);
@@ -1322,6 +1356,7 @@ void MainWindow::new_project()
     output_workspace_->set_selected_source_rows({});
     navigator_->clear_contents();
     navigator_->set_project_name(QStringLiteral("DataLab 项目"));
+    workspace_mode_->setCurrentIndex(0);
     refresh_context_dock();
     statusBar()->showMessage(QStringLiteral("已新建项目。"));
 }
@@ -1354,6 +1389,7 @@ void MainWindow::open_project()
         output_workspace_->add_page(page);
         navigator_->add_analysis(QString::fromStdString(page.id), QString::fromStdString(page.title));
     }
+    workspace_mode_->setCurrentIndex(pages.empty() ? 0 : 1);
     refresh_context_dock();
     statusBar()->showMessage(QStringLiteral("项目已打开。"));
 }
@@ -1679,6 +1715,7 @@ void MainWindow::import_data()
 
 void MainWindow::display_table()
 {
+    workspace_mode_->setCurrentIndex(0);
     worksheet_model_->set_table(table_);
     worksheet_model_->set_excluded_rows(excluded_rows());
     worksheet_model_->set_hidden_rows(hidden_rows());
@@ -1828,6 +1865,7 @@ void MainWindow::publish_page(const datalab::domain::OutputPage& page)
         }
     }
     output_workspace_->add_page(enriched_page);
+    workspace_mode_->setCurrentIndex(1);
     navigator_->add_analysis(QString::fromStdString(enriched_page.id), QString::fromStdString(enriched_page.title));
     statusBar()->showMessage(QStringLiteral("分析完成：") + QString::fromStdString(enriched_page.title));
 }

@@ -11,8 +11,10 @@
 #include <QApplication>
 #include <QAction>
 #include <QClipboard>
+#include <QComboBox>
 #include <QFileDialog>
 #include <QGridLayout>
+#include <QFont>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QIcon>
@@ -21,15 +23,23 @@
 #include <QObject>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollArea>
 #include <QShortcut>
+#include <QStackedWidget>
+#include <QTabWidget>
 #include <QTableView>
 #include <QTextStream>
 #include <QVBoxLayout>
 
 #include <set>
+#include <memory>
+#include <algorithm>
+#include <utility>
 
 namespace page_renderer {
 namespace {
+
+enum class PageContent { complete, charts, tables, diagnostics, method };
 
 QString table_text(
     const datalab::domain::StatisticTable& table,
@@ -88,16 +98,19 @@ QString icon_resource(const std::string& analysis_id)
     return QFile::exists(candidate) ? candidate : QStringLiteral(":/icons/report.svg");
 }
 
-QWidget* build_page_widget(
+static QWidget* build_page_content(
     const datalab::domain::OutputPage& page,
     QWidget* parent,
-    const PageRenderOptions& options)
+    const PageRenderOptions& options,
+    const PageContent content,
+    const std::optional<std::size_t> table_index = std::nullopt)
 {
     auto* container = new QWidget(parent);
     auto* layout = new QVBoxLayout(container);
     layout->setContentsMargins(22, 18, 22, 24);
     layout->setSpacing(14);
 
+    if (content == PageContent::complete) {
     auto* title_row = new QHBoxLayout();
     auto* title_icon = new QLabel(container);
     title_icon->setPixmap(QIcon(icon_resource(page.id)).pixmap(28, 28));
@@ -116,8 +129,10 @@ QWidget* build_page_widget(
         title_row->addWidget(formula_button);
     }
     layout->addLayout(title_row);
+    }
 
-    if (options.include_method) {
+    if ((content == PageContent::complete || content == PageContent::method)
+        && options.include_method) {
         auto* method_card = new QFrame(container);
         method_card->setStyleSheet(QStringLiteral(
             "QFrame { background:#f3f8f9; border:1px solid #d8e7e9; border-radius:8px; }"
@@ -126,14 +141,15 @@ QWidget* build_page_widget(
         method_layout->setContentsMargins(12, 9, 12, 9);
         auto* method = new QLabel(
             QStringLiteral("<b>%1</b><br/>%2")
-                .arg(QString::fromStdString(page.method_name),
-                     QString::fromStdString(page.parameter_summary)),
+                .arg(QString::fromStdString(page.method_name).toHtmlEscaped(),
+                     QString::fromStdString(page.parameter_summary).toHtmlEscaped()),
             method_card);
         method->setTextFormat(Qt::RichText);
         method->setWordWrap(true);
         method_layout->addWidget(method);
         layout->addWidget(method_card);
-    } else if (!page.parameter_summary.empty()) {
+    } else if ((content == PageContent::complete || content == PageContent::method)
+               && !page.parameter_summary.empty()) {
         auto* summary = new QLabel(
             QString::fromStdString(page.parameter_summary), container);
         summary->setWordWrap(true);
@@ -159,6 +175,7 @@ QWidget* build_page_widget(
     const QString visibility_footnote = datalab::ui::row_visibility_footnote(
         excluded_rows, hidden_rows, analysis_n, display_n);
 
+    if (content == PageContent::complete || content == PageContent::diagnostics) {
     for (const auto& section : page.interpretation) {
         auto* card = new QLabel(container);
         QString text = QStringLiteral("【%1】\n").arg(QString::fromStdString(section.heading));
@@ -170,14 +187,20 @@ QWidget* build_page_widget(
         const QString color = section.severity == datalab::domain::DiagnosticMessage::Severity::error
             ? QStringLiteral("#fff0f0")
             : section.severity == datalab::domain::DiagnosticMessage::Severity::warning
-                ? QStringLiteral("#fff8e6") : QStringLiteral("#eaf8f2");
+                ? QStringLiteral("#fff8e6") : QStringLiteral("#f4f6f8");
         card->setStyleSheet(QStringLiteral(
             "background:%1; color:#49636d; padding:11px 13px; border:1px solid #d6e1e5;"
             " border-radius:8px;").arg(color));
         layout->addWidget(card);
     }
+    }
 
-    for (const auto& table : page.tables) {
+    if (content == PageContent::complete || content == PageContent::tables) {
+    for (std::size_t current_table = 0; current_table < page.tables.size(); ++current_table) {
+        if (table_index.has_value() && *table_index != current_table) {
+            continue;
+        }
+        const auto& table = page.tables[current_table];
         auto* caption = new QLabel(QString::fromStdString(table.title), container);
         caption->setStyleSheet(QStringLiteral("font-weight: 600; margin-top: 8px;"));
         layout->addWidget(caption);
@@ -262,20 +285,26 @@ QWidget* build_page_widget(
                             model->data(index, datalab::ui::ReportRowIdRole);
                         if (row_id.isValid()) {
                             rows.push_back(static_cast<std::size_t>(row_id.toULongLong()));
-                        } else {
-                            rows.push_back(static_cast<std::size_t>(index.row()));
                         }
                     }
                     callback(rows);
                 });
         }
         grid->resizeColumnsToContents();
-        grid->resizeRowsToContents();
-        grid->setMinimumHeight(24 * static_cast<int>(table.rows.size() + 2));
+        if (options.interactive_charts) {
+            grid->horizontalHeader()->setResizeContentsPrecision(100);
+            grid->setWordWrap(false);
+            grid->setMinimumHeight(160);
+        } else {
+            grid->resizeRowsToContents();
+            grid->setMinimumHeight(24 * static_cast<int>(table.rows.size() + 2));
+        }
         layout->addWidget(grid);
     }
+    }
 
-    if (!page.diagnostics.empty()) {
+    if ((content == PageContent::complete || content == PageContent::diagnostics)
+        && !page.diagnostics.empty()) {
         auto* caption = new QLabel(QStringLiteral("诊断信息"), container);
         caption->setStyleSheet(QStringLiteral("font-weight: 600;"));
         layout->addWidget(caption);
@@ -306,6 +335,7 @@ QWidget* build_page_widget(
         }
     }
 
+    if (content == PageContent::complete || content == PageContent::charts) {
     QGridLayout* plot_grid = nullptr;
     if (page.method_name == "Capability Sixpack") {
         plot_grid = new QGridLayout();
@@ -342,10 +372,181 @@ QWidget* build_page_widget(
             plot_grid->addWidget(chart, static_cast<int>(plot_index / 2),
                                  static_cast<int>(plot_index % 2));
         } else {
-            layout->addWidget(chart);
+            layout->addWidget(chart, options.interactive_charts && page.plots.size() == 1 ? 1 : 0);
         }
     }
-    layout->addStretch();
+    }
+    if (content != PageContent::tables
+        && !(content == PageContent::charts && page.plots.size() == 1)) {
+        layout->addStretch();
+    }
+    return container;
+}
+
+QWidget* build_page_widget(
+    const datalab::domain::OutputPage& page,
+    QWidget* parent,
+    const PageRenderOptions& options)
+{
+    if (!options.interactive_charts) {
+        return build_page_content(page, parent, options, PageContent::complete);
+    }
+    // The same immutable result feeds lazy interactive sections and complete reports.
+    const auto result = std::make_shared<const datalab::domain::OutputPage>(page);
+    auto* container = new QWidget(parent);
+    container->setObjectName(QStringLiteral("interactive_analysis_page"));
+    auto* layout = new QVBoxLayout(container);
+    layout->setContentsMargins(12, 10, 12, 10);
+    layout->setSpacing(8);
+    auto* heading = new QHBoxLayout();
+    auto* title = new QLabel(QString::fromStdString(page.title), container);
+    title->setTextFormat(Qt::PlainText);
+    title->setWordWrap(true);
+    QFont title_font = title->font();
+    title_font.setPointSize(13);
+    title_font.setBold(true);
+    title->setFont(title_font);
+    heading->addWidget(title, 1);
+    if (options.on_formula_substitution) {
+        auto* formula = new QPushButton(QStringLiteral("公式代入"), container);
+        QObject::connect(formula, &QPushButton::clicked, container,
+            [result, callback = options.on_formula_substitution] { callback(*result); });
+        heading->addWidget(formula);
+    }
+    layout->addLayout(heading);
+    QStringList summary;
+    if (page.method_metadata.valid_count > 0) {
+        summary << QStringLiteral("有效 N = %1").arg(
+            static_cast<qulonglong>(page.method_metadata.valid_count));
+    }
+    if (page.facts.capability.has_value()) {
+        const auto& facts = *page.facts.capability;
+        for (const auto& metric : {std::make_pair("Cp", facts.cp),
+                                  std::make_pair("Cpk", facts.cpk),
+                                  std::make_pair("Ppk", facts.ppk)}) {
+            if (metric.second.has_value()) {
+                summary << QStringLiteral("%1 = %2").arg(
+                    QString::fromLatin1(metric.first), QString::number(*metric.second, 'g', 6));
+            }
+        }
+    }
+    if (!summary.isEmpty()) {
+        auto* metrics = new QLabel(summary.join(QStringLiteral("     ")), container);
+        metrics->setTextFormat(Qt::PlainText);
+        metrics->setWordWrap(true);
+        layout->addWidget(metrics);
+    }
+    auto* sections = new QTabWidget(container);
+    sections->setObjectName(QStringLiteral("analysis_result_sections"));
+    sections->setDocumentMode(true);
+    const auto add_section = [sections](const QString& name) {
+        auto* host = new QWidget(sections);
+        auto* host_layout = new QVBoxLayout(host);
+        host_layout->setContentsMargins(0, 0, 0, 0);
+        sections->addTab(host, name);
+        return host;
+    };
+    if (!page.plots.empty()) {
+        QWidget* charts = add_section(QStringLiteral("图表"));
+        auto* scroll = new QScrollArea(charts);
+        scroll->setWidgetResizable(true);
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setWidget(build_page_content(*result, scroll, options, PageContent::charts));
+        charts->layout()->addWidget(scroll);
+    }
+    if (!page.tables.empty()) {
+        QWidget* statistics = add_section(QStringLiteral("统计结果"));
+        auto* selector = new QComboBox(statistics);
+        selector->setObjectName(QStringLiteral("result_table_selector"));
+        auto* stack = new QStackedWidget(statistics);
+        for (const auto& table : page.tables) {
+            selector->addItem(QString::fromStdString(table.title));
+            auto* host = new QWidget(stack);
+            auto* host_layout = new QVBoxLayout(host);
+            host_layout->setContentsMargins(0, 0, 0, 0);
+            stack->addWidget(host);
+        }
+        statistics->layout()->addWidget(selector);
+        statistics->layout()->addWidget(stack);
+        const auto show_table = [result, stack, options](int index) {
+            if (index < 0 || index >= stack->count()) {
+                return;
+            }
+            QWidget* host = stack->widget(index);
+            if (!host->property("result_built").toBool()) {
+                host->layout()->addWidget(build_page_content(
+                    *result, host, options, PageContent::tables, static_cast<std::size_t>(index)));
+                host->setProperty("result_built", true);
+            }
+            stack->setCurrentIndex(index);
+        };
+        QObject::connect(selector, &QComboBox::currentIndexChanged, statistics, show_table);
+        QObject::connect(sections, &QTabWidget::currentChanged, statistics,
+            [sections, statistics, selector, show_table](int) {
+                if (sections->currentWidget() == statistics) {
+                    show_table(selector->currentIndex());
+                }
+            });
+        if (sections->currentWidget() == statistics) {
+            show_table(0);
+        }
+    }
+    int diagnostics_index = -1;
+    if (!page.diagnostics.empty() || !page.interpretation.empty()) {
+        QWidget* diagnostics = add_section(QStringLiteral("解读与诊断"));
+        diagnostics_index = sections->indexOf(diagnostics);
+        auto* scroll = new QScrollArea(diagnostics);
+        scroll->setWidgetResizable(true);
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setWidget(build_page_content(*result, scroll, options, PageContent::diagnostics));
+        diagnostics->layout()->addWidget(scroll);
+    }
+    QWidget* method = add_section(QStringLiteral("方法与参数"));
+    auto* method_scroll = new QScrollArea(method);
+    method_scroll->setWidgetResizable(true);
+    method_scroll->setFrameShape(QFrame::NoFrame);
+    method_scroll->setWidget(build_page_content(*result, method_scroll, options, PageContent::method));
+    method->layout()->addWidget(method_scroll);
+    QStringList warnings;
+    QStringList errors;
+    for (const auto& diagnostic : page.diagnostics) {
+        if (diagnostic.severity != datalab::domain::DiagnosticMessage::Severity::info) {
+            auto& messages = diagnostic.severity == datalab::domain::DiagnosticMessage::Severity::error
+                ? errors : warnings;
+            messages << QString::fromStdString(diagnostic.message);
+        }
+    }
+    for (const auto& interpretation : page.interpretation) {
+        if (interpretation.severity != datalab::domain::DiagnosticMessage::Severity::info) {
+            for (const auto& bullet : interpretation.bullets) {
+                auto& messages = interpretation.severity == datalab::domain::DiagnosticMessage::Severity::error
+                    ? errors : warnings;
+                messages << QString::fromStdString(bullet);
+            }
+        }
+    }
+    warnings.removeDuplicates();
+    errors.removeDuplicates();
+    const QStringList messages = errors + warnings;
+    if (!messages.isEmpty()) {
+        auto* warning_row = new QHBoxLayout();
+        auto* banner = new QLabel(QStringLiteral("错误 %1 · 警告 %2：%3")
+            .arg(errors.size()).arg(warnings.size()).arg(messages.front().simplified().left(180)), container);
+        banner->setTextFormat(Qt::PlainText);
+        banner->setWordWrap(true);
+        banner->setObjectName(QStringLiteral("analysis_warning_summary"));
+        banner->setToolTip(messages.join(QLatin1Char('\n')));
+        banner->setStyleSheet(errors.isEmpty()
+            ? QStringLiteral("padding:6px; color:#8a5a00; background:#fff8e6; border:0;")
+            : QStringLiteral("padding:6px; color:#b3261e; background:#fff0f0; border:0;"));
+        auto* details = new QPushButton(QStringLiteral("查看详情"), container);
+        QObject::connect(details, &QPushButton::clicked, sections,
+            [sections, diagnostics_index] { sections->setCurrentIndex(diagnostics_index); });
+        warning_row->addWidget(banner, 1);
+        warning_row->addWidget(details);
+        layout->addLayout(warning_row);
+    }
+    layout->addWidget(sections, 1);
     return container;
 }
 

@@ -17,6 +17,7 @@
 #include <QShortcut>
 #include <QTabBar>
 #include <QTableView>
+#include <QVBoxLayout>
 #include <QFocusEvent>
 
 OutputWorkspace::OutputWorkspace(QWidget* parent)
@@ -138,9 +139,9 @@ void OutputWorkspace::add_page(const datalab::domain::OutputPage& page)
 {
     pages_.push_back(page);
     const std::string page_id = page.id;
-    auto* scroll = new QScrollArea(this);
-    scroll->setWidgetResizable(true);
-    scroll->setFrameShape(QFrame::NoFrame);
+    auto* scroll = new QWidget(this);
+    auto* page_layout = new QVBoxLayout(scroll);
+    page_layout->setContentsMargins(0, 0, 0, 0);
     page_renderer::PageRenderOptions options;
     options.interactive_charts = true;
     options.include_method = true;
@@ -162,7 +163,7 @@ void OutputWorkspace::add_page(const datalab::domain::OutputPage& page)
     options.on_formula_substitution = [this](const datalab::domain::OutputPage& p) {
         emit formula_substitution_requested(p);
     };
-    scroll->setWidget(page_renderer::build_page_widget(page, scroll, options));
+    page_layout->addWidget(page_renderer::build_page_widget(page, scroll, options));
     for (AnalysisChartWidget* chart : scroll->findChildren<AnalysisChartWidget*>()) {
         chart->installEventFilter(this);
         if (QWidget* surface = chart->findChild<QWidget*>(QStringLiteral("chart_surface"))) {

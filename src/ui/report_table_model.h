@@ -9,7 +9,8 @@ namespace datalab::ui {
 enum ReportTableRole {
     ReportRowIdRole = Qt::UserRole + 21,
     ReportRuleIdRole = Qt::UserRole + 22,
-    ReportColumnKindRole = Qt::UserRole + 23
+    ReportColumnKindRole = Qt::UserRole + 23,
+    ReportNumericSortRole = Qt::UserRole + 24
 };
 
 class ReportTableModel final : public QAbstractTableModel {

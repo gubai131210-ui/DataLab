@@ -8,6 +8,7 @@
 #include <ctime>
 #include <functional>
 #include <sstream>
+#include <regex>
 #include <string>
 #include <unordered_set>
 
@@ -74,42 +75,63 @@ bool parse_time_cell_to_epoch(
     if (trimmed.empty() || is_missing_cell(trimmed)) {
         return false;
     }
-    original_text = trimmed;
-
-    int year = 0;
-    int month = 0;
-    int day = 0;
-    int hour = 0;
-    int minute = 0;
-    int second = 0;
-    const auto parse_parts = [&](const char* format) -> bool {
-        std::tm tm_value{};
-        const char* cursor = trimmed.c_str();
-        if (std::sscanf(cursor, format, &year, &month, &day, &hour, &minute, &second) < 3) {
-            return false;
-        }
-        tm_value.tm_year = year - 1900;
-        tm_value.tm_mon = month - 1;
-        tm_value.tm_mday = day;
-        tm_value.tm_hour = hour;
-        tm_value.tm_min = minute;
-        tm_value.tm_sec = second;
-        tm_value.tm_isdst = -1;
-        const std::time_t seconds = std::mktime(&tm_value);
-        if (seconds < 0) {
-            return false;
-        }
-        epoch_seconds = static_cast<double>(seconds);
-        return std::isfinite(epoch_seconds);
-    };
-
-    if (parse_parts("%d/%d/%d %d:%d:%d")
-        || parse_parts("%d-%d-%d %d:%d:%d")
-        || parse_parts("%d/%d/%d %d:%d")
-        || parse_parts("%d-%d-%d %d:%d")) {
-        return true;
+    static const std::regex timestamp_pattern(
+        R"(^([0-9]{4})([-/])([0-9]{1,2})\2([0-9]{1,2})(?:[ Tt]([0-9]{1,2}):([0-9]{2})(?::([0-9]{2})(\.[0-9]{1,9})?)?(?:([Zz])|([+-])([0-9]{2}):?([0-9]{2}))?)?$)");
+    std::smatch fields;
+    if (!std::regex_match(trimmed, fields, timestamp_pattern)) {
+        return false;
     }
-    return false;
+    const int year = std::stoi(fields[1].str());
+    const int month = std::stoi(fields[3].str());
+    const int day = std::stoi(fields[4].str());
+    const int hour = fields[5].matched ? std::stoi(fields[5].str()) : 0;
+    const int minute = fields[6].matched ? std::stoi(fields[6].str()) : 0;
+    const int second = fields[7].matched ? std::stoi(fields[7].str()) : 0;
+    const bool leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    static const int month_days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (year < 1 || month < 1 || month > 12 || day < 1
+        || day > month_days[month - 1] + (month == 2 && leap ? 1 : 0)
+        || hour > 23 || minute > 59 || second > 59) {
+        return false;
+    }
+    const double fraction = fields[8].matched ? std::stod(fields[8].str()) : 0.0;
+    if (fields[9].matched || fields[10].matched) {
+        const int offset_hour = fields[11].matched ? std::stoi(fields[11].str()) : 0;
+        const int offset_minute = fields[12].matched ? std::stoi(fields[12].str()) : 0;
+        if (offset_hour > 23 || offset_minute > 59) {
+            return false;
+        }
+        const auto days_before_year = [](int y) {
+            const int previous = y - 1;
+            return 365LL * previous + previous / 4 - previous / 100 + previous / 400;
+        };
+        long long days = days_before_year(year) - days_before_year(1970) + day - 1;
+        for (int m = 1; m < month; ++m) {
+            days += month_days[m - 1] + (m == 2 && leap ? 1 : 0);
+        }
+        const int offset = (offset_hour * 60 + offset_minute) * 60
+            * (fields[10].str() == "-" ? -1 : 1);
+        epoch_seconds = static_cast<double>(days * 86400 + hour * 3600 + minute * 60 + second)
+            - offset + fraction;
+    } else {
+        std::tm local{};
+        local.tm_year = year - 1900;
+        local.tm_mon = month - 1;
+        local.tm_mday = day;
+        local.tm_hour = hour;
+        local.tm_min = minute;
+        local.tm_sec = second;
+        local.tm_isdst = -1;
+        const std::time_t seconds = std::mktime(&local);
+        if (seconds == static_cast<std::time_t>(-1) || local.tm_year != year - 1900
+            || local.tm_mon != month - 1 || local.tm_mday != day || local.tm_hour != hour
+            || local.tm_min != minute || local.tm_sec != second) {
+            return false;
+        }
+        epoch_seconds = static_cast<double>(seconds) + fraction;
+    }
+    original_text = trimmed;
+    return std::isfinite(epoch_seconds);
 }
 
 bool is_missing_cell(const std::string& cell)
@@ -146,10 +168,41 @@ void populate_data_table_contract(DataTable& table)
     }
     table.import_metadata.dataset_id = std::to_string(std::hash<std::string>{}(identity.str()));
 
-    table.column_types.assign(table.columns.size(), ColumnType::unknown);
-    table.cell_states.assign(
-        table.rows.size(), std::vector<CellState>(table.columns.size(), CellState::missing));
-    for (std::size_t column = 0; column < table.columns.size(); ++column) {
+    refresh_data_table_contract(table);
+}
+
+void refresh_data_table_contract(
+    DataTable& table, const std::vector<std::size_t>& changed_columns)
+{
+    table.import_metadata.original_row_count = table.rows.size();
+    table.import_metadata.column_count = table.columns.size();
+    const std::size_t old_id_count = table.row_ids.size();
+    RowId next_id = 0;
+    for (const RowId id : table.row_ids) {
+        next_id = std::max(next_id, id + 1);
+    }
+    table.row_ids.resize(table.rows.size());
+    for (std::size_t row = old_id_count; row < table.row_ids.size(); ++row) {
+        table.row_ids[row] = next_id++;
+    }
+    table.column_types.resize(table.columns.size(), ColumnType::unknown);
+    table.cell_states.resize(table.rows.size());
+    for (std::size_t row = 0; row < table.rows.size(); ++row) {
+        table.rows[row].resize(table.columns.size());
+        table.cell_states[row].resize(table.columns.size(), CellState::missing);
+    }
+    std::vector<std::size_t> columns = changed_columns;
+    if (columns.empty()) {
+        columns.resize(table.columns.size());
+        for (std::size_t column = 0; column < columns.size(); ++column) {
+            columns[column] = column;
+        }
+    }
+    for (const std::size_t column : columns) {
+        if (column >= table.columns.size()) {
+            continue;
+        }
+        table.column_types[column] = ColumnType::unknown;
         bool has_valid = false;
         bool has_numeric = false;
         bool all_numeric = true;

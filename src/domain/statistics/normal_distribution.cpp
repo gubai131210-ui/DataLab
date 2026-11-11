@@ -7,10 +7,7 @@ namespace datalab::domain::statistics {
 
 double standard_normal_cdf(double z)
 {
-    if (!std::isfinite(z)) {
-        return z > 0.0 ? 1.0 : 0.0;
-    }
-    return 0.5 * (1.0 + std::erf(z / std::sqrt(2.0)));
+    return 0.5 * std::erfc(-z / std::sqrt(2.0));
 }
 
 double standard_normal_quantile(double probability)
@@ -77,7 +74,7 @@ double expected_ppm_above(double mean, double sigma, double upper)
     if (!(sigma > 0.0)) {
         return 0.0;
     }
-    return 1.0e6 * (1.0 - standard_normal_cdf((upper - mean) / sigma));
+    return 1.0e6 * standard_normal_cdf((mean - upper) / sigma);
 }
 
 }  // namespace datalab::domain::statistics

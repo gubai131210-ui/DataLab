@@ -23,6 +23,7 @@ class QLabel;
 class QLineEdit;
 class QUndoStack;
 class QAction;
+class QComboBox;
 
 class MainWindow final : public QMainWindow {
     Q_OBJECT
@@ -97,6 +98,10 @@ private:
     WorksheetModel* worksheet_model_ = nullptr;
     datalab::ui::WorksheetSortFilterProxyModel* worksheet_sort_proxy_ = nullptr;
     QLineEdit* worksheet_filter_edit_ = nullptr;
+    QComboBox* workspace_mode_ = nullptr;
+    QWidget* worksheet_pane_ = nullptr;
+    QWidget* output_pane_ = nullptr;
+    QAction* worksheet_visibility_action_ = nullptr;
     CommandRegistry* commands_ = nullptr;
     QUndoStack* undo_stack_ = nullptr;
     bool import_in_progress_ = false;

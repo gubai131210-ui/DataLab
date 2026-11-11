@@ -18,6 +18,7 @@ void WorksheetModel::set_table(const datalab::domain::DataTable& table)
 {
     beginResetModel();
     table_ = table;
+    datalab::domain::refresh_data_table_contract(table_);
     column_hidden_.assign(table_.columns.size(), false);
     refresh_display_extents();
     endResetModel();
@@ -256,6 +257,9 @@ QVariant WorksheetModel::data(const QModelIndex& index, int role) const
     if (row >= table_.rows.size() || column >= table_.rows[row].size()) {
         return QString();
     }
+    if (table_.rows[row][column].empty()) {
+        return QString();
+    }
     if (row < table_.cell_states.size()
         && column < table_.cell_states[row].size()
         && table_.cell_states[row][column] == datalab::domain::CellState::missing) {
@@ -354,6 +358,7 @@ bool WorksheetModel::setData(const QModelIndex& index, const QVariant& value, in
         table_.rows[row].resize(column + 1);
     }
     table_.rows[row][column] = value.toString().toStdString();
+    datalab::domain::refresh_data_table_contract(table_, {column});
     if (table_.name.empty()) {
         table_.name = "工作表1";
     }
@@ -416,6 +421,7 @@ bool WorksheetModel::clear_cells(const QModelIndexList& indexes)
     }
     const QModelIndex top_left = index(min_row, min_column);
     const QModelIndex bottom_right = index(max_row, max_column);
+    datalab::domain::refresh_data_table_contract(table_);
     emit dataChanged(top_left, bottom_right, {Qt::DisplayRole, Qt::EditRole});
     emit table_changed(table_);
     return true;
@@ -459,6 +465,7 @@ bool WorksheetModel::clear_columns(const QList<int>& column_indexes)
     const QModelIndex top_left = index(0, min_column);
     const int last_row = std::max(0, rowCount() - 1);
     const QModelIndex bottom_right = index(last_row, max_column);
+    datalab::domain::refresh_data_table_contract(table_);
     emit dataChanged(top_left, bottom_right, {Qt::DisplayRole, Qt::EditRole});
     emit table_changed(table_);
     return true;
@@ -515,6 +522,7 @@ bool WorksheetModel::remove_columns(const QList<int>& column_indexes)
     }
     refresh_display_extents();
     beginResetModel();
+    datalab::domain::refresh_data_table_contract(table_);
     endResetModel();
     emit table_changed(table_);
     return true;
@@ -536,6 +544,7 @@ bool WorksheetModel::setHeaderData(
     }
     const QString name = value.toString().trimmed();
     table_.columns[column] = name.toStdString();
+    datalab::domain::refresh_data_table_contract(table_);
     emit headerDataChanged(Qt::Horizontal, section, section);
     grow_if_at_edge(0, section);
     emit table_changed(table_);

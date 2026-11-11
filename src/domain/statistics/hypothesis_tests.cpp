@@ -81,7 +81,7 @@ double regularized_beta(double x, double a, double b)
 
 double two_sided_p_value(double statistic, double degrees_of_freedom)
 {
-    return std::clamp(1.0 - student_t_cdf(std::abs(statistic), degrees_of_freedom), 0.0, 1.0)
+    return std::clamp(student_t_cdf(-std::abs(statistic), degrees_of_freedom), 0.0, 1.0)
         * 2.0;
 }
 
@@ -132,34 +132,72 @@ TTestResult summary(const std::vector<double>& observations)
 
 double student_t_cdf(double value, double degrees_of_freedom)
 {
-    if (!(degrees_of_freedom > 0.0) || !std::isfinite(value)) {
+    if (!(degrees_of_freedom > 0.0) || !std::isfinite(degrees_of_freedom)
+        || std::isnan(value)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if (!std::isfinite(value)) {
         return value > 0.0 ? 1.0 : 0.0;
     }
     if (value == 0.0) {
         return 0.5;
     }
-    const double x = degrees_of_freedom
-        / (degrees_of_freedom + value * value);
-    const double beta = regularized_beta(x, degrees_of_freedom / 2.0, 0.5);
-    return value > 0.0 ? 1.0 - 0.5 * beta : 0.5 * beta;
+    const double magnitude = std::abs(value);
+    double tail = 0.0;
+    if (degrees_of_freedom == 1.0) {
+        tail = std::atan2(1.0, magnitude) / std::acos(-1.0);
+    } else {
+        const double log_ratio = std::log(degrees_of_freedom) - 2.0 * std::log(magnitude);
+        const double log_x = log_ratio > 0.0
+            ? -std::log1p(std::exp(-log_ratio))
+            : log_ratio - std::log1p(std::exp(log_ratio));
+        const double a = degrees_of_freedom / 2.0;
+        if (log_x < -36.0) {
+            // I_x(a,1/2) ~ x^a/(a B(a,1/2)); x itself may underflow.
+            tail = std::exp(-std::log(2.0) + a * log_x - std::log(a)
+                - std::lgamma(a) - std::lgamma(0.5) + std::lgamma(a + 0.5));
+        } else {
+            tail = 0.5 * regularized_beta(std::exp(log_x), a, 0.5);
+        }
+    }
+    return value > 0.0 ? 1.0 - tail : tail;
 }
 
 double student_t_quantile(double probability, double degrees_of_freedom)
 {
-    if (!(probability > 0.0 && probability < 1.0) || !(degrees_of_freedom > 0.0)) {
+    if (!(probability > 0.0 && probability < 1.0)
+        || !(degrees_of_freedom > 0.0) || !std::isfinite(degrees_of_freedom)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
-    double lower = -100.0;
-    double upper = 100.0;
+    if (probability == 0.5) {
+        return 0.0;
+    }
+    // Invert the smaller tail directly, with an actual bracket even for df=1.
+    const double tail = std::min(probability, 1.0 - probability);
+    double lower = 0.0;
+    double upper = 1.0;
+    while (student_t_cdf(-upper, degrees_of_freedom) > tail) {
+        lower = upper;
+        if (upper > std::numeric_limits<double>::max() / 2.0) {
+            upper = std::numeric_limits<double>::max();
+            if (student_t_cdf(-upper, degrees_of_freedom) > tail) {
+                return probability < 0.5 ? -std::numeric_limits<double>::infinity()
+                                         : std::numeric_limits<double>::infinity();
+            }
+            break;
+        }
+        upper *= 2.0;
+    }
     for (int iteration = 0; iteration < 160; ++iteration) {
-        const double middle = 0.5 * (lower + upper);
-        if (student_t_cdf(middle, degrees_of_freedom) < probability) {
+        const double middle = lower + 0.5 * (upper - lower);
+        if (student_t_cdf(-middle, degrees_of_freedom) > tail) {
             lower = middle;
         } else {
             upper = middle;
         }
     }
-    return 0.5 * (lower + upper);
+    const double magnitude = lower + 0.5 * (upper - lower);
+    return probability < 0.5 ? -magnitude : magnitude;
 }
 
 double f_right_tail(double value, double numerator_df, double denominator_df)
@@ -205,7 +243,7 @@ TTestResult one_sample_t_test(
         if (alternative == TestAlternative::less) {
             result.p_value = cdf;
         } else if (alternative == TestAlternative::greater) {
-            result.p_value = 1.0 - cdf;
+            result.p_value = student_t_cdf(-result.t_statistic, result.degrees_of_freedom);
         } else {
             result.p_value = two_sided_p_value(result.t_statistic, result.degrees_of_freedom);
         }
@@ -251,9 +289,10 @@ ZTestResult one_sample_z_test(
     if (alternative == TestAlternative::less) {
         result.p_value = cdf;
     } else if (alternative == TestAlternative::greater) {
-        result.p_value = 1.0 - cdf;
+        result.p_value = standard_normal_cdf(-result.z_statistic);
     } else {
-        result.p_value = std::clamp(2.0 * std::min(cdf, 1.0 - cdf), 0.0, 1.0);
+        result.p_value = std::clamp(
+            2.0 * standard_normal_cdf(-std::abs(result.z_statistic)), 0.0, 1.0);
     }
     const double zcrit = standard_normal_quantile(0.5 + confidence_level / 2.0);
     if (alternative == TestAlternative::two_sided) {
@@ -331,7 +370,7 @@ TwoSampleTTestResult two_sample_t_test(
         if (alternative == TestAlternative::less) {
             result.p_value = cdf;
         } else if (alternative == TestAlternative::greater) {
-            result.p_value = 1.0 - cdf;
+            result.p_value = student_t_cdf(-result.t_statistic, result.degrees_of_freedom);
         } else {
             result.p_value = two_sided_p_value(result.t_statistic, result.degrees_of_freedom);
         }

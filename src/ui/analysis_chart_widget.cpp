@@ -169,7 +169,7 @@ void AnalysisChartWidget::apply_model_change(const ChartModel& model, const bool
     }
     model_ = model;
     if (panel_ != nullptr && panel_->isVisible()) {
-        panel_->set_model(model_);
+        panel_->refresh_model(model_);
     }
     emit display_properties_changed(model_);
     request_chart_update();
@@ -565,40 +565,18 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
     } else if (event->button() == Qt::LeftButton) {
         if ((selection_end_ - selection_start_).manhattanLength() > 8
             && !model_.values.empty()) {
-            const QRectF plot = chart_geometry::plot_rect(plot_bounds(), model_.kind);
+            const ChartPlotContext context = model_.kind == ChartKind::Control
+                ? build_control_plot_context(model_, plot_bounds())
+                : build_scatter_plot_context(model_, plot_bounds());
+            if (!context.valid) {
+                selecting_ = false;
+                return;
+            }
+            const ChartCoordinateMapper& mapper = context.mapper;
             const auto x_at = [&](std::size_t index) {
                 return model_.x_values.size() == model_.values.size()
                     ? model_.x_values[index] : static_cast<double>(index);
             };
-            double y_min = *std::min_element(model_.values.cbegin(), model_.values.cend());
-            double y_max = *std::max_element(model_.values.cbegin(), model_.values.cend());
-            if (qFuzzyCompare(y_min, y_max)) {
-                y_min -= 1.0;
-                y_max += 1.0;
-            }
-            const double y_padding = (y_max - y_min) * 0.08;
-            double x_min = x_at(0);
-            double x_max = std::max(x_at(0) + 1.0, x_at(model_.values.size() - 1));
-            if (model_.x_min.has_value() && std::isfinite(*model_.x_min)) {
-                x_min = *model_.x_min;
-            }
-            if (model_.x_max.has_value() && std::isfinite(*model_.x_max)) {
-                x_max = *model_.x_max;
-            }
-            if (model_.y_min.has_value() && std::isfinite(*model_.y_min)) {
-                y_min = *model_.y_min;
-            } else {
-                y_min -= y_padding;
-            }
-            if (model_.y_max.has_value() && std::isfinite(*model_.y_max)) {
-                y_max = *model_.y_max;
-            } else {
-                y_max += y_padding;
-            }
-            ChartCoordinateMapper mapper(plot);
-            mapper.set_data_range(x_min, std::max(x_min + 1.0, x_max), y_min, y_max);
-            mapper.zoom(model_.view.zoom_factor, plot.center());
-            mapper.pan(model_.view.pan_offset);
             if (event->modifiers() & Qt::ShiftModifier) {
                 const QPointF first = mapper.to_data(selection_start_);
                 const QPointF second = mapper.to_data(selection_end_);
@@ -621,20 +599,13 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
                 emit display_properties_changed(model_);
                 request_chart_update();
             } else {
-            const auto to_index = [&](int x) {
-                const double data_x =
-                    mapper.to_data(QPointF(static_cast<double>(x), 0.0)).x();
-                const double clamped = std::clamp(
-                    data_x, 0.0, static_cast<double>(model_.values.size() - 1));
-                return static_cast<std::size_t>(std::llround(clamped));
-            };
-            const std::size_t first = std::min(to_index(selection_start_.x()),
-                                               to_index(selection_end_.x()));
-            const std::size_t last = std::max(to_index(selection_start_.x()),
-                                              to_index(selection_end_.x()));
+            const QRectF selected_area = QRectF(selection_start_, selection_end_).normalized();
             model_.view.selected_points.clear();
-            for (std::size_t index = first; index <= last; ++index) {
-                model_.view.selected_points.push_back(index);
+            for (std::size_t index = 0; index < model_.values.size(); ++index) {
+                if (model_.value_style.visible && selected_area.contains(
+                        mapper.to_pixel(x_at(index), model_.values[index]))) {
+                    model_.view.selected_points.push_back(index);
+                }
             }
             emit_selected_rows();
             request_chart_update();

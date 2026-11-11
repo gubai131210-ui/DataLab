@@ -6,6 +6,7 @@
 #include "reporting/chart_coordinate_mapper.h"
 #include "reporting/chart_geometry.h"
 #include "reporting/chart_plot_context.h"
+#include "reporting/chart_downsampling.h"
 
 #include <QPainter>
 #include <QPainterPath>
@@ -582,10 +583,25 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
     painter.setPen(theme_colors(model).axis);
     painter.drawLine(plot.bottomLeft(), plot.bottomRight());
     painter.drawLine(plot.bottomLeft(), plot.topLeft());
-    painter.setBrush(QColor("#1565c0"));
+    painter.setBrush(QColor(model.value_style.color));
     painter.setPen(Qt::NoPen);
-    for (std::size_t index = 0; index < count; ++index) {
-        if (!std::isfinite(model.x_values[index])
+    std::vector<std::size_t> visible_indices =
+        datalab::reporting::chart_downsample_indices(model.x_values, model.values, plot);
+    for (const std::size_t selected : model.view.selected_points) {
+        if (selected < count
+            && std::find(visible_indices.cbegin(), visible_indices.cend(), selected)
+                == visible_indices.cend()) {
+            visible_indices.push_back(selected);
+        }
+    }
+    if (model.view.hovered_point.has_value() && *model.view.hovered_point < count
+        && std::find(visible_indices.cbegin(), visible_indices.cend(),
+                     *model.view.hovered_point) == visible_indices.cend()) {
+        visible_indices.push_back(*model.view.hovered_point);
+    }
+    std::sort(visible_indices.begin(), visible_indices.end());
+    for (const std::size_t index : visible_indices) {
+        if (!model.value_style.visible || !std::isfinite(model.x_values[index])
             || !std::isfinite(model.values[index])) {
             continue;
         }
@@ -595,17 +611,21 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
             != model.view.selected_points.cend();
         if (selected || (model.view.hovered_point.has_value()
                          && *model.view.hovered_point == index)) {
-            painter.setBrush(selected ? QColor("#ff9800") : QColor("#1565c0"));
-            painter.drawEllipse(point, selected ? 5.0 : 4.5, selected ? 5.0 : 4.5);
+            painter.setBrush(selected ? QColor("#ff9800") : QColor(model.value_style.color));
         }
         if (model.view.hovered_point.has_value() && *model.view.hovered_point == index) {
             painter.setBrush(Qt::NoBrush);
             painter.setPen(QPen(QColor("#0d47a1"), 2.0));
             painter.drawEllipse(point, 8.0, 8.0);
             painter.setPen(Qt::NoPen);
-            painter.setBrush(selected ? QColor("#ff9800") : QColor("#1565c0"));
+            painter.setBrush(selected ? QColor("#ff9800") : QColor(model.value_style.color));
         }
-        painter.drawEllipse(point, 3.5, 3.5);
+        painter.setBrush(selected ? QColor("#ff9800") : QColor(model.value_style.color));
+        painter.setPen(QPen(selected ? QColor("#ff9800") : QColor(model.value_style.color), 1.2));
+        painter.setOpacity(std::clamp(model.value_style.opacity, 0.0, 1.0));
+        draw_point(painter, point, model.value_style.point_style,
+                   model.value_style.point_size + (selected ? 1.5 : 0.0));
+        painter.setOpacity(1.0);
     }
     for (const ChartSeries& series : model.series) {
         if (!series.style.visible) {
@@ -1677,66 +1697,20 @@ void draw_time_series_x_axis_labels(
     const QRectF& area,
     const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
-    double x_min = 0.0;
-    double x_max = 1.0;
-    double y_min = 0.0;
-    double y_max = 1.0;
-    bool have_range = false;
-    const std::size_t point_count = std::min(model.x_values.size(), model.values.size());
-    if (point_count > 0) {
-        const auto x_range = std::minmax_element(
-            model.x_values.cbegin(), model.x_values.cbegin() + point_count);
-        const auto y_range = std::minmax_element(
-            model.values.cbegin(), model.values.cbegin() + point_count);
-        x_min = *x_range.first;
-        x_max = *x_range.second;
-        y_min = *y_range.first;
-        y_max = *y_range.second;
-        have_range = true;
-    }
-    for (const ChartSeries& series : model.series) {
-        if (series.x_values.empty()) {
-            continue;
-        }
-        have_range = true;
-        const auto x_range = std::minmax_element(
-            series.x_values.cbegin(), series.x_values.cend());
-        x_min = std::min(x_min, *x_range.first);
-        x_max = std::max(x_max, *x_range.second);
-        if (!series.values.empty()) {
-            const auto y_range = std::minmax_element(
-                series.values.cbegin(), series.values.cend());
-            y_min = std::min(y_min, *y_range.first);
-            y_max = std::max(y_max, *y_range.second);
-        }
-    }
-    if (!have_range) {
+    const ChartPlotContext context = build_scatter_plot_context(model, area);
+    if (!context.valid) {
         return;
     }
-    if (x_min == x_max) {
-        x_min -= 1.0;
-        x_max += 1.0;
-    }
-    if (y_min == y_max) {
-        y_min -= 1.0;
-        y_max += 1.0;
-    }
-    const double x_padding = 0.05 * (x_max - x_min);
-    x_min -= x_padding;
-    x_max += x_padding;
-    apply_custom_x_range(x_min, x_max, model);
-    apply_custom_y_range(y_min, y_max, model);
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(x_min, x_max, y_min, y_max);
-    mapper.zoom(model.view.zoom_factor, plot.center());
-    mapper.pan(model.view.pan_offset);
+    const QRectF& plot = context.plot;
+    const ChartCoordinateMapper& mapper = context.mapper;
+    const double x_min = mapper.x_min();
+    const double x_max = mapper.x_max();
     painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), model.axis_font_size));
     painter.setPen(theme_colors(model).muted_text);
     for (int tick = 0; tick <= 5; ++tick) {
         const double fraction = static_cast<double>(tick) / 5.0;
         const double x_value = x_min + (x_max - x_min) * fraction;
-        const QPointF pixel = mapper.to_pixel(x_value, y_min);
+        const QPointF pixel = mapper.to_pixel(x_value, mapper.y_min());
         painter.drawText(
             QRectF(pixel.x() - 44.0, plot.bottom() + 4.0, 88.0, 16.0),
             Qt::AlignCenter,
@@ -1746,10 +1720,7 @@ void draw_time_series_x_axis_labels(
 
 void render_time_series(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    ChartModel line = model;
-    line.kind = ChartKind::Scatter;
-    line.value_style.point_style = ChartPointStyle::Circle;
-    render_scatter(painter, area, line);
+    render_scatter(painter, area, model);
     draw_time_series_x_axis_labels(painter, area, model);
     if (!model.series.empty()) {
         return;
@@ -1757,36 +1728,42 @@ void render_time_series(QPainter& painter, const QRectF& area, const ChartModel&
     if (model.x_values.size() < 2 || model.values.size() < 2) {
         return;
     }
-    const QRectF plot = plot_rect(area);
-    const std::size_t count = std::min(model.x_values.size(), model.values.size());
-    auto x_range = std::minmax_element(model.x_values.cbegin(), model.x_values.cbegin() + count);
-    auto y_range = std::minmax_element(model.values.cbegin(), model.values.cbegin() + count);
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(*x_range.first, *x_range.second, *y_range.first, *y_range.second);
-    mapper.zoom(model.view.zoom_factor, plot.center());
-    mapper.pan(model.view.pan_offset);
-    if (model.value_style.line_width > 0.0) {
-        painter.setPen(QPen(QColor(model.value_style.color), model.value_style.line_width));
-        for (std::size_t index = 1; index < count; ++index) {
-            painter.drawLine(mapper.to_pixel(model.x_values[index - 1], model.values[index - 1]),
-                             mapper.to_pixel(model.x_values[index], model.values[index]));
+    const ChartPlotContext context = build_scatter_plot_context(model, area);
+    if (!context.valid) {
+        return;
+    }
+    const QRectF& plot = context.plot;
+    const ChartCoordinateMapper& mapper = context.mapper;
+    if (model.value_style.visible && model.value_style.line_width > 0.0) {
+        painter.setPen(QPen(QColor(model.value_style.color), model.value_style.line_width,
+                            qt_line_style(model.value_style.line_style)));
+        const auto visible_indices = datalab::reporting::chart_downsample_indices(
+            model.x_values, model.values, plot);
+        for (std::size_t position = 1; position < visible_indices.size(); ++position) {
+            const std::size_t previous = visible_indices[position - 1];
+            const std::size_t index = visible_indices[position];
+            if (std::isfinite(model.x_values[previous])
+                && std::isfinite(model.values[previous])
+                && std::isfinite(model.x_values[index])
+                && std::isfinite(model.values[index])) {
+                painter.drawLine(mapper.to_pixel(model.x_values[previous], model.values[previous]),
+                                 mapper.to_pixel(model.x_values[index], model.values[index]));
+            }
         }
     }
 }
 
 void render_area(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF plot = plot_rect(area);
+    const ChartPlotContext context = build_scatter_plot_context(model, area);
+    const QRectF& plot = context.plot;
     const std::size_t count = std::min(model.x_values.size(), model.values.size());
-    if (count < 2) {
+    if (count < 2 || !context.valid) {
         painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
         return;
     }
-    auto x_range = std::minmax_element(model.x_values.cbegin(), model.x_values.cbegin() + count);
-    auto y_range = std::minmax_element(model.values.cbegin(), model.values.cbegin() + count);
-    const double y_min = std::min(0.0, *y_range.first);
-    ChartCoordinateMapper mapper(plot);
-    mapper.set_data_range(*x_range.first, *x_range.second, y_min, *y_range.second);
+    const double y_min = 0.0;
+    const ChartCoordinateMapper& mapper = context.mapper;
     QPainterPath path;
     path.moveTo(mapper.to_pixel(model.x_values.front(), y_min));
     for (std::size_t index = 0; index < count; ++index) {
