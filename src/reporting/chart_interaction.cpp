@@ -1,4 +1,5 @@
 #include "reporting/chart_interaction.h"
+#include "reporting/chart_series_contract.h"
 #include <QStringList>
 #include "domain/statistics/special_cause_rule_catalog.h"
 
@@ -224,6 +225,7 @@ std::vector<std::size_t> resolve_selected_source_rows(
     const std::vector<std::size_t>& selected_points)
 {
     std::set<std::size_t> unique;
+    std::optional<bool> mirrored_primary;
     for (const std::size_t point : selected_points) {
         // When member_source_rows is present for this index, it is authoritative —
         // even if empty (aggregated empty cell must not fall back to row 0).
@@ -250,8 +252,20 @@ std::vector<std::size_t> resolve_selected_source_rows(
         if (point_chart && point >= model.values.size() && !model.series.empty()) {
             std::size_t offset = model.values.size();
             for (const auto& series : model.series) {
-                if (point >= offset && point - offset < series.values.size()
-                    && series.role == ChartSeriesRole::Actual && series.values.size() == model.source_rows.size()) unique.insert(model.source_rows[point - offset]);
+                if (point >= offset && point - offset < series.values.size()) {
+                    if (series.role == ChartSeriesRole::Actual
+                        && series.values.size() == model.source_rows.size()) {
+                        unique.insert(model.source_rows[point - offset]);
+                    } else if ((series.role == ChartSeriesRole::Generic
+                                || series.role == ChartSeriesRole::Actual)
+                               && model.source_rows.size() == model.values.size()) {
+                        if (!mirrored_primary.has_value()) {
+                            mirrored_primary = datalab::reporting::chart_primary_mirrors_series(model);
+                        }
+                        if (*mirrored_primary) unique.insert(model.source_rows[point - model.values.size()]);
+                    }
+                    break;
+                }
                 offset += series.values.size();
             }
             continue;
@@ -294,10 +308,21 @@ std::vector<std::size_t> resolve_mark_indices_for_source_rows(
     const bool point_chart = model.kind == ChartKind::Control || model.kind == ChartKind::Scatter
         || model.kind == ChartKind::TimeSeries || model.kind == ChartKind::Area || model.kind == ChartKind::Marginal;
     if (point_chart) {
+        const bool mirrored_primary = model.source_rows.size() == model.values.size()
+            && datalab::reporting::chart_primary_mirrors_series(model);
         std::size_t offset = model.values.size();
         for (const auto& series : model.series) {
-            if (series.role == ChartSeriesRole::Actual && series.values.size() == model.source_rows.size())
+            if (mirrored_primary && (series.role == ChartSeriesRole::Generic
+                                     || series.role == ChartSeriesRole::Actual)) {
+                for (std::size_t index = 0; index < series.values.size(); ++index) {
+                    if (offset + index >= model.member_source_rows.size()
+                        && wanted.count(model.source_rows[offset - model.values.size() + index]) != 0) {
+                        marks.insert(offset + index);
+                    }
+                }
+            } else if (series.role == ChartSeriesRole::Actual && series.values.size() == model.source_rows.size()) {
                 for (std::size_t index = 0; index < series.values.size(); ++index) add_if_resolved(offset + index);
+            }
             offset += series.values.size();
         }
     }

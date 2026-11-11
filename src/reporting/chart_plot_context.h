@@ -13,6 +13,7 @@ struct ChartPlotContext {
     QRectF plot;
     ChartCoordinateMapper mapper;
     bool valid = false;
+    bool primary_mirrors_series = false;
     double surface_z_min = 0.0;
     double surface_z_max = 1.0;
 };
@@ -31,7 +32,16 @@ struct ChartMatrixGridLayout {
     bool valid = false;
 };
 
+struct ChartMarginalPlotLayout {
+    QRectF scatter_canvas;
+    QRectF scatter;
+    QRectF x_histogram;
+    QRectF y_histogram;
+    bool valid = false;
+};
+
 QRectF chart_plot_area(const QRectF& area, ChartKind kind);
+ChartMarginalPlotLayout chart_marginal_plot_layout(const QRectF& area);
 QPointF chart_pan_offset(const ChartModel& model, const QRectF& plot);
 void chart_set_pan_offset(ChartModel& model, const QRectF& plot, const QPointF& pixels);
 

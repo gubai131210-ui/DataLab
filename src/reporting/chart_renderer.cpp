@@ -1,6 +1,4 @@
-#include <set>
-#include "reporting/chart_interaction.h"
-#include "chart_renderer.h"
+#include "reporting/chart_renderer.h"
 
 #include "domain/report_text_catalog.h"
 #include "domain/statistics/normal_distribution.h"
@@ -8,7 +6,9 @@
 #include "reporting/chart_coordinate_mapper.h"
 #include "reporting/chart_geometry.h"
 #include "reporting/chart_downsampling.h"
+#include "reporting/chart_interaction.h"
 #include "reporting/chart_plot_context.h"
+#include "reporting/chart_series_contract.h"
 
 #include <QPainter>
 #include <QPainterPath>
@@ -21,8 +21,12 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <set>
 
 namespace {
+
+using datalab::reporting::chart_series_is_visible;
+using datalab::reporting::chart_series_opacity;
 
 QString no_displayable_data_text(const ChartModel& model)
 {
@@ -57,8 +61,52 @@ Qt::PenStyle qt_line_style(const ChartLineStyle style)
 
 QColor series_color(const ChartSeries& series)
 {
-    const QColor configured(series.style.color);
-    return configured.isValid() ? configured : QColor("#455a64");
+    QColor color(series.style.color);
+    if (!color.isValid()) color = QColor("#455a64");
+    color.setAlphaF(color.alphaF() * chart_series_opacity(series.style));
+    return color;
+}
+
+QColor series_fill_color(const ChartSeries& series, QColor fallback)
+{
+    const QColor configured(series.style.fill_color);
+    if (configured.isValid()) fallback = configured;
+    fallback.setAlphaF(fallback.alphaF() * chart_series_opacity(series.style));
+    return fallback;
+}
+
+double series_x(const ChartSeries& series, std::size_t index)
+{
+    return index < series.x_values.size() ? series.x_values[index] : static_cast<double>(index);
+}
+
+bool finite_band_point(const ChartSeries& series, std::size_t index)
+{
+    return std::isfinite(series_x(series, index))
+        && std::isfinite(series.lower[index]) && std::isfinite(series.upper[index]);
+}
+
+void draw_confidence_band(QPainter& painter, const ChartSeries& series,
+                          const ChartCoordinateMapper& mapper)
+{
+    const std::size_t count = std::min(series.lower.size(), series.upper.size());
+    std::size_t begin = 0;
+    while (begin < count) {
+        while (begin < count && !finite_band_point(series, begin)) ++begin;
+        std::size_t end = begin;
+        while (end < count && finite_band_point(series, end)) ++end;
+        if (end - begin >= 2) {
+            QPainterPath band;
+            band.moveTo(mapper.to_pixel(series_x(series, begin), series.lower[begin]));
+            for (std::size_t index = begin + 1; index < end; ++index)
+                band.lineTo(mapper.to_pixel(series_x(series, index), series.lower[index]));
+            for (std::size_t index = end; index-- > begin;)
+                band.lineTo(mapper.to_pixel(series_x(series, index), series.upper[index]));
+            band.closeSubpath();
+            painter.fillPath(band, series_fill_color(series, QColor(144, 202, 249, 75)));
+        }
+        begin = end;
+    }
 }
 
 void draw_point(
@@ -306,7 +354,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
         }
     };
     const auto draw_extra_series = [&](const ChartSeries& series) {
-        if (!series.style.visible) {
+        if (!chart_series_is_visible(series.style)) {
             return;
         }
         const std::size_t count = std::max({
@@ -317,31 +365,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
         const QColor color = series_color(series);
         if (series.role == ChartSeriesRole::ConfidenceBand
             && series.lower.size() == count && series.upper.size() == count) {
-            QPainterPath band;
-            bool started = false;
-            for (std::size_t i = 0; i < count; ++i) {
-                if (!std::isfinite(series.lower[i]) || !std::isfinite(series_x_at(series, i))) {
-                    continue;
-                }
-                const QPointF point = mapper.to_pixel(
-                    series_x_at(series, i), series.lower[i]);
-                if (!started) {
-                    band.moveTo(point);
-                    started = true;
-                } else {
-                    band.lineTo(point);
-                }
-            }
-            for (std::size_t i = count; i-- > 0;) {
-                if (!std::isfinite(series.upper[i]) || !std::isfinite(series_x_at(series, i))) {
-                    continue;
-                }
-                band.lineTo(mapper.to_pixel(series_x_at(series, i), series.upper[i]));
-            }
-            if (started) {
-                band.closeSubpath();
-                painter.fillPath(band, QColor(144, 202, 249, 75));
-            }
+            draw_confidence_band(painter, series, mapper);
         }
         painter.setPen(QPen(color, series.style.line_width,
                             qt_line_style(series.style.line_style)));
@@ -383,7 +407,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
             QColor(model.center_style.color), model.center_style.line_width,
             qt_line_style(model.center_style.line_style)));
     }
-    if (model.value_style.visible) {
+    if (chart_series_is_visible(model.value_style)) {
         draw_series(model.values, QPen(
             QColor(model.value_style.color), model.value_style.line_width,
             qt_line_style(model.value_style.line_style)));
@@ -432,7 +456,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
         const QColor value_color(model.value_style.color);
         painter.setBrush(selected ? QColor("#ff9800")
                                    : (special_cause ? QColor("#d32f2f") : value_color));
-        if (!model.value_style.visible || !std::isfinite(x_at(i)) || !std::isfinite(model.values[i])) {
+        if (!chart_series_is_visible(model.value_style) || !std::isfinite(x_at(i)) || !std::isfinite(model.values[i])) {
             continue;
         }
         const QPointF point = mapper.to_pixel(x_at(i), model.values[i]);
@@ -477,7 +501,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
                          Qt::AlignLeft, QStringLiteral("— ") + label);
         legend_x += 76.0;
     };
-    if (model.value_style.visible) {
+    if (chart_series_is_visible(model.value_style)) {
         draw_legend_item(QStringLiteral("观测值"), QColor(model.value_style.color));
     }
     if (model.center_style.visible) {
@@ -488,7 +512,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
     }
     double legend_y = legend.bottom() + 2.0;
     for (const ChartSeries& series : model.series) {
-        if (series.label.isEmpty() || !series.style.visible) {
+        if (series.label.isEmpty() || !chart_series_is_visible(series.style)) {
             continue;
         }
         painter.setPen(series_color(series));
@@ -498,7 +522,7 @@ void render_control(QPainter& painter, const QRectF& area, const ChartModel& mod
     }
 }
 
-void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& model)
+void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& model, bool show_title = true)
 {
     std::vector<double> implicit_x;
     if (model.x_values.empty()) {
@@ -534,22 +558,20 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
     painter.setBrush(QColor(model.value_style.color));
     painter.setPen(Qt::NoPen);
     std::vector<std::size_t> visible_indices =
-        datalab::reporting::chart_downsample_indices(base_x, model.values, plot);
+        datalab::reporting::chart_visible_point_indices(base_x, model.values, plot, mapper);
     for (const std::size_t selected : model.view.selected_points) {
-        if (selected < count
-            && std::find(visible_indices.cbegin(), visible_indices.cend(), selected)
-                == visible_indices.cend()) {
+        if (selected < count) {
             visible_indices.push_back(selected);
         }
     }
-    if (model.view.hovered_point.has_value() && *model.view.hovered_point < count
-        && std::find(visible_indices.cbegin(), visible_indices.cend(),
-                     *model.view.hovered_point) == visible_indices.cend()) {
+    if (model.view.hovered_point.has_value() && *model.view.hovered_point < count) {
         visible_indices.push_back(*model.view.hovered_point);
     }
     std::sort(visible_indices.begin(), visible_indices.end());
+    visible_indices.erase(std::unique(visible_indices.begin(), visible_indices.end()), visible_indices.end());
     for (const std::size_t index : visible_indices) {
-        if (!model.value_style.visible || !std::isfinite(base_x[index])
+        if (!chart_series_is_visible(model.value_style) || plot_context.primary_mirrors_series
+            || !std::isfinite(base_x[index])
             || !std::isfinite(model.values[index])) {
             continue;
         }
@@ -576,7 +598,7 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
         painter.setOpacity(1.0);
     }
     for (const ChartSeries& series : model.series) {
-        if (!series.style.visible) {
+        if (!chart_series_is_visible(series.style)) {
             continue;
         }
         const std::size_t count = std::max({
@@ -600,16 +622,7 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
         }
         if (series.role == ChartSeriesRole::ConfidenceBand
             && series.lower.size() == count && series.upper.size() == count) {
-            QPainterPath band;
-            for (std::size_t index = 0; index < series.lower.size(); ++index) {
-                const QPointF point = mapper.to_pixel(x_at(index), series.lower[index]);
-                index == 0 ? band.moveTo(point) : band.lineTo(point);
-            }
-            for (std::size_t index = series.upper.size(); index-- > 0;) {
-                band.lineTo(mapper.to_pixel(x_at(index), series.upper[index]));
-            }
-            band.closeSubpath();
-            painter.fillPath(band, QColor(144, 202, 249, 75));
+            draw_confidence_band(painter, series, mapper);
         }
         if (series.show_points) {
             painter.setBrush(series_color(series));
@@ -625,8 +638,10 @@ void render_scatter(QPainter& painter, const QRectF& area, const ChartModel& mod
     }
     painter.restore();
     painter.setPen(theme_colors(model).text);
-    painter.drawText(QRectF(plot.left(), area.top() + 8.0, plot.width(), 24.0),
-                     Qt::AlignCenter, model.title);
+    if (show_title) {
+        painter.drawText(QRectF(plot.left(), area.top() + 8.0, plot.width(), 24.0),
+                         Qt::AlignCenter, model.title);
+    }
     painter.drawText(QRectF(plot.left(), plot.bottom() + 8.0, plot.width(), 24.0),
                      Qt::AlignCenter, model.x_axis_title);
     painter.save();
@@ -721,7 +736,7 @@ void render_probability(QPainter& painter, const QRectF& area, const ChartModel&
     painter.setPen(Qt::NoPen);
     painter.setBrush(QColor("#1565c0"));
     for (std::size_t index = 0; index < model.values.size(); ++index) {
-        if (!model.value_style.visible || !std::isfinite(model.x_values[index]) || !std::isfinite(model.values[index])) continue;
+        if (!chart_series_is_visible(model.value_style) || !std::isfinite(model.x_values[index]) || !std::isfinite(model.values[index])) continue;
         const QPointF point = mapper.to_pixel(model.x_values[index], model.values[index]);
         const bool selected = std::find(model.view.selected_points.cbegin(),
                                         model.view.selected_points.cend(), index)
@@ -865,7 +880,7 @@ void render_histogram(QPainter& painter, const QRectF& area, const ChartModel& m
         };
         if (!model.series.empty()) {
             for (const ChartSeries& series : model.series) {
-                if (!series.style.visible || series.label.isEmpty()) {
+                if (!chart_series_is_visible(series.style) || series.label.isEmpty()) {
                     continue;
                 }
                 draw_curve_legend(series.label, QColor(series.style.color));
@@ -947,7 +962,8 @@ void render_boxplot(QPainter& painter, const QRectF& area, const ChartModel& mod
     painter.setPen(Qt::NoPen);
     painter.setBrush(QColor("#c62828"));
     for (const ChartSeries& series : model.series) {
-        if (!series.style.visible) continue;
+        if (!chart_series_is_visible(series.style)) continue;
+        painter.setOpacity(chart_series_opacity(series.style));
         const std::size_t count = std::min(series.x_values.size(), series.values.size());
         for (std::size_t index = 0; index < count; ++index) {
             if (!std::isfinite(series.x_values[index]) || !std::isfinite(series.values[index])) continue;
@@ -1003,7 +1019,7 @@ void render_pareto(QPainter& painter, const QRectF& area, const ChartModel& mode
         for (std::size_t category_index = 0; category_index < category_count; ++category_index) {
             for (std::size_t series_index = 0; series_index < series_count; ++series_index) {
                 const ChartSeries& series = model.series[series_index];
-                if (!series.style.visible || category_index >= series.values.size()) {
+                if (!chart_series_is_visible(series.style) || category_index >= series.values.size()) {
                     continue;
                 }
                 const double value = series.values[category_index];
@@ -1313,7 +1329,7 @@ void render_bubble(QPainter& painter, const QRectF& area, const ChartModel& mode
         return QColor::fromHsv(static_cast<int>(hash % 360U), 150, 210, 180);
     };
     for (std::size_t index = 0; index < count; ++index) {
-        if (!model.value_style.visible || !std::isfinite(model.x_values[index])
+        if (!chart_series_is_visible(model.value_style) || !std::isfinite(model.x_values[index])
             || !std::isfinite(model.values[index]) || !std::isfinite(model.bubble_sizes[index])) continue;
         const double fraction = size_max > size_min
             ? (model.bubble_sizes[index] - size_min) / (size_max - size_min) : 0.5;
@@ -1442,7 +1458,7 @@ void render_ecdf(QPainter& painter, const QRectF& area, const ChartModel& model)
     path.lineTo(mapper.to_pixel(x_max, previous));
     painter.save();
     painter.setClipRect(plot, Qt::IntersectClip);
-    if (model.value_style.visible && model.value_style.line_width > 0.0) painter.drawPath(path);
+    if (chart_series_is_visible(model.value_style) && model.value_style.line_width > 0.0) painter.drawPath(path);
     painter.restore();
     draw_title_and_axes(painter, area, plot, model);
 }
@@ -1495,8 +1511,8 @@ void render_matrix(QPainter& painter, const QRectF& area, const ChartModel& mode
                                   y_min, y_min == y_max ? y_min + 1.0 : y_max);
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor("#1565c0"));
-            auto indices = datalab::reporting::chart_downsample_indices(
-                xs, ys, cell_rect);
+            auto indices = datalab::reporting::chart_visible_point_indices(
+                xs, ys, cell_rect, mapper);
             for (std::size_t index : model.view.selected_points)
                 if (index < n) indices.push_back(index);
             if (model.view.hovered_point.has_value() && *model.view.hovered_point < n) indices.push_back(*model.view.hovered_point);
@@ -1520,49 +1536,55 @@ void render_matrix(QPainter& painter, const QRectF& area, const ChartModel& mode
                      Qt::AlignCenter, model.title);
 }
 
+void draw_marginal_histogram(
+    QPainter& painter, const QRectF& strip, const std::vector<double>& edges,
+    const std::vector<double>& counts, const ChartCoordinateMapper& mapper, bool vertical)
+{
+    if (edges.size() < 2 || strip.width() <= 0.0 || strip.height() <= 0.0) return;
+    const std::size_t count = std::min(counts.size(), edges.size() - 1);
+    double maximum = 0.0;
+    for (std::size_t index = 0; index < count; ++index) {
+        if (std::isfinite(counts[index])) maximum = std::max(maximum, counts[index]);
+    }
+    if (!(maximum > 0.0)) return;
+    painter.save();
+    painter.setClipRect(strip, Qt::IntersectClip);
+    for (std::size_t index = 0; index < count; ++index) {
+        if (!std::isfinite(edges[index]) || !std::isfinite(edges[index + 1])
+            || !(edges[index] < edges[index + 1])
+            || !std::isfinite(counts[index]) || !(counts[index] > 0.0)) continue;
+        const double fraction = counts[index] / maximum;
+        QRectF bar;
+        if (vertical) {
+            const double top = mapper.to_pixel(0.0, edges[index + 1]).y();
+            const double bottom = mapper.to_pixel(0.0, edges[index]).y();
+            bar = QRectF(strip.left(), top, fraction * strip.width(), bottom - top);
+        } else {
+            const double left = mapper.to_pixel(edges[index], 0.0).x();
+            const double right = mapper.to_pixel(edges[index + 1], 0.0).x();
+            bar = QRectF(left, strip.bottom() - fraction * strip.height(),
+                         right - left, fraction * strip.height());
+        }
+        painter.fillRect(bar, QColor("#90caf9"));
+        painter.setPen(QColor("#1565c0"));
+        painter.drawRect(bar);
+    }
+    painter.restore();
+}
+
 void render_marginal(QPainter& painter, const QRectF& area, const ChartModel& model)
 {
-    const QRectF scatter_area = area.adjusted(58.0, 72.0, -78.0, -48.0);
-    const QRectF x_hist(scatter_area.left(), area.top() + 36.0,
-                        scatter_area.width(), scatter_area.top() - area.top() - 40.0);
-    const QRectF y_hist(scatter_area.right() + 8.0, scatter_area.top(),
-                        58.0, scatter_area.height());
-    ChartModel scatter = model;
-    scatter.kind = ChartKind::Scatter;
-    scatter.title.clear();
-    scatter.subtitle.clear();
-    render_scatter(painter, scatter_area.adjusted(-58.0, -42.0, 96.0, 48.0), scatter);
-    auto draw_hist = [&](const QRectF& rect, const std::vector<double>& edges,
-                         const std::vector<double>& counts, bool vertical) {
-        if (edges.size() < 2 || counts.empty()) {
-            return;
-        }
-        const double maximum = std::max(1.0, *std::max_element(counts.cbegin(), counts.cend()));
-        for (std::size_t index = 0; index < counts.size(); ++index) {
-            const double start = (edges[index] - edges.front())
-                / std::max(1.0e-12, edges.back() - edges.front());
-            const double end = (edges[index + 1] - edges.front())
-                / std::max(1.0e-12, edges.back() - edges.front());
-            const double height = counts[index] / maximum;
-            QRectF bar;
-            if (vertical) {
-                bar = QRectF(rect.left(),
-                             rect.bottom() - end * rect.height(),
-                             height * rect.width(),
-                             (end - start) * rect.height());
-            } else {
-                bar = QRectF(rect.left() + start * rect.width(),
-                             rect.bottom() - height * rect.height(),
-                             (end - start) * rect.width(),
-                             height * rect.height());
-            }
-            painter.fillRect(bar, QColor("#90caf9"));
-            painter.setPen(QColor("#1565c0"));
-            painter.drawRect(bar);
-        }
-    };
-    draw_hist(x_hist, model.histogram_edges, model.histogram_counts, false);
-    draw_hist(y_hist, model.histogram_edges_y, model.histogram_counts_y, true);
+    const ChartMarginalPlotLayout layout = chart_marginal_plot_layout(area);
+    const ChartPlotContext context = build_chart_plot_context(model, area);
+    if (!layout.valid || !context.valid) {
+        painter.drawText(area, Qt::AlignCenter, no_displayable_data_text(model));
+        return;
+    }
+    render_scatter(painter, layout.scatter_canvas, model, false);
+    draw_marginal_histogram(painter, layout.x_histogram, model.histogram_edges,
+                           model.histogram_counts, context.mapper, false);
+    draw_marginal_histogram(painter, layout.y_histogram, model.histogram_edges_y,
+                           model.histogram_counts_y, context.mapper, true);
     painter.setPen(theme_colors(model).text);
     painter.setFont(QFont(QStringLiteral("Microsoft YaHei"), 11, QFont::Bold));
     painter.drawText(QRectF(area.left(), area.top(), area.width(), 26.0),
@@ -1712,9 +1734,6 @@ void render_time_series(QPainter& painter, const QRectF& area, const ChartModel&
 
     render_scatter(painter, area, model);
     draw_time_series_x_axis_labels(painter, area, model);
-    if (!model.series.empty()) {
-        return;
-    }
     if (base_x.size() < 2 || model.values.size() < 2) {
         return;
     }
@@ -1726,18 +1745,17 @@ void render_time_series(QPainter& painter, const QRectF& area, const ChartModel&
     const ChartCoordinateMapper& mapper = context.mapper;
     painter.save();
     painter.setClipRect(plot, Qt::IntersectClip);
-    if (model.value_style.visible && model.value_style.line_width > 0.0) {
+    if (chart_series_is_visible(model.value_style) && !context.primary_mirrors_series
+        && model.value_style.line_width > 0.0) {
         painter.setPen(QPen(QColor(model.value_style.color), model.value_style.line_width,
                             qt_line_style(model.value_style.line_style)));
         const auto visible_indices = datalab::reporting::chart_downsample_indices(
-            base_x, model.values, plot);
+            base_x, model.values, plot, mapper);
         for (std::size_t position = 1; position < visible_indices.size(); ++position) {
             const std::size_t previous = visible_indices[position - 1];
             const std::size_t index = visible_indices[position];
-            if (std::isfinite(base_x[previous])
-                && std::isfinite(model.values[previous])
-                && std::isfinite(base_x[index])
-                && std::isfinite(model.values[index])) {
+            if (datalab::reporting::chart_samples_are_connected(
+                    base_x, model.values, previous, index)) {
                 painter.drawLine(mapper.to_pixel(base_x[previous], model.values[previous]),
                                  mapper.to_pixel(base_x[index], model.values[index]));
             }
@@ -1766,21 +1784,31 @@ void render_area(QPainter& painter, const QRectF& area, const ChartModel& model)
     const ChartCoordinateMapper& mapper = context.mapper;
     QPainterPath path;
     const auto visible_indices = datalab::reporting::chart_downsample_indices(
-        base_x, model.values, plot);
+        base_x, model.values, plot, mapper);
     if (visible_indices.empty()) {
+        render_time_series(painter, area, model);
         return;
     }
-    path.moveTo(mapper.to_pixel(base_x[visible_indices.front()], y_min));
+    std::optional<std::size_t> previous;
     for (const std::size_t index : visible_indices) {
+        if (!previous.has_value() || !datalab::reporting::chart_samples_are_connected(
+                base_x, model.values, *previous, index)) {
+            if (previous.has_value()) {
+                path.lineTo(mapper.to_pixel(base_x[*previous], y_min));
+                path.closeSubpath();
+            }
+            path.moveTo(mapper.to_pixel(base_x[index], y_min));
+        }
         path.lineTo(mapper.to_pixel(base_x[index], model.values[index]));
+        previous = index;
     }
-    path.lineTo(mapper.to_pixel(base_x[visible_indices.back()], y_min));
+    path.lineTo(mapper.to_pixel(base_x[*previous], y_min));
     path.closeSubpath();
     QColor fill(model.value_style.color);
     fill.setAlpha(90);
     painter.save();
     painter.setClipRect(plot, Qt::IntersectClip);
-    if (model.value_style.visible) painter.fillPath(path, fill);
+    if (chart_series_is_visible(model.value_style)) painter.fillPath(path, fill);
     painter.restore();
     render_time_series(painter, area, model);
 }
@@ -1848,7 +1876,7 @@ void render_violin(QPainter& painter, const QRectF& area, const ChartModel& mode
         painter.save();
         painter.setClipRect(plot, Qt::IntersectClip);
         const double center = static_cast<double>(index);
-        if (index < model.series.size() && model.series[index].style.visible) {
+        if (index < model.series.size() && chart_series_is_visible(model.series[index].style)) {
             const ChartSeries& density = model.series[index];
             const std::size_t count = std::min(density.x_values.size(), density.values.size());
             if (count >= 2) {
@@ -1869,8 +1897,8 @@ void render_violin(QPainter& painter, const QRectF& area, const ChartModel& mode
                 path.closeSubpath();
                 QColor fill("#90caf9");
                 fill.setAlpha(140);
-                painter.fillPath(path, fill);
-                painter.setPen(QPen(QColor("#1565c0"), 1.0));
+                painter.fillPath(path, series_fill_color(density, fill));
+                painter.setPen(QPen(series_color(density), 1.0));
                 painter.drawPath(path);
             }
         }

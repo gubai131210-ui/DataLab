@@ -1,6 +1,7 @@
 #include "reporting/chart_plot_context.h"
 
 #include "reporting/chart_geometry.h"
+#include "reporting/chart_series_contract.h"
 
 #include <QLineF>
 #include <QVector>
@@ -11,6 +12,8 @@
 #include <utility>
 
 namespace {
+
+using datalab::reporting::chart_series_is_visible;
 
 QVector<double> finite_values(const std::vector<double>& values)
 {
@@ -57,6 +60,19 @@ QRectF chart_plot_area(const QRectF& area, ChartKind kind)
         plot.setTop(std::max(plot.top(), area.top() + 52.0));
     }
     return plot;
+}
+
+ChartMarginalPlotLayout chart_marginal_plot_layout(const QRectF& area)
+{
+    ChartMarginalPlotLayout layout;
+    layout.scatter_canvas = area.adjusted(0.0, 30.0, 18.0, 0.0);
+    layout.scatter = chart_plot_area(layout.scatter_canvas, ChartKind::Scatter);
+    layout.x_histogram = QRectF(layout.scatter.left(), area.top() + 36.0,
+        layout.scatter.width(), layout.scatter.top() - area.top() - 40.0);
+    layout.y_histogram = QRectF(layout.scatter.right() + 8.0, layout.scatter.top(),
+        58.0, layout.scatter.height());
+    layout.valid = layout.scatter.width() > 1.0 && layout.scatter.height() > 1.0;
+    return layout;
 }
 
 QPointF chart_pan_offset(const ChartModel& model, const QRectF& plot)
@@ -141,12 +157,12 @@ ChartPlotContext build_control_plot_context(const ChartModel& model, const QRect
             y_min = std::min(y_min, ys[i]); y_max = std::max(y_max, ys[i]);
         }
     };
-    if (model.value_style.visible) extend(model.values, model.x_values);
+    if (chart_series_is_visible(model.value_style)) extend(model.values, model.x_values);
     if (model.lower_style.visible) extend(model.lower, model.x_values);
     if (model.upper_style.visible) extend(model.upper, model.x_values);
     if (model.center_style.visible) extend(model.center, model.x_values);
     for (const auto& series : model.series) {
-        if (!series.style.visible) continue;
+        if (!chart_series_is_visible(series.style)) continue;
         extend(series.values, series.x_values);
         extend(series.lower, series.x_values);
         extend(series.upper, series.x_values);
@@ -165,6 +181,7 @@ static ChartPlotContext build_xy_plot_context(
     const ChartModel& model, const QRectF& area, double padding, bool include_series)
 {
     ChartPlotContext context;
+    context.primary_mirrors_series = datalab::reporting::chart_primary_mirrors_series(model);
     double x_min = 0.0;
     double x_max = 1.0;
     double y_min = 0.0;
@@ -179,13 +196,13 @@ static ChartPlotContext build_xy_plot_context(
     std::size_t base_count = model.values.size();
     if (model.kind == ChartKind::Bubble) base_count = std::min(base_count, model.bubble_sizes.size());
     if (!model.x_values.empty()) base_count = std::min(base_count, model.x_values.size());
-    if (model.value_style.visible) {
+    if (chart_series_is_visible(model.value_style) && !context.primary_mirrors_series) {
         for (std::size_t i = 0; i < base_count; ++i) {
             extend(model.x_values.empty() ? static_cast<double>(i) : model.x_values[i], model.values[i]);
         }
     }
     if (include_series) for (const ChartSeries& series : model.series) {
-        if (!series.style.visible) continue;
+        if (!chart_series_is_visible(series.style)) continue;
         const std::size_t count = std::max({series.values.size(), series.lower.size(), series.upper.size()});
         for (std::size_t i = 0; i < count; ++i) {
             const double x = i < series.x_values.size() ? series.x_values[i] : static_cast<double>(i);
@@ -249,7 +266,7 @@ ChartPlotContext build_pareto_plot_context(const ChartModel& model, const QRectF
     double maximum_count = values.empty() ? 0.0 : *std::max_element(values.cbegin(), values.cend());
     double minimum_count = values.empty() ? 0.0 : std::min(0.0, *std::min_element(values.cbegin(), values.cend()));
     if (grouped) for (const auto& series : model.series) {
-        if (!series.style.visible) continue;
+        if (!chart_series_is_visible(series.style)) continue;
         for (double value : series.values) if (std::isfinite(value)) {
             maximum_count = std::max(maximum_count, value);
             minimum_count = std::min(minimum_count, value);
@@ -312,6 +329,7 @@ ChartPlotContext build_box_plot_context(const ChartModel& model, const QRectF& a
         }
     }
     for (const ChartSeries& series : model.series) {
+        if (!chart_series_is_visible(series.style)) continue;
         for (const double value : finite_values(series.values)) {
             all_values.append(value);
         }
@@ -350,6 +368,7 @@ ChartPlotContext build_violin_plot_context(const ChartModel& model, const QRectF
         }
     }
     for (const ChartSeries& series : model.series) {
+        if (!chart_series_is_visible(series.style)) continue;
         for (const double value : finite_values(series.values)) {
             all_values.append(value);
         }
@@ -522,7 +541,11 @@ ChartPlotContext build_chart_plot_context(const ChartModel& model, const QRectF&
     case ChartKind::Ecdf: return build_ecdf_plot_context(model, area);
     case ChartKind::Probability: return build_probability_plot_context(model, area);
     case ChartKind::Bubble: return build_xy_plot_context(model, area, 0.05, false);
-    case ChartKind::Marginal: return build_scatter_plot_context(model, area.adjusted(0.0, 30.0, 18.0, 0.0));
+    case ChartKind::Marginal: {
+        const auto layout = chart_marginal_plot_layout(area);
+        return layout.valid ? build_scatter_plot_context(model, layout.scatter_canvas)
+                            : ChartPlotContext{};
+    }
     case ChartKind::Parallel: return build_parallel_plot_context(model, area);
     case ChartKind::Contour: case ChartKind::Hexbin: return build_contour_plot_context(model, area);
     case ChartKind::Surface: return build_surface_plot_context(model, area);
@@ -660,14 +683,14 @@ std::optional<std::size_t> chart_hit_test_point_series(
     const bool line_visible = (model.kind == ChartKind::Control
         || model.kind == ChartKind::TimeSeries || model.kind == ChartKind::Area)
         && model.value_style.line_width > 0.0;
-    if (!model.values.empty() && model.value_style.visible
+    if (!model.values.empty() && chart_series_is_visible(model.value_style)
         && (model.value_style.point_style != ChartPointStyle::None || line_visible)) {
         test_series(model.x_values, model.values, 0);
     }
     if (model.values.empty() && !model.series.empty()) {
         std::size_t flat_offset = 0;
         for (const ChartSeries& series : model.series) {
-            if (series.style.visible) {
+            if (chart_series_is_visible(series.style)) {
                 test_series(series.x_values, series.values, flat_offset);
             }
             flat_offset += series.values.size();

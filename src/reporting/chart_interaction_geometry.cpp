@@ -1,5 +1,6 @@
 #include "reporting/chart_interaction.h"
 #include "reporting/chart_plot_context.h"
+#include "reporting/chart_series_contract.h"
 
 #include <QLineF>
 #include <QPainter>
@@ -13,6 +14,8 @@
 
 namespace chart_interaction {
 namespace {
+
+using datalab::reporting::chart_series_is_visible;
 
 enum class Shape { point, rectangle, segment, path };
 struct Mark {
@@ -152,7 +155,7 @@ void visit_marks(const ChartModel& model, const QRectF& area, const Visitor& vis
             for (std::size_t category = 0; category < model.categories.size(); ++category)
                 for (std::size_t s = 0; s < model.series.size(); ++s) {
                     const auto& series = model.series[s];
-                    if (!series.style.visible || category >= series.values.size() || !std::isfinite(series.values[category])) continue;
+                    if (!chart_series_is_visible(series.style) || category >= series.values.size() || !std::isfinite(series.values[category])) continue;
                     const double slot = category + (static_cast<double>(s) - (model.series.size() - 1) / 2.0) * (width / cluster);
                     const QPointF top = mapper.to_pixel(slot, series.values[category]);
                     const QPointF bottom = mapper.to_pixel(slot, 0.0);
@@ -187,7 +190,7 @@ void visit_marks(const ChartModel& model, const QRectF& area, const Visitor& vis
                     segment_mark(visitor, hit, point - QPointF(8.0, 0.0), point + QPointF(8.0, 0.0), plot);
                 }
             }
-            if (model.kind == ChartKind::Violin && i < model.series.size() && model.series[i].style.visible) {
+            if (model.kind == ChartKind::Violin && i < model.series.size() && chart_series_is_visible(model.series[i].style)) {
                 const auto& density = model.series[i];
                 const std::size_t n = std::min(density.x_values.size(), density.values.size());
                 if (n < 2) continue;
@@ -201,7 +204,7 @@ void visit_marks(const ChartModel& model, const QRectF& area, const Visitor& vis
             }
         }
         if (model.kind == ChartKind::BoxPlot) for (const auto& series : model.series) {
-            if (!series.style.visible) continue;
+            if (!chart_series_is_visible(series.style)) continue;
             for (std::size_t j = 0; j < std::min(series.x_values.size(), series.values.size()); ++j) {
                 if (!std::isfinite(series.x_values[j]) || series.x_values[j] < -0.5
                     || series.x_values[j] >= static_cast<double>(count) - 0.5) continue;
@@ -267,7 +270,8 @@ void visit_marks(const ChartModel& model, const QRectF& area, const Visitor& vis
     if (model.kind == ChartKind::Bubble) count = std::min(count, model.bubble_sizes.size());
     const bool line_kind = model.kind == ChartKind::Control || model.kind == ChartKind::TimeSeries
         || model.kind == ChartKind::Area || model.kind == ChartKind::Density || model.kind == ChartKind::Ecdf;
-    if (model.value_style.visible && (model.value_style.point_style != ChartPointStyle::None
+    if (chart_series_is_visible(model.value_style) && !context.primary_mirrors_series
+        && (model.value_style.point_style != ChartPointStyle::None
                                      || (line_kind && model.value_style.line_width > 0.0))) {
         for (std::size_t i = 0; i < count; ++i) {
             double radius = std::clamp(model.value_style.point_size, 1.0, 12.0);
@@ -283,7 +287,9 @@ void visit_marks(const ChartModel& model, const QRectF& area, const Visitor& vis
     std::size_t offset = model.values.size();
     for (std::size_t s = 0; s < model.series.size(); ++s) {
         const auto& series = model.series[s];
-        if (series.style.visible && (series.show_points || series.style.line_width > 0.0))
+        if (chart_series_is_visible(series.style)
+            && ((series.show_points && series.style.point_style != ChartPointStyle::None)
+                || series.style.line_width > 0.0))
             for (std::size_t i = 0; i < series.values.size(); ++i) {
                 Hit hit{HitKind::SeriesPoint, offset + i}; hit.series_index = s; hit.sample_index = i;
                 point_mark(visitor, hit, mapper.to_pixel(i < series.x_values.size() ? series.x_values[i] : static_cast<double>(i), series.values[i]),
@@ -328,6 +334,19 @@ double distance(const Mark& mark, const QPointF& point)
     return QLineF(nearest, point).length();
 }
 
+int point_priority(const ChartModel& model, const Hit& hit)
+{
+    if (hit.kind == HitKind::Point) return 2;
+    if (hit.kind == HitKind::SeriesPoint && hit.series_index.has_value()
+        && *hit.series_index < model.series.size()) {
+        const ChartSeries& series = model.series[*hit.series_index];
+        if (series.role == ChartSeriesRole::Actual
+            && series.values.size() == model.source_rows.size()) return 3;
+        return series.role == ChartSeriesRole::Generic ? 2 : 1;
+    }
+    return 2;
+}
+
 bool intersects(const Mark& mark, const QRectF& selection)
 {
     const QRectF clipped = selection.intersected(mark.viewport);
@@ -351,7 +370,11 @@ std::optional<Hit> hit_test(const ChartModel& model, const QRectF& area, const Q
         if (mark.hit.kind == HitKind::Cell && !mark.bounds.contains(position)) return;
         double gap = distance(mark, position);
         if (mark.hit.kind == HitKind::ReferenceLine) gap += 1.0;
-        if (gap <= best_distance) { best_distance = gap; best = mark.hit; }
+        if (gap < best_distance || (gap == best_distance
+            && (!best.has_value() || point_priority(model, mark.hit) >= point_priority(model, *best)))) {
+            best_distance = gap;
+            best = mark.hit;
+        }
     }, QRectF(position - QPointF(6.0, 6.0), QSizeF(12.0, 12.0)));
     return best;
 }

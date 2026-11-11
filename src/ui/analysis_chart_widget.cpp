@@ -407,8 +407,11 @@ void AnalysisChartWidget::mouseReleaseEvent(QMouseEvent* event)
                 const auto found = std::find(selected.begin(), selected.end(), hit->index);
                 if ((selection_modifiers_ & Qt::ControlModifier) && found != selected.end()) {
                     const auto hit_rows = chart_interaction::resolve_selected_source_rows(model_, {hit->index});
+                    const auto linked_marks = hit_rows.empty() ? std::vector<std::size_t>{}
+                        : chart_interaction::resolve_mark_indices_for_source_rows(model_, hit_rows);
                     selected.erase(std::remove_if(selected.begin(), selected.end(), [&](std::size_t index) {
                         return index == hit->index || (!hit_rows.empty()
+                            && std::binary_search(linked_marks.begin(), linked_marks.end(), index)
                             && chart_interaction::resolve_selected_source_rows(model_, {index}) == hit_rows);
                     }), selected.end());
                 } else selected.push_back(hit->index);
