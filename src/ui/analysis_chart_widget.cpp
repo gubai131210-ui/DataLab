@@ -233,6 +233,11 @@ void AnalysisChartWidget::set_selected_source_rows(const std::vector<std::size_t
     request_chart_update();
 }
 
+std::vector<std::size_t> AnalysisChartWidget::selected_source_rows() const
+{
+    return chart_interaction::resolve_selected_source_rows(model_, model_.view.selected_points);
+}
+
 void AnalysisChartWidget::set_row_visibility_summary(
     const std::size_t excluded_count,
     const std::size_t hidden_count,
@@ -657,8 +662,7 @@ void AnalysisChartWidget::fit_to_window()
 
 void AnalysisChartWidget::emit_selected_rows()
 {
-    emit rows_selected(chart_interaction::resolve_selected_source_rows(
-        model_, model_.view.selected_points));
+    emit rows_selected(selected_source_rows());
 }
 
 std::optional<chart_interaction::Hit> AnalysisChartWidget::hit_test(const QPoint& position) const

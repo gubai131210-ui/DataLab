@@ -11,6 +11,7 @@
 #include "infrastructure/project_repository.h"
 #include "infrastructure/report_export_writer.h"
 #include "infrastructure/report_serialization.h"
+#include "infrastructure/table_fingerprint.h"
 #include "ui/analysis_commands.h"
 #include "ui/analysis_setup_dialog.h"
 #include "ui/analysis_chart_widget.h"
@@ -349,7 +350,12 @@ MainWindow::MainWindow(QWidget *parent)
     refresh_license_status();
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    if (output_workspace_ != nullptr) {
+        output_workspace_->set_source_fingerprint_provider({});
+    }
+}
 
 void MainWindow::create_commands()
 {
@@ -691,11 +697,18 @@ void MainWindow::create_layout()
     layout->addLayout(workbar);
 
     worksheet_model_ = new WorksheetModel(this);
+    connect(worksheet_model_, &QAbstractItemModel::modelReset, this,
+            &MainWindow::invalidate_result_source);
+    connect(worksheet_model_, &QAbstractItemModel::dataChanged, this,
+            &MainWindow::invalidate_result_source);
+    connect(worksheet_model_, &QAbstractItemModel::headerDataChanged, this,
+            &MainWindow::invalidate_result_source);
     worksheet_sort_proxy_ = new datalab::ui::WorksheetSortFilterProxyModel(this);
     worksheet_sort_proxy_->setSourceModel(worksheet_model_);
     connect(worksheet_model_, &WorksheetModel::table_changed, this,
             [this](const datalab::domain::DataTable& table) {
                 table_ = table;
+                invalidate_result_source();
                 std::set<int> sortable;
                 for (int column = 0; column < static_cast<int>(table.columns.size()); ++column) {
                     sortable.insert(column);
@@ -795,6 +808,9 @@ void MainWindow::create_layout()
                 }
             });
     output_workspace_ = new OutputWorkspace(central);
+    output_workspace_->set_source_fingerprint_provider([this] { return source_fingerprint(); });
+    connect(output_workspace_, &OutputWorkspace::source_link_unavailable, this,
+            [this](const QString& message) { statusBar()->showMessage(message); });
     output_workspace_->installEventFilter(this);
     connect(output_workspace_, &OutputWorkspace::copy_chart_requested, this, &MainWindow::copy_chart);
     connect(output_workspace_, &OutputWorkspace::formula_substitution_requested, this,
@@ -831,7 +847,10 @@ void MainWindow::create_layout()
                 QItemSelection selection;
                 int hidden_rows = 0;
                 for (const std::size_t row : rows) {
-                    if (row >= static_cast<std::size_t>(worksheet_model_->rowCount())) { ++hidden_rows; continue; }
+                    if (row >= worksheet_model_->table().rows.size()) {
+                        ++hidden_rows;
+                        continue;
+                    }
                     const QModelIndex source =
                         worksheet_model_->index(static_cast<int>(row), 0);
                     const QModelIndex proxy = worksheet_sort_proxy_->mapFromSource(source);
@@ -860,7 +879,8 @@ void MainWindow::create_layout()
                     for (const QModelIndex& index :
                          data_table_->selectionModel()->selectedRows()) {
                         const QModelIndex source = worksheet_sort_proxy_->mapToSource(index);
-                        if (source.isValid()) {
+                        if (source.isValid() && static_cast<std::size_t>(source.row())
+                            < worksheet_model_->table().rows.size()) {
                             rows.push_back(static_cast<std::size_t>(source.row()));
                         }
                     }
@@ -1820,9 +1840,29 @@ std::vector<std::size_t> MainWindow::hidden_rows() const
     return rows;
 }
 
+std::string MainWindow::source_fingerprint()
+{
+    if (source_fingerprint_dirty_) {
+        source_fingerprint_ = datalab::infrastructure::table_fingerprint(
+            worksheet_model_ != nullptr ? worksheet_model_->table() : table_);
+        source_fingerprint_dirty_ = false;
+    }
+    return source_fingerprint_;
+}
+
+void MainWindow::invalidate_result_source()
+{
+    source_fingerprint_dirty_ = true;
+    if (output_workspace_ != nullptr) {
+        output_workspace_->invalidate_source_selection();
+    }
+}
+
 void MainWindow::publish_page(const datalab::domain::OutputPage& page)
 {
     datalab::domain::OutputPage enriched_page = page;
+    enriched_page.source_data_fingerprint = source_fingerprint();
+    enriched_page.source_worksheet_name = worksheet_model_->table().name;
     datalab::application::InterpretationService::enrich(enriched_page);
     if (!enriched_page.diagnostics.empty()
         && enriched_page.diagnostics.front().severity == datalab::domain::DiagnosticMessage::Severity::error

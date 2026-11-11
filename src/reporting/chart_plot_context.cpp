@@ -23,6 +23,15 @@ QVector<double> finite_values(const std::vector<double>& values)
     return result;
 }
 
+double aggregate_range_padding(double minimum, double maximum)
+{
+    const double scale = maximum > minimum ? maximum - minimum
+        : minimum != 0.0 ? std::abs(minimum) : 1.0;
+    const double padding = scale * 0.08;
+    return padding > 0.0 ? padding
+        : std::abs(minimum - std::nextafter(minimum, 0.0));
+}
+
 void finalize_mapper(
     ChartPlotContext& context,
     const ChartModel& model,
@@ -313,7 +322,7 @@ ChartPlotContext build_box_plot_context(const ChartModel& model, const QRectF& a
     auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
     double minimum = *minimum_it;
     double maximum = *maximum_it;
-    const double padding = std::max(0.08 * (maximum - minimum), 1.0e-6);
+    const double padding = aggregate_range_padding(minimum, maximum);
     context.plot = chart_plot_area(area, ChartKind::BoxPlot);
     context.mapper = ChartCoordinateMapper(context.plot);
     finalize_mapper(context, model,
@@ -349,7 +358,7 @@ ChartPlotContext build_violin_plot_context(const ChartModel& model, const QRectF
         return context;
     }
     auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
-    const double padding = std::max(0.08 * (*maximum_it - *minimum_it), 1.0e-6);
+    const double padding = aggregate_range_padding(*minimum_it, *maximum_it);
     context.plot = chart_plot_area(area, ChartKind::Violin);
     context.mapper = ChartCoordinateMapper(context.plot);
     finalize_mapper(context, model,

@@ -437,6 +437,8 @@ add_library(datalab_infrastructure STATIC
     src/infrastructure/project_repository.h
     src/infrastructure/output_serialization.cpp
     src/infrastructure/output_serialization.h
+    src/infrastructure/table_fingerprint.cpp
+    src/infrastructure/table_fingerprint.h
     src/infrastructure/database/database_provider_bootstrap.cpp
     src/infrastructure/database/database_provider_bootstrap.h
     src/infrastructure/database/sqlite_database_provider.cpp
@@ -1011,10 +1013,12 @@ add_datalab_test(chart_plot_context_test tests/chart_plot_context_test.cpp datal
 add_datalab_test(chart_renderer_test tests/chart_renderer_test.cpp datalab_reporting)
 add_datalab_test(chart_interaction_test tests/chart_interaction_test.cpp datalab_reporting datalab_application datalab_infrastructure datalab_domain)
 add_datalab_test(chart_interaction_contract_test tests/chart_interaction_contract_test.cpp datalab_ui datalab_infrastructure)
+add_datalab_test(analysis_source_binding_test tests/analysis_source_binding_test.cpp datalab_ui datalab_infrastructure)
 set_tests_properties(
     chart_renderer_test
     chart_interaction_test
     chart_interaction_contract_test
+    analysis_source_binding_test
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 

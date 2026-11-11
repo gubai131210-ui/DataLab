@@ -31,6 +31,8 @@ public:
     void set_model(const ChartModel& model);
     void set_source_rows(const std::vector<std::size_t>& rows);
     void set_selected_source_rows(const std::vector<std::size_t>& rows);
+    // Returns worksheet rows represented by the current chart selection.
+    std::vector<std::size_t> selected_source_rows() const;
     void set_row_visibility_summary(
         std::size_t excluded_count,
         std::size_t hidden_count,

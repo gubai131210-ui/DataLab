@@ -70,6 +70,8 @@ private:
     QStringList column_labels() const;
     datalab::domain::AnalysisConfiguration base_configuration() const;
     void publish_page(const datalab::domain::OutputPage& page);
+    std::string source_fingerprint();
+    void invalidate_result_source();
     void restore_cleaning_operations(
         const std::vector<datalab::domain::CleaningOperation>& operations);
     std::vector<std::size_t> excluded_rows() const;
@@ -97,6 +99,8 @@ private:
     QLabel* cell_address_ = nullptr;
     WorksheetModel* worksheet_model_ = nullptr;
     bool synchronizing_chart_selection_ = false;
+    bool source_fingerprint_dirty_ = true;
+    std::string source_fingerprint_;
     datalab::ui::WorksheetSortFilterProxyModel* worksheet_sort_proxy_ = nullptr;
     QLineEdit* worksheet_filter_edit_ = nullptr;
     QComboBox* workspace_mode_ = nullptr;

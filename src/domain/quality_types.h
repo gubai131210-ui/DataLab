@@ -2650,6 +2650,9 @@ struct OutputPage {
     // Optional worksheet payload for design generators (CCD/BBD) — UI may replace active sheet.
     std::optional<DataTable> worksheet_export;
     std::vector<ComputationTrace> computation_traces;
+    // Empty on legacy results. Never infer a binding from row counts alone.
+    std::string source_data_fingerprint;
+    std::string source_worksheet_name;
 };
 
 }  // namespace datalab::domain

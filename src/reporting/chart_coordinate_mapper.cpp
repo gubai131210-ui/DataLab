@@ -3,10 +3,7 @@
 #include <QtGlobal>
 
 #include <algorithm>
-
-namespace {
-constexpr double kMinimumRange = 1.0e-12;
-}
+#include <cmath>
 
 ChartCoordinateMapper::ChartCoordinateMapper(const QRectF& plot_rect)
     : plot_rect_(plot_rect)
@@ -35,13 +32,15 @@ void ChartCoordinateMapper::set_data_range(
 
 void ChartCoordinateMapper::zoom(double factor, const QPointF& anchor)
 {
-    if (factor <= 0.0 || !qIsFinite(factor)) {
+    if (factor <= 0.0 || !qIsFinite(factor) || factor == 1.0
+        || plot_rect_.width() <= 0.0 || plot_rect_.height() <= 0.0
+        || !std::isfinite(anchor.x()) || !std::isfinite(anchor.y())) {
         return;
     }
 
     const QPointF anchor_data = to_data(anchor);
-    const double new_x_range = std::max(kMinimumRange, (x_max_ - x_min_) / factor);
-    const double new_y_range = std::max(kMinimumRange, (y_max_ - y_min_) / factor);
+    const double new_x_range = (x_max_ - x_min_) / factor;
+    const double new_y_range = (y_max_ - y_min_) / factor;
     const double x_ratio = plot_rect_.width() > 0.0
         ? (anchor.x() - plot_rect_.left()) / plot_rect_.width()
         : 0.5;
@@ -49,10 +48,20 @@ void ChartCoordinateMapper::zoom(double factor, const QPointF& anchor)
         ? (plot_rect_.bottom() - anchor.y()) / plot_rect_.height()
         : 0.5;
 
-    x_min_ = anchor_data.x() - new_x_range * x_ratio;
-    x_max_ = x_min_ + new_x_range;
-    y_min_ = anchor_data.y() - new_y_range * y_ratio;
-    y_max_ = y_min_ + new_y_range;
+    const double x_min = anchor_data.x() - new_x_range * x_ratio;
+    const double x_max = x_min + new_x_range;
+    const double y_min = anchor_data.y() - new_y_range * y_ratio;
+    const double y_max = y_min + new_y_range;
+    // A zoom limit is determined by representable doubles, not by an absolute
+    // data-unit floor. Keep the previous view if either axis would collapse.
+    if (!std::isfinite(x_min) || !std::isfinite(x_max) || !(x_min < x_max)
+        || !std::isfinite(y_min) || !std::isfinite(y_max) || !(y_min < y_max)) {
+        return;
+    }
+    x_min_ = x_min;
+    x_max_ = x_max;
+    y_min_ = y_min;
+    y_max_ = y_max;
 }
 
 void ChartCoordinateMapper::pan(const QPointF& delta_pixels)
@@ -60,12 +69,23 @@ void ChartCoordinateMapper::pan(const QPointF& delta_pixels)
     if (plot_rect_.width() <= 0.0 || plot_rect_.height() <= 0.0) {
         return;
     }
+    if (!std::isfinite(delta_pixels.x()) || !std::isfinite(delta_pixels.y())) {
+        return;
+    }
     const double x_delta = delta_pixels.x() / plot_rect_.width() * (x_max_ - x_min_);
     const double y_delta = delta_pixels.y() / plot_rect_.height() * (y_max_ - y_min_);
-    x_min_ -= x_delta;
-    x_max_ -= x_delta;
-    y_min_ += y_delta;
-    y_max_ += y_delta;
+    const double x_min = x_min_ - x_delta;
+    const double x_max = x_max_ - x_delta;
+    const double y_min = y_min_ + y_delta;
+    const double y_max = y_max_ + y_delta;
+    if (!std::isfinite(x_min) || !std::isfinite(x_max) || !(x_min < x_max)
+        || !std::isfinite(y_min) || !std::isfinite(y_max) || !(y_min < y_max)) {
+        return;
+    }
+    x_min_ = x_min;
+    x_max_ = x_max;
+    y_min_ = y_min;
+    y_max_ = y_max;
 }
 
 QPointF ChartCoordinateMapper::to_pixel(double x, double y) const

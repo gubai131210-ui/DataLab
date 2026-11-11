@@ -5337,6 +5337,10 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
     QJsonObject object;
     object.insert(QStringLiteral("schema_version"), 2);
     object.insert(QStringLiteral("id"), QString::fromStdString(page.id));
+    object.insert(QStringLiteral("source_data_fingerprint"),
+                  QString::fromStdString(page.source_data_fingerprint));
+    object.insert(QStringLiteral("source_worksheet_name"),
+                  QString::fromStdString(page.source_worksheet_name));
     object.insert(QStringLiteral("title"), QString::fromStdString(page.title));
     object.insert(QStringLiteral("method_name"), QString::fromStdString(page.method_name));
     object.insert(QStringLiteral("analysis_command_id"),
@@ -6043,6 +6047,10 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
 {
     domain::OutputPage page;
     page.id = object.value(QStringLiteral("id")).toString().toStdString();
+    page.source_data_fingerprint =
+        object.value(QStringLiteral("source_data_fingerprint")).toString().toStdString();
+    page.source_worksheet_name =
+        object.value(QStringLiteral("source_worksheet_name")).toString().toStdString();
     page.title = object.value(QStringLiteral("title")).toString().toStdString();
     page.method_name = object.value(QStringLiteral("method_name")).toString().toStdString();
     page.parameter_summary = object.value(QStringLiteral("parameter_summary")).toString().toStdString();
