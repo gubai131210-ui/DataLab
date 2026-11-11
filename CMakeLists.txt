@@ -400,6 +400,7 @@ target_link_libraries(datalab_application
 add_library(datalab_reporting STATIC
     src/reporting/chart_model.h
     src/reporting/chart_interaction.cpp
+    src/reporting/chart_interaction_geometry.cpp
     src/reporting/chart_interaction.h
     src/reporting/chart_geometry.h
     src/reporting/chart_downsampling.cpp
@@ -524,6 +525,7 @@ add_library(datalab_ui STATIC
     src/ui/report_template_dialog.h
     src/ui/graph_properties_panel.cpp
     src/ui/graph_properties_panel.h
+    src/ui/chart_axis_bound_editor.h
     src/ui/graph_properties_dialog.cpp
     src/ui/graph_properties_dialog.h
     src/ui/algorithm_help_catalog.cpp
@@ -1008,9 +1010,11 @@ add_datalab_test(chart_plot_context_test tests/chart_plot_context_test.cpp datal
 
 add_datalab_test(chart_renderer_test tests/chart_renderer_test.cpp datalab_reporting)
 add_datalab_test(chart_interaction_test tests/chart_interaction_test.cpp datalab_reporting datalab_application datalab_infrastructure datalab_domain)
+add_datalab_test(chart_interaction_contract_test tests/chart_interaction_contract_test.cpp datalab_ui datalab_infrastructure)
 set_tests_properties(
     chart_renderer_test
     chart_interaction_test
+    chart_interaction_contract_test
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 

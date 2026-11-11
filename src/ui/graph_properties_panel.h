@@ -29,6 +29,7 @@ public:
     // Refresh controls without replacing the current edit session's baseline.
     void refresh_model(const ChartModel& model);
     void set_selected_path(const QString& path);
+    void set_selected_series(std::size_t index);
     // Presentation-only: excluded vs hidden counts (never merges into one flag).
     void set_row_visibility_summary(
         std::size_t excluded_count,

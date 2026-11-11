@@ -1,4 +1,5 @@
 #include "ui/graph_properties_panel.h"
+#include "ui/chart_axis_bound_editor.h"
 
 #include <QCheckBox>
 #include <QColor>
@@ -207,8 +208,8 @@ GraphPropertiesPanel::GraphPropertiesPanel(const ChartModel& model, QWidget* par
     y_min_->setObjectName(QStringLiteral("y_min"));
     y_max_->setObjectName(QStringLiteral("y_max"));
     for (auto* spin : {x_min_, x_max_, y_min_, y_max_}) {
-        spin->setRange(-1.0e9, 1.0e9);
-        spin->setDecimals(4);
+        spin->setRange(-1.0e12, 1.0e12);
+        spin->setDecimals(10);
     }
     title_font_size_ = new QSpinBox(scale_group);
     axis_font_size_ = new QSpinBox(scale_group);
@@ -426,14 +427,17 @@ void GraphPropertiesPanel::refresh_model(const ChartModel& model)
     x_max_auto_->setChecked(!model.x_max.has_value());
     y_min_auto_->setChecked(!model.y_min.has_value());
     y_max_auto_->setChecked(!model.y_max.has_value());
-    x_min_->setValue(model.x_min.value_or(0.0));
-    x_max_->setValue(model.x_max.value_or(1.0));
-    y_min_->setValue(model.y_min.value_or(0.0));
-    y_max_->setValue(model.y_max.value_or(1.0));
-    x_min_->setEnabled(!x_min_auto_->isChecked());
-    x_max_->setEnabled(!x_max_auto_->isChecked());
-    y_min_->setEnabled(!y_min_auto_->isChecked());
-    y_max_->setEnabled(!y_max_auto_->isChecked());
+    chart_axis_bound_editor::load(x_min_, model.x_min, 0.0);
+    chart_axis_bound_editor::load(x_max_, model.x_max, 1.0);
+    chart_axis_bound_editor::load(y_min_, model.y_min, 0.0);
+    chart_axis_bound_editor::load(y_max_, model.y_max, 1.0);
+    const bool numeric_axes = model.kind != ChartKind::Pie && model.kind != ChartKind::Matrix
+        && model.kind != ChartKind::Correlation && model.kind != ChartKind::Heatmap;
+    for (auto* control : {x_min_auto_, x_max_auto_, y_min_auto_, y_max_auto_}) control->setEnabled(numeric_axes);
+    x_min_->setEnabled(numeric_axes && !x_min_auto_->isChecked());
+    x_max_->setEnabled(numeric_axes && !x_max_auto_->isChecked());
+    y_min_->setEnabled(numeric_axes && !y_min_auto_->isChecked());
+    y_max_->setEnabled(numeric_axes && !y_max_auto_->isChecked());
     title_font_size_->setValue(model.title_font_size);
     axis_font_size_->setValue(model.axis_font_size);
     legend_font_size_->setValue(model.legend_font_size);
@@ -454,21 +458,36 @@ void GraphPropertiesPanel::set_selected_path(const QString& path)
         const QSignalBlocker blocker(object_list_);
         int matched = 0;
         for (int row = 0; row < object_list_->count(); ++row) {
-            const QString text = object_list_->item(row)->text();
-            const QString series_name = text.section(QStringLiteral(" / "), 1, 1);
-            if ((!series_name.isEmpty() && resolved.contains(series_name))
-                || resolved.contains(text)
-                || (text == QStringLiteral("图形") && resolved == QStringLiteral("图形"))) {
+            const auto* item = object_list_->item(row);
+            const QString text = item->text();
+            const bool series_path = resolved.startsWith(QStringLiteral("图形 > 数据系列 > "));
+            const bool series_match = series_path && item->data(Qt::UserRole).isValid()
+                && resolved.mid(QStringLiteral("图形 > 数据系列 > ").size()) == text.mid(QStringLiteral("数据系列 / ").size());
+            if (series_match || (!item->data(Qt::UserRole).isValid()
+                && (resolved == text || resolved.endsWith(QStringLiteral(" > ") + text)))) {
                 matched = row;
-                if (!series_name.isEmpty() && resolved.contains(series_name)) {
-                    break;
-                }
+                break;
             }
         }
         object_list_->setCurrentRow(matched);
     }
     selection_path_->setText(resolved);
     load_series_editors();
+}
+
+void GraphPropertiesPanel::set_selected_series(const std::size_t index)
+{
+    if (object_list_ == nullptr || index >= model_.series.size()) return;
+    for (int row = 0; row < object_list_->count(); ++row) {
+        const auto* item = object_list_->item(row);
+        if (item->data(Qt::UserRole).isValid() && item->data(Qt::UserRole).toULongLong() == index) {
+            const QSignalBlocker blocker(object_list_);
+            object_list_->setCurrentRow(row);
+            selection_path_->setText(item->text());
+            load_series_editors();
+            return;
+        }
+    }
 }
 
 void GraphPropertiesPanel::set_row_visibility_summary(
@@ -520,22 +539,22 @@ void GraphPropertiesPanel::apply_changes()
     if (x_min_auto_->isChecked()) {
         model_.x_min.reset();
     } else {
-        model_.x_min = x_min_->value();
+        model_.x_min = chart_axis_bound_editor::read(x_min_);
     }
     if (x_max_auto_->isChecked()) {
         model_.x_max.reset();
     } else {
-        model_.x_max = x_max_->value();
+        model_.x_max = chart_axis_bound_editor::read(x_max_);
     }
     if (y_min_auto_->isChecked()) {
         model_.y_min.reset();
     } else {
-        model_.y_min = y_min_->value();
+        model_.y_min = chart_axis_bound_editor::read(y_min_);
     }
     if (y_max_auto_->isChecked()) {
         model_.y_max.reset();
     } else {
-        model_.y_max = y_max_->value();
+        model_.y_max = chart_axis_bound_editor::read(y_max_);
     }
     if (model_.x_min.has_value() && model_.x_max.has_value()
         && *model_.x_min >= *model_.x_max) {
@@ -592,6 +611,7 @@ void GraphPropertiesPanel::rebuild_object_list()
     if (object_list_ == nullptr) {
         return;
     }
+    const auto previous_series = selected_series_index();
     const QString previous =
         object_list_->currentItem() != nullptr ? object_list_->currentItem()->text()
                                                : QString();
@@ -603,6 +623,7 @@ void GraphPropertiesPanel::rebuild_object_list()
             ? QStringLiteral("系列 %1").arg(static_cast<qulonglong>(index + 1))
             : model_.series[index].label;
         object_list_->addItem(QStringLiteral("数据系列 / ") + label);
+        object_list_->item(object_list_->count() - 1)->setData(Qt::UserRole, QVariant::fromValue(static_cast<qulonglong>(index)));
     }
     if (model_.kind == ChartKind::Control) {
         object_list_->addItem(QStringLiteral("控制线 / CL"));
@@ -611,7 +632,9 @@ void GraphPropertiesPanel::rebuild_object_list()
     }
     int row = 0;
     for (int index = 0; index < object_list_->count(); ++index) {
-        if (object_list_->item(index)->text() == previous) {
+        const auto data = object_list_->item(index)->data(Qt::UserRole);
+        if ((previous_series.has_value() && data.isValid() && data.toULongLong() == *previous_series)
+            || (!previous_series.has_value() && object_list_->item(index)->text() == previous)) {
             row = index;
             break;
         }
@@ -624,20 +647,8 @@ std::optional<std::size_t> GraphPropertiesPanel::selected_series_index() const
     if (object_list_ == nullptr || object_list_->currentItem() == nullptr) {
         return std::nullopt;
     }
-    const QString text = object_list_->currentItem()->text();
-    const QString prefix = QStringLiteral("数据系列 / ");
-    if (!text.startsWith(prefix)) {
-        return std::nullopt;
-    }
-    const QString label = text.mid(prefix.size());
-    for (std::size_t index = 0; index < model_.series.size(); ++index) {
-        const QString series_label = model_.series[index].label.isEmpty()
-            ? QStringLiteral("系列 %1").arg(static_cast<qulonglong>(index + 1))
-            : model_.series[index].label;
-        if (series_label == label) {
-            return index;
-        }
-    }
+    const auto data = object_list_->currentItem()->data(Qt::UserRole);
+    if (data.isValid() && data.toULongLong() < model_.series.size()) return static_cast<std::size_t>(data.toULongLong());
     return std::nullopt;
 }
 

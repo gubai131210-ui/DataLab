@@ -8,7 +8,7 @@ namespace chart_geometry {
 
 inline QRectF plot_rect(const QRectF& area, const ChartKind kind)
 {
-    return kind == ChartKind::Pareto
+    return kind == ChartKind::Pareto || kind == ChartKind::Bar
         ? area.adjusted(64.0, 42.0, -120.0, -178.0)
         : area.adjusted(58.0, 42.0, -96.0, -48.0);
 }

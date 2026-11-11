@@ -13,6 +13,8 @@ struct ChartPlotContext {
     QRectF plot;
     ChartCoordinateMapper mapper;
     bool valid = false;
+    double surface_z_min = 0.0;
+    double surface_z_max = 1.0;
 };
 
 struct ChartMatrixGridLayout {
@@ -30,6 +32,8 @@ struct ChartMatrixGridLayout {
 };
 
 QRectF chart_plot_area(const QRectF& area, ChartKind kind);
+QPointF chart_pan_offset(const ChartModel& model, const QRectF& plot);
+void chart_set_pan_offset(ChartModel& model, const QRectF& plot, const QPointF& pixels);
 
 void chart_apply_custom_y_range(double& y_min, double& y_max, const ChartModel& model);
 void chart_apply_custom_x_range(double& x_min, double& x_max, const ChartModel& model);
@@ -37,6 +41,16 @@ void chart_apply_custom_x_range(double& x_min, double& x_max, const ChartModel& 
 ChartPlotContext build_histogram_plot_context(const ChartModel& model, const QRectF& area);
 ChartPlotContext build_control_plot_context(const ChartModel& model, const QRectF& area);
 ChartPlotContext build_scatter_plot_context(const ChartModel& model, const QRectF& area);
+// One coordinate contract for painting, pointer hit testing and navigation.
+ChartPlotContext build_chart_plot_context(const ChartModel& model, const QRectF& area);
+ChartPlotContext build_probability_plot_context(const ChartModel& model, const QRectF& area);
+ChartPlotContext build_contour_plot_context(const ChartModel& model, const QRectF& area);
+ChartPlotContext build_parallel_plot_context(const ChartModel& model, const QRectF& area);
+ChartPlotContext build_surface_plot_context(const ChartModel& model, const QRectF& area);
+std::optional<QPointF> chart_surface_point(
+    const ChartModel& model, const ChartPlotContext& context, std::size_t row, std::size_t column);
+std::optional<QPointF> chart_parallel_point(
+    const ChartModel& model, const ChartPlotContext& context, std::size_t row, std::size_t axis);
 ChartPlotContext build_pareto_plot_context(const ChartModel& model, const QRectF& area);
 ChartPlotContext build_category_index_plot_context(
     const ChartModel& model,

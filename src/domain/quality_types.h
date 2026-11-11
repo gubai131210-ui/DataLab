@@ -1009,6 +1009,11 @@ struct PlotSpec {
     std::optional<double> x_min;
     std::optional<double> x_max;
     std::string data_region_fill;
+    double view_zoom_factor = 1.0;
+    double view_pan_x = 0.0;
+    double view_pan_y = 0.0;
+    double view_reference_width = 0.0;
+    double view_reference_height = 0.0;
 };
 
 struct InterpretationSection {

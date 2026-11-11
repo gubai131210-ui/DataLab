@@ -96,6 +96,7 @@ private:
     QLabel* context_next_ = nullptr;
     QLabel* cell_address_ = nullptr;
     WorksheetModel* worksheet_model_ = nullptr;
+    bool synchronizing_chart_selection_ = false;
     datalab::ui::WorksheetSortFilterProxyModel* worksheet_sort_proxy_ = nullptr;
     QLineEdit* worksheet_filter_edit_ = nullptr;
     QComboBox* workspace_mode_ = nullptr;

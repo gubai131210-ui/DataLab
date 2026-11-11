@@ -8,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <numeric>
+#include <utility>
 
 namespace {
 
@@ -34,14 +35,33 @@ void finalize_mapper(
     chart_apply_custom_y_range(y_min, y_max, model);
     context.mapper.set_data_range(x_min, x_max, y_min, y_max);
     context.mapper.zoom(model.view.zoom_factor, context.plot.center());
-    context.mapper.pan(model.view.pan_offset);
+    context.mapper.pan(chart_pan_offset(model, context.plot));
 }
 
 }  // namespace
 
 QRectF chart_plot_area(const QRectF& area, ChartKind kind)
 {
-    return chart_geometry::plot_rect(area, kind);
+    auto plot = chart_geometry::plot_rect(area, kind);
+    if (kind == ChartKind::Correlation || kind == ChartKind::Heatmap) {
+        plot.setLeft(std::max(plot.left(), area.left() + (kind == ChartKind::Correlation ? 120.0 : 110.0)));
+        plot.setTop(std::max(plot.top(), area.top() + 52.0));
+    }
+    return plot;
+}
+
+QPointF chart_pan_offset(const ChartModel& model, const QRectF& plot)
+{
+    const auto size = model.view.pan_reference_size;
+    if (size.width() <= 0.0 || size.height() <= 0.0) return model.view.pan_offset;
+    return {model.view.pan_offset.x() * plot.width() / size.width(),
+            model.view.pan_offset.y() * plot.height() / size.height()};
+}
+
+void chart_set_pan_offset(ChartModel& model, const QRectF& plot, const QPointF& pixels)
+{
+    model.view.pan_offset = pixels;
+    model.view.pan_reference_size = plot.size();
 }
 
 void chart_apply_custom_y_range(double& y_min, double& y_max, const ChartModel& model)
@@ -102,162 +122,73 @@ ChartPlotContext build_histogram_plot_context(const ChartModel& model, const QRe
 ChartPlotContext build_control_plot_context(const ChartModel& model, const QRectF& area)
 {
     ChartPlotContext context;
-    const ChartSeries* first_series = nullptr;
-    for (const ChartSeries& series : model.series) {
-        if (!series.values.empty() || !series.lower.empty() || !series.upper.empty()) {
-            first_series = &series;
-            break;
+    double x_min = std::numeric_limits<double>::infinity(), x_max = -x_min;
+    double y_min = x_min, y_max = -x_min;
+    const auto extend = [&](const std::vector<double>& ys, const std::vector<double>& xs) {
+        for (std::size_t i = 0; i < ys.size(); ++i) {
+            const double x = i < xs.size() ? xs[i] : static_cast<double>(i);
+            if (!std::isfinite(x) || !std::isfinite(ys[i])) continue;
+            x_min = std::min(x_min, x); x_max = std::max(x_max, x);
+            y_min = std::min(y_min, ys[i]); y_max = std::max(y_max, ys[i]);
         }
-    }
-  QVector<double> all_values = finite_values(model.values);
-    for (const double value : finite_values(model.lower)) {
-        all_values.append(value);
-    }
-    for (const double value : finite_values(model.upper)) {
-        all_values.append(value);
-    }
-    for (const double value : finite_values(model.center)) {
-        all_values.append(value);
-    }
-    if (first_series != nullptr) {
-        for (const double value : finite_values(first_series->values)) {
-            all_values.append(value);
-        }
-        for (const double value : finite_values(first_series->lower)) {
-            all_values.append(value);
-        }
-        for (const double value : finite_values(first_series->upper)) {
-            all_values.append(value);
-        }
-    }
-    for (const ChartSeries& series : model.series) {
-        for (const double value : finite_values(series.values)) {
-            all_values.append(value);
-        }
-        for (const double value : finite_values(series.lower)) {
-            all_values.append(value);
-        }
-        for (const double value : finite_values(series.upper)) {
-            all_values.append(value);
-        }
-    }
-    if (all_values.isEmpty()) {
-        return context;
-    }
-    auto [minimum_it, maximum_it] = std::minmax_element(all_values.cbegin(), all_values.cend());
-    double y_min = *minimum_it;
-    double y_max = *maximum_it;
-    if (qFuzzyCompare(y_min, y_max)) {
-        y_min -= 1.0;
-        y_max += 1.0;
-    } else {
-        const double padding = (y_max - y_min) * 0.08;
-        y_min -= padding;
-        y_max += padding;
-    }
-
-    const auto x_at = [&](std::size_t index) {
-        return model.x_values.size() == model.values.size()
-            ? model.x_values[index] : static_cast<double>(index);
     };
-    const auto series_x_at = [](const ChartSeries& series, std::size_t index) {
-        return index < series.x_values.size()
-            ? series.x_values[index] : static_cast<double>(index);
-    };
-    double x_min = model.values.empty() && first_series != nullptr
-        ? series_x_at(*first_series, 0) : x_at(0);
-    double x_max = x_min;
-    if (!model.values.empty() && model.x_values.size() == model.values.size()) {
-        const auto x_range = std::minmax_element(
-            model.x_values.cbegin(), model.x_values.cend());
-        x_min = *x_range.first;
-        x_max = *x_range.second;
-    } else if (!model.values.empty()) {
-        x_max = x_at(model.values.size() - 1);
-    } else if (first_series != nullptr && !first_series->values.empty()) {
-        x_max = series_x_at(*first_series, first_series->values.size() - 1);
+    if (model.value_style.visible) extend(model.values, model.x_values);
+    if (model.lower_style.visible) extend(model.lower, model.x_values);
+    if (model.upper_style.visible) extend(model.upper, model.x_values);
+    if (model.center_style.visible) extend(model.center, model.x_values);
+    for (const auto& series : model.series) {
+        if (!series.style.visible) continue;
+        extend(series.values, series.x_values);
+        extend(series.lower, series.x_values);
+        extend(series.upper, series.x_values);
     }
-    for (const ChartSeries& series : model.series) {
-        if (series.values.empty()) {
-            continue;
-        }
-        double series_min = series_x_at(series, 0);
-        double series_max = series_min;
-        if (series.x_values.size() == series.values.size()) {
-            const auto range = std::minmax_element(
-                series.x_values.cbegin(), series.x_values.cend());
-            series_min = *range.first;
-            series_max = *range.second;
-        } else {
-            series_max = series_x_at(series, series.values.size() - 1);
-        }
-        x_min = std::min(x_min, series_min);
-        x_max = std::max(x_max, series_max);
-    }
-
-    context.plot = chart_plot_area(area, ChartKind::Control);
+    if (!std::isfinite(x_min) || !std::isfinite(y_min)) return context;
+    if (y_min == y_max) { y_min -= 1.0; y_max += 1.0; }
+    else { const double padding = (y_max - y_min) * 0.08; y_min -= padding; y_max += padding; }
+    context.plot = chart_plot_area(area, model.kind);
     context.mapper = ChartCoordinateMapper(context.plot);
     finalize_mapper(context, model, x_min, std::max(x_min + 1.0, x_max), y_min, y_max);
-    context.valid = true;
+    context.valid = context.plot.width() > 1.0 && context.plot.height() > 1.0;
     return context;
 }
 
-ChartPlotContext build_scatter_plot_context(const ChartModel& model, const QRectF& area)
+static ChartPlotContext build_xy_plot_context(
+    const ChartModel& model, const QRectF& area, double padding, bool include_series)
 {
     ChartPlotContext context;
-    const std::size_t count = std::min(model.x_values.size(), model.values.size());
     double x_min = 0.0;
     double x_max = 1.0;
     double y_min = 0.0;
     double y_max = 1.0;
     bool have_range = false;
-    if (count > 0) {
-        const auto x_range = std::minmax_element(
-            model.x_values.cbegin(), model.x_values.cbegin() + count);
-        const auto y_range = std::minmax_element(
-            model.values.cbegin(), model.values.cbegin() + count);
-        x_min = *x_range.first;
-        x_max = *x_range.second;
-        y_min = *y_range.first;
-        y_max = *y_range.second;
-        have_range = true;
+    const auto extend = [&](double x, double y) {
+        if (!std::isfinite(x) || !std::isfinite(y)) return;
+        if (!have_range) { x_min = x_max = x; y_min = y_max = y; have_range = true; }
+        x_min = std::min(x_min, x); x_max = std::max(x_max, x);
+        y_min = std::min(y_min, y); y_max = std::max(y_max, y);
+    };
+    std::size_t base_count = model.values.size();
+    if (model.kind == ChartKind::Bubble) base_count = std::min(base_count, model.bubble_sizes.size());
+    if (!model.x_values.empty()) base_count = std::min(base_count, model.x_values.size());
+    if (model.value_style.visible) {
+        for (std::size_t i = 0; i < base_count; ++i) {
+            extend(model.x_values.empty() ? static_cast<double>(i) : model.x_values[i], model.values[i]);
+        }
     }
-    for (const ChartSeries& series : model.series) {
-        const std::size_t series_count = series.values.size();
-        const std::size_t interval_count = std::max(series.lower.size(), series.upper.size());
-        if (series_count == 0 && interval_count == 0) {
-            continue;
-        }
-        have_range = true;
-        if (series_count > 0) {
-            const auto series_y_range = std::minmax_element(
-                series.values.cbegin(), series.values.cend());
-            y_min = std::min(y_min, *series_y_range.first);
-            y_max = std::max(y_max, *series_y_range.second);
-        }
-        if (series.lower.size() == interval_count && interval_count > 0) {
-            const auto range = std::minmax_element(
-                series.lower.cbegin(), series.lower.cend());
-            y_min = std::min(y_min, *range.first);
-            y_max = std::max(y_max, *range.second);
-        }
-        if (series.upper.size() == interval_count && interval_count > 0) {
-            const auto range = std::minmax_element(
-                series.upper.cbegin(), series.upper.cend());
-            y_min = std::min(y_min, *range.first);
-            y_max = std::max(y_max, *range.second);
-        }
-        if (series.x_values.size() == series_count) {
-            const auto series_x_range = std::minmax_element(
-                series.x_values.cbegin(), series.x_values.cend());
-            x_min = std::min(x_min, *series_x_range.first);
-            x_max = std::max(x_max, *series_x_range.second);
+    if (include_series) for (const ChartSeries& series : model.series) {
+        if (!series.style.visible) continue;
+        const std::size_t count = std::max({series.values.size(), series.lower.size(), series.upper.size()});
+        for (std::size_t i = 0; i < count; ++i) {
+            const double x = i < series.x_values.size() ? series.x_values[i] : static_cast<double>(i);
+            if (i < series.values.size()) extend(x, series.values[i]);
+            if (i < series.lower.size()) extend(x, series.lower[i]);
+            if (i < series.upper.size()) extend(x, series.upper[i]);
         }
     }
     if (!have_range) {
         return context;
     }
-    if (model.kind == ChartKind::Area) {
+    if (model.kind == ChartKind::Area || model.kind == ChartKind::Density) {
         y_min = std::min(0.0, y_min);
         y_max = std::max(0.0, y_max);
     }
@@ -269,8 +200,8 @@ ChartPlotContext build_scatter_plot_context(const ChartModel& model, const QRect
         y_min -= 1.0;
         y_max += 1.0;
     }
-    const double x_padding = 0.05 * (x_max - x_min);
-    const double y_padding = 0.05 * (y_max - y_min);
+    const double x_padding = padding * (x_max - x_min);
+    const double y_padding = padding * (y_max - y_min);
     x_min -= x_padding;
     x_max += x_padding;
     y_min -= y_padding;
@@ -279,14 +210,26 @@ ChartPlotContext build_scatter_plot_context(const ChartModel& model, const QRect
     context.plot = chart_plot_area(area, model.kind);
     context.mapper = ChartCoordinateMapper(context.plot);
     finalize_mapper(context, model, x_min, x_max, y_min, y_max);
-    context.valid = true;
+    context.valid = context.plot.width() > 1.0 && context.plot.height() > 1.0;
     return context;
+}
+
+ChartPlotContext build_scatter_plot_context(const ChartModel& model, const QRectF& area)
+{
+    return build_xy_plot_context(model, area, 0.05, true);
+}
+
+ChartPlotContext build_probability_plot_context(const ChartModel& model, const QRectF& area)
+{
+    return build_xy_plot_context(model, area, 0.08, false);
 }
 
 ChartPlotContext build_pareto_plot_context(const ChartModel& model, const QRectF& area)
 {
     ChartPlotContext context;
-    if (model.category_values.empty()) {
+    const auto& values = model.category_values.empty() ? model.values : model.category_values;
+    const bool grouped = !model.series.empty() && !model.categories.empty();
+    if (values.empty() && !grouped) {
         return context;
     }
     context.plot = chart_plot_area(area, ChartKind::Pareto);
@@ -294,10 +237,17 @@ ChartPlotContext build_pareto_plot_context(const ChartModel& model, const QRectF
         return context;
     }
     const bool show_cumulative = !model.cumulative_percent.empty();
-    const double maximum_count = *std::max_element(
-        model.category_values.cbegin(), model.category_values.cend());
+    double maximum_count = values.empty() ? 0.0 : *std::max_element(values.cbegin(), values.cend());
+    double minimum_count = values.empty() ? 0.0 : std::min(0.0, *std::min_element(values.cbegin(), values.cend()));
+    if (grouped) for (const auto& series : model.series) {
+        if (!series.style.visible) continue;
+        for (double value : series.values) if (std::isfinite(value)) {
+            maximum_count = std::max(maximum_count, value);
+            minimum_count = std::min(minimum_count, value);
+        }
+    }
     const double total_count = std::accumulate(
-        model.category_values.cbegin(), model.category_values.cend(), 0.0);
+        values.cbegin(), values.cend(), 0.0);
     const double reference = !model.center.empty() && std::isfinite(model.center.front())
         ? model.center.front() : 0.0;
     const double scale_top = show_cumulative
@@ -306,10 +256,10 @@ ChartPlotContext build_pareto_plot_context(const ChartModel& model, const QRectF
     const double tick_step = std::max(1.0, std::ceil(scale_top / 5.0));
     const double y_max = tick_step * 5.0;
     context.mapper = ChartCoordinateMapper(context.plot);
-    context.mapper.set_data_range(
+    finalize_mapper(context, model,
         -0.5,
-        static_cast<double>(model.category_values.size()) - 0.5,
-        0.0,
+        static_cast<double>(grouped ? model.categories.size() : values.size()) - 0.5,
+        minimum_count,
         y_max);
     context.valid = true;
     return context;
@@ -328,7 +278,7 @@ ChartPlotContext build_category_index_plot_context(
     }
     context.plot = chart_plot_area(area, model.kind);
     context.mapper = ChartCoordinateMapper(context.plot);
-    context.mapper.set_data_range(
+    finalize_mapper(context, model,
         -0.5,
         static_cast<double>(values.size()) - 0.5,
         y_minimum,
@@ -348,12 +298,12 @@ ChartPlotContext build_box_plot_context(const ChartModel& model, const QRectF& a
     }
     QVector<double> all_values;
     for (const auto& series : {model.box_min, model.box_max, model.box_q1, model.box_q3}) {
-        for (const double value : series) {
+        for (const double value : finite_values(series)) {
             all_values.append(value);
         }
     }
     for (const ChartSeries& series : model.series) {
-        for (const double value : series.values) {
+        for (const double value : finite_values(series.values)) {
             all_values.append(value);
         }
     }
@@ -366,7 +316,7 @@ ChartPlotContext build_box_plot_context(const ChartModel& model, const QRectF& a
     const double padding = std::max(0.08 * (maximum - minimum), 1.0e-6);
     context.plot = chart_plot_area(area, ChartKind::BoxPlot);
     context.mapper = ChartCoordinateMapper(context.plot);
-    context.mapper.set_data_range(
+    finalize_mapper(context, model,
         -0.5,
         static_cast<double>(box_count) - 0.5,
         minimum - padding,
@@ -386,12 +336,12 @@ ChartPlotContext build_violin_plot_context(const ChartModel& model, const QRectF
     }
     QVector<double> all_values;
     for (const auto& series : {model.box_min, model.box_max}) {
-        for (const double value : series) {
+        for (const double value : finite_values(series)) {
             all_values.append(value);
         }
     }
     for (const ChartSeries& series : model.series) {
-        for (const double value : series.values) {
+        for (const double value : finite_values(series.values)) {
             all_values.append(value);
         }
     }
@@ -402,7 +352,7 @@ ChartPlotContext build_violin_plot_context(const ChartModel& model, const QRectF
     const double padding = std::max(0.08 * (*maximum_it - *minimum_it), 1.0e-6);
     context.plot = chart_plot_area(area, ChartKind::Violin);
     context.mapper = ChartCoordinateMapper(context.plot);
-    context.mapper.set_data_range(
+    finalize_mapper(context, model,
         -0.5,
         static_cast<double>(box_count) - 0.5,
         *minimum_it - padding,
@@ -430,7 +380,7 @@ ChartPlotContext build_interval_plot_context(const ChartModel& model, const QRec
     const double padding = (maximum - minimum) * 0.08;
     context.plot = chart_plot_area(area, ChartKind::Interval);
     context.mapper = ChartCoordinateMapper(context.plot);
-    context.mapper.set_data_range(
+    finalize_mapper(context, model,
         -0.5,
         static_cast<double>(count) - 0.5,
         minimum - padding,
@@ -454,9 +404,136 @@ ChartPlotContext build_ecdf_plot_context(const ChartModel& model, const QRectF& 
     }
     context.plot = chart_plot_area(area, ChartKind::Ecdf);
     context.mapper = ChartCoordinateMapper(context.plot);
-    context.mapper.set_data_range(x_min, x_max, 0.0, 1.05);
+    finalize_mapper(context, model, x_min, x_max, 0.0, 1.05);
     context.valid = true;
     return context;
+}
+
+ChartPlotContext build_contour_plot_context(const ChartModel& model, const QRectF& area)
+{
+    ChartPlotContext context;
+    if (model.contour_x.size() < 2 || model.contour_y.size() < 2) return context;
+    context.plot = chart_plot_area(area, model.kind);
+    context.mapper = ChartCoordinateMapper(context.plot);
+    finalize_mapper(context, model, model.contour_x.front(), model.contour_x.back(),
+                    model.contour_y.front(), model.contour_y.back());
+    context.valid = context.plot.width() > 1.0 && context.plot.height() > 1.0;
+    return context;
+}
+
+ChartPlotContext build_parallel_plot_context(const ChartModel& model, const QRectF& area)
+{
+    ChartPlotContext context;
+    if (model.matrix_labels.size() < 2 || model.matrix_values.empty()) return context;
+    context.plot = chart_plot_area(area, model.kind);
+    context.mapper = ChartCoordinateMapper(context.plot);
+    finalize_mapper(context, model, 0.0, static_cast<double>(model.matrix_labels.size() - 1), 0.0, 1.0);
+    context.valid = context.plot.width() > 1.0 && context.plot.height() > 1.0;
+    return context;
+}
+
+std::optional<QPointF> chart_parallel_point(
+    const ChartModel& model, const ChartPlotContext& context, std::size_t row, std::size_t axis)
+{
+    if (!context.valid || row >= model.matrix_values.size() || axis >= model.matrix_labels.size()
+        || axis >= model.matrix_values[row].size() || !std::isfinite(model.matrix_values[row][axis])) return {};
+    const double minimum = axis < model.lower.size() ? model.lower[axis] : 0.0;
+    const double maximum = axis < model.upper.size() ? model.upper[axis] : 1.0;
+    if (!std::isfinite(minimum) || !std::isfinite(maximum)) return {};
+    const double fraction = maximum > minimum
+        ? std::clamp((model.matrix_values[row][axis] - minimum) / (maximum - minimum), 0.0, 1.0) : 0.5;
+    return context.mapper.to_pixel(static_cast<double>(axis), fraction);
+}
+
+static std::optional<QPointF> surface_projection(
+    const ChartModel& model, double z_min, double z_max, std::size_t row, std::size_t column)
+{
+    if (row >= model.contour_y.size() || column >= model.contour_x.size()
+        || row >= model.matrix_values.size() || column >= model.matrix_values[row].size()) return {};
+    const double z = model.matrix_values[row][column];
+    if (!std::isfinite(z) || !std::isfinite(model.contour_x[column])
+        || !std::isfinite(model.contour_y[row])) return {};
+    const double dx = model.contour_x.back() - model.contour_x.front();
+    const double dy = model.contour_y.back() - model.contour_y.front();
+    if (!(dx > 0.0) || !(dy > 0.0) || !(z_max > z_min)) return {};
+    const double x = (model.contour_x[column] - model.contour_x.front()) / dx;
+    const double y = (model.contour_y[row] - model.contour_y.front()) / dy;
+    return QPointF((x - y) * 0.8660254037844386, (x + y) * 0.5 + (z - z_min) / (z_max - z_min) * 0.65);
+}
+
+ChartPlotContext build_surface_plot_context(const ChartModel& model, const QRectF& area)
+{
+    ChartPlotContext context;
+    if (model.contour_x.size() < 2 || model.contour_y.size() < 2) return context;
+    context.surface_z_min = std::numeric_limits<double>::infinity();
+    context.surface_z_max = -std::numeric_limits<double>::infinity();
+    for (std::size_t row = 0; row < std::min(model.contour_y.size(), model.matrix_values.size()); ++row)
+        for (std::size_t column = 0; column < std::min(model.contour_x.size(), model.matrix_values[row].size()); ++column) {
+            const double z = model.matrix_values[row][column];
+            if (!std::isfinite(z)) continue;
+            context.surface_z_min = std::min(context.surface_z_min, z);
+            context.surface_z_max = std::max(context.surface_z_max, z);
+        }
+    if (!std::isfinite(context.surface_z_min) || !std::isfinite(context.surface_z_max)) return context;
+    if (context.surface_z_min == context.surface_z_max) { context.surface_z_min -= 1.0; context.surface_z_max += 1.0; }
+    double u_min = std::numeric_limits<double>::infinity(), u_max = -u_min;
+    double v_min = u_min, v_max = -u_min;
+    for (std::size_t row = 0; row < model.contour_y.size(); ++row)
+        for (std::size_t column = 0; column < model.contour_x.size(); ++column) {
+            const auto point = surface_projection(model, context.surface_z_min, context.surface_z_max, row, column);
+            if (!point.has_value()) continue;
+            u_min = std::min(u_min, point->x()); u_max = std::max(u_max, point->x());
+            v_min = std::min(v_min, point->y()); v_max = std::max(v_max, point->y());
+        }
+    if (!std::isfinite(u_min) || !std::isfinite(v_min)) return context;
+    context.plot = chart_plot_area(area, model.kind);
+    context.mapper = ChartCoordinateMapper(context.plot);
+    finalize_mapper(context, model, u_min, u_max, v_min, v_max);
+    context.valid = context.plot.width() > 1.0 && context.plot.height() > 1.0;
+    return context;
+}
+
+std::optional<QPointF> chart_surface_point(
+    const ChartModel& model, const ChartPlotContext& context, std::size_t row, std::size_t column)
+{
+    const auto point = surface_projection(model, context.surface_z_min, context.surface_z_max, row, column);
+    return context.valid && point.has_value()
+        ? std::optional<QPointF>(context.mapper.to_pixel(point->x(), point->y())) : std::nullopt;
+}
+
+ChartPlotContext build_chart_plot_context(const ChartModel& model, const QRectF& area)
+{
+    switch (model.kind) {
+    case ChartKind::Control: return build_control_plot_context(model, area);
+    case ChartKind::Histogram: return build_histogram_plot_context(model, area);
+    case ChartKind::Pareto: case ChartKind::Bar: return build_pareto_plot_context(model, area);
+    case ChartKind::BoxPlot: return build_box_plot_context(model, area);
+    case ChartKind::Violin: return build_violin_plot_context(model, area);
+    case ChartKind::Interval: return build_interval_plot_context(model, area);
+    case ChartKind::Ecdf: return build_ecdf_plot_context(model, area);
+    case ChartKind::Probability: return build_probability_plot_context(model, area);
+    case ChartKind::Bubble: return build_xy_plot_context(model, area, 0.05, false);
+    case ChartKind::Marginal: return build_scatter_plot_context(model, area.adjusted(0.0, 30.0, 18.0, 0.0));
+    case ChartKind::Parallel: return build_parallel_plot_context(model, area);
+    case ChartKind::Contour: case ChartKind::Hexbin: return build_contour_plot_context(model, area);
+    case ChartKind::Surface: return build_surface_plot_context(model, area);
+    case ChartKind::Scatter: case ChartKind::TimeSeries: case ChartKind::Area: case ChartKind::Density:
+        return build_scatter_plot_context(model, area);
+    default: return {};
+    }
+}
+
+static void finalize_grid(ChartMatrixGridLayout& grid)
+{
+    const auto visible_range = [](double start, double end, double origin, double cell, std::size_t count) {
+        const double first = std::clamp(std::floor((start - origin) / cell), 0.0, static_cast<double>(count));
+        const double last = std::clamp(std::ceil((end - origin) / cell), first, static_cast<double>(count));
+        return std::make_pair(static_cast<std::size_t>(first), static_cast<std::size_t>(last - first));
+    };
+    const auto columns = visible_range(grid.viewport.left(), grid.viewport.right(), grid.origin.x(), grid.cell_width, grid.column_count);
+    const auto rows = visible_range(grid.viewport.top(), grid.viewport.bottom(), grid.origin.y(), grid.cell_height, grid.row_count);
+    grid.first_column = columns.first; grid.visible_column_count = columns.second;
+    grid.first_row = rows.first; grid.visible_row_count = rows.second;
 }
 
 ChartMatrixGridLayout build_correlation_grid_layout(const ChartModel& model, const QRectF& area)
@@ -469,30 +546,16 @@ ChartMatrixGridLayout build_correlation_grid_layout(const ChartModel& model, con
     const double cell = std::min(
         82.0,
         std::max(42.0, std::min(area.width(), area.height())
-                 / static_cast<double>(count + 1))) * std::max(1.0, model.view.zoom_factor);
+                 / static_cast<double>(count + 1))) * std::clamp(model.view.zoom_factor, 0.25, 20.0);
     layout.viewport = chart_plot_area(area, ChartKind::Correlation);
     layout.origin = QPointF(area.left() + 120.0, area.top() + 52.0)
-        + model.view.pan_offset;
+        + chart_pan_offset(model, layout.viewport);
     layout.cell_width = cell;
     layout.cell_height = cell;
     layout.column_count = count;
     layout.row_count = count;
-    layout.first_column = layout.origin.x() < layout.viewport.left()
-        ? static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.left() - layout.origin.x()) / cell))) : 0;
-    layout.first_row = layout.origin.y() < layout.viewport.top()
-        ? static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.top() - layout.origin.y()) / cell))) : 0;
-    layout.first_column = std::min(layout.first_column, count);
-    layout.first_row = std::min(layout.first_row, count);
-    layout.visible_column_count = std::min(
-        count - layout.first_column,
-        static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.right() - layout.origin.x()) / cell))));
-    layout.visible_row_count = std::min(
-        count - layout.first_row,
-        static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.bottom() - layout.origin.y()) / cell))));
+    if (layout.viewport.width() <= 1.0 || layout.viewport.height() <= 1.0) return layout;
+    finalize_grid(layout);
     layout.valid = true;
     return layout;
 }
@@ -506,32 +569,18 @@ ChartMatrixGridLayout build_heatmap_grid_layout(const ChartModel& model, const Q
     if (columns.empty() || rows.empty() || model.matrix_values.empty()) {
         return layout;
     }
-    const double zoom = std::max(1.0, model.view.zoom_factor);
+    const double zoom = std::clamp(model.view.zoom_factor, 0.25, 20.0);
     layout.cell_width = std::max(18.0, std::min(
         72.0, (area.width() - 140.0) / static_cast<double>(columns.size()))) * zoom;
     layout.cell_height = std::max(18.0, std::min(
         48.0, (area.height() - 90.0) / static_cast<double>(rows.size()))) * zoom;
     layout.viewport = chart_plot_area(area, ChartKind::Heatmap);
     layout.origin = QPointF(area.left() + 110.0, area.top() + 52.0)
-        + model.view.pan_offset;
+        + chart_pan_offset(model, layout.viewport);
     layout.column_count = columns.size();
     layout.row_count = rows.size();
-    layout.first_column = layout.origin.x() < layout.viewport.left()
-        ? static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.left() - layout.origin.x()) / layout.cell_width))) : 0;
-    layout.first_row = layout.origin.y() < layout.viewport.top()
-        ? static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.top() - layout.origin.y()) / layout.cell_height))) : 0;
-    layout.first_column = std::min(layout.first_column, layout.column_count);
-    layout.first_row = std::min(layout.first_row, layout.row_count);
-    layout.visible_column_count = std::min(
-        layout.column_count - layout.first_column,
-        static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.right() - layout.origin.x()) / layout.cell_width))));
-    layout.visible_row_count = std::min(
-        layout.row_count - layout.first_row,
-        static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.bottom() - layout.origin.y()) / layout.cell_height))));
+    if (layout.viewport.width() <= 1.0 || layout.viewport.height() <= 1.0) return layout;
+    finalize_grid(layout);
     layout.valid = true;
     return layout;
 }
@@ -543,38 +592,26 @@ ChartMatrixGridLayout build_matrix_grid_layout(const ChartModel& model, const QR
     if (count == 0 || model.matrix_values.size() < count) {
         return layout;
     }
-    const double zoom = std::max(1.0, model.view.zoom_factor);
+    const double zoom = std::clamp(model.view.zoom_factor, 0.25, 20.0);
     const double cell = std::max(18.0, std::min(area.width(), area.height())
-        / static_cast<double>(count + 0.4)) * zoom;
+        / static_cast<double>(count + 0.4) * zoom);
     layout.viewport = chart_plot_area(area, ChartKind::Matrix);
     layout.origin = QPointF(area.left() + 36.0, area.top() + 40.0)
-        + model.view.pan_offset;
+        + chart_pan_offset(model, layout.viewport);
     layout.cell_width = cell;
     layout.cell_height = cell;
     layout.column_count = count;
     layout.row_count = count;
-    layout.first_column = layout.origin.x() < layout.viewport.left()
-        ? static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.left() - layout.origin.x()) / cell))) : 0;
-    layout.first_row = layout.origin.y() < layout.viewport.top()
-        ? static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.top() - layout.origin.y()) / cell))) : 0;
-    layout.first_column = std::min(layout.first_column, count);
-    layout.first_row = std::min(layout.first_row, count);
-    layout.visible_column_count = std::min(count - layout.first_column,
-        static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.right() - layout.origin.x()) / cell))));
-    layout.visible_row_count = std::min(count - layout.first_row,
-        static_cast<std::size_t>(std::max(0.0, std::ceil(
-            (layout.viewport.bottom() - layout.origin.y()) / cell))));
+    if (layout.viewport.width() <= 1.0 || layout.viewport.height() <= 1.0) return layout;
+    finalize_grid(layout);
     layout.valid = true;
     return layout;
 }
 
 double chart_hit_tolerance_pixels(const ChartModel& model, double base_tolerance)
 {
-    const double zoom = std::max(model.view.zoom_factor, 1.0e-6);
-    return base_tolerance / zoom;
+    Q_UNUSED(model)
+    return std::max(1.0, base_tolerance);
 }
 
 std::optional<std::size_t> chart_hit_test_point_series(
@@ -584,12 +621,8 @@ std::optional<std::size_t> chart_hit_test_point_series(
     double base_tolerance)
 {
     ChartPlotContext context;
-    if (model.kind == ChartKind::Control) {
-        context = build_control_plot_context(model, area);
-    } else {
-        context = build_scatter_plot_context(model, area);
-    }
-    if (!context.valid) {
+    context = build_chart_plot_context(model, area);
+    if (!context.valid || !context.plot.contains(position)) {
         return std::nullopt;
     }
     const double tolerance = chart_hit_tolerance_pixels(model, base_tolerance);
@@ -601,8 +634,9 @@ std::optional<std::size_t> chart_hit_test_point_series(
     const auto test_series = [&](const std::vector<double>& xs,
                                  const std::vector<double>& ys,
                                  std::size_t flat_offset) {
-        const std::size_t count = std::min(xs.size(), ys.size());
+        const std::size_t count = xs.empty() ? ys.size() : std::min(xs.size(), ys.size());
         for (std::size_t index = 0; index < count; ++index) {
+            if (!std::isfinite(x_at(index, xs)) || !std::isfinite(ys[index])) continue;
             const QPointF point = context.mapper.to_pixel(x_at(index, xs), ys[index]);
             if (std::abs(point.x() - position.x()) > tolerance) {
                 continue;
@@ -627,7 +661,7 @@ std::optional<std::size_t> chart_hit_test_point_series(
             if (series.style.visible) {
                 test_series(series.x_values, series.values, flat_offset);
             }
-            flat_offset += std::min(series.x_values.size(), series.values.size());
+            flat_offset += series.values.size();
         }
     }
     return result;

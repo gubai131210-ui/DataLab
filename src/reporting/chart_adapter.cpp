@@ -1,6 +1,8 @@
 #include "reporting/chart_adapter.h"
 
 #include <utility>
+#include <algorithm>
+#include <cmath>
 
 namespace {
 
@@ -327,6 +329,12 @@ ChartModel chart_model_from_plot(const datalab::domain::PlotSpec& plot)
     model.y_max = plot.y_max;
     model.x_min = plot.x_min;
     model.x_max = plot.x_max;
+    model.view.zoom_factor = std::isfinite(plot.view_zoom_factor) ? std::clamp(plot.view_zoom_factor, 0.25, 20.0) : 1.0;
+    model.view.pan_offset = QPointF(std::isfinite(plot.view_pan_x) ? plot.view_pan_x : 0.0,
+                                   std::isfinite(plot.view_pan_y) ? plot.view_pan_y : 0.0);
+    if (std::isfinite(plot.view_reference_width) && std::isfinite(plot.view_reference_height)
+        && plot.view_reference_width > 0.0 && plot.view_reference_height > 0.0)
+        model.view.pan_reference_size = QSizeF(plot.view_reference_width, plot.view_reference_height);
     model.data_region_fill = QString::fromStdString(plot.data_region_fill);
     return model;
 }
@@ -452,6 +460,11 @@ datalab::domain::PlotSpec plot_from_chart_model(const ChartModel& model)
     plot.y_max = model.y_max;
     plot.x_min = model.x_min;
     plot.x_max = model.x_max;
+    plot.view_zoom_factor = model.view.zoom_factor;
+    plot.view_pan_x = model.view.pan_offset.x();
+    plot.view_pan_y = model.view.pan_offset.y();
+    plot.view_reference_width = model.view.pan_reference_size.width();
+    plot.view_reference_height = model.view.pan_reference_size.height();
     plot.data_region_fill = model.data_region_fill.toStdString();
     return plot;
 }

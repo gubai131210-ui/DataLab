@@ -12,6 +12,7 @@
 
 #include <optional>
 #include <vector>
+#include <variant>
 
 class GraphPropertiesPanel;
 class QEvent;
@@ -66,9 +67,19 @@ private:
     void copy_graph();
     void emit_selected_rows();
     void request_chart_update();
+    void clear_hover();
+    struct NavigationState {
+        double zoom = 1.0;
+        QPointF pan;
+        QSizeF pan_reference_size;
+        std::optional<double> x_min, x_max, y_min, y_max;
+    };
+    NavigationState navigation_state() const;
+    void restore_navigation(const NavigationState& state);
+    void record_navigation_change(const NavigationState& before);
     QRect plot_bounds() const;
     QSize chart_render_size() const;
-    std::optional<std::size_t> hit_test(const QPoint& position) const;
+    std::optional<chart_interaction::Hit> hit_test(const QPoint& position) const;
 
     ChartModel model_;
     QWidget* surface_ = nullptr;
@@ -83,10 +94,16 @@ private:
     bool panning_ = false;
     bool selecting_ = false;
     bool space_pressed_ = false;
+    std::optional<chart_interaction::Hit> hovered_hit_;
+    std::optional<chart_interaction::Hit> pressed_hit_;
+    std::optional<NavigationState> navigation_before_drag_;
+    Qt::KeyboardModifiers selection_modifiers_ = Qt::NoModifier;
+    std::vector<std::size_t> selection_before_drag_;
     QTimer tooltip_timer_;
     QString pending_tooltip_;
     QPoint pending_tooltip_position_;
-    std::vector<ChartModel> undo_history_;
-    std::vector<ChartModel> redo_history_;
+    using HistoryEntry = std::variant<ChartModel, NavigationState>;
+    std::vector<HistoryEntry> undo_history_;
+    std::vector<HistoryEntry> redo_history_;
     bool applying_history_ = false;
 };

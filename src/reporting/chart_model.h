@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPointF>
+#include <QSizeF>
 #include <QString>
 
 #include <cstddef>
@@ -86,6 +87,8 @@ struct ChartViewState {
     std::optional<std::size_t> hovered_point;
     double zoom_factor = 1.0;
     QPointF pan_offset;
+    // Size at which pan_offset was recorded. Keeps the same view when resized/exported.
+    QSizeF pan_reference_size;
 };
 
 struct ChartSeries {

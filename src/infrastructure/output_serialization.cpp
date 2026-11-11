@@ -5813,6 +5813,11 @@ QJsonObject output_page_to_json(const domain::OutputPage& page)
         plot_object.insert(QStringLiteral("y_min"), optional_number(plot.y_min));
         plot_object.insert(QStringLiteral("y_max"), optional_number(plot.y_max));
         plot_object.insert(QStringLiteral("x_min"), optional_number(plot.x_min));
+        plot_object.insert(QStringLiteral("view_zoom_factor"), plot.view_zoom_factor);
+        plot_object.insert(QStringLiteral("view_pan_x"), plot.view_pan_x);
+        plot_object.insert(QStringLiteral("view_pan_y"), plot.view_pan_y);
+        plot_object.insert(QStringLiteral("view_reference_width"), plot.view_reference_width);
+        plot_object.insert(QStringLiteral("view_reference_height"), plot.view_reference_height);
         plot_object.insert(QStringLiteral("x_max"), optional_number(plot.x_max));
         plot_object.insert(QStringLiteral("data_region_fill"),
                            QString::fromStdString(plot.data_region_fill));
@@ -6627,6 +6632,11 @@ domain::OutputPage output_page_from_json(const QJsonObject& object)
         plot.y_min = read_optional(plot_object.value(QStringLiteral("y_min")));
         plot.y_max = read_optional(plot_object.value(QStringLiteral("y_max")));
         plot.x_min = read_optional(plot_object.value(QStringLiteral("x_min")));
+        plot.view_zoom_factor = plot_object.value(QStringLiteral("view_zoom_factor")).toDouble(1.0);
+        plot.view_pan_x = plot_object.value(QStringLiteral("view_pan_x")).toDouble(0.0);
+        plot.view_pan_y = plot_object.value(QStringLiteral("view_pan_y")).toDouble(0.0);
+        plot.view_reference_width = plot_object.value(QStringLiteral("view_reference_width")).toDouble(0.0);
+        plot.view_reference_height = plot_object.value(QStringLiteral("view_reference_height")).toDouble(0.0);
         plot.x_max = read_optional(plot_object.value(QStringLiteral("x_max")));
         plot.data_region_fill = plot_object.value(QStringLiteral("data_region_fill"))
                                     .toString().toStdString();

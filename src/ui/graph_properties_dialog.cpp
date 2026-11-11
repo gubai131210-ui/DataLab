@@ -1,4 +1,5 @@
 #include "ui/graph_properties_dialog.h"
+#include "ui/chart_axis_bound_editor.h"
 
 #include "reporting/chart_renderer.h"
 
@@ -214,7 +215,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(const ChartModel& model, QWidget* p
     for (QDoubleSpinBox* box : {y_min_, y_max_, x_min_, x_max_}) {
         configure_double_spin(box);
         box->setRange(-1.0e12, 1.0e12);
-        box->setDecimals(6);
+        box->setDecimals(10);
         box->setSingleStep(0.1);
     }
     data_region_fill_ = new QPushButton(axis_page);
@@ -459,14 +460,14 @@ void GraphPropertiesDialog::populate_from(const ChartModel& model)
     set_color_button(grid_color_, model.grid_color);
     y_min_auto_->setChecked(!model.y_min.has_value());
     y_max_auto_->setChecked(!model.y_max.has_value());
-    y_min_->setValue(model.y_min.value_or(0.0));
-    y_max_->setValue(model.y_max.value_or(1.0));
+    chart_axis_bound_editor::load(y_min_, model.y_min, 0.0);
+    chart_axis_bound_editor::load(y_max_, model.y_max, 1.0);
     y_min_->setEnabled(!y_min_auto_->isChecked());
     y_max_->setEnabled(!y_max_auto_->isChecked());
     x_min_auto_->setChecked(!model.x_min.has_value());
     x_max_auto_->setChecked(!model.x_max.has_value());
-    x_min_->setValue(model.x_min.value_or(0.0));
-    x_max_->setValue(model.x_max.value_or(1.0));
+    chart_axis_bound_editor::load(x_min_, model.x_min, 0.0);
+    chart_axis_bound_editor::load(x_max_, model.x_max, 1.0);
     x_min_->setEnabled(!x_min_auto_->isChecked());
     x_max_->setEnabled(!x_max_auto_->isChecked());
     set_color_button(data_region_fill_,
@@ -578,22 +579,22 @@ ChartModel GraphPropertiesDialog::collect_model() const
     if (y_min_auto_->isChecked()) {
         result.y_min.reset();
     } else {
-        result.y_min = y_min_->value();
+        result.y_min = chart_axis_bound_editor::read(y_min_);
     }
     if (y_max_auto_->isChecked()) {
         result.y_max.reset();
     } else {
-        result.y_max = y_max_->value();
+        result.y_max = chart_axis_bound_editor::read(y_max_);
     }
     if (x_min_auto_->isChecked()) {
         result.x_min.reset();
     } else {
-        result.x_min = x_min_->value();
+        result.x_min = chart_axis_bound_editor::read(x_min_);
     }
     if (x_max_auto_->isChecked()) {
         result.x_max.reset();
     } else {
-        result.x_max = x_max_->value();
+        result.x_max = chart_axis_bound_editor::read(x_max_);
     }
     result.data_region_fill = color_from_button(data_region_fill_);
     if (result.data_region_fill.compare(QStringLiteral("#00000000"), Qt::CaseInsensitive) == 0) {

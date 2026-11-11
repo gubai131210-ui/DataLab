@@ -88,6 +88,7 @@
 #include <QAction>
 #include <QAbstractItemDelegate>
 #include <QApplication>
+#include <QScopedValueRollback>
 #include <QClipboard>
 #include <QComboBox>
 #include <QToolButton>
@@ -823,23 +824,27 @@ void MainWindow::create_layout()
                     || worksheet_model_ == nullptr || worksheet_sort_proxy_ == nullptr) {
                     return;
                 }
-                data_table_->selectionModel()->clearSelection();
+                // A chart selection already owns its mark identities. Reverse-syncing
+                // each intermediate table selection can replace them (notably fitted
+                // and forecast marks, which deliberately have no source row).
+                const QScopedValueRollback<bool> selection_guard(synchronizing_chart_selection_, true);
+                QItemSelection selection;
                 int hidden_rows = 0;
                 for (const std::size_t row : rows) {
+                    if (row >= static_cast<std::size_t>(worksheet_model_->rowCount())) { ++hidden_rows; continue; }
                     const QModelIndex source =
                         worksheet_model_->index(static_cast<int>(row), 0);
                     const QModelIndex proxy = worksheet_sort_proxy_->mapFromSource(source);
                     if (proxy.isValid()) {
-                        data_table_->selectionModel()->select(
-                            proxy, QItemSelectionModel::Select | QItemSelectionModel::Rows);
+                        selection.select(proxy, proxy);
                     } else {
                         ++hidden_rows;
                     }
                 }
+                data_table_->selectionModel()->select(selection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
                 if (!rows.empty()) {
                     worksheet_visibility_action_->setChecked(true);
                     data_table_->scroll_source_rows_into_view(worksheet_sort_proxy_, rows);
-                    data_table_->setFocus();
                 }
                 if (hidden_rows > 0) {
                     statusBar()->showMessage(
@@ -848,6 +853,7 @@ void MainWindow::create_layout()
             });
     connect(data_table_->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, [this] {
+                if (synchronizing_chart_selection_) return;
                 std::vector<std::size_t> rows;
                 if (data_table_ != nullptr && data_table_->selectionModel() != nullptr
                     && worksheet_sort_proxy_ != nullptr) {
